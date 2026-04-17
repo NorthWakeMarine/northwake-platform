@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #000000;
+  --background: #000000;
+  --foreground: #ffffff;
 }
 
 @theme inline {
@@ -12,18 +12,110 @@
   --font-mono: var(--font-geist-mono);
 
   /* NorthWake Maritime Palette */
-  --color-navy: #000080;
-  --color-navy-light: #0a0a9e;
-  --color-navy-dark: #00005a;
-  --color-steel: #686A6C;
+  --color-navy:        #000080;
+  --color-navy-light:  #0a0a9e;
+  --color-navy-dark:   #00005a;
+  --color-steel:       #686A6C;
   --color-steel-light: #8a8c8e;
-  --color-steel-dark: #4a4c4e;
-  --color-obsidian: #000000;
-  --color-wake: #ffffff;
+  --color-steel-dark:  #4a4c4e;
+  --color-obsidian:    #000000;
+  --color-wake:        #ffffff;
+  --color-link:        #6b9fff;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Chrome / liquid-metal text effect */
+.chrome-text {
+  background: linear-gradient(
+    135deg,
+    #b0b3b8 0%,
+    #e8eaed 20%,
+    #ffffff 35%,
+    #c8cacc 50%,
+    #ffffff 65%,
+    #9a9d9f 80%,
+    #d0d2d4 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Chrome button shimmer */
+.chrome-btn {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    #8a8d90 0%,
+    #d4d6d8 30%,
+    #ffffff 50%,
+    #c0c2c4 70%,
+    #8a8d90 100%
+  );
+  color: #000000;
+  overflow: hidden;
+}
+
+.chrome-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+
+.chrome-btn:hover::after {
+  transform: translateX(100%);
+}
+
+/* Subtle grid overlay for hero depth */
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(0, 0, 128, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 128, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Divider line accent */
+.accent-rule {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #000080, #686a6c, transparent);
+}
+
+/* Chrome stage — carousel border with gradient chrome effect */
+.chrome-stage {
+  position: relative;
+  /* 1px gradient border using background-clip trick */
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(#000000, #000000),
+    linear-gradient(135deg, #4a4c4e 0%, #a0a3a6 25%, #d8dadc 50%, #a0a3a6 75%, #4a4c4e 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* Carousel dot — active state chrome pill */
+.chrome-btn-dot {
+  background: linear-gradient(
+    90deg,
+    #8a8d90 0%,
+    #d4d6d8 40%,
+    #ffffff 60%,
+    #8a8d90 100%
+  );
+  height: 1px;
+  display: block;
 }
