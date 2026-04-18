@@ -5,7 +5,7 @@ import FloatingCTA from "@/components/FloatingCTA";
 import QuoteForm from "@/components/QuoteForm";
 
 export const metadata: Metadata = {
-  title: "Contact NorthWake Marine — Get a Free Quote in Jacksonville, FL",
+  title: "Contact NorthWake Marine, Get a Free Quote in Jacksonville, FL",
   description:
     "Contact NorthWake Marine for a free, no-obligation quote on boat detailing, ceramic coating, or yacht management in Jacksonville, FL. Call, email, or submit your vessel details online.",
   keywords: [
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "yacht management inquiry Florida",
   ],
   openGraph: {
-    title: "Contact NorthWake Marine | Free Quote — Jacksonville, FL",
+    title: "Contact NorthWake Marine | Free Quote, Jacksonville, FL",
     description:
       "Ready to elevate your vessel? Contact NorthWake Marine for a free, no-obligation estimate on any of our professional marine services.",
     url: "https://northwakemarine.com/contact",
@@ -35,9 +35,9 @@ const contactInfo = [
   {
     icon: "◈",
     label: "Email",
-    value: "admin@northwakemarine.com",
-    href: "mailto:admin@northwakemarine.com",
-    sub: "We reply within one business day",
+    value: "info@northwakemarine.com",
+    href: "mailto:info@northwakemarine.com",
+    sub: "info@northwakemarine.com",
   },
   {
     icon: "◇",
@@ -81,7 +81,7 @@ export default function ContactPage() {
             </h1>
             <p className="text-steel-light text-base max-w-xl leading-relaxed">
               Fill out the form below, give us a call, or send an email. We respond to every
-              inquiry within one business day with a detailed, no-obligation estimate.
+              inquiry with a detailed, no-obligation estimate.
             </p>
           </div>
           <div
@@ -98,7 +98,7 @@ export default function ContactPage() {
         >
           <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.6fr] gap-16 items-start">
 
-            {/* Left column — contact info + map */}
+            {/* Left column, contact info + map */}
             <div className="flex flex-col gap-8 lg:sticky lg:top-28">
               {/* Contact cards */}
               <div className="flex flex-col gap-px bg-steel-dark">
@@ -149,13 +149,13 @@ export default function ContactPage() {
                 </table>
               </div>
 
-              {/* Google Maps embed — Jacksonville, FL */}
+              {/* Google Maps embed, Jacksonville, FL */}
               <div className="border border-steel-dark overflow-hidden">
                 <p className="text-steel text-[9px] tracking-[0.35em] uppercase px-4 py-3 border-b border-steel-dark">
-                  Service Area — Jacksonville, FL
+                  Service Area, Jacksonville, FL
                 </p>
                 <iframe
-                  title="NorthWake Marine service area map — Jacksonville, Florida"
+                  title="NorthWake Marine service area map, Jacksonville, Florida"
                   aria-label="Google Maps showing Jacksonville, Florida, the primary service area for NorthWake Marine boat detailing and vessel management"
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d220927.69745792906!2d-81.88149869999999!3d30.3321838!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x88e5b716f1ceafeb%3A0xc3f21e5d32819f4!2sJacksonville%2C%20FL!5e0!3m2!1sen!2sus!4v1713366000000!5m2!1sen!2sus"
                   width="100%"
@@ -167,7 +167,7 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Right column — form */}
+            {/* Right column, form */}
             <div className="flex flex-col gap-8">
               <header className="flex flex-col gap-3">
                 <h2
@@ -244,7 +244,7 @@ export default function ContactPage() {
                 },
                 {
                   q: "How does the monthly maintenance plan billing work?",
-                  a: "Monthly plans are billed in advance on a recurring basis. The rate is locked in for the term of your plan, and the schedule is agreed upon upfront. Adjustments are handled with direct communication — no auto-escalations.",
+                  a: "Monthly plans are billed in advance on a recurring basis. The rate is locked in for the term of your plan, and the schedule is agreed upon upfront. Adjustments are handled with direct communication, no auto-escalations.",
                 },
               ].map(({ q, a }) => (
                 <div key={q} className="bg-obsidian p-7 hover:bg-[#040408] transition-colors duration-200">

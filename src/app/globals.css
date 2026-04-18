@@ -12,9 +12,9 @@
   --font-mono: var(--font-geist-mono);
 
   /* NorthWake Maritime Palette */
-  --color-navy:        #000080;
-  --color-navy-light:  #0a0a9e;
-  --color-navy-dark:   #00005a;
+  --color-navy:        #3535dd;
+  --color-navy-light:  #5050ff;
+  --color-navy-dark:   #1a1aaa;
   --color-steel:       #686A6C;
   --color-steel-light: #8a8c8e;
   --color-steel-dark:  #4a4c4e;
@@ -118,4 +118,30 @@ body {
   );
   height: 1px;
   display: block;
+}
+
+/* Chrome-blue badge — used for Featured / Most Popular / Premium labels */
+.badge-chrome {
+  position: relative;
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(rgba(0, 0, 15, 0.85), rgba(0, 0, 15, 0.85)),
+    linear-gradient(135deg, #1a1aaa 0%, #4444ee 30%, #8888ff 50%, #4444ee 70%, #1a1aaa 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.badge-chrome-text {
+  background: linear-gradient(
+    135deg,
+    #7080cc 0%,
+    #a8b4ff 28%,
+    #dce0ff 52%,
+    #a8b4ff 76%,
+    #7080cc 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }

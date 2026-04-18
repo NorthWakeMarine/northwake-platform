@@ -17,7 +17,7 @@ const siteUrl = "https://northwakemarine.com";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "NorthWake Marine | Premium Boat Detailing & Vessel Management — Jacksonville, FL",
+    default: "NorthWake Marine | Premium Boat Detailing & Vessel Management: Jacksonville, FL",
     template: "%s | NorthWake Marine",
   },
   description:
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: siteUrl,
     siteName: "NorthWake Marine",
-    title: "NorthWake Marine | Premium Boat Detailing & Vessel Management — Jacksonville, FL",
+    title: "NorthWake Marine | Premium Boat Detailing & Vessel Management: Jacksonville, FL",
     description:
       "Ceramic coating, monthly maintenance plans, and full-service yacht management for discerning boat owners in Jacksonville, FL.",
     images: [
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "NorthWake Marine — Jacksonville's Premier Marine Services",
+        alt: "NorthWake Marine: Jacksonville's Premier Marine Services",
       },
     ],
   },
@@ -77,7 +77,7 @@ const jsonLd = {
     "Premium boat detailing, ceramic coating, monthly maintenance plans, and full-service yacht management in Jacksonville, FL.",
   url: siteUrl,
   telephone: "+1-904-606-5454",
-  email: "admin@northwakemarine.com",
+  email: "info@northwakemarine.com",
   address: {
     "@type": "PostalAddress",
     addressLocality: "Jacksonville",

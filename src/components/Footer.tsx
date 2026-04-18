@@ -4,16 +4,8 @@ const navLinks = [
   { label: "Home",     href: "/"         },
   { label: "Services", href: "/services" },
   { label: "About",    href: "/about"    },
+  { label: "Socials",  href: "/socials"  },
   { label: "Contact",  href: "/contact"  },
-];
-
-const services = [
-  "Exterior Detailing",
-  "Ceramic Coating",
-  "Monthly Maintenance",
-  "Yacht Management",
-  "Marine Transport",
-  "Gel Coat Restoration",
 ];
 
 export default function Footer() {
@@ -40,8 +32,8 @@ export default function Footer() {
               Ready to Elevate Your Vessel?
             </h2>
             <p className="text-steel-light text-sm max-w-md leading-relaxed">
-              Tell us about your boat and we&apos;ll respond within one business day
-              with a detailed, no-obligation quote.
+              Tell us about your boat and we&apos;ll put together a detailed,
+              no-obligation quote.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 shrink-0">
@@ -62,37 +54,17 @@ export default function Footer() {
       </section>
 
       {/* ── Main footer grid ── */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 flex flex-col sm:flex-row gap-12 sm:gap-0 sm:justify-between">
         {/* Brand */}
-        <div className="flex flex-col gap-4 lg:col-span-1">
+        <div className="flex flex-col gap-4 sm:w-56">
           <Link href="/" className="flex flex-col leading-none w-fit">
             <span className="text-wake text-base font-bold tracking-[0.2em] uppercase">NorthWake</span>
             <span className="text-steel text-[10px] tracking-[0.35em] uppercase">Marine</span>
           </Link>
           <p className="text-steel text-xs leading-relaxed max-w-xs">
-            Jacksonville&apos;s premier marine services company. Expert detailing, ceramic
-            coating, and vessel management on the St. Johns River since 2012.
+            Yacht management, expert detailing, ceramic coating, and full vessel
+            services on the St. Johns River. Jacksonville&apos;s premier marine company.
           </p>
-          <div className="flex gap-4 mt-1">
-            <a
-              href="https://www.instagram.com/northwakemarine"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="NorthWake Marine on Instagram"
-              className="text-steel hover:text-wake transition-colors duration-200 text-xs tracking-widest uppercase"
-            >
-              IG
-            </a>
-            <a
-              href="https://www.facebook.com/northwakemarine"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="NorthWake Marine on Facebook"
-              className="text-steel hover:text-wake transition-colors duration-200 text-xs tracking-widest uppercase"
-            >
-              FB
-            </a>
-          </div>
         </div>
 
         {/* Navigation */}
@@ -112,25 +84,8 @@ export default function Footer() {
           </ul>
         </nav>
 
-        {/* Services */}
-        <nav aria-label="Footer services navigation">
-          <p className="text-steel text-[9px] tracking-[0.35em] uppercase mb-5">Services</p>
-          <ul className="flex flex-col gap-3 list-none">
-            {services.map((s) => (
-              <li key={s}>
-                <Link
-                  href={`/services#${s.toLowerCase().replace(/\s+/g, "-")}`}
-                  className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
-                >
-                  {s}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
         {/* Contact */}
-        <address className="flex flex-col gap-3 not-italic">
+        <address className="flex flex-col gap-3 not-italic sm:w-48">
           <p className="text-steel text-[9px] tracking-[0.35em] uppercase mb-2">Contact</p>
           <a
             href="tel:+19046065454"
@@ -139,22 +94,25 @@ export default function Footer() {
             (904) 606-5454
           </a>
           <a
-            href="mailto:admin@northwakemarine.com"
+            href="mailto:info@northwakemarine.com"
             className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
           >
-            admin@northwakemarine.com
+            info@northwakemarine.com
           </a>
           <p className="text-steel text-xs">Jacksonville, FL</p>
-          <p className="text-steel text-xs leading-relaxed mt-1">
-            Mon–Fri: 8:00 AM – 6:00 PM<br />
-            Sat: 9:00 AM – 2:00 PM
-          </p>
         </address>
       </div>
 
       {/* ── Bottom bar ── */}
-      <div className="border-t border-steel-dark px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] text-steel tracking-wide max-w-7xl mx-auto w-full">
+      <div className="border-t border-steel-dark px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-steel tracking-wide max-w-7xl mx-auto w-full">
         <p>© {new Date().getFullYear()} NorthWake Marine. All rights reserved.</p>
+        <Link
+          href="/pro"
+          className="flex items-center gap-2 border border-steel-dark px-4 py-1.5 text-steel hover:border-navy hover:text-wake transition-colors duration-300 tracking-[0.2em] uppercase text-[9px]"
+        >
+          <span aria-hidden="true" className="text-navy text-[7px]">◈</span>
+          NorthWakePro
+        </Link>
         <p>Premium Marine Services · Jacksonville, FL</p>
       </div>
     </footer>

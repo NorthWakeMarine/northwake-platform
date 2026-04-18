@@ -29,7 +29,7 @@ const serviceOptions = [
   "Captain & Crew Services",
   "Yacht Management",
   "Custom Request",
-  "Not Sure — Need Consultation",
+  "Not Sure, Need Consultation",
 ];
 
 const referralSources = [
@@ -210,7 +210,7 @@ export default function QuoteForm({
       </button>
 
       <p className="text-steel text-[10px] text-center tracking-wide leading-relaxed">
-        No obligation. No spam. We respond within one business day.
+        No obligation. No spam.
       </p>
     </form>
   );

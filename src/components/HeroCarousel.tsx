@@ -10,7 +10,7 @@ const slides = [
   {
     id: "slide-1",
     src: "/images/IMG_6468.JPG",
-    alt: "NorthWake Marine — professional marine detailing and vessel care, Jacksonville FL",
+    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
     caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
     service: "NorthWake Marine",
     tagline: "",
@@ -19,7 +19,7 @@ const slides = [
   {
     id: "slide-2",
     src: "/images/IMG_6469.JPG",
-    alt: "NorthWake Marine — professional marine detailing and vessel care, Jacksonville FL",
+    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
     caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
     service: "NorthWake Marine",
     tagline: "",
@@ -28,7 +28,7 @@ const slides = [
   {
     id: "slide-3",
     src: "/images/IMG_6497.JPG",
-    alt: "NorthWake Marine — professional marine detailing and vessel care, Jacksonville FL",
+    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
     caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
     service: "NorthWake Marine",
     tagline: "",
@@ -37,7 +37,7 @@ const slides = [
   {
     id: "slide-4",
     src: "/images/IMG_6515.JPG",
-    alt: "NorthWake Marine — professional marine detailing and vessel care, Jacksonville FL",
+    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
     caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
     service: "NorthWake Marine",
     tagline: "",
@@ -46,7 +46,7 @@ const slides = [
 ];
 
 interface HeroCarouselProps {
-  /** When false the "Premium Marine Care" headline + CTAs are hidden — use for bottom-of-page showcase */
+  /** When false the "Premium Marine Care" headline + CTAs are hidden, use for bottom-of-page showcase */
   showHeroOverlay?: boolean;
 }
 
@@ -84,7 +84,7 @@ export default function HeroCarousel({ showHeroOverlay = true }: HeroCarouselPro
     <>
       {/* ─── CAROUSEL STAGE ─────────────────────────────────────── */}
       <section
-        aria-label="NorthWake Marine — featured work carousel"
+        aria-label="NorthWake Marine, featured work carousel"
         className="relative w-full overflow-visible"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -109,7 +109,7 @@ export default function HeroCarousel({ showHeroOverlay = true }: HeroCarouselPro
                   {/*
                    * TO SWAP IMAGES: replace `src` in the `slides` array above
                    * with your real photo path, e.g. "/images/ceramic-coating.jpg"
-                   * Keep the same `alt` and `caption` values — they drive SEO.
+                   * Keep the same `alt` and `caption` values, they drive SEO.
                    */}
                   <Image
                     src={slide.src}
@@ -117,8 +117,8 @@ export default function HeroCarousel({ showHeroOverlay = true }: HeroCarouselPro
                     fill
                     priority={i === 0}
                     sizes="100vw"
-                    className="object-cover object-center"
-                    quality={90}
+                    className="object-contain object-center"
+                    quality={100}
                   />
 
                   {/* Bottom-to-top gradient for text legibility */}
@@ -138,7 +138,7 @@ export default function HeroCarousel({ showHeroOverlay = true }: HeroCarouselPro
             </div>
           </div>
 
-          {/* ── Hero text overlay — desktop (hero mode only) ── */}
+          {/* ── Hero text overlay, desktop (hero mode only) ── */}
           {showHeroOverlay && (
             <div
               className="hidden md:flex absolute inset-x-0 bottom-0 z-20 flex-col items-start gap-5 px-12 pb-16 max-w-4xl"
@@ -154,7 +154,7 @@ export default function HeroCarousel({ showHeroOverlay = true }: HeroCarouselPro
               <p className="text-steel-light text-base max-w-xl leading-relaxed">
                 NorthWake Marine delivers concierge-level detailing, ceramic coating, and
                 full-service vessel management to Jacksonville&apos;s most discerning boat
-                owners — on the St. Johns River and beyond.
+                owners, on the St. Johns River and beyond.
               </p>
               <div className="flex gap-4 mt-1">
                 <Link
@@ -266,7 +266,7 @@ export default function HeroCarousel({ showHeroOverlay = true }: HeroCarouselPro
         </div>
       </section>
 
-      {/* ─── MOBILE HERO TEXT (below carousel — hero mode only) ─── */}
+      {/* ─── MOBILE HERO TEXT (below carousel, hero mode only) ─── */}
       {showHeroOverlay && (
         <section
           aria-labelledby="hero-mobile-heading"

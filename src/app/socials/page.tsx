@@ -5,13 +5,13 @@ import Footer from "@/components/Footer";
 import FloatingCTA from "@/components/FloatingCTA";
 
 export const metadata: Metadata = {
-  title: "Follow NorthWake Marine — Social Media & Reviews",
+  title: "Follow NorthWake Marine, Social Media & Reviews",
   description:
     "Follow NorthWake Marine on YouTube, Instagram, TikTok, and Facebook. Leave us a Google review and stay up to date with our latest marine services and work.",
   openGraph: {
     title: "Follow NorthWake Marine | Social Media & Reviews",
     description:
-      "Stay connected with NorthWake Marine — follow us on social media and leave a Google review.",
+      "Stay connected with NorthWake Marine, follow us on social media and leave a Google review.",
     url: "https://northwakemarine.com/socials",
   },
   alternates: { canonical: "https://northwakemarine.com/socials" },
@@ -68,8 +68,8 @@ const socials = [
     label: "Facebook",
     handle: "NorthWake Marine",
     description:
-      "Service announcements, client testimonials, local Jacksonville boating news, and special promotions — follow our Facebook page to stay in the loop.",
-    href: "https://www.facebook.com/northwakemarine",
+      "Service announcements, client testimonials, local Jacksonville boating news, and special promotions, follow our Facebook page to stay in the loop.",
+    href: "https://www.facebook.com/profile.php?id=61577308802144",
     cta: "Follow on Facebook",
     icon: (
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
@@ -83,8 +83,8 @@ const socials = [
     label: "Google Reviews",
     handle: "NorthWake Marine on Google",
     description:
-      "Had a great experience with NorthWake Marine? We&apos;d be grateful for a Google review — it helps other Jacksonville boat owners find us and know what to expect.",
-    href: "https://g.page/r/northwakemarine/review",
+      "Had a great experience with NorthWake Marine? We'd be grateful for a Google review. It helps other Jacksonville boat owners find us and know what to expect.",
+    href: "https://g.page/r/CdvYJ9aDJv8NEAE/review",
     cta: "Leave a Google Review",
     icon: (
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
@@ -108,7 +108,7 @@ export default function SocialsPage() {
         {/* ── Hero ── */}
         <section
           aria-labelledby="socials-heading"
-          className="hero-grid relative pt-32 pb-16 px-6 overflow-hidden text-center"
+          className="hero-grid relative pt-32 pb-6 px-6 overflow-hidden text-center"
         >
           <div
             aria-hidden="true"
@@ -148,7 +148,7 @@ export default function SocialsPage() {
                 href={s.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${s.cta} — opens in a new tab`}
+                aria-label={`${s.cta}, opens in a new tab`}
                 className="group bg-obsidian hover:bg-navy-dark transition-colors duration-300 flex flex-col sm:flex-row items-start sm:items-center gap-6 p-8"
               >
                 {/* Icon */}
@@ -194,40 +194,6 @@ export default function SocialsPage() {
           </div>
         </section>
 
-        {/* ── Review ask ── */}
-        <section
-          aria-labelledby="review-heading"
-          className="py-20 px-6 border-t border-steel-dark text-center"
-        >
-          <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
-            <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Share Your Experience</p>
-            <h2
-              id="review-heading"
-              className="text-wake text-2xl sm:text-3xl font-bold tracking-tight"
-            >
-              Had a Great Experience?<br />
-              <span className="chrome-text">We&apos;d Love a Review.</span>
-            </h2>
-            <p className="text-steel text-sm leading-relaxed">
-              Google reviews help other Jacksonville boat owners find us and know what to
-              expect. It takes less than a minute and means the world to our team.
-            </p>
-            <a
-              href="https://g.page/r/northwakemarine/review"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-10 py-4 transition-all duration-300 hover:scale-105"
-            >
-              Leave a Google Review
-            </a>
-            <Link
-              href="/contact"
-              className="text-steel text-xs tracking-[0.25em] uppercase hover:text-wake transition-colors duration-200"
-            >
-              Or get in touch directly →
-            </Link>
-          </div>
-        </section>
       </main>
 
       <Footer />

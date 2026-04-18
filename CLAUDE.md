@@ -8,6 +8,11 @@
 - Database: Supabase
 - Hosting: Vercel
 
+## Writing Rules
+- Never use em dashes (—) anywhere in copy, UI text, or code comments. Use a comma, colon, or rewrite the sentence instead.
+- Never use the word "technician" or "technicians" in any customer-facing copy.
+- NorthWake Marine was established in 2025.
+
 ## Core Logic
 - Landing Site: High-end, luxury Jacksonville maritime aesthetic. Will have Home, About, Services, Contact, and Socials Pages. With funnels to fill a "contact us" form all over the landing site.
 - CRM: Lead tracking, vessel management, and service interval logic.

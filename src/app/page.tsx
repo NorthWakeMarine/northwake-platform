@@ -7,11 +7,19 @@ import Link from "next/link";
 
 const services = [
   {
+    icon: "◉",
+    title: "Yacht Management",
+    tagline: "Full-Service Concierge Care",
+    description:
+      "Complete end-to-end management for serious yacht owners. Crew sourcing, provisioning, insurance coordination, compliance, and voyage planning, all handled by our dedicated captains and marine professionals.",
+    details: ["Crew & captain coordination", "Provisioning & logistics", "Insurance & compliance management"],
+  },
+  {
     icon: "◈",
     title: "Ceramic Coating",
     tagline: "Armor-Grade Hull Protection",
     description:
-      "Professional-grade nano-ceramic coating bonds permanently to your hull, gelcoat, and topside surfaces. Repels water, salt, and UV damage for up to 5 years — leaving a mirror-grade finish that turns heads at every marina.",
+      "Professional-grade nano-ceramic coating bonds permanently to your hull, gelcoat, and topside surfaces. Repels water, salt, and UV damage for up to 5 years, leaving a mirror-grade finish that turns heads at every marina.",
     details: ["9H hardness rating", "UV & salt-water resistance", "5-year protection warranty"],
   },
   {
@@ -19,31 +27,23 @@ const services = [
     title: "Monthly Maintenance",
     tagline: "Zero Effort. Perfect Condition.",
     description:
-      "Bespoke maintenance programs designed around your schedule and vessel. From weekly wash-downs to seasonal engine checks and hull inspections — we handle every detail so your boat is always ready to launch.",
+      "Bespoke maintenance programs designed around your schedule and vessel. From weekly wash-downs to seasonal engine checks and hull inspections, we handle every detail so your boat is always ready to launch.",
     details: ["Custom maintenance schedules", "Priority booking & storage coordination", "Detailed condition reports"],
   },
   {
-    icon: "◉",
-    title: "Yacht Management",
-    tagline: "Full-Service Concierge Care",
-    description:
-      "Complete end-to-end management for serious yacht owners. Crew sourcing, provisioning, insurance coordination, compliance, and voyage planning — all handled by our dedicated captains and marine professionals.",
-    details: ["Crew & captain coordination", "Provisioning & logistics", "Insurance & compliance management"],
-  },
-  {
-    icon: "⬡",
-    title: "Full Details",
+    icon: "◈",
+    title: "Full Detail",
     tagline: "Bow-to-Stern Perfection",
     description:
-      "Our most comprehensive service: compound & polish, wax, stainless & glass polishing, upholstery cleaning, plus optional engine bay detailing. Every surface restored to showroom condition.",
-    details: ["Multi-stage compound & machine polish", "Marine wax or polymer sealant", "Interior vacuum & full wipe-down"],
+      "Clay bar, multi-stage compound, polish, and sealant on every exterior surface — then interior vacuum, wipe-down, and stainless polishing. Showroom condition, stem to stern.",
+    details: ["Clay bar & multi-stage compound polish", "Marine wax or polymer sealant coat", "Interior vacuum, wipe-down & stainless polish"],
   },
   {
     icon: "△",
     title: "Marine Transport",
     tagline: "Safe, Reliable. On Schedule.",
     description:
-      "Licensed vessel transport across Florida and beyond — moving slips, hauling for service, or full relocations. Experienced crew, coordinated scheduling, and full in-transit protection for your investment.",
+      "Licensed vessel transport across Florida and beyond, moving slips, hauling for service, or full relocations. Experienced crew, coordinated scheduling, and full in-transit protection for your investment.",
     details: ["Licensed & insured transport team", "Local & statewide Florida moves", "Haul-out & launch coordination"],
   },
   {
@@ -51,7 +51,7 @@ const services = [
     title: "Captain & Crew Services",
     tagline: "Experienced Professionals, On Demand",
     description:
-      "USCG-licensed captains and qualified crew available on a day-rate or contract basis. Delivery captaining, charter support, new vessel pickups — reliable marine professionals whenever you need them.",
+      "USCG-licensed captains and qualified crew available on a day-rate or contract basis. Delivery captaining, charter support, new vessel pickups, reliable marine professionals whenever you need them.",
     details: ["USCG-licensed captains", "Day-rate & contract crew", "Delivery & relocation captaining"],
   },
 ];
@@ -90,7 +90,7 @@ export default function Home() {
               opacity: 0.85,
             }}
           />
-          {/* Navy depth glow — ties into the navy palette used site-wide */}
+          {/* Navy depth glow, ties into the navy palette used site-wide */}
           <div
             aria-hidden="true"
             className="absolute inset-0"
@@ -106,7 +106,7 @@ export default function Home() {
             <div className="flex flex-col gap-4 order-2 md:order-1 text-center items-center">
               <Image
                 src="/brand/nwmlogofullwhite.png"
-                alt="NorthWake Marine — Premium Boat Detailing and Vessel Management, Jacksonville FL"
+                alt="NorthWake Marine, Premium Boat Detailing and Vessel Management, Jacksonville FL"
                 width={260}
                 height={70}
                 className="w-full max-w-[320px] sm:max-w-[420px]"
@@ -208,7 +208,7 @@ export default function Home() {
                     <select id="hero-service" name="service" required defaultValue=""
                       className="bg-obsidian border border-steel-dark text-wake text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer">
                       <option value="" disabled className="text-steel">Select service…</option>
-                      {["Maintenance Wash","One-Off Wash","Full Detail","Exterior Detailing","Interior Cleaning & Cabin Detailing","Canvas Cleaning & Treatment","Vinyl & Upholstery Conditioning","Teak Cleaning & Brightening","Stainless Polish","Engine Bay & Bilge Cleaning","Water Spot & Mineral Deposit Removal","Ceramic Coating","Wax Application","Gel Coat Restoration","Monthly Maintenance Plan","Marine Transport","Captain & Crew Services","Yacht Management","Custom Request","Not Sure — Need Consultation"].map(s => (
+                      {["Maintenance Wash","One-Off Wash","Full Detail","Exterior Detailing","Interior Cleaning & Cabin Detailing","Canvas Cleaning & Treatment","Vinyl & Upholstery Conditioning","Teak Cleaning & Brightening","Stainless Polish","Engine Bay & Bilge Cleaning","Water Spot & Mineral Deposit Removal","Ceramic Coating","Wax Application","Gel Coat Restoration","Monthly Maintenance Plan","Marine Transport","Captain & Crew Services","Yacht Management","Custom Request","Not Sure, Need Consultation"].map(s => (
                         <option key={s} value={s} className="bg-obsidian text-wake">{s}</option>
                       ))}
                     </select>
@@ -321,64 +321,10 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── ABOUT / WHY NORTHWAKE ── */}
-        <section id="about" aria-labelledby="about-heading" className="py-28 px-6 border-t border-steel-dark">
-          <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-            <div className="flex flex-col gap-6">
-              <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Why NorthWake Marine</p>
-              <h2
-                id="about-heading"
-                className="text-wake text-3xl sm:text-4xl font-bold tracking-tight leading-tight"
-              >
-                Jacksonville&apos;s Waters Demand<br />
-                <span className="chrome-text">A Different Standard</span>
-              </h2>
-              <p className="text-steel-light text-sm leading-relaxed">
-                The St. Johns River and Northeast Florida&apos;s coastal waters are beautiful —
-                and brutal on marine finishes. Salt air, UV intensity, and the pace of a working
-                waterway accelerate wear that undermines even well-maintained vessels.
-              </p>
-              <p className="text-steel-light text-sm leading-relaxed">
-                NorthWake Marine was founded to bring yacht-club-level care to every owner, not
-                just those with the largest slips. Our work is hands-on, our products
-                are professional-grade, and our standards are simply non-negotiable.
-              </p>
-              <Link
-                href="/contact"
-                className="self-start chrome-btn text-[10px] font-bold tracking-[0.3em] uppercase px-8 py-3.5 transition-all duration-300 hover:scale-105 mt-2"
-              >
-                Start a Conversation
-              </Link>
-            </div>
-
-            {/* Feature list */}
-            <ul className="flex flex-col gap-0 border border-steel-dark list-none">
-              {[
-                ["Professional-Grade Products Only", "We never compromise on chemistry — your vessel deserves the best"],
-                ["Transparent Pricing", "Detailed quotes before any work begins, no hidden fees"],
-                ["Concierge Scheduling", "We work around your calendar, not the other way around"],
-                ["Full Documentation", "Photo reports before and after every service"],
-              ].map(([title, desc], i) => (
-                <li
-                  key={title}
-                  className={`flex gap-5 p-6 ${i !== 3 ? "border-b border-steel-dark" : ""} group hover:bg-navy-dark transition-colors duration-200`}
-                >
-                  <span aria-hidden="true" className="chrome-text text-lg mt-0.5 shrink-0">✦</span>
-                  <div>
-                    <p className="text-wake text-sm font-semibold mb-0.5">{title}</p>
-                    <p className="text-steel text-xs leading-relaxed">{desc}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
         {/* ── FEATURED WORK CAROUSEL (bottom showcase) ── */}
-        <section aria-labelledby="showcase-heading" className="pt-20 pb-0 border-t border-steel-dark">
+        <section aria-labelledby="showcase-heading" className="pt-20 pb-0">
           <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-8 flex items-end justify-between gap-4">
             <div className="flex flex-col gap-2">
-              <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Our Work</p>
               <h2
                 id="showcase-heading"
                 className="text-wake text-2xl sm:text-3xl font-bold tracking-tight"

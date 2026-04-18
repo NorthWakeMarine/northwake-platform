@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 const EFFECTIVE_DATE = "April 17, 2025";
 const COMPANY = "NorthWake Marine";
-const EMAIL = "admin@northwakemarine.com";
+const EMAIL = "info@northwakemarine.com";
 const PHONE = "(904) 606-5454";
 const LOCATION = "Jacksonville, FL";
 

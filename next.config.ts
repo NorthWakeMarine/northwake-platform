@@ -5,7 +5,20 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    qualities: [75, 90],
+    qualities: [75, 90, 100],
+  },
+
+  // Prevent the /pro route from appearing in search engines at the config level
+  async headers() {
+    return [
+      {
+        source: "/pro/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control",  value: "no-store, no-cache, must-revalidate" },
+        ],
+      },
+    ];
   },
 };
 
