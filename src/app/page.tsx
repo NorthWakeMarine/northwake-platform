@@ -152,7 +152,7 @@ export default function Home() {
                 className="flex flex-col gap-2.5"
               >
                 {/* Row: First + Last */}
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
                     <label htmlFor="hero-first" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
                       First Name <span aria-hidden="true" className="text-navy">*</span>
@@ -170,7 +170,7 @@ export default function Home() {
                 </div>
 
                 {/* Row: Email + Phone */}
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
                     <label htmlFor="hero-email" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
                       Email <span aria-hidden="true" className="text-navy">*</span>
@@ -188,7 +188,7 @@ export default function Home() {
                 </div>
 
                 {/* Row: Vessel Type + Service Needed */}
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="flex flex-col gap-1">
                     <label htmlFor="hero-vessel" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
                       Vessel Type <span aria-hidden="true" className="text-navy">*</span>

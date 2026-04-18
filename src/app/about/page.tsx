@@ -94,7 +94,7 @@ export default function AboutPage() {
             </div>
 
             {/* Team cards */}
-            <ul className="grid grid-cols-2 gap-px bg-steel-dark list-none">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-steel-dark list-none">
               {team.map((member) => (
                 <li
                   key={member.name}
