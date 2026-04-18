@@ -126,9 +126,8 @@ export default function SocialsPage() {
             >
               Follow NorthWake Marine
             </h1>
-            <p className="text-steel-light text-sm leading-relaxed max-w-md">
-              Follow us for detailing transformations, marine tips, and behind-the-scenes
-              content from the St. Johns River waterway.
+            <p className="text-steel-light text-sm leading-relaxed max-w-xl">
+              Follow us for detailing transformations, marine tips, and behind-the-scenes content from the St. Johns River waterway.
             </p>
             <hr className="accent-rule w-40" />
           </div>

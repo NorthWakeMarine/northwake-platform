@@ -30,14 +30,14 @@ const contactInfo = [
     label: "Phone",
     value: "(904) 606-5454",
     href: "tel:+19046065454",
-    sub: "Mon–Fri 8am–6pm · Sat 9am–2pm",
+    sub: null,
   },
   {
     icon: "◈",
     label: "Email",
     value: "info@northwakemarine.com",
     href: "mailto:info@northwakemarine.com",
-    sub: "info@northwakemarine.com",
+    sub: null,
   },
   {
     icon: "◇",
@@ -55,46 +55,10 @@ export default function ContactPage() {
       <FloatingCTA />
 
       <main>
-        {/* ── Hero strip ── */}
-        <section
-          aria-labelledby="contact-hero-heading"
-          className="hero-grid relative pt-32 pb-16 px-6 overflow-hidden"
-        >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 70% 50% at 60% 30%, rgba(0,0,128,0.2) 0%, transparent 70%)",
-            }}
-          />
-          <div className="relative z-10 max-w-7xl mx-auto flex flex-col gap-5">
-            <p className="text-steel text-[10px] tracking-[0.4em] uppercase">
-              Free · No Obligation
-            </p>
-            <h1
-              id="contact-hero-heading"
-              className="text-wake text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight"
-            >
-              Let&apos;s Talk About<br />
-              <span className="chrome-text">Your Vessel.</span>
-            </h1>
-            <p className="text-steel-light text-base max-w-xl leading-relaxed">
-              Fill out the form below, give us a call, or send an email. We respond to every
-              inquiry with a detailed, no-obligation estimate.
-            </p>
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 inset-x-0 h-20"
-            style={{ background: "linear-gradient(to bottom, transparent, #000000)" }}
-          />
-        </section>
-
         {/* ── Main contact layout ── */}
         <section
           aria-labelledby="contact-form-heading"
-          className="py-16 px-6 border-t border-steel-dark"
+          className="pt-32 pb-16 px-6"
         >
           <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.6fr] gap-16 items-start">
 
@@ -124,47 +88,13 @@ export default function ContactPage() {
                       ) : (
                         <p className="text-wake text-sm font-semibold">{item.value}</p>
                       )}
-                      <p className="text-steel text-xs mt-0.5">{item.sub}</p>
+                      {item.sub && <p className="text-steel text-xs mt-0.5">{item.sub}</p>}
                     </div>
                   </address>
                 ))}
               </div>
 
-              {/* Hours */}
-              <div className="border border-steel-dark p-6 flex flex-col gap-4">
-                <p className="text-steel text-[9px] tracking-[0.35em] uppercase">Business Hours</p>
-                <table className="w-full text-xs" aria-label="NorthWake Marine business hours">
-                  <tbody className="divide-y divide-steel-dark">
-                    {[
-                      ["Monday – Friday", "8:00 AM – 6:00 PM"],
-                      ["Saturday",        "9:00 AM – 2:00 PM"],
-                      ["Sunday",          "By Appointment"],
-                    ].map(([day, hours]) => (
-                      <tr key={day}>
-                        <td className="py-2.5 text-steel pr-4">{day}</td>
-                        <td className="py-2.5 text-steel-light text-right">{hours}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
 
-              {/* Google Maps embed, Jacksonville, FL */}
-              <div className="border border-steel-dark overflow-hidden">
-                <p className="text-steel text-[9px] tracking-[0.35em] uppercase px-4 py-3 border-b border-steel-dark">
-                  Service Area, Jacksonville, FL
-                </p>
-                <iframe
-                  title="NorthWake Marine service area map, Jacksonville, Florida"
-                  aria-label="Google Maps showing Jacksonville, Florida, the primary service area for NorthWake Marine boat detailing and vessel management"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d220927.69745792906!2d-81.88149869999999!3d30.3321838!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x88e5b716f1ceafeb%3A0xc3f21e5d32819f4!2sJacksonville%2C%20FL!5e0!3m2!1sen!2sus!4v1713366000000!5m2!1sen!2sus"
-                  width="100%"
-                  height="260"
-                  style={{ border: 0, display: "block", filter: "grayscale(1) invert(0.9) contrast(0.85)" }}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
             </div>
 
             {/* Right column, form */}
@@ -190,19 +120,6 @@ export default function ContactPage() {
                 />
               </div>
 
-              {/* Trust badges */}
-              <ul className="grid grid-cols-3 gap-px bg-steel-dark list-none text-center">
-                {[
-                  { icon: "◈", text: "Certified Technicians" },
-                  { icon: "◉", text: "1-Day Response" },
-                  { icon: "◇", text: "No Hidden Fees" },
-                ].map((badge) => (
-                  <li key={badge.text} className="bg-obsidian py-5 px-4 flex flex-col items-center gap-2">
-                    <span aria-hidden="true" className="chrome-text text-xl">{badge.icon}</span>
-                    <p className="text-steel text-[9px] tracking-[0.2em] uppercase leading-tight">{badge.text}</p>
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
         </section>
@@ -240,11 +157,11 @@ export default function ContactPage() {
                 },
                 {
                   q: "Are your products safe for fiberglass, painted hulls, and teak?",
-                  a: "Yes. We always assess the substrate type before selecting products. Our technicians are trained to identify and protect painted hulls, varnished teak, vinyl faux-teak, and factory gelcoat finishes.",
+                  a: "Yes. We always assess the substrate type before selecting products. Every surface is evaluated to identify and protect painted hulls, varnished teak, vinyl faux-teak, and factory gelcoat finishes.",
                 },
                 {
                   q: "How does the monthly maintenance plan billing work?",
-                  a: "Monthly plans are billed in advance on a recurring basis. The rate is locked in for the term of your plan, and the schedule is agreed upon upfront. Adjustments are handled with direct communication, no auto-escalations.",
+                  a: "We never lock you into a contract. Plans are billed on a recurring basis with a rate and schedule agreed upon upfront. Adjustments are handled with direct communication.",
                 },
               ].map(({ q, a }) => (
                 <div key={q} className="bg-obsidian p-7 hover:bg-[#040408] transition-colors duration-200">

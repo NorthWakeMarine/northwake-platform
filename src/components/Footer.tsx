@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const navLinks = [
   { label: "Home",     href: "/"         },
@@ -57,9 +58,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 flex flex-col sm:flex-row gap-12 sm:gap-0 sm:justify-between">
         {/* Brand */}
         <div className="flex flex-col gap-4 sm:w-56">
-          <Link href="/" className="flex flex-col leading-none w-fit">
-            <span className="text-wake text-base font-bold tracking-[0.2em] uppercase">NorthWake</span>
-            <span className="text-steel text-[10px] tracking-[0.35em] uppercase">Marine</span>
+          <Link href="/" className="w-fit">
+            <Image
+              src="/brand/nwmlogowhite.svg"
+              alt="NorthWake Marine"
+              width={160}
+              height={48}
+              className="h-12 w-auto"
+            />
           </Link>
           <p className="text-steel text-xs leading-relaxed max-w-xs">
             Yacht management, expert detailing, ceramic coating, and full vessel
@@ -68,9 +74,9 @@ export default function Footer() {
         </div>
 
         {/* Navigation */}
-        <nav aria-label="Footer site navigation">
+        <nav aria-label="Footer site navigation" className="flex flex-col items-center">
           <p className="text-steel text-[9px] tracking-[0.35em] uppercase mb-5">Navigation</p>
-          <ul className="flex flex-col gap-3 list-none">
+          <ul className="flex flex-row flex-wrap gap-x-6 gap-y-2 list-none justify-center">
             {navLinks.map(({ label, href }) => (
               <li key={href}>
                 <Link

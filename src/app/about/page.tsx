@@ -24,38 +24,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://northwakemarine.com/about" },
 };
 
-const process = [
-  {
-    step: "01",
-    title: "Consultation",
-    body: "We start with a thorough vessel assessment, in-person or via detailed photos and video. We document the current condition, understand your goals, and ask the questions most services skip.",
-  },
-  {
-    step: "02",
-    title: "Custom Service Plan",
-    body: "No two vessels are identical. We build a tailored service plan that matches your boat's condition, your usage pattern, and your budget, with full transparency before a single product is applied.",
-  },
-  {
-    step: "03",
-    title: "Preparation",
-    body: "Proper prep is where most services fail. We decontaminate surfaces, mask hardware, protect electronics, and set up a controlled work environment before any chemical or abrasive is introduced.",
-  },
-  {
-    step: "04",
-    title: "Expert Execution",
-    body: "Our certified technicians execute the plan using professional-grade products and calibrated equipment, the same tools used by top yacht yards. No shortcuts. No substitutions.",
-  },
-  {
-    step: "05",
-    title: "Final Inspection",
-    body: "Before we pack up, every inch of your vessel is inspected against our internal quality standard. If it doesn't meet the NorthWake threshold, it gets addressed on the spot.",
-  },
-  {
-    step: "06",
-    title: "Documentation & Delivery",
-    body: "You receive a timestamped before-and-after photo report within 24 hours, along with a service summary and any recommendations for future care, all in your client dashboard.",
-  },
-];
 
 const team = [
   {
@@ -246,41 +214,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* ── The Process ── */}
-        <section
-          aria-labelledby="process-heading"
-          className="py-16 px-6"
-        >
-          <div className="max-w-7xl mx-auto">
-            <header className="flex flex-col items-center text-center gap-4 mb-16">
-              <p className="text-steel text-[10px] tracking-[0.4em] uppercase">How We Work</p>
-              <h2
-                id="process-heading"
-                className="text-wake text-3xl sm:text-4xl font-bold tracking-tight"
-              >
-                The NorthWake <span className="chrome-text">Process</span>
-              </h2>
-            </header>
-
-            <ol className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-steel-dark list-none">
-              {process.map((step) => (
-                <li
-                  key={step.step}
-                  className="group bg-obsidian p-8 lg:p-10 flex flex-col gap-5 hover:bg-navy-dark transition-colors duration-300"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="chrome-text text-4xl font-bold leading-none tracking-tighter"
-                  >
-                    {step.step}
-                  </span>
-                  <h3 className="text-wake text-lg font-bold tracking-tight">{step.title}</h3>
-                  <p className="text-steel text-xs leading-relaxed">{step.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
 
       </main>
 
