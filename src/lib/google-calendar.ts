@@ -6,18 +6,27 @@ import { google } from "googleapis";
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID ?? "primary";
 
 function getAuth() {
-  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const CAL_SCOPE = "https://www.googleapis.com/auth/calendar";
 
-  if (serviceAccountJson) {
-    const credentials = JSON.parse(serviceAccountJson);
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ["https://www.googleapis.com/auth/calendar"],
+  // Option 1: full service account JSON blob
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    return new google.auth.GoogleAuth({
+      credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+      scopes: [CAL_SCOPE],
     });
-    return auth;
   }
 
-  // OAuth2 via refresh token
+  // Option 2: separate email + private key (standard Cloud Console copy-paste)
+  // Private keys in .env files have literal \n — replace before passing to JWT.
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+    return new google.auth.JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key:   process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      scopes: [CAL_SCOPE],
+    });
+  }
+
+  // Option 3: OAuth2 refresh token (user account)
   const oauth2 = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,

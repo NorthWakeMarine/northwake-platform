@@ -61,6 +61,21 @@ export default async function ContactsPage({
   let error: string | null = null;
   let searchHit = false;
 
+  // Detect contacts sharing the same phone number
+  const { data: phoneCounts } = await supabase
+    .from("contacts")
+    .select("phone, id, name")
+    .not("phone", "is", null);
+
+  const phoneMap = new Map<string, { id: string; name: string | null }[]>();
+  for (const row of phoneCounts ?? []) {
+    if (!row.phone) continue;
+    const existing = phoneMap.get(row.phone) ?? [];
+    existing.push({ id: row.id, name: row.name });
+    phoneMap.set(row.phone, existing);
+  }
+  const duplicateGroups = [...phoneMap.values()].filter((g) => g.length > 1);
+
   if (term) {
     searchHit = true;
 
@@ -127,6 +142,34 @@ export default async function ContactsPage({
         </div>
 
         <div className="px-8 py-6 flex flex-col gap-5">
+
+          {/* Duplicate phone banner */}
+          {duplicateGroups.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-sm px-4 py-3 flex flex-col gap-2">
+              <p className="text-amber-700 text-xs font-semibold tracking-wide">
+                {duplicateGroups.length === 1
+                  ? "1 potential duplicate detected"
+                  : `${duplicateGroups.length} potential duplicates detected`}
+                : multiple contacts share the same phone number.
+              </p>
+              <div className="flex flex-col gap-1">
+                {duplicateGroups.map((group, i) => (
+                  <div key={i} className="flex flex-wrap gap-2 items-center">
+                    <span className="text-amber-600 text-[10px] tracking-widest uppercase font-medium">Group {i + 1}:</span>
+                    {group.map((c) => (
+                      <Link
+                        key={c.id}
+                        href={`/pro/contacts/${c.id}`}
+                        className="text-[10px] tracking-widest uppercase text-amber-700 underline hover:text-amber-900 font-medium"
+                      >
+                        {c.name || "Unnamed"}
+                      </Link>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Legend */}
           <div className="flex flex-wrap gap-2">

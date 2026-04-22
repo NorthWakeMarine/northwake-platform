@@ -18,12 +18,24 @@ export type Asset = {
   vessel_type: string | null;
 };
 
-function serviceStatus(lastServiceDate: string | null) {
-  if (!lastServiceDate) return { label: "No service record", cls: "bg-slate-100 text-slate-400 border border-slate-200" };
-  const days = Math.floor((Date.now() - new Date(lastServiceDate).getTime()) / 86400000);
-  if (days < 30) return { label: `Serviced ${days}d ago`, cls: "bg-emerald-50 text-emerald-700 border border-emerald-200" };
-  if (days < 60) return { label: `Due soon · ${days}d`, cls: "bg-amber-50 text-amber-700 border border-amber-200" };
-  return { label: `Overdue · ${days}d`, cls: "bg-red-50 text-red-700 border border-red-200" };
+// Thresholds: 0-90d green, 90-120d amber, 120+d red.
+// barWidth is % of the 120-day service window that remains (100 = just serviced, 0 = overdue).
+function serviceHealth(lastServiceDate: string | null): {
+  label: string;
+  barColor: string;
+  textCls: string;
+  barWidth: number;
+} {
+  if (!lastServiceDate) {
+    return { label: "No service record", barColor: "bg-slate-200", textCls: "text-slate-400", barWidth: 0 };
+  }
+  const MAX = 120;
+  const days    = Math.floor((Date.now() - new Date(lastServiceDate).getTime()) / 86400000);
+  const barWidth = Math.max(0, Math.round(((MAX - days) / MAX) * 100));
+
+  if (days < 90)  return { label: `${days}d since service`,  barColor: "bg-emerald-500", textCls: "text-emerald-700", barWidth };
+  if (days < 120) return { label: `Due soon (${days}d)`,     barColor: "bg-amber-400",   textCls: "text-amber-700",   barWidth };
+  return              { label: `Overdue (${days}d)`,          barColor: "bg-red-500",     textCls: "text-red-700",     barWidth: Math.max(4, barWidth) };
 }
 
 const typeConfig: Record<string, { label: string; iconCls: string; badgeCls: string; icon: React.ReactNode }> = {
@@ -214,7 +226,7 @@ function AddAssetForm({ contactId, onDone }: { contactId: string; onDone: () => 
 function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: string; onClose: () => void }) {
   const [notesState, notesAction, isSaving] = useActionState<AssetState, FormData>(updateAssetNotes, {});
   const cfg = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
-  const svc = serviceStatus(asset.last_service_date);
+  const svc = serviceHealth(asset.last_service_date);
   const displayName = asset.name || asset.make_model || `${cfg.label} Asset`;
 
   return (
@@ -243,9 +255,19 @@ function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: st
         </div>
 
         <div className="p-6 flex flex-col gap-5">
-          <span className={`text-[9px] tracking-widest uppercase px-2.5 py-1 rounded-sm font-semibold self-start ${svc.cls}`}>
-            {svc.label}
-          </span>
+          {/* Health bar in modal */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Maintenance Health</p>
+              <span className={`text-[10px] font-semibold ${svc.textCls}`}>{svc.label}</span>
+            </div>
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${svc.barColor}`}
+                style={{ width: `${svc.barWidth}%` }}
+              />
+            </div>
+          </div>
 
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
             {[
@@ -341,26 +363,23 @@ export default function FleetGallery({
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {assets.map((asset) => {
-              const cfg = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
-              const svc = serviceStatus(asset.last_service_date);
+              const cfg    = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
+              const health = serviceHealth(asset.last_service_date);
               return (
                 <button
                   key={asset.id}
                   onClick={() => setSelectedAsset(asset)}
                   className="text-left border border-slate-200 rounded-sm p-4 hover:border-slate-300 hover:shadow-sm transition-all flex flex-col gap-2.5 group"
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
                     <div className={`w-8 h-8 rounded-sm flex items-center justify-center shrink-0 ${cfg.iconCls}`}>
                       {cfg.icon}
                     </div>
-                    <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium whitespace-nowrap ${svc.cls}`}>
-                      {svc.label}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-slate-800 text-xs font-semibold leading-snug truncate">
+                    <p className="text-slate-800 text-xs font-semibold leading-snug truncate flex-1 min-w-0">
                       {asset.name || asset.make_model || `${cfg.label} Asset`}
                     </p>
+                  </div>
+                  <div className="min-w-0">
                     {asset.make_model && asset.name && (
                       <p className="text-slate-400 text-[11px] truncate">{asset.make_model}</p>
                     )}
@@ -372,6 +391,16 @@ export default function FleetGallery({
                     {asset.location && (
                       <p className="text-slate-400 text-[11px] truncate mt-0.5">{asset.location}</p>
                     )}
+                  </div>
+                  {/* Maintenance health bar */}
+                  <div className="flex flex-col gap-1 w-full">
+                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${health.barColor}`}
+                        style={{ width: `${health.barWidth}%` }}
+                      />
+                    </div>
+                    <p className={`text-[9px] font-medium ${health.textCls}`}>{health.label}</p>
                   </div>
                   <p className="text-[9px] tracking-widest uppercase text-slate-300 font-medium group-hover:text-blue-400 transition-colors">
                     View Details

@@ -6,6 +6,13 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ingestContact } from "@/lib/ingest";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+
+function normalizePhone(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const parsed = parsePhoneNumberFromString(raw, "US");
+  return parsed?.isValid() ? parsed.format("E.164") : raw.trim() || null;
+}
 
 // ─── Lead Submission ──────────────────────────────────────────────────────────
 
@@ -50,7 +57,7 @@ export async function submitLead(
   const { error } = await supabase.from("leads").insert({
     name,
     email:           d.email,
-    phone:           d.phone           || null,
+    phone:           normalizePhone(d.phone),
     vessel_length:   d.vessel_length   || null,
     vessel_type:     d.vessel_type,
     service:         d.service,
@@ -68,7 +75,7 @@ export async function submitLead(
   ingestContact({
     name,
     email: d.email,
-    phone: d.phone ?? undefined,
+    phone: normalizePhone(d.phone) ?? undefined,
     vessel_type: d.vessel_type,
     vessel_length: d.vessel_length ?? undefined,
     source: d.source ?? "website",
@@ -227,7 +234,7 @@ export async function submitWaiver(
 ): Promise<WaiverState> {
   const name       = (formData.get("name")       as string)?.trim();
   const address    = (formData.get("address")    as string)?.trim();
-  const phone      = (formData.get("phone")      as string)?.trim();
+  const phone      = normalizePhone((formData.get("phone") as string)?.trim()) ?? (formData.get("phone") as string)?.trim();
   const email      = (formData.get("email")      as string)?.trim();
   const boat       = (formData.get("boat")       as string)?.trim();
   const date       = (formData.get("date")       as string)?.trim();
@@ -323,6 +330,7 @@ async function insertVessel(
       owner_id: contactId,
       asset_type: "vessel",
       vessel_type: lead.vessel_type ?? null,
+      make_model: lead.vessel_type ?? null,
       length_ft: lead.vessel_length ?? null,
       last_service_date: lead.last_service_date ?? null,
     });
@@ -362,7 +370,7 @@ export async function checkDuplicateContact(leadId: string): Promise<DuplicateCh
     const { data } = await supabase
       .from("contacts")
       .select("id, name, email, phone")
-      .eq("phone", lead.phone)
+      .eq("phone", normalizePhone(lead.phone) ?? lead.phone)
       .maybeSingle();
     contact = data;
   }
@@ -403,12 +411,12 @@ export async function convertLead(
   if (contactId) {
     await supabase
       .from("contacts")
-      .update({ name: lead.name, phone: lead.phone, vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, status: "client" })
+      .update({ name: lead.name, phone: normalizePhone(lead.phone), vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, status: "client" })
       .eq("id", contactId);
   } else {
     const { data: newContact, error: contactErr } = await supabase
       .from("contacts")
-      .insert({ name: lead.name, email: lead.email, phone: lead.phone, vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, source: lead.source ?? "website", status: "client" })
+      .insert({ name: lead.name, email: lead.email, phone: normalizePhone(lead.phone), vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, source: lead.source ?? "website", status: "client" })
       .select("id")
       .single();
     if (contactErr || !newContact) return { error: contactErr?.message ?? "Failed to create contact." };
@@ -458,7 +466,7 @@ export async function mergeLead(
     .from("contacts")
     .update({
       ...(lead.name  ? { name: lead.name }   : {}),
-      ...(lead.phone ? { phone: lead.phone } : {}),
+      ...(lead.phone ? { phone: normalizePhone(lead.phone) ?? lead.phone } : {}),
       ...(lead.vessel_type   ? { vessel_type: lead.vessel_type }     : {}),
       ...(lead.vessel_length ? { vessel_length: lead.vessel_length } : {}),
       ...(lead.waiver_signed ? { waiver_signed: true }               : {}),
@@ -509,7 +517,15 @@ export async function addAsset(
   if (!contact_id) return { error: "Missing contact." };
 
   const supabase = await svc();
-  const { error } = await supabase.from("vessels").insert({
+
+  const { data: contactRow } = await supabase
+    .from("contacts")
+    .select("name")
+    .eq("id", contact_id)
+    .maybeSingle();
+  const contactName = contactRow?.name ?? "Unknown";
+
+  const { data: inserted, error } = await supabase.from("vessels").insert({
     owner_id: contact_id,
     asset_type,
     name,
@@ -520,9 +536,19 @@ export async function addAsset(
     location,
     registration,
     notes,
-  });
+  }).select("id").single();
 
   if (error) return { error: error.message };
+
+  const assetLabel = name || make_model || asset_type;
+  try {
+    const { createAssetFolder } = await import("@/lib/google-drive");
+    const driveUrl = await createAssetFolder(contactName, assetLabel);
+    await supabase.from("vessels").update({ drive_folder_url: driveUrl }).eq("id", inserted.id);
+  } catch {
+    // Drive folder creation is best-effort; don't fail the asset save
+  }
+
   revalidatePath(`/pro/contacts/${contact_id}`);
   return { success: true };
 }
@@ -555,7 +581,7 @@ export async function addLinkedContact(
 ): Promise<LinkedContactState> {
   const primary_contact_id = formData.get("primary_contact_id") as string;
   const name               = (formData.get("name")         as string)?.trim();
-  const phone              = (formData.get("phone")        as string)?.trim() || null;
+  const phone              = normalizePhone((formData.get("phone") as string)?.trim());
   const email              = (formData.get("email")        as string)?.trim() || null;
   const relationship       = (formData.get("relationship") as string)?.trim() || "associate";
 
