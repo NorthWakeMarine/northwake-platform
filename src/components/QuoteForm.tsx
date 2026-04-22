@@ -1,46 +1,29 @@
+"use client";
+
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import Link from "next/link";
+import { submitLead, type LeadFormState } from "@/app/actions";
+
 const vesselTypes = [
-  "Center Console",
-  "Bowrider",
-  "Pontoon",
-  "Cruiser",
-  "Motor Yacht",
-  "Sailboat",
-  "Sport Fishing",
-  "Other",
+  "Center Console", "Bowrider", "Pontoon", "Cruiser",
+  "Motor Yacht", "Sailboat", "Sport Fishing", "Other",
 ];
 
 const serviceOptions = [
-  "Maintenance Wash",
-  "One-Off Wash",
-  "Full Detail",
-  "Exterior Detailing",
-  "Interior Cleaning & Cabin Detailing",
-  "Canvas Cleaning & Treatment",
-  "Vinyl & Upholstery Conditioning",
-  "Teak Cleaning & Brightening",
-  "Stainless Polish",
-  "Engine Bay & Bilge Cleaning",
-  "Water Spot & Mineral Deposit Removal",
-  "Ceramic Coating",
-  "Wax Application",
-  "Gel Coat Restoration",
-  "Monthly Maintenance Plan",
-  "Marine Transport",
-  "Captain & Crew Services",
-  "Yacht Management",
-  "Custom Request",
+  "Maintenance Wash", "One-Off Wash", "Full Detail", "Exterior Detailing",
+  "Interior Cleaning & Cabin Detailing", "Canvas Cleaning & Treatment",
+  "Vinyl & Upholstery Conditioning", "Teak Cleaning & Brightening",
+  "Stainless Polish", "Engine Bay & Bilge Cleaning",
+  "Water Spot & Mineral Deposit Removal", "Ceramic Coating", "Wax Application",
+  "Gel Coat Restoration", "Monthly Maintenance Plan", "Marine Transport",
+  "Captain & Crew Services", "Yacht Management", "Custom Request",
   "Not Sure, Need Consultation",
 ];
 
 const referralSources = [
-  "Google Search",
-  "Google Maps",
-  "Instagram",
-  "Facebook",
-  "Friend / Word of Mouth",
-  "Boat Show",
-  "Marina Referral",
-  "Other",
+  "Google Search", "Google Maps", "Instagram", "Facebook",
+  "Friend / Word of Mouth", "Boat Show", "Marina Referral", "Other",
 ];
 
 interface QuoteFormProps {
@@ -49,26 +32,78 @@ interface QuoteFormProps {
   formId?: string;
 }
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-4 transition-all duration-300 hover:scale-[1.02] mt-2 w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+    >
+      {pending ? "Submitting…" : "Submit Quote Request"}
+    </button>
+  );
+}
+
 export default function QuoteForm({
   preselectedService,
   showReferral = false,
   formId = "quote-form",
 }: QuoteFormProps) {
+  const [state, action] = useActionState<LeadFormState, FormData>(submitLead, {
+    success: false,
+  });
+
   const fieldClass =
-    "bg-transparent border border-steel-dark text-wake placeholder-steel text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full";
+    "bg-transparent border border-steel-dark text-wake placeholder-steel text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full [&:user-invalid]:border-red-500";
   const selectClass =
-    "bg-obsidian border border-steel-dark text-wake text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full";
+    "bg-obsidian border border-steel-dark text-wake text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full [&:user-invalid]:border-red-500";
   const labelClass =
     "text-steel-light text-[10px] tracking-[0.3em] uppercase font-medium";
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (!e.currentTarget.checkValidity()) {
+      e.preventDefault();
+      e.currentTarget.reportValidity();
+    }
+  }
+
+  if (state.success) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center gap-5 py-12 text-center">
+        <span aria-hidden="true" className="chrome-text text-4xl">◈</span>
+        <h3 className="text-wake text-xl font-bold tracking-tight">
+          Request Received
+        </h3>
+        <p className="text-steel-light text-sm leading-relaxed max-w-sm">
+          Thank you. A member of our team will review your request and be in touch shortly.
+        </p>
+        <p className="text-steel text-xs tracking-wide">
+          Questions? Call us at{" "}
+          <a href="tel:+19046065454" className="text-link hover:text-wake transition-colors">
+            (904) 606-5454
+          </a>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form
       id={formId}
-      action="#"
-      method="POST"
+      action={action}
+      onSubmit={handleSubmit}
       aria-label="Quote request form"
       className="w-full flex flex-col gap-5"
     >
+      <input type="hidden" name="source" value="contact" />
+
+      {state.error && (
+        <div role="alert" className="border border-red-900/60 bg-red-950/20 px-3.5 py-2.5">
+          <p className="text-red-400 text-[10px] tracking-wide">{state.error}</p>
+        </div>
+      )}
+
       {/* Row: Name + Email */}
       <div className="grid sm:grid-cols-2 gap-5">
         <div className="flex flex-col gap-2">
@@ -101,16 +136,17 @@ export default function QuoteForm({
         </div>
       </div>
 
-      {/* Row: Phone + Vessel */}
+      {/* Row: Phone + Vessel Length */}
       <div className="grid sm:grid-cols-2 gap-5">
         <div className="flex flex-col gap-2">
           <label htmlFor={`${formId}-phone`} className={labelClass}>
-            Phone Number
+            Phone Number <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input
             id={`${formId}-phone`}
             name="phone"
             type="tel"
+            required
             autoComplete="tel"
             placeholder="(904) 606-5454"
             className={fieldClass}
@@ -118,12 +154,13 @@ export default function QuoteForm({
         </div>
         <div className="flex flex-col gap-2">
           <label htmlFor={`${formId}-vessel-length`} className={labelClass}>
-            Vessel Length (ft)
+            Vessel Length (ft) <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input
             id={`${formId}-vessel-length`}
             name="vessel_length"
             type="text"
+            required
             placeholder="e.g. 28"
             className={fieldClass}
           />
@@ -168,7 +205,7 @@ export default function QuoteForm({
         </div>
       </div>
 
-      {/* Referral source (optional) */}
+      {/* Referral source */}
       {showReferral && (
         <div className="flex flex-col gap-2">
           <label htmlFor={`${formId}-referral`} className={labelClass}>
@@ -202,12 +239,24 @@ export default function QuoteForm({
         />
       </div>
 
-      <button
-        type="submit"
-        className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-4 transition-all duration-300 hover:scale-[1.02] mt-2 w-full"
-      >
-        Submit Quote Request
-      </button>
+      {/* Terms */}
+      <label className="flex items-start gap-2.5 cursor-pointer">
+        <input
+          type="checkbox"
+          name="terms"
+          required
+          className="mt-0.5 w-3 h-3 border border-steel-dark bg-transparent accent-navy shrink-0 cursor-pointer"
+        />
+        <span className="text-steel-light text-[10px] leading-relaxed">
+          I agree to the{" "}
+          <Link href="/terms" target="_blank" className="text-link hover:text-wake transition-colors underline underline-offset-2">
+            terms &amp; conditions
+          </Link>
+          . By providing my phone number I agree to receive communications from NorthWake Marine.
+        </span>
+      </label>
+
+      <SubmitButton />
 
       <p className="text-steel text-[10px] text-center tracking-wide leading-relaxed">
         No obligation. No spam.

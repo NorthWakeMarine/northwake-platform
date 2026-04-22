@@ -2,12 +2,13 @@
 
 import { useActionState } from "react";
 import { useState } from "react";
-import { loginAction, type LoginState } from "./actions";
-
-const initialState: LoginState = {};
+import { login, type LoginState } from "@/app/actions";
 
 export default function LoginForm() {
-  const [state, formAction, isPending] = useActionState(loginAction, initialState);
+  const [state, formAction, isPending] = useActionState<LoginState, FormData>(
+    login,
+    {}
+  );
   const [showPass, setShowPass] = useState(false);
 
   return (
@@ -23,25 +24,25 @@ export default function LoginForm() {
         </div>
       )}
 
-      {/* Username */}
+      {/* Email */}
       <div className="flex flex-col gap-1.5">
         <label
-          htmlFor="pro-username"
+          htmlFor="pro-email"
           className="text-steel-light text-[10px] tracking-[0.25em] uppercase"
         >
-          Username
+          Email
         </label>
         <input
-          id="pro-username"
-          name="username"
-          type="text"
+          id="pro-email"
+          name="email"
+          type="email"
           required
-          autoComplete="username"
+          autoComplete="email"
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          maxLength={64}
-          placeholder="your.name"
+          maxLength={256}
+          placeholder="you@northwakemarine.com"
           disabled={isPending}
           className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3.5 py-2.5 focus:outline-none focus:border-navy transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         />
@@ -70,7 +71,7 @@ export default function LoginForm() {
           <button
             type="button"
             aria-label={showPass ? "Hide password" : "Show password"}
-            onClick={() => setShowPass(v => !v)}
+            onClick={() => setShowPass((v) => !v)}
             tabIndex={-1}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-steel hover:text-wake transition-colors duration-200 text-[9px] tracking-widest uppercase"
           >

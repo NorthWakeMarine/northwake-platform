@@ -3,7 +3,19 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingCTA from "@/components/FloatingCTA";
 import HeroCarousel from "@/components/HeroCarousel";
+import HeroQuoteForm from "@/components/HeroQuoteForm";
 import Link from "next/link";
+import { createServerSupabase } from "@/lib/supabase/server";
+
+async function getCMS(): Promise<Record<string, string>> {
+  try {
+    const supabase = await createServerSupabase();
+    const { data } = await supabase.from("site_content").select("key, value");
+    return Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
+  } catch {
+    return {};
+  }
+}
 
 const services = [
   {
@@ -57,7 +69,11 @@ const services = [
 ];
 
 
-export default function Home() {
+export default async function Home() {
+  const cms = await getCMS();
+  const heroHeadline    = cms.hero_headline    ?? "From Dock to Destination";
+  const heroSubheadline = cms.hero_subheadline ?? "Your Yacht Is Our Priority";
+
   return (
     <>
       <Header />
@@ -115,10 +131,10 @@ export default function Home() {
               <div className="flex flex-col gap-1.5 items-center">
                 <h1 id="hero-heading" className="flex flex-col items-center gap-0.5 uppercase leading-snug">
                   <span className="text-wake font-black text-xl sm:text-2xl lg:text-3xl tracking-wide">
-                    From Dock to Destination
+                    {heroHeadline}
                   </span>
                   <span className="text-steel-light font-bold text-base sm:text-lg lg:text-xl tracking-widest">
-                    Your Yacht Is Our Priority
+                    {heroSubheadline}
                   </span>
                 </h1>
                 <p className="text-steel text-[10px] tracking-[0.45em] uppercase">
@@ -144,119 +160,7 @@ export default function Home() {
             {/* ── Right: Free Quote form card ── */}
             <div className="order-1 md:order-2 chrome-stage bg-obsidian/90 backdrop-blur-md p-5 sm:p-7">
               <h2 className="text-wake text-xl font-bold tracking-tight mb-4">Free Quote</h2>
-
-              <form
-                action="#"
-                method="POST"
-                aria-label="Free quote request form"
-                className="flex flex-col gap-2.5"
-              >
-                {/* Row: First + Last */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="hero-first" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
-                      First Name <span aria-hidden="true" className="text-navy">*</span>
-                    </label>
-                    <input id="hero-first" name="first_name" type="text" required autoComplete="given-name" placeholder="John"
-                      className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200" />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="hero-last" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
-                      Last Name <span aria-hidden="true" className="text-navy">*</span>
-                    </label>
-                    <input id="hero-last" name="last_name" type="text" required autoComplete="family-name" placeholder="Harrington"
-                      className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200" />
-                  </div>
-                </div>
-
-                {/* Row: Email + Phone */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="hero-email" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
-                      Email <span aria-hidden="true" className="text-navy">*</span>
-                    </label>
-                    <input id="hero-email" name="email" type="email" required autoComplete="email" placeholder="john@example.com"
-                      className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200" />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="hero-phone" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
-                      Phone <span aria-hidden="true" className="text-navy">*</span>
-                    </label>
-                    <input id="hero-phone" name="phone" type="tel" required autoComplete="tel" placeholder="(904) 606-5454"
-                      className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200" />
-                  </div>
-                </div>
-
-                {/* Row: Vessel Type + Service Needed */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="hero-vessel" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
-                      Vessel Type <span aria-hidden="true" className="text-navy">*</span>
-                    </label>
-                    <select id="hero-vessel" name="vessel_type" required defaultValue=""
-                      className="bg-obsidian border border-steel-dark text-wake text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer">
-                      <option value="" disabled className="text-steel">Select type…</option>
-                      {["Center Console","Bowrider","Pontoon","Cruiser","Motor Yacht","Sailboat","Sport Fishing","Other"].map(v => (
-                        <option key={v} value={v} className="bg-obsidian text-wake">{v}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="hero-service" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
-                      Service Needed <span aria-hidden="true" className="text-navy">*</span>
-                    </label>
-                    <select id="hero-service" name="service" required defaultValue=""
-                      className="bg-obsidian border border-steel-dark text-wake text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer">
-                      <option value="" disabled className="text-steel">Select service…</option>
-                      {["Maintenance Wash","One-Off Wash","Full Detail","Exterior Detailing","Interior Cleaning & Cabin Detailing","Canvas Cleaning & Treatment","Vinyl & Upholstery Conditioning","Teak Cleaning & Brightening","Stainless Polish","Engine Bay & Bilge Cleaning","Water Spot & Mineral Deposit Removal","Ceramic Coating","Wax Application","Gel Coat Restoration","Monthly Maintenance Plan","Marine Transport","Captain & Crew Services","Yacht Management","Custom Request","Not Sure, Need Consultation"].map(s => (
-                        <option key={s} value={s} className="bg-obsidian text-wake">{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* How did you hear */}
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="hero-referral" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
-                    How Did You Hear About Us?
-                  </label>
-                  <select id="hero-referral" name="referral_source" defaultValue=""
-                    className="bg-obsidian border border-steel-dark text-wake text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer">
-                    <option value="" className="text-steel">Prefer not to say</option>
-                    {["Google Search","Google Maps","Instagram","Facebook","TikTok","Friend / Word of Mouth","Boat Show","Marina Referral","Other"].map(r => (
-                      <option key={r} value={r} className="bg-obsidian text-wake">{r}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Additional details */}
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="hero-comments" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
-                    Additional Details
-                  </label>
-                  <textarea id="hero-comments" name="comments" rows={2}
-                    placeholder="Vessel length, condition, preferred dates…"
-                    className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 resize-none" />
-                </div>
-
-                {/* Terms */}
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input type="checkbox" name="terms" required
-                    className="mt-0.5 w-3 h-3 border border-steel-dark bg-obsidian/60 accent-navy shrink-0 cursor-pointer" />
-                  <span className="text-steel-light text-[10px] leading-relaxed">
-                    I agree to the{" "}
-                    <Link href="/terms" target="_blank" className="text-link hover:text-wake transition-colors underline underline-offset-2">
-                      terms &amp; conditions
-                    </Link>
-                    . By providing my phone number I agree to receive communications from NorthWake Marine.
-                  </span>
-                </label>
-
-                <button type="submit"
-                  className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-3 transition-all duration-300 hover:scale-[1.02] w-full">
-                  Submit
-                </button>
-              </form>
+              <HeroQuoteForm />
             </div>
 
           </div>

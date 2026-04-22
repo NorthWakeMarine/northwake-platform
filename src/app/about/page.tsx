@@ -3,6 +3,17 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingCTA from "@/components/FloatingCTA";
+import { createServerSupabase } from "@/lib/supabase/server";
+
+async function getCMS(): Promise<Record<string, string>> {
+  try {
+    const supabase = await createServerSupabase();
+    const { data } = await supabase.from("site_content").select("key, value");
+    return Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
+  } catch {
+    return {};
+  }
+}
 
 export const metadata: Metadata = {
   title: "About NorthWake Marine, Jacksonville's Premier Marine Services",
@@ -40,7 +51,10 @@ const team = [
   },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const cms = await getCMS();
+  const aboutHeroIntro = cms.about_hero_intro ??
+    "NorthWake Marine was founded in Jacksonville with a single conviction: boat owners in Northeast Florida deserve the same level of care that world-class yacht yards deliver, without the world-class distance or wait list.";
   return (
     <>
       <Header />
@@ -73,9 +87,7 @@ export default function AboutPage() {
                 <span className="chrome-text">St. Johns River.</span>
               </h1>
               <p className="text-steel-light text-base leading-relaxed max-w-lg">
-                NorthWake Marine was founded in Jacksonville with a single conviction: boat owners
-                in Northeast Florida deserve the same level of care that world-class yacht yards
-                deliver, without the world-class distance or wait list.
+                {aboutHeroIntro}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mt-2">
                 <Link
