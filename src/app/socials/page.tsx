@@ -160,7 +160,7 @@ export default function SocialsPage() {
 
                 {/* Info */}
                 <div className="flex flex-col gap-1.5 flex-1">
-                  <div className="flex items-baseline gap-3">
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <span className="text-wake text-base font-bold tracking-tight">{s.label}</span>
                     <span className="text-steel text-xs tracking-wide">{s.handle}</span>
                   </div>

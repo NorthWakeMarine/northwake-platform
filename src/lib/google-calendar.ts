@@ -7,12 +7,14 @@ const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID ?? "primary";
 
 function getAuth() {
   const CAL_SCOPE = "https://www.googleapis.com/auth/calendar";
+  const subject   = process.env.GOOGLE_CALENDAR_SUBJECT;
 
   // Option 1: full service account JSON blob
   if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     return new google.auth.GoogleAuth({
       credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
       scopes: [CAL_SCOPE],
+      clientOptions: subject ? { subject } : undefined,
     });
   }
 
@@ -20,9 +22,10 @@ function getAuth() {
   // Private keys in .env files have literal \n — replace before passing to JWT.
   if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
     return new google.auth.JWT({
-      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key:   process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-      scopes: [CAL_SCOPE],
+      email:   process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key:     process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      scopes:  [CAL_SCOPE],
+      subject: subject,
     });
   }
 
@@ -112,6 +115,42 @@ export async function getBusySlots(
   return busy
     .filter((b) => b.start && b.end)
     .map((b) => ({ start: b.start!, end: b.end! }));
+}
+
+export type CalendarEvent = {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  description?: string;
+  location?: string;
+};
+
+export async function listUpcomingEvents(days = 14): Promise<CalendarEvent[]> {
+  const auth     = getAuth();
+  const calendar = google.calendar({ version: "v3", auth });
+  const now      = new Date();
+  const future   = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+  const res = await calendar.events.list({
+    calendarId:   CALENDAR_ID,
+    timeMin:      now.toISOString(),
+    timeMax:      future.toISOString(),
+    singleEvents: true,
+    orderBy:      "startTime",
+    maxResults:   50,
+  });
+
+  return (res.data.items ?? [])
+    .filter((e) => e.id && (e.start?.dateTime || e.start?.date))
+    .map((e) => ({
+      id:          e.id!,
+      title:       e.summary ?? "(No title)",
+      start:       e.start?.dateTime ?? e.start?.date ?? "",
+      end:         e.end?.dateTime   ?? e.end?.date   ?? "",
+      description: e.description ?? undefined,
+      location:    e.location    ?? undefined,
+    }));
 }
 
 // Fetch events and detect discrepancies (event moved/deleted outside CRM)

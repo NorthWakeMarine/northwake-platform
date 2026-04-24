@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import ProShell from "@/components/ProShell";
+import type { CalendarEvent } from "@/lib/google-calendar";
 
 type Lead = {
   id: string;
@@ -58,6 +59,15 @@ function PlaceholderCard({
   );
 }
 
+async function fetchUpcomingEvents(): Promise<CalendarEvent[]> {
+  try {
+    const { listUpcomingEvents } = await import("@/lib/google-calendar");
+    return await listUpcomingEvents(7);
+  } catch {
+    return [];
+  }
+}
+
 export default async function ProDashboardPage() {
   const supabase = await createServerSupabase();
 
@@ -97,6 +107,8 @@ export default async function ProDashboardPage() {
       .order("created_at", { ascending: false })
       .limit(5),
   ]);
+
+  const upcomingEvents = await fetchUpcomingEvents();
 
   const { data: { user } } = await supabase.auth.getUser();
   const userName = parseName(
@@ -205,19 +217,26 @@ export default async function ProDashboardPage() {
               }
             />
 
-            {/* Placeholder: Upcoming Jobs (Google Calendar) */}
-            <PlaceholderCard
-              label="Upcoming Jobs"
-              sub="Scheduled this week"
-              service="Google Calendar"
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-              }
-            />
+            {/* Live: Upcoming Jobs (Google Calendar) */}
+            <Link
+              href="/pro/calendar"
+              className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3 lg:col-span-1 col-span-1 hover:border-slate-300 transition-colors"
+            >
+              <div className="flex items-start justify-between">
+                <p className="text-slate-500 text-xs font-medium">Upcoming Jobs</p>
+                <div className="w-9 h-9 rounded-sm bg-purple-50 flex items-center justify-center shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-500">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <p className="text-slate-900 text-3xl font-bold tracking-tight">{upcomingEvents.length}</p>
+                <p className="text-slate-400 text-[11px] mt-1">Scheduled this week</p>
+              </div>
+            </Link>
           </div>
 
           {/* Scheduling Conflict Flags */}
@@ -359,19 +378,43 @@ export default async function ProDashboardPage() {
                 </div>
               </div>
 
-              {/* Upcoming Jobs — Google Calendar */}
+              {/* Upcoming Jobs — Google Calendar (live) */}
               <div className="bg-white border border-slate-200 rounded-sm flex flex-col flex-1">
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <h2 className="text-slate-800 text-sm font-semibold">Upcoming Jobs</h2>
-                  <span className="text-[9px] tracking-widest uppercase text-slate-300 border border-slate-200 px-2 py-0.5 rounded-sm">Calendar</span>
+                  <Link
+                    href="/pro/calendar"
+                    className="text-[9px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors"
+                  >
+                    View All
+                  </Link>
                 </div>
-                <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 text-center gap-2">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  <p className="text-slate-400 text-xs">Connect Google Calendar to view scheduled jobs and appointments here.</p>
-                </div>
+                {upcomingEvents.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 text-center gap-2">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <p className="text-slate-400 text-xs">No jobs scheduled in the next 7 days.</p>
+                  </div>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-slate-50">
+                    {upcomingEvents.slice(0, 5).map((ev) => (
+                      <li key={ev.id} className="px-5 py-3 flex gap-3 items-start">
+                        <div className="w-1 h-full min-h-[2rem] rounded-full bg-[#000080] shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="text-slate-800 text-xs font-semibold truncate">{ev.title}</p>
+                          <p className="text-slate-400 text-[10px] mt-0.5">
+                            {new Date(ev.start).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            {ev.start.includes("T") && (
+                              <> &middot; {new Date(ev.start).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</>
+                            )}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
             </div>

@@ -1,60 +1,46 @@
+import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
+import CalendarRegisterButton from "./IntegrationsClient";
 
-type Integration = {
-  id: string;
-  name: string;
-  description: string;
-  detail: string;
-  status: "connected" | "not_connected" | "error";
-  icon: string;
-};
+export const dynamic = "force-dynamic";
 
-const integrations: Integration[] = [
-  {
-    id: "google-calendar",
-    name: "Google Calendar",
-    description: "Appointment & scheduling sync",
-    detail: "Automatically push booked jobs to your Google Calendar and pull availability when scheduling new services.",
-    status: "not_connected",
-    icon: "GC",
-  },
-  {
-    id: "quickbooks",
-    name: "QuickBooks",
-    description: "Invoice sync and conflict detection",
-    detail: "Pull invoice dates from QuickBooks and compare against service records to flag billing mismatches automatically.",
-    status: "not_connected",
-    icon: "QB",
-  },
-  {
-    id: "dialpad",
-    name: "Dialpad",
-    description: "Call logging and contact sync",
-    detail: "Log inbound and outbound calls against contact records and auto-create leads from new caller IDs.",
-    status: "not_connected",
-    icon: "DP",
-  },
-];
+async function getWebhookExpiry(): Promise<string | null> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SECRET_KEY!
+    );
+    const { data } = await supabase
+      .from("system_flags")
+      .select("message")
+      .eq("flag_type", "calendar_webhook_channel")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data?.message ?? null;
+  } catch {
+    return null;
+  }
+}
 
-const statusConfig = {
-  connected: {
-    dot: "bg-emerald-500",
-    label: "Connected",
-    cls: "bg-emerald-50 text-emerald-600 border border-emerald-200",
-  },
-  not_connected: {
-    dot: "bg-slate-300",
-    label: "Not Connected",
-    cls: "bg-slate-100 text-slate-500 border border-slate-200",
-  },
-  error: {
-    dot: "bg-red-500",
-    label: "Error",
-    cls: "bg-red-50 text-red-600 border border-red-200",
-  },
-};
+function StatusBadge({ connected }: { connected: boolean }) {
+  return connected ? (
+    <span className="shrink-0 text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm flex items-center gap-1.5 whitespace-nowrap font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+      Connected
+    </span>
+  ) : (
+    <span className="shrink-0 text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm flex items-center gap-1.5 whitespace-nowrap font-medium bg-slate-100 text-slate-500 border border-slate-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+      Not Connected
+    </span>
+  );
+}
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+  const webhookExpiry = await getWebhookExpiry();
+  const calendarConnected = !!webhookExpiry && new Date(webhookExpiry) > new Date();
+
   return (
     <ProShell>
       <div className="flex-1 flex flex-col">
@@ -65,46 +51,79 @@ export default function IntegrationsPage() {
         </div>
 
         <div className="px-8 py-6 flex flex-col gap-5">
-
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {integrations.map((intg) => {
-              const cfg = statusConfig[intg.status];
-              return (
-                <div key={intg.id} className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
 
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
-                        <span className="text-slate-500 text-[10px] font-bold tracking-wider">{intg.icon}</span>
-                      </div>
-                      <div>
-                        <h2 className="text-slate-800 text-sm font-semibold">{intg.name}</h2>
-                        <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">{intg.description}</p>
-                      </div>
-                    </div>
-                    <span className={`shrink-0 text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm flex items-center gap-1.5 whitespace-nowrap font-medium ${cfg.cls}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} aria-hidden="true" />
-                      {cfg.label}
-                    </span>
+            {/* Google Calendar */}
+            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                    <span className="text-slate-500 text-[10px] font-bold tracking-wider">GC</span>
                   </div>
-
-                  <p className="text-slate-500 text-xs leading-relaxed flex-1">{intg.detail}</p>
-
-                  <button
-                    disabled
-                    className="w-full border border-slate-200 text-slate-400 text-[10px] tracking-widest uppercase py-2.5 rounded-sm cursor-not-allowed font-medium"
-                    title="Coming soon — OAuth credentials required"
-                  >
-                    {intg.status === "connected" ? "Manage" : "Connect"}
-                  </button>
+                  <div>
+                    <h2 className="text-slate-800 text-sm font-semibold">Google Calendar</h2>
+                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Appointment and scheduling sync</p>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+                <StatusBadge connected={calendarConnected} />
+              </div>
+              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+                Push booked jobs to Google Calendar in real time. Changes made on your phone sync back to the CRM automatically.
+              </p>
+              <CalendarRegisterButton expires={webhookExpiry} />
+            </div>
 
-          <p className="text-slate-400 text-xs leading-relaxed">
-            Integration setup requires OAuth credentials. Contact your developer to configure each connection.
-          </p>
+            {/* QuickBooks */}
+            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                    <span className="text-slate-500 text-[10px] font-bold tracking-wider">QB</span>
+                  </div>
+                  <div>
+                    <h2 className="text-slate-800 text-sm font-semibold">QuickBooks</h2>
+                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Invoice sync and auto-scheduling</p>
+                  </div>
+                </div>
+                <StatusBadge connected={false} />
+              </div>
+              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+                Pull invoice data from QuickBooks and auto-schedule jobs on Google Calendar. Flags billing mismatches against service records.
+              </p>
+              <button
+                disabled
+                className="w-full border border-slate-200 text-slate-400 text-[10px] tracking-widest uppercase py-2.5 rounded-sm cursor-not-allowed font-medium"
+              >
+                Requires QB OAuth Credentials
+              </button>
+            </div>
+
+            {/* Dialpad */}
+            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                    <span className="text-slate-500 text-[10px] font-bold tracking-wider">DP</span>
+                  </div>
+                  <div>
+                    <h2 className="text-slate-800 text-sm font-semibold">Dialpad</h2>
+                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Call logging and lead capture</p>
+                  </div>
+                </div>
+                <StatusBadge connected={false} />
+              </div>
+              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+                Log inbound and outbound calls against contact records. Inbound calls from unknown numbers auto-create a new lead.
+              </p>
+              <button
+                disabled
+                className="w-full border border-slate-200 text-slate-400 text-[10px] tracking-widest uppercase py-2.5 rounded-sm cursor-not-allowed font-medium"
+              >
+                Requires Dialpad Webhook Setup
+              </button>
+            </div>
+
+          </div>
         </div>
       </div>
     </ProShell>

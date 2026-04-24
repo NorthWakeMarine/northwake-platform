@@ -700,6 +700,188 @@ export async function syncAppointmentToGoogle(
   }
 }
 
+// ─── Calendar Webhook Registration ───────────────────────────────────────────
+
+export async function registerCalendarWebhook(): Promise<{ ok?: boolean; expires?: string; error?: string }> {
+  const { google } = await import("googleapis");
+
+  const subject     = process.env.GOOGLE_CALENDAR_SUBJECT;
+  const CAL_SCOPE   = "https://www.googleapis.com/auth/calendar";
+  const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID ?? "primary";
+  const webhookUrl  = `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/google-calendar`;
+
+  let auth;
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    auth = new google.auth.GoogleAuth({
+      credentials:   JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+      scopes:        [CAL_SCOPE],
+      clientOptions: subject ? { subject } : undefined,
+    });
+  } else if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+    auth = new google.auth.JWT({
+      email:   process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key:     process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      scopes:  [CAL_SCOPE],
+      subject: subject,
+    });
+  } else {
+    return { error: "Google service account credentials are not configured." };
+  }
+
+  try {
+    const calendar = google.calendar({ version: "v3", auth });
+    const res = await calendar.events.watch({
+      calendarId: CALENDAR_ID,
+      requestBody: {
+        id:      `northwake-crm-${Date.now()}`,
+        type:    "web_hook",
+        address: webhookUrl,
+        token:   process.env.GOOGLE_WEBHOOK_TOKEN ?? "",
+      },
+    });
+
+    const expires = res.data.expiration
+      ? new Date(parseInt(res.data.expiration)).toISOString()
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const supabase = await createServerSupabase();
+    const { data: existing } = await supabase
+      .from("system_flags")
+      .select("id")
+      .eq("flag_type", "calendar_webhook_channel")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("system_flags").update({ message: expires, resolved: false }).eq("id", existing.id);
+    } else {
+      await supabase.from("system_flags").insert({
+        flag_type:      "calendar_webhook_channel",
+        reference_type: "system",
+        reference_id:   "calendar_webhook",
+        message:        expires,
+        resolved:       false,
+      });
+    }
+
+    revalidatePath("/pro/integrations");
+    return { ok: true, expires };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to register webhook." };
+  }
+}
+
+// ─── Standalone Calendar Event CRUD ──────────────────────────────────────────
+
+export type CalendarEventState = { error?: string; success?: boolean; eventId?: string };
+
+export async function createStandaloneEvent(
+  _prev: CalendarEventState,
+  formData: FormData
+): Promise<CalendarEventState> {
+  const title       = formData.get("title")       as string;
+  const start_time  = formData.get("start_time")  as string;
+  const end_time    = formData.get("end_time")     as string;
+  const description = formData.get("description") as string | null;
+  const location    = formData.get("location")    as string | null;
+
+  if (!title || !start_time || !end_time) return { error: "Title, start, and end time are required." };
+
+  try {
+    const { createCalendarEvent } = await import("@/lib/google-calendar");
+    const eventId = await createCalendarEvent({
+      title,
+      description: description ?? undefined,
+      location:    location    ?? undefined,
+      startTime:   start_time,
+      endTime:     end_time,
+    });
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/dashboard");
+    return { success: true, eventId };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to create event." };
+  }
+}
+
+export async function updateStandaloneEvent(
+  _prev: CalendarEventState,
+  formData: FormData
+): Promise<CalendarEventState> {
+  const event_id    = formData.get("event_id")    as string;
+  const title       = formData.get("title")       as string;
+  const start_time  = formData.get("start_time")  as string;
+  const end_time    = formData.get("end_time")     as string;
+  const description = formData.get("description") as string | null;
+  const location    = formData.get("location")    as string | null;
+
+  if (!event_id || !title || !start_time || !end_time) return { error: "Missing required fields." };
+
+  try {
+    const { updateCalendarEvent } = await import("@/lib/google-calendar");
+    await updateCalendarEvent(event_id, {
+      title,
+      description: description ?? undefined,
+      location:    location    ?? undefined,
+      startTime:   start_time,
+      endTime:     end_time,
+    });
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/dashboard");
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to update event." };
+  }
+}
+
+export async function deleteStandaloneEvent(eventId: string): Promise<{ error?: string }> {
+  try {
+    const { deleteCalendarEvent } = await import("@/lib/google-calendar");
+    await deleteCalendarEvent(eventId);
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/dashboard");
+    return {};
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to delete event." };
+  }
+}
+
+// ─── QuickBooks Invoice Auto-Schedule (hook stub) ─────────────────────────────
+// Call this from the QB webhook handler once QBO_CLIENT_ID, QBO_CLIENT_SECRET,
+// QBO_REALM_ID, and QBO_REFRESH_TOKEN are configured in Vercel env vars.
+export async function scheduleFromInvoice({
+  contactId, contactName, service, startTime, endTime, location,
+}: {
+  contactId: string; contactName: string; service: string;
+  startTime: string; endTime: string; location?: string;
+}): Promise<{ eventId?: string; error?: string }> {
+  try {
+    const { createCalendarEvent } = await import("@/lib/google-calendar");
+    const eventId = await createCalendarEvent({
+      title:       `${service} — ${contactName}`,
+      description: `Auto-scheduled from QuickBooks invoice.\n\nContact Dossier: ${process.env.NEXT_PUBLIC_SITE_URL}/pro/contacts/${contactId}`,
+      location,
+      startTime,
+      endTime,
+    });
+    const supabase = await createServerSupabase();
+    await supabase.from("timeline_events").insert({
+      contact_id:  contactId,
+      event_type:  "appointment_scheduled",
+      title:       "Job scheduled from QuickBooks invoice",
+      body:        `${service} on ${new Date(startTime).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`,
+      metadata:    { google_event_id: eventId, source: "quickbooks" },
+      created_by:  "system",
+    });
+    revalidatePath("/pro/dashboard");
+    revalidatePath("/pro/calendar");
+    return { eventId };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to schedule from invoice." };
+  }
+}
+
 // ─── Conflict Detection ───────────────────────────────────────────────────────
 
 export async function detectServiceConflicts(): Promise<{ flagged: number; error?: string }> {

@@ -7,13 +7,26 @@ const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID ?? "primary";
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 function getGoogleAuth() {
-  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-  if (serviceAccountJson) {
+  const subject = process.env.GOOGLE_CALENDAR_SUBJECT;
+  const CAL_SCOPE = "https://www.googleapis.com/auth/calendar";
+
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     return new google.auth.GoogleAuth({
-      credentials: JSON.parse(serviceAccountJson),
-      scopes: ["https://www.googleapis.com/auth/calendar"],
+      credentials:   JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+      scopes:        [CAL_SCOPE],
+      clientOptions: subject ? { subject } : undefined,
     });
   }
+
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+    return new google.auth.JWT({
+      email:   process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key:     process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      scopes:  [CAL_SCOPE],
+      subject: subject,
+    });
+  }
+
   const oauth2 = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
