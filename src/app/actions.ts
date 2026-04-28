@@ -581,6 +581,94 @@ export async function updateAssetNotes(
   return { success: true };
 }
 
+// ─── Update Contact Field ─────────────────────────────────────────────────────
+
+export type ContactFieldState = { error?: string; success?: boolean };
+
+export async function updateContactField(
+  _prev: ContactFieldState,
+  formData: FormData
+): Promise<ContactFieldState> {
+  const contact_id = formData.get("contact_id") as string;
+  const field      = formData.get("field")      as string;
+  const value      = (formData.get("value")     as string)?.trim() || null;
+
+  const ALLOWED = ["address", "name", "email", "phone"];
+  if (!contact_id || !field || !ALLOWED.includes(field)) return { error: "Invalid request." };
+
+  const supabase = await svc();
+  const { error } = await supabase.from("contacts").update({ [field]: value }).eq("id", contact_id);
+  if (error) return { error: error.message };
+  revalidatePath(`/pro/contacts/${contact_id}`);
+  return { success: true };
+}
+
+// ─── Vessel Service Schedules ─────────────────────────────────────────────────
+
+export type VesselServiceState = { error?: string; success?: boolean };
+
+export async function addVesselService(
+  _prev: VesselServiceState,
+  formData: FormData
+): Promise<VesselServiceState> {
+  const vessel_id       = formData.get("vessel_id")        as string;
+  const contact_id      = formData.get("contact_id")       as string;
+  const service_name    = (formData.get("service_name") as string)?.trim();
+  const intervalRaw     = formData.get("interval_days")    as string;
+  const interval_days   = intervalRaw ? parseInt(intervalRaw, 10) : 90;
+  const last_service_date = (formData.get("last_service_date") as string)?.trim() || null;
+
+  if (!vessel_id || !service_name) return { error: "Vessel and service name are required." };
+
+  const supabase = await svc();
+  const { error } = await supabase.from("vessel_services").insert({
+    vessel_id,
+    service_name,
+    interval_days: isNaN(interval_days) ? 90 : interval_days,
+    last_service_date: last_service_date || null,
+  });
+  if (error) return { error: error.message };
+  if (contact_id) revalidatePath(`/pro/contacts/${contact_id}`);
+  return { success: true };
+}
+
+export async function markServiced(
+  _prev: VesselServiceState,
+  formData: FormData
+): Promise<VesselServiceState> {
+  const service_id  = formData.get("service_id")  as string;
+  const contact_id  = formData.get("contact_id")  as string;
+  const date        = (formData.get("date") as string)?.trim() ||
+    new Date().toISOString().split("T")[0];
+
+  if (!service_id) return { error: "Missing service ID." };
+
+  const supabase = await svc();
+  const { error } = await supabase
+    .from("vessel_services")
+    .update({ last_service_date: date })
+    .eq("id", service_id);
+  if (error) return { error: error.message };
+  if (contact_id) revalidatePath(`/pro/contacts/${contact_id}`);
+  return { success: true };
+}
+
+export async function deleteVesselService(
+  _prev: VesselServiceState,
+  formData: FormData
+): Promise<VesselServiceState> {
+  const service_id = formData.get("service_id") as string;
+  const contact_id = formData.get("contact_id") as string;
+
+  if (!service_id) return { error: "Missing service ID." };
+
+  const supabase = await svc();
+  const { error } = await supabase.from("vessel_services").delete().eq("id", service_id);
+  if (error) return { error: error.message };
+  if (contact_id) revalidatePath(`/pro/contacts/${contact_id}`);
+  return { success: true };
+}
+
 // ─── Linked Contacts ──────────────────────────────────────────────────────────
 
 export type LinkedContactState = { error?: string; success?: boolean };

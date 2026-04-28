@@ -4,8 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import NoteForm from "./NoteForm";
 import CopyWaiverLink from "./CopyWaiverLink";
-import FleetGallery, { type Asset } from "./FleetGallery";
+import FleetGallery, { type Asset, type VesselService } from "./FleetGallery";
 import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
+import EditableField from "./EditableField";
 
 type Contact = {
   id: string;
@@ -13,6 +14,7 @@ type Contact = {
   name: string | null;
   email: string | null;
   phone: string | null;
+  address: string | null;
   vessel_type: string | null;
   vessel_length: string | null;
   waiver_signed: boolean | null;
@@ -70,6 +72,7 @@ function HealthCheck({ contact, assetCount }: { contact: Contact; assetCount: nu
   const checks: HealthItem[] = [
     { label: "Email",         ok: !!contact.email },
     { label: "Phone",         ok: !!contact.phone },
+    { label: "Address",       ok: !!contact.address },
     { label: "Fleet on File", ok: assetCount > 0 },
     { label: "Waiver Signed", ok: !!contact.waiver_signed },
   ];
@@ -125,7 +128,7 @@ export default async function ContactProfilePage({
   ] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, created_at, name, email, phone, vessel_type, vessel_length, waiver_signed, status, source")
+      .select("id, created_at, name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source")
       .eq("id", id)
       .single(),
     supabase
@@ -135,7 +138,7 @@ export default async function ContactProfilePage({
       .order("created_at", { ascending: false }),
     supabase
       .from("vessels")
-      .select("id, asset_type, name, make_model, year, color, length_ft, location, registration, notes, last_service_date, vessel_type")
+      .select("id, asset_type, name, make_model, year, color, length_ft, location, registration, notes, last_service_date, vessel_type, service_interval_days")
       .eq("owner_id", id)
       .order("created_at", { ascending: true }),
     supabase
@@ -147,8 +150,19 @@ export default async function ContactProfilePage({
 
   if (!contact) notFound();
 
-  const assets: Asset[]           = (rawVessels ?? []) as Asset[];
+  const assets: Asset[] = (rawVessels ?? []) as Asset[];
   const linkedContacts: LinkedContact[] = (rawLinked ?? []) as LinkedContact[];
+
+  // Fetch vessel services for all vessels belonging to this contact
+  const vesselIds = assets.map((a) => a.id);
+  const { data: vesselServicesData } = vesselIds.length > 0
+    ? await supabase
+        .from("vessel_services")
+        .select("id, vessel_id, service_name, interval_days, last_service_date")
+        .in("vessel_id", vesselIds)
+        .order("created_at", { ascending: true })
+    : { data: [] };
+  const vesselServices = (vesselServicesData ?? []) as import("./FleetGallery").VesselService[];
 
   return (
     <ProShell>
@@ -209,7 +223,7 @@ export default async function ContactProfilePage({
         <div className="flex-1 px-8 py-6 flex flex-col gap-5">
 
           {/* Fleet Gallery — full width */}
-          <FleetGallery contactId={contact.id} assets={assets} />
+          <FleetGallery contactId={contact.id} assets={assets} vesselServices={vesselServices} />
 
           {/* Main two-column grid */}
           <div className="grid lg:grid-cols-3 gap-5">
@@ -223,6 +237,12 @@ export default async function ContactProfilePage({
               <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-4">
                 <h3 className="text-slate-800 text-sm font-semibold">Contact Details</h3>
                 <dl className="flex flex-col gap-3 text-xs">
+                  <div>
+                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Address</dt>
+                    <dd>
+                      <EditableField contactId={contact.id} field="address" value={contact.address} placeholder="Click to add address" />
+                    </dd>
+                  </div>
                   <div>
                     <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Email</dt>
                     <dd className="text-slate-700">

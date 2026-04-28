@@ -1,7 +1,18 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { addAsset, updateAssetNotes, type AssetState } from "@/app/actions";
+import {
+  addAsset, updateAssetNotes, type AssetState,
+  addVesselService, markServiced, deleteVesselService, type VesselServiceState,
+} from "@/app/actions";
+
+export type VesselService = {
+  id: string;
+  vessel_id: string;
+  service_name: string;
+  interval_days: number;
+  last_service_date: string | null;
+};
 
 export type Asset = {
   id: string;
@@ -249,11 +260,123 @@ function AddAssetForm({ contactId, onDone }: { contactId: string; onDone: () => 
   );
 }
 
-function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: string; onClose: () => void }) {
+function ServiceScheduleSection({ asset, contactId, services }: {
+  asset: Asset; contactId: string; services: VesselService[];
+}) {
+  const [addState, addAction, isAdding] = useActionState<VesselServiceState, FormData>(addVesselService, {});
+  const [markState, markAction, isMarking] = useActionState<VesselServiceState, FormData>(markServiced, {});
+  const [delState, delAction, isDeleting] = useActionState<VesselServiceState, FormData>(deleteVesselService, {});
+  const addRef = useRef<HTMLFormElement>(null);
+  const [showAdd, setShowAdd] = useState(false);
+
+  useEffect(() => { if (addState.success) { addRef.current?.reset(); setShowAdd(false); } }, [addState.success]);
+
+  const SERVICE_SUGGESTIONS = ["Full Detail", "Exterior Wash", "Wax / Sealant", "Bottom Paint", "Engine Service", "Isinglass Treatment", "Teak Restoration", "One-Off Wash"];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Schedule</p>
+        {!showAdd && (
+          <button type="button" onClick={() => setShowAdd(true)}
+            className="text-[9px] tracking-widest uppercase text-[#000080] font-semibold hover:text-[#0000a0]">
+            + Add Service
+          </button>
+        )}
+      </div>
+
+      {services.length === 0 && !showAdd && (
+        <p className="text-slate-400 text-xs">No service schedules yet.</p>
+      )}
+
+      {services.map((s) => {
+        const h = serviceHealth(s.last_service_date, s.interval_days);
+        return (
+          <div key={s.id} className="border border-slate-100 rounded-sm p-3 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-700">{s.service_name}</span>
+              <span className="text-[9px] text-slate-400">{intervalLabel(s.interval_days)}</span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full ${h.barColor}`} style={{ width: `${h.barWidth}%` }} />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className={`text-[10px] font-medium ${h.textCls}`}>{h.label}</span>
+              <div className="flex items-center gap-3">
+                <form action={markAction}>
+                  <input type="hidden" name="service_id" value={s.id} />
+                  <input type="hidden" name="contact_id" value={contactId} />
+                  <button type="submit" disabled={isMarking}
+                    className="text-[9px] tracking-widest uppercase text-emerald-600 font-semibold hover:text-emerald-800 disabled:opacity-50">
+                    Mark Done
+                  </button>
+                </form>
+                <form action={delAction}>
+                  <input type="hidden" name="service_id" value={s.id} />
+                  <input type="hidden" name="contact_id" value={contactId} />
+                  <button type="submit" disabled={isDeleting}
+                    className="text-[9px] tracking-widest uppercase text-red-400 hover:text-red-600 disabled:opacity-50">
+                    Remove
+                  </button>
+                </form>
+              </div>
+            </div>
+            {s.last_service_date && (
+              <p className="text-[10px] text-slate-400">Last: {new Date(s.last_service_date + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+            )}
+          </div>
+        );
+      })}
+
+      {showAdd && (
+        <form ref={addRef} action={addAction} className="border border-slate-200 rounded-sm p-3 flex flex-col gap-2">
+          <input type="hidden" name="vessel_id" value={asset.id} />
+          <input type="hidden" name="contact_id" value={contactId} />
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service</label>
+            <input name="service_name" list="service-suggestions" required placeholder="e.g. Full Detail"
+              className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
+            <datalist id="service-suggestions">
+              {SERVICE_SUGGESTIONS.map(s => <option key={s} value={s} />)}
+            </datalist>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Interval</label>
+              <select name="interval_days" defaultValue="90"
+                className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400 bg-white">
+                {INTERVAL_OPTIONS.map((o) => <option key={o.days} value={o.days}>{o.label}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Last Done</label>
+              <input type="date" name="last_service_date"
+                className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
+            </div>
+          </div>
+          {addState.error && <p className="text-red-500 text-[11px]">{addState.error}</p>}
+          <div className="flex gap-2 pt-1">
+            <button type="submit" disabled={isAdding}
+              className="bg-[#000080] text-white text-[9px] tracking-widest uppercase px-3 py-1.5 rounded-sm font-semibold disabled:opacity-50">
+              {isAdding ? "Saving..." : "Add"}
+            </button>
+            <button type="button" onClick={() => setShowAdd(false)}
+              className="text-slate-400 text-xs hover:text-slate-600">Cancel</button>
+          </div>
+        </form>
+      )}
+      {(markState.error || delState.error) && (
+        <p className="text-red-500 text-[11px]">{markState.error ?? delState.error}</p>
+      )}
+    </div>
+  );
+}
+
+function AssetModal({ asset, contactId, services, onClose }: {
+  asset: Asset; contactId: string; services: VesselService[]; onClose: () => void;
+}) {
   const [notesState, notesAction, isSaving] = useActionState<AssetState, FormData>(updateAssetNotes, {});
-  const [intervalDays, setIntervalDays] = useState<number>(asset.service_interval_days ?? 90);
   const cfg = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
-  const svc = serviceHealth(asset.last_service_date, intervalDays);
   const displayName = asset.name || asset.make_model || `${cfg.label} Asset`;
 
   return (
@@ -282,20 +405,6 @@ function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: st
         </div>
 
         <div className="p-6 flex flex-col gap-5">
-          {/* Health bar in modal */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Maintenance Health</p>
-              <span className={`text-[10px] font-semibold ${svc.textCls}`}>{svc.label}</span>
-            </div>
-            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${svc.barColor}`}
-                style={{ width: `${svc.barWidth}%` }}
-              />
-            </div>
-          </div>
-
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
             {[
               { label: "Type",         value: cfg.label },
@@ -303,7 +412,6 @@ function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: st
               { label: "Length",       value: asset.length_ft ? `${asset.length_ft} ft` : null },
               { label: "Registration", value: asset.registration },
               { label: "Location",     value: asset.location },
-              { label: "Last Service", value: asset.last_service_date },
             ]
               .filter((f) => f.value)
               .map(({ label, value }) => (
@@ -314,27 +422,13 @@ function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: st
               ))}
           </dl>
 
+          <ServiceScheduleSection asset={asset} contactId={contactId} services={services} />
+
           <div className="flex flex-col gap-2">
-            <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Notes &amp; Settings</p>
+            <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Notes</p>
             <form action={notesAction}>
               <input type="hidden" name="asset_id"   value={asset.id} />
               <input type="hidden" name="contact_id" value={contactId} />
-              <input type="hidden" name="service_interval_days" value={intervalDays} />
-              <input type="hidden" name="last_service_date" value={asset.last_service_date ?? ""} />
-
-              <div className="flex flex-col gap-1 mb-3">
-                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Interval</label>
-                <select
-                  value={intervalDays}
-                  onChange={(e) => setIntervalDays(Number(e.target.value))}
-                  className="border border-slate-200 rounded-sm px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-slate-400 bg-white"
-                >
-                  {INTERVAL_OPTIONS.map((o) => (
-                    <option key={o.days} value={o.days}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-
               <textarea
                 name="notes"
                 defaultValue={asset.notes ?? ""}
@@ -349,7 +443,7 @@ function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: st
                 disabled={isSaving}
                 className="mt-2 bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm font-semibold disabled:opacity-50 transition-colors"
               >
-                {isSaving ? "Saving..." : "Save"}
+                {isSaving ? "Saving..." : "Save Notes"}
               </button>
             </form>
           </div>
@@ -362,9 +456,11 @@ function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: st
 export default function FleetGallery({
   contactId,
   assets,
+  vesselServices,
 }: {
   contactId: string;
   assets: Asset[];
+  vesselServices: VesselService[];
 }) {
   const [showAddForm, setShowAddForm]     = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -406,8 +502,14 @@ export default function FleetGallery({
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {assets.map((asset) => {
-              const cfg    = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
-              const health = serviceHealth(asset.last_service_date, asset.service_interval_days ?? 90);
+              const cfg = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
+              const assetServices = vesselServices.filter(s => s.vessel_id === asset.id);
+              // Show the most urgent service on the card, fall back to vessel-wide
+              const health = assetServices.length > 0
+                ? assetServices
+                    .map(s => serviceHealth(s.last_service_date, s.interval_days))
+                    .sort((a, b) => a.barWidth - b.barWidth)[0]
+                : serviceHealth(asset.last_service_date, asset.service_interval_days ?? 90);
               return (
                 <button
                   key={asset.id}
@@ -459,6 +561,7 @@ export default function FleetGallery({
         <AssetModal
           asset={selectedAsset}
           contactId={contactId}
+          services={vesselServices.filter(s => s.vessel_id === selectedAsset.id)}
           onClose={() => setSelectedAsset(null)}
         />
       )}

@@ -55,7 +55,7 @@ export default function Footer() {
       </section>
 
       {/* ── Main footer grid ── */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 flex flex-col sm:flex-row gap-12 sm:gap-0 sm:justify-between">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8 flex flex-col sm:flex-row gap-8 sm:gap-0 sm:justify-between">
         {/* Brand */}
         <div className="flex flex-col gap-4 sm:w-56">
           <Link href="/" className="w-fit">
