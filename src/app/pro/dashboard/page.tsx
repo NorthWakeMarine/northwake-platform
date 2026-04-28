@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import ProShell from "@/components/ProShell";
+import LeadStatCard from "./LeadStatCard";
 import type { CalendarEvent } from "@/lib/google-calendar";
 
 type Lead = {
@@ -29,6 +30,10 @@ function todayLabel() {
 function startOfMonth() {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+}
+
+function startOfYear() {
+  return new Date(new Date().getFullYear(), 0, 1).toISOString();
 }
 
 function parseName(email: string, meta: Record<string, string> = {}) {
@@ -73,8 +78,9 @@ export default async function ProDashboardPage() {
 
   const [
     { data: leads },
-    { count: totalCount },
+    { count: allCount },
     { count: monthCount },
+    { count: yearCount },
     { count: waiverCount },
     { data: calDiscrepancies },
     { data: calConflicts },
@@ -89,6 +95,10 @@ export default async function ProDashboardPage() {
       .from("leads")
       .select("*", { count: "exact", head: true })
       .gte("created_at", startOfMonth()),
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", startOfYear()),
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
@@ -116,43 +126,18 @@ export default async function ProDashboardPage() {
     (user?.user_metadata ?? {}) as Record<string, string>
   );
 
-  const stats = [
-    {
-      label: "Total Contacts",
-      value: String(totalCount ?? 0),
-      sub: "All time submissions",
-      iconBg: "bg-blue-50",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
-      ),
-    },
-    {
-      label: "New This Month",
-      value: String(monthCount ?? 0),
-      sub: new Date().toLocaleString("en-US", { month: "long", year: "numeric" }),
-      iconBg: "bg-emerald-50",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
-          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" />
-        </svg>
-      ),
-    },
-    {
-      label: "Waivers Pending",
-      value: String(waiverCount ?? 0),
-      sub: "Awaiting signed waiver",
-      iconBg: "bg-amber-50",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
-        </svg>
-      ),
-    },
-  ];
+  const waiverStat = {
+    label: "Waivers Pending",
+    value: String(waiverCount ?? 0),
+    sub: "Awaiting signed waiver",
+    iconBg: "bg-amber-50",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
+      </svg>
+    ),
+  };
 
   return (
     <ProShell>
@@ -188,24 +173,32 @@ export default async function ProDashboardPage() {
           </div>
 
           {/* Stat cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Live stats */}
-            {stats.map((s) => (
-              <div key={s.label} className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3 lg:col-span-1 col-span-1">
-                <div className="flex items-start justify-between">
-                  <p className="text-slate-500 text-xs font-medium">{s.label}</p>
-                  <div className={`w-9 h-9 rounded-sm ${s.iconBg} flex items-center justify-center shrink-0`}>
-                    {s.icon}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-slate-900 text-3xl font-bold tracking-tight">{s.value}</p>
-                  <p className="text-slate-400 text-[11px] mt-1">{s.sub}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+            {/* New Leads with range toggle */}
+            <LeadStatCard
+              monthCount={monthCount ?? 0}
+              yearCount={yearCount ?? 0}
+              allCount={allCount ?? 0}
+              monthLabel={new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}
+              yearLabel={String(new Date().getFullYear())}
+            />
+
+            {/* Waivers Pending */}
+            <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3">
+              <div className="flex items-start justify-between">
+                <p className="text-slate-500 text-xs font-medium">{waiverStat.label}</p>
+                <div className={`w-9 h-9 rounded-sm ${waiverStat.iconBg} flex items-center justify-center shrink-0`}>
+                  {waiverStat.icon}
                 </div>
               </div>
-            ))}
+              <div>
+                <p className="text-slate-900 text-3xl font-bold tracking-tight">{waiverStat.value}</p>
+                <p className="text-slate-400 text-[11px] mt-1">{waiverStat.sub}</p>
+              </div>
+            </div>
 
-            {/* Placeholder: Missed Calls (Dialpad) */}
+            {/* Missed Calls — Dialpad placeholder */}
             <PlaceholderCard
               label="Missed Calls"
               sub="Calls needing follow-up"
@@ -217,13 +210,13 @@ export default async function ProDashboardPage() {
               }
             />
 
-            {/* Live: Upcoming Jobs (Google Calendar) */}
+            {/* Calendar — links to calendar page */}
             <Link
               href="/pro/calendar"
-              className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3 lg:col-span-1 col-span-1 hover:border-slate-300 transition-colors"
+              className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3 hover:border-slate-300 transition-colors"
             >
               <div className="flex items-start justify-between">
-                <p className="text-slate-500 text-xs font-medium">Upcoming Jobs</p>
+                <p className="text-slate-500 text-xs font-medium">On the Calendar</p>
                 <div className="w-9 h-9 rounded-sm bg-purple-50 flex items-center justify-center shrink-0">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-500">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -234,7 +227,7 @@ export default async function ProDashboardPage() {
               </div>
               <div>
                 <p className="text-slate-900 text-3xl font-bold tracking-tight">{upcomingEvents.length}</p>
-                <p className="text-slate-400 text-[11px] mt-1">Scheduled this week</p>
+                <p className="text-slate-400 text-[11px] mt-1">Events in the next 7 days</p>
               </div>
             </Link>
           </div>
