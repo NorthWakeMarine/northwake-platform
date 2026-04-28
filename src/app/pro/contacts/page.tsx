@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import SearchBar from "./SearchBar";
+import DeleteContactButton from "./DeleteContactButton";
 
 type Contact = {
   id: string;
@@ -231,12 +232,15 @@ export default async function ContactsPage({
                         <td className="py-3 px-4 text-slate-500">{c.vessel_length ? `${c.vessel_length} ft` : <span className="text-slate-300">—</span>}</td>
                         <td className="py-3 px-4"><StatusBadges contact={c} /></td>
                         <td className="py-3 px-4 last:pr-6">
-                          <Link
-                            href={`/pro/contacts/${c.id}`}
-                            className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap"
-                          >
-                            View
-                          </Link>
+                          <div className="flex items-center gap-3">
+                            <Link
+                              href={`/pro/contacts/${c.id}`}
+                              className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap opacity-0 group-hover:opacity-100"
+                            >
+                              View
+                            </Link>
+                            <DeleteContactButton contactId={c.id} />
+                          </div>
                         </td>
                       </tr>
                     ))}

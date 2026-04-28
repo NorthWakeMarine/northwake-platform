@@ -876,6 +876,21 @@ export async function deleteStandaloneEvent(eventId: string): Promise<{ error?: 
   }
 }
 
+// ─── Delete Contact ───────────────────────────────────────────────────────────
+
+export async function deleteContact(contactId: string): Promise<{ error?: string }> {
+  const supabase = await svc();
+  // Cascade: vessels, linked_contacts, and timeline_events should be set up
+  // with ON DELETE CASCADE in Supabase, but delete children explicitly to be safe
+  await supabase.from("vessels").delete().eq("owner_id", contactId);
+  await supabase.from("linked_contacts").delete().eq("primary_contact_id", contactId);
+  await supabase.from("timeline_events").delete().eq("contact_id", contactId);
+  const { error } = await supabase.from("contacts").delete().eq("id", contactId);
+  if (error) return { error: error.message };
+  revalidatePath("/pro/contacts");
+  return {};
+}
+
 // ─── Delete Lead ─────────────────────────────────────────────────────────────
 
 export async function deleteLead(leadId: string): Promise<{ error?: string }> {
