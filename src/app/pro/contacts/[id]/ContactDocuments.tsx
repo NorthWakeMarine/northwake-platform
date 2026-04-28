@@ -1,7 +1,13 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import type { DriveFile } from "@/lib/google-drive";
+
+type WaiverEvent = {
+  id: string;
+  created_at: string;
+  metadata?: Record<string, string> | null;
+};
 
 function fileIcon(mimeType: string) {
   if (mimeType === "application/pdf") return "PDF";
@@ -27,16 +33,17 @@ export default function ContactDocuments({
   contactId,
   initialFiles,
   folderUrl,
+  waiverEvents,
 }: {
   contactId: string;
   initialFiles: DriveFile[];
   folderUrl: string | null;
+  waiverEvents: WaiverEvent[];
 }) {
   const [files, setFiles] = useState<DriveFile[]>(initialFiles);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [, startTransition] = useTransition();
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -112,12 +119,40 @@ export default function ContactDocuments({
         <p className="text-red-500 text-xs px-6 py-3 border-b border-red-100">{error}</p>
       )}
 
-      {files.length === 0 ? (
+      {/* Waivers from timeline events (submitted via website) */}
+      {waiverEvents.length > 0 && (
+        <ul className="divide-y divide-slate-50">
+          {waiverEvents.map((ev) => {
+            const m = ev.metadata;
+            return (
+              <li key={ev.id} className="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                <div className="w-8 h-8 rounded-sm bg-emerald-50 flex items-center justify-center shrink-0">
+                  <span className="text-[8px] font-bold text-emerald-600 tracking-wider">WAV</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-slate-800 text-xs font-medium truncate">
+                    Signed Waiver{m?.name ? ` — ${m.name}` : ""}
+                  </p>
+                  <p className="text-slate-400 text-[10px] mt-0.5">
+                    {m?.date ?? fmtDate(ev.created_at)}
+                    {m?.boat ? ` · ${m.boat}` : ""}
+                  </p>
+                </div>
+                <span className="text-[10px] tracking-widest uppercase text-emerald-600 font-medium whitespace-nowrap shrink-0">
+                  Signed
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {files.length === 0 && waiverEvents.length === 0 ? (
         <div className="px-6 py-10 text-center">
           <p className="text-slate-400 text-sm">No documents yet.</p>
           <p className="text-slate-300 text-xs mt-1">Upload a signed waiver, COI, or any other file.</p>
         </div>
-      ) : (
+      ) : files.length > 0 ? (
         <ul className="divide-y divide-slate-50">
           {files.map((f) => (
             <li key={f.id} className="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 transition-colors">
@@ -141,7 +176,7 @@ export default function ContactDocuments({
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -33,6 +33,7 @@ type TimelineEvent = {
   title: string | null;
   body: string | null;
   created_by: string | null;
+  metadata?: Record<string, string> | null;
 };
 
 function fmt(iso: string) {
@@ -137,7 +138,7 @@ export default async function ContactProfilePage({
       .single(),
     supabase
       .from("timeline_events")
-      .select("id, created_at, event_type, title, body, created_by")
+      .select("id, created_at, event_type, title, body, created_by, metadata")
       .eq("contact_id", id)
       .order("created_at", { ascending: false }),
     supabase
@@ -305,6 +306,7 @@ export default async function ContactProfilePage({
                 contactId={contact.id}
                 initialFiles={driveFiles}
                 folderUrl={contact.drive_folder_url}
+                waiverEvents={(events as TimelineEvent[])?.filter(e => e.event_type === "waiver_signed") ?? []}
               />
 
             </div>

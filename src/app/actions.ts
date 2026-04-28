@@ -303,6 +303,51 @@ export async function submitWaiver(
     created_by: "customer",
   });
 
+  // Auto-save waiver to Google Drive
+  try {
+    const { getOrCreateContactFolder, uploadFileToFolder } = await import("@/lib/google-drive");
+
+    const { data: contactRow } = await supabase
+      .from("contacts")
+      .select("drive_folder_id, drive_folder_url")
+      .eq("id", id)
+      .single();
+
+    let folderId = contactRow?.drive_folder_id as string | null;
+    if (!folderId) {
+      const folder = await getOrCreateContactFolder(name);
+      folderId = folder.id;
+      await supabase.from("contacts").update({
+        drive_folder_id: folder.id,
+        drive_folder_url: folder.url,
+      }).eq("id", id);
+    }
+
+    const waiverText = [
+      "NORTHWAKE MARINE - LIABILITY WAIVER",
+      "=====================================",
+      "",
+      `Full Name:    ${name}`,
+      `Date Signed:  ${date}`,
+      `Email:        ${email}`,
+      `Phone:        ${phone}`,
+      `Address:      ${address}`,
+      `Vessel/Boat:  ${boat}`,
+      "",
+      "ELECTRONIC SIGNATURE",
+      "---------------------",
+      signature,
+      "",
+      "The signer acknowledged and agreed to the NorthWake Marine Liability",
+      "Waiver and Release of Claims on the date above.",
+    ].join("\n");
+
+    const fileName = `Waiver - ${name} - ${date}.txt`;
+    await uploadFileToFolder(folderId, fileName, "text/plain", Buffer.from(waiverText, "utf-8"));
+  } catch (err) {
+    console.error("Waiver Drive upload failed (non-fatal):", err);
+  }
+
   revalidatePath(`/pro/contacts/${id}`);
   return { success: true };
 }
