@@ -114,7 +114,7 @@ export default async function LeadsPage() {
                             <div className="flex items-center gap-3">
                               <Link
                                 href={`/pro/leads/${lead.id}`}
-                                className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors opacity-0 group-hover:opacity-100 whitespace-nowrap"
+                                className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap"
                               >
                                 View
                               </Link>
