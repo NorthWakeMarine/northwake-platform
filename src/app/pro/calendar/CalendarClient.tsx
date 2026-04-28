@@ -9,136 +9,124 @@ import {
 } from "@/app/actions";
 import type { CalendarEvent } from "@/lib/google-calendar";
 
-function fmtDate(iso: string) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+// ── Date utils ─────────────────────────────────────────────────────────────────
+
+function startOfWeek(d: Date): Date {
+  const s = new Date(d);
+  s.setDate(s.getDate() - s.getDay());
+  s.setHours(0, 0, 0, 0);
+  return s;
 }
 
-function fmtTime(iso: string) {
-  if (!iso) return "";
+function addDays(d: Date, n: number): Date {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+}
+
+function eventDay(iso: string): Date {
+  if (!iso.includes("T")) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(iso);
+}
+
+function fmtWeekRange(start: Date): string {
+  const end = addDays(start, 6);
+  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+  const s = start.toLocaleDateString("en-US", opts);
+  const e = end.toLocaleDateString("en-US", {
+    month: start.getMonth() === end.getMonth() ? undefined : "short",
+    day: "numeric",
+  });
+  return `${s} – ${e}, ${start.getFullYear()}`;
+}
+
+function fmtTime(iso: string): string {
   if (!iso.includes("T")) return "All day";
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-function toLocalDateTimeInput(iso: string) {
+function toLocalDateTimeInput(iso: string): string {
   if (!iso || !iso.includes("T")) return iso ?? "";
   const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 // ── Event Modal ────────────────────────────────────────────────────────────────
 
-function EventModal({
-  event,
-  onClose,
-}: {
+function EventModal({ event, defaultDate, onClose }: {
   event: CalendarEvent | null;
+  defaultDate?: string;
   onClose: () => void;
 }) {
   const isEdit = !!event;
-  const [createState, createAction, creating] = useActionState<CalendarEventState, FormData>(
-    createStandaloneEvent,
-    {}
-  );
-  const [updateState, updateAction, updating] = useActionState<CalendarEventState, FormData>(
-    updateStandaloneEvent,
-    {}
-  );
+  const [createState, createAction, creating] = useActionState<CalendarEventState, FormData>(createStandaloneEvent, {});
+  const [updateState, updateAction, updating] = useActionState<CalendarEventState, FormData>(updateStandaloneEvent, {});
 
   const state  = isEdit ? updateState : createState;
   const action = isEdit ? updateAction : createAction;
   const busy   = isEdit ? updating    : creating;
 
-  useEffect(() => {
-    if (state.success) onClose();
-  }, [state.success, onClose]);
+  useEffect(() => { if (state.success) onClose(); }, [state.success, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-sm shadow-2xl w-full max-w-md">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-slate-800 text-sm font-semibold">
-            {isEdit ? "Edit Event" : "New Calendar Event"}
-          </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+          <h2 className="text-slate-800 text-sm font-semibold">{isEdit ? "Edit Event" : "New Event"}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
         </div>
         <form action={action} className="px-6 py-5 flex flex-col gap-4">
           {isEdit && <input type="hidden" name="event_id" value={event.id} />}
-
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Title</label>
-            <input
-              name="title"
-              required
-              defaultValue={event?.title ?? ""}
-              placeholder="e.g. Engine Service — Hull Breaker"
-              className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080]"
-            />
+            <input name="title" required defaultValue={event?.title ?? ""}
+              placeholder="e.g. Wash + Wax — Hull Breaker"
+              className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080]" />
           </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Start</label>
-              <input
-                type="datetime-local"
-                name="start_time"
-                required
-                defaultValue={event ? toLocalDateTimeInput(event.start) : ""}
-                className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080]"
-              />
+              <input type="datetime-local" name="start_time" required
+                defaultValue={event ? toLocalDateTimeInput(event.start) : defaultDate ?? ""}
+                className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080]" />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">End</label>
-              <input
-                type="datetime-local"
-                name="end_time"
-                required
-                defaultValue={event ? toLocalDateTimeInput(event.end) : ""}
-                className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080]"
-              />
+              <input type="datetime-local" name="end_time" required
+                defaultValue={event ? toLocalDateTimeInput(event.end) : defaultDate ?? ""}
+                className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080]" />
             </div>
           </div>
-
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Location</label>
-            <input
-              name="location"
-              defaultValue={event?.location ?? ""}
+            <input name="location" defaultValue={event?.location ?? ""}
               placeholder="Marina slip, address, etc."
-              className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080]"
-            />
+              className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080]" />
           </div>
-
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Notes</label>
-            <textarea
-              name="description"
-              rows={3}
-              defaultValue={event?.description ?? ""}
+            <textarea name="description" rows={2} defaultValue={event?.description ?? ""}
               placeholder="Service details, access info, etc."
-              className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080] resize-none"
-            />
+              className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080] resize-none" />
           </div>
-
-          {state.error && (
-            <p className="text-red-600 text-xs">{state.error}</p>
-          )}
-
+          {state.error && <p className="text-red-600 text-xs">{state.error}</p>}
           <div className="flex gap-3 pt-1">
-            <button
-              type="submit"
-              disabled={busy}
-              className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50"
-            >
+            <button type="submit" disabled={busy}
+              className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
               {busy ? "Saving..." : isEdit ? "Save Changes" : "Create Event"}
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 text-slate-500 text-xs font-medium hover:text-slate-800 transition-colors"
-            >
+            <button type="button" onClick={onClose}
+              className="px-4 text-slate-500 text-xs font-medium hover:text-slate-800 transition-colors">
               Cancel
             </button>
           </div>
@@ -166,21 +154,16 @@ function DeleteConfirm({ event, onClose }: { event: CalendarEvent; onClose: () =
       <div className="bg-white rounded-sm shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
         <h2 className="text-slate-800 text-sm font-semibold">Delete Event?</h2>
         <p className="text-slate-500 text-xs leading-relaxed">
-          This will permanently delete <span className="font-semibold text-slate-700">{event.title}</span> from Google Calendar. This cannot be undone.
+          This will permanently delete <span className="font-semibold text-slate-700">{event.title}</span> from Google Calendar.
         </p>
         {error && <p className="text-red-600 text-xs">{error}</p>}
         <div className="flex gap-3">
-          <button
-            onClick={handleDelete}
-            disabled={busy}
-            className="flex-1 bg-red-600 text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-red-700 transition-colors disabled:opacity-50"
-          >
+          <button onClick={handleDelete} disabled={busy}
+            className="flex-1 bg-red-600 text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-red-700 transition-colors disabled:opacity-50">
             {busy ? "Deleting..." : "Delete"}
           </button>
-          <button
-            onClick={onClose}
-            className="px-4 text-slate-500 text-xs font-medium hover:text-slate-800 transition-colors"
-          >
+          <button onClick={onClose}
+            className="px-4 text-slate-500 text-xs font-medium hover:text-slate-800 transition-colors">
             Cancel
           </button>
         </div>
@@ -189,103 +172,185 @@ function DeleteConfirm({ event, onClose }: { event: CalendarEvent; onClose: () =
   );
 }
 
+// ── Week Grid ──────────────────────────────────────────────────────────────────
+
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function WeekGrid({ weekStart, events, today, onDayClick, onEventClick, onDeleteClick }: {
+  weekStart: Date;
+  events: CalendarEvent[];
+  today: Date;
+  onDayClick: (iso: string) => void;
+  onEventClick: (e: CalendarEvent) => void;
+  onDeleteClick: (e: CalendarEvent) => void;
+}) {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  return (
+    <div className="grid grid-cols-7 flex-1 divide-x divide-slate-100 border border-slate-200 rounded-sm overflow-hidden bg-white">
+      {days.map((day, i) => {
+        const isToday = isSameDay(day, today);
+        const dayEvents = events.filter(ev => isSameDay(eventDay(ev.start), day));
+        const dateLabel = day.getDate();
+        const monthLabel = day.toLocaleDateString("en-US", { month: "short" });
+
+        return (
+          <div key={i} className="flex flex-col min-h-0">
+            {/* Day header */}
+            <div
+              className={`px-2 py-2.5 text-center border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors ${isToday ? "bg-[#000080]/5" : ""}`}
+              onClick={() => {
+                const p = (n: number) => String(n).padStart(2, "0");
+                onDayClick(`${day.getFullYear()}-${p(day.getMonth() + 1)}-${p(day.getDate())}T09:00`);
+              }}
+            >
+              <p className={`text-[10px] font-semibold tracking-widest uppercase ${isToday ? "text-[#000080]" : "text-slate-400"}`}>
+                {DAY_LABELS[i]}
+              </p>
+              <div className={`mt-0.5 w-7 h-7 mx-auto flex items-center justify-center rounded-full text-sm font-bold ${isToday ? "bg-[#000080] text-white" : "text-slate-700"}`}>
+                {dateLabel}
+              </div>
+              {isToday && (
+                <p className="text-[8px] text-[#000080] font-semibold tracking-widest uppercase mt-0.5">Today</p>
+              )}
+              {!isToday && (
+                <p className="text-[8px] text-slate-300 mt-0.5">{monthLabel}</p>
+              )}
+            </div>
+
+            {/* Events */}
+            <div className="flex-1 p-1.5 flex flex-col gap-1 overflow-y-auto">
+              {dayEvents.length === 0 && (
+                <div className="flex-1" />
+              )}
+              {dayEvents.map(ev => (
+                <div
+                  key={ev.id}
+                  className="group relative bg-[#000080]/8 border border-[#000080]/20 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-[#000080]/15 transition-colors"
+                  onClick={() => onEventClick(ev)}
+                >
+                  <p className="text-[11px] font-semibold text-slate-800 leading-tight line-clamp-2">{ev.title}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{fmtTime(ev.start)}</p>
+                  {ev.location && (
+                    <p className="text-[9px] text-slate-400 truncate mt-0.5">{ev.location}</p>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeleteClick(ev); }}
+                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all text-xs leading-none w-4 h-4 flex items-center justify-center"
+                    title="Delete"
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Main Client ────────────────────────────────────────────────────────────────
 
 export default function CalendarClient({ events }: { events: CalendarEvent[] }) {
-  const [modal, setModal] = useState<"create" | "edit" | "delete" | null>(null);
-  const [selected, setSelected] = useState<CalendarEvent | null>(null);
+  const today      = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
+  const [modal, setModal]         = useState<"create" | "edit" | "delete" | null>(null);
+  const [selected, setSelected]   = useState<CalendarEvent | null>(null);
+  const [defaultDate, setDefaultDate] = useState<string | undefined>();
 
-  function openCreate() { setSelected(null); setModal("create"); }
-  function openEdit(e: CalendarEvent) { setSelected(e); setModal("edit"); }
-  function openDelete(e: CalendarEvent) { setSelected(e); setModal("delete"); }
-  function closeModal() { setModal(null); setSelected(null); }
+  function prevWeek() { setWeekStart(d => addDays(d, -7)); }
+  function nextWeek() { setWeekStart(d => addDays(d, 7)); }
+  function goToday()  { setWeekStart(startOfWeek(today)); }
 
-  const grouped = events.reduce<Record<string, CalendarEvent[]>>((acc, ev) => {
-    const key = fmtDate(ev.start);
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(ev);
-    return acc;
-  }, {});
+  function openCreate(iso?: string) { setDefaultDate(iso); setSelected(null); setModal("create"); }
+  function openEdit(ev: CalendarEvent) { setSelected(ev); setModal("edit"); }
+  function openDelete(ev: CalendarEvent) { setSelected(ev); setModal("delete"); }
+  function closeModal() { setModal(null); setSelected(null); setDefaultDate(undefined); }
+
+  const isCurrentWeek = isSameDay(weekStart, startOfWeek(today));
 
   return (
     <>
-      {/* Header bar */}
-      <div className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Upcoming jobs and appointments synced with Google Calendar.</p>
-        </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 bg-[#000080] text-white text-xs font-semibold px-4 py-2.5 rounded-sm hover:bg-blue-900 transition-colors"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          New Event
-        </button>
-      </div>
+      <div className="flex-1 flex flex-col min-h-0">
 
-      {/* Event list */}
-      <div className="flex-1 px-8 py-6">
-        {events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            <p className="text-slate-400 text-sm">No upcoming events in the next 14 days.</p>
-            <button onClick={openCreate} className="text-[#000080] text-xs font-semibold hover:underline">
-              Create your first event
+        {/* Header */}
+        <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            {/* Nav arrows */}
+            <div className="flex items-center gap-1">
+              <button onClick={prevWeek}
+                className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-sm text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+              <button onClick={nextWeek}
+                className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-sm text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+
+            <div>
+              <h1 className="text-slate-900 text-base font-bold tracking-tight">{fmtWeekRange(weekStart)}</h1>
+              <p className="text-slate-400 text-[10px] mt-0.5">Calendar</p>
+            </div>
+
+            {!isCurrentWeek && (
+              <button onClick={goToday}
+                className="text-[10px] tracking-widest uppercase text-[#000080] font-semibold border border-[#000080]/30 px-2.5 py-1 rounded-sm hover:bg-[#000080]/5 transition-colors">
+                Today
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a
+              href="https://calendar.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 border border-slate-200 text-slate-500 text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm hover:border-slate-300 hover:text-slate-700 transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+              Open Google Calendar
+            </a>
+            <button onClick={() => openCreate()}
+              className="flex items-center gap-1.5 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm hover:bg-blue-900 transition-colors">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              New Event
             </button>
           </div>
-        ) : (
-          <div className="flex flex-col gap-6 max-w-2xl">
-            {Object.entries(grouped).map(([day, dayEvents]) => (
-              <div key={day}>
-                <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-widest mb-2">{day}</p>
-                <div className="flex flex-col gap-2">
-                  {dayEvents.map((ev) => (
-                    <div key={ev.id} className="bg-white border border-slate-200 rounded-sm px-5 py-4 flex items-start justify-between gap-4 group hover:border-slate-300 transition-colors">
-                      <div className="flex gap-4 items-start min-w-0">
-                        <div className="w-1.5 h-full min-h-[2.5rem] rounded-full bg-[#000080] shrink-0 mt-0.5" />
-                        <div className="min-w-0">
-                          <p className="text-slate-800 text-sm font-semibold truncate">{ev.title}</p>
-                          <p className="text-slate-400 text-xs mt-0.5">
-                            {fmtTime(ev.start)}
-                            {ev.end && ev.end !== ev.start && ` — ${fmtTime(ev.end)}`}
-                          </p>
-                          {ev.location && (
-                            <p className="text-slate-400 text-[11px] mt-0.5 truncate">{ev.location}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => openEdit(ev)}
-                          className="text-[10px] tracking-widest uppercase text-slate-400 hover:text-[#000080] font-semibold px-2 py-1 transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => openDelete(ev)}
-                          className="text-[10px] tracking-widest uppercase text-slate-400 hover:text-red-500 font-semibold px-2 py-1 transition-colors"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
+
+        {/* Week grid */}
+        <div className="flex-1 px-6 py-4 min-h-0 overflow-auto">
+          <WeekGrid
+            weekStart={weekStart}
+            events={events}
+            today={today}
+            onDayClick={openCreate}
+            onEventClick={openEdit}
+            onDeleteClick={openDelete}
+          />
+        </div>
       </div>
 
-      {/* Modals */}
       {(modal === "create" || modal === "edit") && (
-        <EventModal event={modal === "edit" ? selected : null} onClose={closeModal} />
+        <EventModal
+          event={modal === "edit" ? selected : null}
+          defaultDate={defaultDate}
+          onClose={closeModal}
+        />
       )}
       {modal === "delete" && selected && (
         <DeleteConfirm event={selected} onClose={closeModal} />

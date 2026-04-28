@@ -127,18 +127,22 @@ export type CalendarEvent = {
 };
 
 export async function listUpcomingEvents(days = 14): Promise<CalendarEvent[]> {
+  const now    = new Date();
+  const future = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  return listEvents(now, future);
+}
+
+export async function listEvents(from: Date, to: Date): Promise<CalendarEvent[]> {
   const auth     = getAuth();
   const calendar = google.calendar({ version: "v3", auth });
-  const now      = new Date();
-  const future   = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
 
   const res = await calendar.events.list({
     calendarId:   CALENDAR_ID,
-    timeMin:      now.toISOString(),
-    timeMax:      future.toISOString(),
+    timeMin:      from.toISOString(),
+    timeMax:      to.toISOString(),
     singleEvents: true,
     orderBy:      "startTime",
-    maxResults:   50,
+    maxResults:   200,
   });
 
   return (res.data.items ?? [])
