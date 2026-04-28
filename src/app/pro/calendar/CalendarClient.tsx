@@ -38,6 +38,23 @@ function eventDay(iso: string): Date {
   return new Date(iso);
 }
 
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/li>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<\/ol>|<\/ul>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function fmtWeekRange(start: Date): string {
   const end = addDays(start, 6);
   const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
@@ -177,7 +194,7 @@ function EventModal({ event, defaultDate, onClose }: {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Notes</label>
-            <textarea name="description" rows={2} defaultValue={event?.description ?? ""}
+            <textarea name="description" rows={4} defaultValue={event?.description ? htmlToPlainText(event.description) : ""}
               placeholder="Service details, access info, etc."
               className="border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080] resize-none" />
           </div>
