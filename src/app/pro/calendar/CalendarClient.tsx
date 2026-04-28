@@ -61,6 +61,68 @@ function toLocalDateTimeInput(iso: string): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+// ── Event Detail Modal ─────────────────────────────────────────────────────────
+
+function EventDetailModal({ event, onEdit, onDelete, onClose }: {
+  event: CalendarEvent;
+  onEdit: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  const isAllDay = !event.start.includes("T");
+  const dateStr = isAllDay
+    ? new Date(...(event.start.split("-").map(Number) as [number, number, number]).map((v, i) => i === 1 ? v - 1 : v) as [number, number, number]).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+    : new Date(event.start).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const timeStr = isAllDay ? "All day" : `${fmtTime(event.start)} – ${fmtTime(event.end)}`;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh]">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-slate-900 text-base font-bold leading-snug">{event.title}</h2>
+            <p className="text-slate-500 text-xs mt-1">{dateStr} &middot; {timeStr}</p>
+            {event.location && (
+              <p className="text-slate-400 text-xs mt-0.5">{event.location}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none shrink-0">&times;</button>
+        </div>
+
+        {event.description && (
+          <div className="px-6 py-4 overflow-y-auto flex-1">
+            <div
+              className="prose prose-sm prose-slate max-w-none text-slate-700 text-sm leading-relaxed [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mt-1"
+              dangerouslySetInnerHTML={{ __html: event.description }}
+            />
+          </div>
+        )}
+
+        <div className="px-6 py-4 border-t border-slate-100 flex items-center gap-3">
+          <button
+            onClick={onEdit}
+            className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors"
+          >
+            Edit Event
+          </button>
+          <button
+            onClick={onDelete}
+            className="px-4 text-red-500 text-xs font-medium hover:text-red-700 transition-colors"
+          >
+            Delete
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 text-slate-500 text-xs font-medium hover:text-slate-800 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Event Modal ────────────────────────────────────────────────────────────────
 
 function EventModal({ event, defaultDate, onClose }: {
@@ -257,7 +319,7 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
   const today      = new Date();
   today.setHours(0, 0, 0, 0);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
-  const [modal, setModal]         = useState<"create" | "edit" | "delete" | null>(null);
+  const [modal, setModal]         = useState<"create" | "detail" | "edit" | "delete" | null>(null);
   const [selected, setSelected]   = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
 
@@ -266,6 +328,7 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
   function goToday()  { setWeekStart(startOfWeek(today)); }
 
   function openCreate(iso?: string) { setDefaultDate(iso); setSelected(null); setModal("create"); }
+  function openDetail(ev: CalendarEvent) { setSelected(ev); setModal("detail"); }
   function openEdit(ev: CalendarEvent) { setSelected(ev); setModal("edit"); }
   function openDelete(ev: CalendarEvent) { setSelected(ev); setModal("delete"); }
   function closeModal() { setModal(null); setSelected(null); setDefaultDate(undefined); }
@@ -339,12 +402,20 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
             events={events}
             today={today}
             onDayClick={openCreate}
-            onEventClick={openEdit}
+            onEventClick={openDetail}
             onDeleteClick={openDelete}
           />
         </div>
       </div>
 
+      {modal === "detail" && selected && (
+        <EventDetailModal
+          event={selected}
+          onEdit={() => openEdit(selected)}
+          onDelete={() => openDelete(selected)}
+          onClose={closeModal}
+        />
+      )}
       {(modal === "create" || modal === "edit") && (
         <EventModal
           event={modal === "edit" ? selected : null}
