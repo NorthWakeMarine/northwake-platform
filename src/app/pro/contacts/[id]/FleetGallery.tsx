@@ -16,11 +16,24 @@ export type Asset = {
   notes: string | null;
   last_service_date: string | null;
   vessel_type: string | null;
+  service_interval_days: number | null;
 };
 
-// Thresholds: 0-90d green, 90-120d amber, 120+d red.
-// barWidth is % of the 120-day service window that remains (100 = just serviced, 0 = overdue).
-function serviceHealth(lastServiceDate: string | null): {
+const INTERVAL_OPTIONS = [
+  { label: "Every month",    days: 30  },
+  { label: "Every 2 months", days: 60  },
+  { label: "Every 3 months", days: 90  },
+  { label: "Every 4 months", days: 120 },
+  { label: "Every 6 months", days: 180 },
+  { label: "Every year",     days: 365 },
+];
+
+function intervalLabel(days: number): string {
+  const match = INTERVAL_OPTIONS.find(o => o.days === days);
+  return match ? match.label : `Every ${days} days`;
+}
+
+export function serviceHealth(lastServiceDate: string | null, intervalDays = 90): {
   label: string;
   barColor: string;
   textCls: string;
@@ -29,13 +42,14 @@ function serviceHealth(lastServiceDate: string | null): {
   if (!lastServiceDate) {
     return { label: "No service record", barColor: "bg-slate-200", textCls: "text-slate-400", barWidth: 0 };
   }
-  const MAX = 120;
-  const days    = Math.floor((Date.now() - new Date(lastServiceDate).getTime()) / 86400000);
-  const barWidth = Math.max(0, Math.round(((MAX - days) / MAX) * 100));
+  const warnAt = Math.round(intervalDays * 0.9); // warn at 90% of interval
+  const maxAt  = Math.round(intervalDays * 1.2); // red zone starts at 120%
+  const days   = Math.floor((Date.now() - new Date(lastServiceDate).getTime()) / 86400000);
+  const barWidth = Math.max(0, Math.round(((maxAt - days) / maxAt) * 100));
 
-  if (days < 90)  return { label: `${days}d since service`,  barColor: "bg-emerald-500", textCls: "text-emerald-700", barWidth };
-  if (days < 120) return { label: `Due soon (${days}d)`,     barColor: "bg-amber-400",   textCls: "text-amber-700",   barWidth };
-  return              { label: `Overdue (${days}d)`,          barColor: "bg-red-500",     textCls: "text-red-700",     barWidth: Math.max(4, barWidth) };
+  if (days < warnAt) return { label: `${days}d since service`,  barColor: "bg-emerald-500", textCls: "text-emerald-700", barWidth };
+  if (days < maxAt)  return { label: `Due soon (${days}d)`,     barColor: "bg-amber-400",   textCls: "text-amber-700",   barWidth };
+  return                    { label: `Overdue (${days}d)`,       barColor: "bg-red-500",     textCls: "text-red-700",     barWidth: Math.max(4, barWidth) };
 }
 
 const typeConfig: Record<string, { label: string; iconCls: string; badgeCls: string; icon: React.ReactNode }> = {
@@ -197,6 +211,18 @@ function AddAssetForm({ contactId, onDone }: { contactId: string; onDone: () => 
           />
         </div>
         <div className="col-span-2 flex flex-col gap-1">
+          <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Interval</label>
+          <select
+            name="service_interval_days"
+            defaultValue="90"
+            className="border border-slate-200 rounded-sm px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-slate-400 bg-white"
+          >
+            {INTERVAL_OPTIONS.map((o) => (
+              <option key={o.days} value={o.days}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="col-span-2 flex flex-col gap-1">
           <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Notes</label>
           <textarea
             name="notes"
@@ -225,8 +251,9 @@ function AddAssetForm({ contactId, onDone }: { contactId: string; onDone: () => 
 
 function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: string; onClose: () => void }) {
   const [notesState, notesAction, isSaving] = useActionState<AssetState, FormData>(updateAssetNotes, {});
+  const [intervalDays, setIntervalDays] = useState<number>(asset.service_interval_days ?? 90);
   const cfg = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
-  const svc = serviceHealth(asset.last_service_date);
+  const svc = serviceHealth(asset.last_service_date, intervalDays);
   const displayName = asset.name || asset.make_model || `${cfg.label} Asset`;
 
   return (
@@ -288,10 +315,26 @@ function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: st
           </dl>
 
           <div className="flex flex-col gap-2">
-            <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Notes</p>
+            <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Notes &amp; Settings</p>
             <form action={notesAction}>
               <input type="hidden" name="asset_id"   value={asset.id} />
               <input type="hidden" name="contact_id" value={contactId} />
+              <input type="hidden" name="service_interval_days" value={intervalDays} />
+              <input type="hidden" name="last_service_date" value={asset.last_service_date ?? ""} />
+
+              <div className="flex flex-col gap-1 mb-3">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Interval</label>
+                <select
+                  value={intervalDays}
+                  onChange={(e) => setIntervalDays(Number(e.target.value))}
+                  className="border border-slate-200 rounded-sm px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-slate-400 bg-white"
+                >
+                  {INTERVAL_OPTIONS.map((o) => (
+                    <option key={o.days} value={o.days}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+
               <textarea
                 name="notes"
                 defaultValue={asset.notes ?? ""}
@@ -306,7 +349,7 @@ function AssetModal({ asset, contactId, onClose }: { asset: Asset; contactId: st
                 disabled={isSaving}
                 className="mt-2 bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm font-semibold disabled:opacity-50 transition-colors"
               >
-                {isSaving ? "Saving..." : "Save Notes"}
+                {isSaving ? "Saving..." : "Save"}
               </button>
             </form>
           </div>
@@ -364,7 +407,7 @@ export default function FleetGallery({
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {assets.map((asset) => {
               const cfg    = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
-              const health = serviceHealth(asset.last_service_date);
+              const health = serviceHealth(asset.last_service_date, asset.service_interval_days ?? 90);
               return (
                 <button
                   key={asset.id}

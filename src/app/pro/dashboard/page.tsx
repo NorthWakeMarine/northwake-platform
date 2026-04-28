@@ -41,28 +41,6 @@ function parseName(email: string, meta: Record<string, string> = {}) {
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
-// Placeholder card for integrations not yet connected
-function PlaceholderCard({
-  label, sub, service, icon,
-}: {
-  label: string; sub: string; service: string; icon: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3">
-      <div className="flex items-start justify-between">
-        <p className="text-slate-500 text-xs font-medium">{label}</p>
-        <div className="w-9 h-9 rounded-sm bg-slate-100 flex items-center justify-center shrink-0">
-          {icon}
-        </div>
-      </div>
-      <div>
-        <p className="text-slate-300 text-3xl font-bold tracking-tight">—</p>
-        <p className="text-slate-400 text-[11px] mt-1">{sub}</p>
-        <p className="text-[10px] text-blue-500 mt-1.5">Connect {service}</p>
-      </div>
-    </div>
-  );
-}
 
 async function fetchUpcomingEvents(): Promise<CalendarEvent[]> {
   try {
@@ -76,14 +54,17 @@ async function fetchUpcomingEvents(): Promise<CalendarEvent[]> {
 export default async function ProDashboardPage() {
   const supabase = await createServerSupabase();
 
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+
   const [
     { data: leads },
     { count: allCount },
     { count: monthCount },
     { count: yearCount },
-    { count: waiverCount },
     { data: calDiscrepancies },
     { data: calConflicts },
+    { data: rawVessels },
+    { data: activeContacts },
   ] = await Promise.all([
     supabase
       .from("leads")
@@ -100,10 +81,6 @@ export default async function ProDashboardPage() {
       .select("*", { count: "exact", head: true })
       .gte("created_at", startOfYear()),
     supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .or("waiver_signed.is.null,waiver_signed.eq.false"),
-    supabase
       .from("timeline_events")
       .select("id, contact_id, body, created_at")
       .eq("event_type", "calendar_discrepancy")
@@ -116,6 +93,13 @@ export default async function ProDashboardPage() {
       .eq("resolved", false)
       .order("created_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("vessels")
+      .select("id, last_service_date, service_interval_days"),
+    supabase
+      .from("timeline_events")
+      .select("contact_id")
+      .gte("created_at", ninetyDaysAgo),
   ]);
 
   const upcomingEvents = await fetchUpcomingEvents();
@@ -126,18 +110,17 @@ export default async function ProDashboardPage() {
     (user?.user_metadata ?? {}) as Record<string, string>
   );
 
-  const waiverStat = {
-    label: "Waivers Pending",
-    value: String(waiverCount ?? 0),
-    sub: "Awaiting signed waiver",
-    iconBg: "bg-amber-50",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
-      </svg>
-    ),
-  };
+  const now = Date.now();
+  const overdueCount = (rawVessels ?? []).filter((v) => {
+    if (!v.last_service_date) return false;
+    const interval = v.service_interval_days ?? 90;
+    const daysSince = Math.floor((now - new Date(v.last_service_date).getTime()) / 86400000);
+    return daysSince > interval;
+  }).length;
+
+  const recentContactIds = new Set((activeContacts ?? []).map((e: { contact_id: string }) => e.contact_id));
+  const { data: allContactIds } = await supabase.from("contacts").select("id");
+  const followUpCount = (allContactIds ?? []).filter((c: { id: string }) => !recentContactIds.has(c.id)).length;
 
   return (
     <ProShell>
@@ -146,31 +129,13 @@ export default async function ProDashboardPage() {
         {/* Page header */}
         <div className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between">
           <div>
-            <h1 className="text-slate-900 text-xl font-bold tracking-tight">Overview</h1>
+            <h1 className="text-slate-900 text-xl font-bold tracking-tight">Welcome back, {userName}.</h1>
             <p className="text-slate-400 text-xs mt-0.5">Here&apos;s what&apos;s happening at NorthWake Marine today.</p>
           </div>
           <p className="text-slate-400 text-xs hidden sm:block">{todayLabel()}</p>
         </div>
 
         <div className="flex-1 px-8 py-6 flex flex-col gap-6">
-
-          {/* Welcome banner */}
-          <div
-            className="rounded-sm overflow-hidden relative flex items-end px-8 py-7 min-h-[110px]"
-            style={{ background: "linear-gradient(135deg, #000040 0%, #000080 60%, #0010a0 100%)" }}
-          >
-            <div className="relative z-10">
-              <h2 className="text-white text-xl font-bold tracking-tight">Welcome back, {userName}.</h2>
-              <p className="text-white/60 text-sm mt-1">
-                <span className="text-white font-semibold">{monthCount ?? 0} new {(monthCount ?? 0) === 1 ? "lead" : "leads"}</span> this month
-                {(waiverCount ?? 0) > 0 && (
-                  <> · <span className="text-amber-300 font-semibold">{waiverCount} waiver{(waiverCount ?? 0) === 1 ? "" : "s"}</span> pending</>
-                )}
-              </p>
-            </div>
-            <div aria-hidden="true" className="absolute inset-0"
-              style={{ background: "radial-gradient(ellipse 60% 80% at 100% 50%, rgba(0,0,180,0.3) 0%, transparent 70%)" }} />
-          </div>
 
           {/* Stat cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -184,31 +149,44 @@ export default async function ProDashboardPage() {
               yearLabel={String(new Date().getFullYear())}
             />
 
-            {/* Waivers Pending */}
-            <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3">
+            {/* Overdue Services */}
+            <Link
+              href="/pro/contacts"
+              className={`bg-white border rounded-sm p-5 flex flex-col gap-3 hover:border-slate-300 transition-colors ${overdueCount > 0 ? "border-red-200" : "border-slate-200"}`}
+            >
               <div className="flex items-start justify-between">
-                <p className="text-slate-500 text-xs font-medium">{waiverStat.label}</p>
-                <div className={`w-9 h-9 rounded-sm ${waiverStat.iconBg} flex items-center justify-center shrink-0`}>
-                  {waiverStat.icon}
+                <p className="text-slate-500 text-xs font-medium">Overdue Services</p>
+                <div className={`w-9 h-9 rounded-sm flex items-center justify-center shrink-0 ${overdueCount > 0 ? "bg-red-50" : "bg-slate-100"}`}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={overdueCount > 0 ? "text-red-500" : "text-slate-400"}>
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
                 </div>
               </div>
               <div>
-                <p className="text-slate-900 text-3xl font-bold tracking-tight">{waiverStat.value}</p>
-                <p className="text-slate-400 text-[11px] mt-1">{waiverStat.sub}</p>
+                <p className={`text-3xl font-bold tracking-tight ${overdueCount > 0 ? "text-red-600" : "text-slate-900"}`}>{overdueCount}</p>
+                <p className="text-slate-400 text-[11px] mt-1">Vessels past service interval</p>
               </div>
-            </div>
+            </Link>
 
-            {/* Missed Calls — Dialpad placeholder */}
-            <PlaceholderCard
-              label="Missed Calls"
-              sub="Calls needing follow-up"
-              service="Dialpad"
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-red-400">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.89 12 19.79 19.79 0 0 1 1.85 3.37 2 2 0 0 1 3.84 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.93-.93a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
-              }
-            />
+            {/* Follow-ups Due */}
+            <Link
+              href="/pro/contacts"
+              className={`bg-white border rounded-sm p-5 flex flex-col gap-3 hover:border-slate-300 transition-colors ${followUpCount > 0 ? "border-amber-200" : "border-slate-200"}`}
+            >
+              <div className="flex items-start justify-between">
+                <p className="text-slate-500 text-xs font-medium">Follow-ups Due</p>
+                <div className={`w-9 h-9 rounded-sm flex items-center justify-center shrink-0 ${followUpCount > 0 ? "bg-amber-50" : "bg-slate-100"}`}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={followUpCount > 0 ? "text-amber-500" : "text-slate-400"}>
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <p className={`text-3xl font-bold tracking-tight ${followUpCount > 0 ? "text-amber-600" : "text-slate-900"}`}>{followUpCount}</p>
+                <p className="text-slate-400 text-[11px] mt-1">No contact in 90+ days</p>
+              </div>
+            </Link>
 
             {/* Calendar — links to calendar page */}
             <Link
