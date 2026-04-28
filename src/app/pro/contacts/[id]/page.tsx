@@ -7,6 +7,8 @@ import CopyWaiverLink from "./CopyWaiverLink";
 import FleetGallery, { type Asset, type VesselService } from "./FleetGallery";
 import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
 import EditableField from "./EditableField";
+import ContactDocuments from "./ContactDocuments";
+import type { DriveFile } from "@/lib/google-drive";
 
 type Contact = {
   id: string;
@@ -20,6 +22,8 @@ type Contact = {
   waiver_signed: boolean | null;
   status: string | null;
   source: string | null;
+  drive_folder_id: string | null;
+  drive_folder_url: string | null;
 };
 
 type TimelineEvent = {
@@ -128,7 +132,7 @@ export default async function ContactProfilePage({
   ] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, created_at, name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source")
+      .select("id, created_at, name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source, drive_folder_id, drive_folder_url")
       .eq("id", id)
       .single(),
     supabase
@@ -163,6 +167,15 @@ export default async function ContactProfilePage({
         .order("created_at", { ascending: true })
     : { data: [] };
   const vesselServices = (vesselServicesData ?? []) as import("./FleetGallery").VesselService[];
+
+  // Fetch Drive documents for this contact (best-effort — fails gracefully)
+  let driveFiles: DriveFile[] = [];
+  if (contact.drive_folder_id) {
+    try {
+      const { listFolderFiles } = await import("@/lib/google-drive");
+      driveFiles = await listFolderFiles(contact.drive_folder_id);
+    } catch { /* Drive unavailable */ }
+  }
 
   return (
     <ProShell>
@@ -286,6 +299,13 @@ export default async function ContactProfilePage({
 
               {/* Household */}
               <LinkedContacts contactId={contact.id} linkedContacts={linkedContacts} />
+
+              {/* Documents */}
+              <ContactDocuments
+                contactId={contact.id}
+                initialFiles={driveFiles}
+                folderUrl={contact.drive_folder_url}
+              />
 
             </div>
 

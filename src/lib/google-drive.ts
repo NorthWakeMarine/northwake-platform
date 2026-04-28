@@ -27,26 +27,25 @@ function getAuth() {
   return oauth2;
 }
 
-// Creates a Drive folder named "[Contact Name] - [Asset Name]" and returns its URL.
-// The folder is owned by the service account; set GOOGLE_DRIVE_PARENT_FOLDER_ID
-// to nest it under a shared team folder (optional).
+function parents() {
+  const id = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
+  return id ? [id] : undefined;
+}
+
+// Creates a Drive folder for an asset and returns its URL.
 export async function createAssetFolder(
   contactName: string,
   assetName: string
 ): Promise<string> {
   const auth  = getAuth();
   const drive = google.drive({ version: "v3", auth });
-
-  const folderName = `${contactName} - ${assetName}`;
-  const parents    = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID
-    ? [process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID]
-    : undefined;
+  const p     = parents();
 
   const res = await drive.files.create({
     requestBody: {
-      name:     folderName,
+      name:     `${contactName} - ${assetName}`,
       mimeType: "application/vnd.google-apps.folder",
-      ...(parents ? { parents } : {}),
+      ...(p ? { parents: p } : {}),
     },
     fields: "id, webViewLink",
   });
@@ -54,4 +53,90 @@ export async function createAssetFolder(
   const link = res.data.webViewLink;
   if (!link) throw new Error("Drive did not return a folder link.");
   return link;
+}
+
+// Gets or creates a contact-level Documents folder. Returns { id, url }.
+export async function getOrCreateContactFolder(
+  contactName: string
+): Promise<{ id: string; url: string }> {
+  const auth  = getAuth();
+  const drive = google.drive({ version: "v3", auth });
+  const p     = parents();
+  const name  = `${contactName} - Documents`;
+
+  // Check if it already exists under the parent
+  const existing = await drive.files.list({
+    q: `name = '${name.replace(/'/g, "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    fields: "files(id, webViewLink)",
+    pageSize: 1,
+  });
+
+  const found = existing.data.files?.[0];
+  if (found?.id && found?.webViewLink) {
+    return { id: found.id, url: found.webViewLink };
+  }
+
+  const res = await drive.files.create({
+    requestBody: {
+      name,
+      mimeType: "application/vnd.google-apps.folder",
+      ...(p ? { parents: p } : {}),
+    },
+    fields: "id, webViewLink",
+  });
+
+  if (!res.data.id || !res.data.webViewLink) throw new Error("Failed to create contact folder.");
+  return { id: res.data.id, url: res.data.webViewLink };
+}
+
+export type DriveFile = {
+  id: string;
+  name: string;
+  mimeType: string;
+  webViewLink: string;
+  createdTime: string;
+  size: string | null;
+};
+
+// Lists files inside a Drive folder.
+export async function listFolderFiles(folderId: string): Promise<DriveFile[]> {
+  const auth  = getAuth();
+  const drive = google.drive({ version: "v3", auth });
+
+  const res = await drive.files.list({
+    q:      `'${folderId}' in parents and trashed = false`,
+    fields: "files(id, name, mimeType, webViewLink, createdTime, size)",
+    orderBy: "createdTime desc",
+    pageSize: 50,
+  });
+
+  return (res.data.files ?? []).map((f) => ({
+    id:          f.id!,
+    name:        f.name!,
+    mimeType:    f.mimeType!,
+    webViewLink: f.webViewLink!,
+    createdTime: f.createdTime!,
+    size:        f.size ?? null,
+  }));
+}
+
+// Uploads a file buffer to a Drive folder. Returns the file's view URL.
+export async function uploadFileToFolder(
+  folderId: string,
+  fileName: string,
+  mimeType: string,
+  buffer: Buffer
+): Promise<{ id: string; url: string; name: string }> {
+  const { Readable } = await import("stream");
+  const auth  = getAuth();
+  const drive = google.drive({ version: "v3", auth });
+
+  const res = await drive.files.create({
+    requestBody: { name: fileName, parents: [folderId] },
+    media: { mimeType, body: Readable.from(buffer) },
+    fields: "id, webViewLink, name",
+  });
+
+  if (!res.data.id || !res.data.webViewLink) throw new Error("Upload failed.");
+  return { id: res.data.id, url: res.data.webViewLink, name: res.data.name! };
 }
