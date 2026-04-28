@@ -119,7 +119,7 @@ export default async function Home() {
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
 
             {/* ── Left: logo + tagline ── */}
-            <div className="flex flex-col gap-4 order-2 md:order-1 text-center items-center">
+            <div className="flex flex-col gap-4 order-1 text-center items-center">
               <Image
                 src="/brand/nwmlogofullwhite.png"
                 alt="NorthWake Marine, Premium Boat Detailing and Vessel Management, Jacksonville FL"
@@ -158,7 +158,7 @@ export default async function Home() {
             </div>
 
             {/* ── Right: Free Quote form card ── */}
-            <div className="order-1 md:order-2 chrome-stage bg-obsidian/90 backdrop-blur-md p-5 sm:p-7">
+            <div className="order-2 chrome-stage bg-obsidian/90 backdrop-blur-md p-5 sm:p-7">
               <h2 className="text-wake text-xl font-bold tracking-tight mb-4">Free Quote</h2>
               <HeroQuoteForm />
             </div>

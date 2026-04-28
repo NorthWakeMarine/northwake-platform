@@ -4,7 +4,7 @@ export default function FloatingCTA() {
   return (
     <div
       aria-label="Get a quick quote"
-      className="fixed bottom-6 right-6 z-40 md:hidden"
+      className="hidden"
     >
       <Link
         href="/contact"
