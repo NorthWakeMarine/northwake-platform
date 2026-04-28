@@ -876,6 +876,17 @@ export async function deleteStandaloneEvent(eventId: string): Promise<{ error?: 
   }
 }
 
+// ─── Delete Lead ─────────────────────────────────────────────────────────────
+
+export async function deleteLead(leadId: string): Promise<{ error?: string }> {
+  const supabase = await svc();
+  const { error } = await supabase.from("leads").delete().eq("id", leadId);
+  if (error) return { error: error.message };
+  revalidatePath("/pro/leads");
+  revalidatePath("/pro/dashboard");
+  return {};
+}
+
 // ─── QuickBooks Invoice Auto-Schedule (hook stub) ─────────────────────────────
 // Call this from the QB webhook handler once QBO_CLIENT_ID, QBO_CLIENT_SECRET,
 // QBO_REALM_ID, and QBO_REFRESH_TOKEN are configured in Vercel env vars.

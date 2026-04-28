@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
+import DeleteLeadButton from "./DeleteLeadButton";
 
 type Lead = {
   id: string;
@@ -12,11 +13,10 @@ type Lead = {
   vessel_length: string | null;
   service: string | null;
   source: string | null;
-  waiver_signed: boolean | null;
 };
 
 const sourceConfig: Record<string, { label: string; cls: string }> = {
-  hero:       { label: "Hero Form",    cls: "bg-blue-50 text-blue-600 border border-blue-200" },
+  hero:       { label: "Home Form",    cls: "bg-blue-50 text-blue-600 border border-blue-200" },
   contact:    { label: "Contact Form", cls: "bg-blue-50 text-blue-600 border border-blue-200" },
   website:    { label: "Website",      cls: "bg-blue-50 text-blue-600 border border-blue-200" },
   waiver:     { label: "Waiver",       cls: "bg-emerald-50 text-emerald-600 border border-emerald-200" },
@@ -40,7 +40,7 @@ export default async function LeadsPage() {
 
   const { data: leads, error } = await supabase
     .from("leads")
-    .select("id, created_at, name, email, phone, vessel_type, vessel_length, service, source, waiver_signed")
+    .select("id, created_at, name, email, phone, vessel_type, vessel_length, service, source")
     .order("created_at", { ascending: false });
 
   const total = leads?.length ?? 0;
@@ -77,7 +77,7 @@ export default async function LeadsPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      {["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source", "Waiver", ""].map((h) => (
+                      {["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source", ""].map((h) => (
                         <th key={h} className="text-left text-slate-400 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
                           {h}
                         </th>
@@ -110,20 +110,16 @@ export default async function LeadsPage() {
                               {src.label}
                             </span>
                           </td>
-                          <td className="py-3 px-4">
-                            {lead.waiver_signed ? (
-                              <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">Signed</span>
-                            ) : (
-                              <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-red-50 text-red-500 border border-red-200">Pending</span>
-                            )}
-                          </td>
                           <td className="py-3 px-4 last:pr-6">
-                            <Link
-                              href={`/pro/leads/${lead.id}`}
-                              className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors opacity-0 group-hover:opacity-100 whitespace-nowrap"
-                            >
-                              View
-                            </Link>
+                            <div className="flex items-center gap-3">
+                              <Link
+                                href={`/pro/leads/${lead.id}`}
+                                className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors opacity-0 group-hover:opacity-100 whitespace-nowrap"
+                              >
+                                View
+                              </Link>
+                              <DeleteLeadButton leadId={lead.id} />
+                            </div>
                           </td>
                         </tr>
                       );
