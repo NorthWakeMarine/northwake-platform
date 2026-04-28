@@ -215,7 +215,7 @@ export default async function ContactsPage({
                   </thead>
                   <tbody>
                     {contacts.map((c) => (
-                      <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                      <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
                         <td className="py-3 px-4 first:pl-6 text-slate-400 whitespace-nowrap">{fmt(c.created_at)}</td>
                         <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{c.name || "—"}</td>
                         <td className="py-3 px-4 text-slate-500">
@@ -235,7 +235,7 @@ export default async function ContactsPage({
                           <div className="flex items-center gap-3">
                             <Link
                               href={`/pro/contacts/${c.id}`}
-                              className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap opacity-0 group-hover:opacity-100"
+                              className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap"
                             >
                               View
                             </Link>

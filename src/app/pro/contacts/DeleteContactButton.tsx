@@ -13,7 +13,7 @@ export default function DeleteContactButton({ contactId }: { contactId: string }
     return (
       <button
         onClick={(e) => { e.preventDefault(); setConfirm(true); }}
-        className="text-[10px] tracking-widest uppercase text-red-400 hover:text-red-600 font-medium transition-colors opacity-0 group-hover:opacity-100 whitespace-nowrap"
+        className="text-[10px] tracking-widest uppercase text-red-400 hover:text-red-600 font-medium transition-colors whitespace-nowrap"
       >
         Delete
       </button>
