@@ -4,12 +4,15 @@ import CalendarRegisterButton from "./IntegrationsClient";
 
 export const dynamic = "force-dynamic";
 
-async function getWebhookExpiry(): Promise<string | null> {
+async function getCalendarStatus(): Promise<{ connected: boolean; webhookExpiry: string | null }> {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SECRET_KEY!
+  );
+
+  // Check webhook expiry from system_flags
+  let webhookExpiry: string | null = null;
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SECRET_KEY!
-    );
     const { data } = await supabase
       .from("system_flags")
       .select("message")
@@ -17,10 +20,18 @@ async function getWebhookExpiry(): Promise<string | null> {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    return data?.message ?? null;
-  } catch {
-    return null;
-  }
+    webhookExpiry = data?.message ?? null;
+  } catch { /* ignore */ }
+
+  // Verify the actual Google Calendar API is reachable regardless of flag state
+  let connected = false;
+  try {
+    const { listUpcomingEvents } = await import("@/lib/google-calendar");
+    await listUpcomingEvents(1);
+    connected = true;
+  } catch { /* not connected */ }
+
+  return { connected, webhookExpiry };
 }
 
 function StatusBadge({ connected }: { connected: boolean }) {
@@ -38,8 +49,7 @@ function StatusBadge({ connected }: { connected: boolean }) {
 }
 
 export default async function IntegrationsPage() {
-  const webhookExpiry = await getWebhookExpiry();
-  const calendarConnected = !!webhookExpiry && new Date(webhookExpiry) > new Date();
+  const { connected: calendarConnected, webhookExpiry } = await getCalendarStatus();
 
   return (
     <ProShell>
