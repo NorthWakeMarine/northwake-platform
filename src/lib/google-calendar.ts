@@ -43,14 +43,22 @@ export type CalendarEventInput = {
   title: string;
   description?: string;
   location?: string;
-  startTime: string;  // ISO 8601
-  endTime: string;    // ISO 8601
+  startTime: string;  // ISO 8601 datetime or YYYY-MM-DD for all-day
+  endTime: string;    // ISO 8601 datetime or YYYY-MM-DD for all-day
+  isAllDay?: boolean;
   googleEventId?: string;
 };
+
+function gcalTime(iso: string, allDay: boolean) {
+  return allDay
+    ? { date: iso }
+    : { dateTime: iso, timeZone: "America/New_York" };
+}
 
 export async function createCalendarEvent(event: CalendarEventInput): Promise<string> {
   const auth     = getAuth();
   const calendar = google.calendar({ version: "v3", auth });
+  const allDay   = event.isAllDay ?? false;
 
   const res = await calendar.events.insert({
     calendarId: CALENDAR_ID,
@@ -58,8 +66,8 @@ export async function createCalendarEvent(event: CalendarEventInput): Promise<st
       summary:     event.title,
       description: event.description,
       location:    event.location,
-      start: { dateTime: event.startTime, timeZone: "America/New_York" },
-      end:   { dateTime: event.endTime,   timeZone: "America/New_York" },
+      start: gcalTime(event.startTime, allDay),
+      end:   gcalTime(event.endTime,   allDay),
     },
   });
 
@@ -74,16 +82,17 @@ export async function updateCalendarEvent(
 ): Promise<void> {
   const auth     = getAuth();
   const calendar = google.calendar({ version: "v3", auth });
+  const allDay   = patch.isAllDay ?? false;
 
   await calendar.events.patch({
     calendarId: CALENDAR_ID,
     eventId:    googleEventId,
     requestBody: {
-      ...(patch.title       ? { summary:     patch.title }       : {}),
-      ...(patch.description ? { description: patch.description } : {}),
-      ...(patch.location    ? { location:    patch.location }    : {}),
-      ...(patch.startTime   ? { start: { dateTime: patch.startTime, timeZone: "America/New_York" } } : {}),
-      ...(patch.endTime     ? { end:   { dateTime: patch.endTime,   timeZone: "America/New_York" } } : {}),
+      ...(patch.title       !== undefined ? { summary:     patch.title }       : {}),
+      ...(patch.description !== undefined ? { description: patch.description } : {}),
+      ...(patch.location    !== undefined ? { location:    patch.location }    : {}),
+      ...(patch.startTime   ? { start: gcalTime(patch.startTime, allDay) } : {}),
+      ...(patch.endTime     ? { end:   gcalTime(patch.endTime,   allDay) } : {}),
     },
   });
 }

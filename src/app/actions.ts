@@ -513,6 +513,8 @@ export async function addAsset(
   const location    = (formData.get("location")    as string)?.trim() || null;
   const registration = (formData.get("registration") as string)?.trim() || null;
   const notes       = (formData.get("notes")       as string)?.trim() || null;
+  const intervalRaw = formData.get("service_interval_days") as string;
+  const service_interval_days = intervalRaw ? parseInt(intervalRaw, 10) : 90;
 
   if (!contact_id) return { error: "Missing contact." };
 
@@ -536,6 +538,7 @@ export async function addAsset(
     location,
     registration,
     notes,
+    service_interval_days: isNaN(service_interval_days) ? 90 : service_interval_days,
   }).select("id").single();
 
   if (error) return { error: error.message };
@@ -557,14 +560,21 @@ export async function updateAssetNotes(
   _prev: AssetState,
   formData: FormData
 ): Promise<AssetState> {
-  const asset_id   = formData.get("asset_id")   as string;
-  const contact_id = formData.get("contact_id") as string;
-  const notes      = (formData.get("notes") as string)?.trim() || null;
+  const asset_id          = formData.get("asset_id")             as string;
+  const contact_id        = formData.get("contact_id")           as string;
+  const notes             = (formData.get("notes") as string)?.trim() || null;
+  const last_service_date = (formData.get("last_service_date") as string)?.trim() || null;
+  const intervalRaw       = formData.get("service_interval_days") as string;
+  const service_interval_days = intervalRaw ? parseInt(intervalRaw, 10) : null;
 
   if (!asset_id) return { error: "Missing asset ID." };
 
   const supabase = await svc();
-  const { error } = await supabase.from("vessels").update({ notes }).eq("id", asset_id);
+  const { error } = await supabase.from("vessels").update({
+    notes,
+    ...(last_service_date !== null ? { last_service_date } : {}),
+    ...(service_interval_days && !isNaN(service_interval_days) ? { service_interval_days } : {}),
+  }).eq("id", asset_id);
   if (error) return { error: error.message };
 
   if (contact_id) revalidatePath(`/pro/contacts/${contact_id}`);
@@ -785,6 +795,7 @@ export async function createStandaloneEvent(
   const end_time    = formData.get("end_time")     as string;
   const description = formData.get("description") as string | null;
   const location    = formData.get("location")    as string | null;
+  const is_all_day  = formData.get("is_all_day")  === "true";
 
   if (!title || !start_time || !end_time) return { error: "Title, start, and end time are required." };
 
@@ -796,6 +807,7 @@ export async function createStandaloneEvent(
       location:    location    ?? undefined,
       startTime:   start_time,
       endTime:     end_time,
+      isAllDay:    is_all_day,
     });
     revalidatePath("/pro/calendar");
     revalidatePath("/pro/dashboard");
@@ -815,6 +827,7 @@ export async function updateStandaloneEvent(
   const end_time    = formData.get("end_time")     as string;
   const description = formData.get("description") as string | null;
   const location    = formData.get("location")    as string | null;
+  const is_all_day  = formData.get("is_all_day")  === "true";
 
   if (!event_id || !title || !start_time || !end_time) return { error: "Missing required fields." };
 
@@ -826,6 +839,7 @@ export async function updateStandaloneEvent(
       location:    location    ?? undefined,
       startTime:   start_time,
       endTime:     end_time,
+      isAllDay:    is_all_day,
     });
     revalidatePath("/pro/calendar");
     revalidatePath("/pro/dashboard");
