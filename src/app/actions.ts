@@ -799,6 +799,14 @@ export async function createStandaloneEvent(
 
   if (!title || !start_time || !end_time) return { error: "Title, start, and end time are required." };
 
+  // All-day end dates from the form are inclusive; Google needs exclusive (next day)
+  function nextDay(dateStr: string): string {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${next.getFullYear()}-${p(next.getMonth() + 1)}-${p(next.getDate())}`;
+  }
+
   try {
     const { createCalendarEvent } = await import("@/lib/google-calendar");
     const eventId = await createCalendarEvent({
@@ -806,7 +814,7 @@ export async function createStandaloneEvent(
       description: description ?? undefined,
       location:    location    ?? undefined,
       startTime:   start_time,
-      endTime:     end_time,
+      endTime:     is_all_day ? nextDay(end_time) : end_time,
       isAllDay:    is_all_day,
     });
     revalidatePath("/pro/calendar");
@@ -831,6 +839,13 @@ export async function updateStandaloneEvent(
 
   if (!event_id || !title || !start_time || !end_time) return { error: "Missing required fields." };
 
+  function nextDay(dateStr: string): string {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${next.getFullYear()}-${p(next.getMonth() + 1)}-${p(next.getDate())}`;
+  }
+
   try {
     const { updateCalendarEvent } = await import("@/lib/google-calendar");
     await updateCalendarEvent(event_id, {
@@ -838,7 +853,7 @@ export async function updateStandaloneEvent(
       description: description ?? undefined,
       location:    location    ?? undefined,
       startTime:   start_time,
-      endTime:     end_time,
+      endTime:     is_all_day ? nextDay(end_time) : end_time,
       isAllDay:    is_all_day,
     });
     revalidatePath("/pro/calendar");

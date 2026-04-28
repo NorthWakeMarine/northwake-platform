@@ -78,6 +78,14 @@ function toLocalDateTimeInput(iso: string): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+// Google all-day end dates are exclusive (day after last day). Subtract 1 for display.
+function allDayEndDisplay(isoEnd: string): string {
+  const [y, m, d] = isoEnd.split("-").map(Number);
+  const date = new Date(y, m - 1, d - 1);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+}
+
 // ── Event Detail Modal ─────────────────────────────────────────────────────────
 
 function EventDetailModal({ event, onEdit, onDelete, onClose }: {
@@ -147,8 +155,8 @@ function EventModal({ event, defaultDate, onClose }: {
   defaultDate?: string;
   onClose: () => void;
 }) {
-  const isEdit  = !!event;
-  const isAllDay = event ? !event.start.includes("T") : false;
+  const isEdit = !!event;
+  const [isAllDay, setIsAllDay] = useState(event ? !event.start.includes("T") : false);
   const [createState, createAction, creating] = useActionState<CalendarEventState, FormData>(createStandaloneEvent, {});
   const [updateState, updateAction, updating] = useActionState<CalendarEventState, FormData>(updateStandaloneEvent, {});
 
@@ -158,7 +166,15 @@ function EventModal({ event, defaultDate, onClose }: {
 
   useEffect(() => { if (state.success) onClose(); }, [state.success, onClose]);
 
-  const inputCls = "border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080]";
+  const inputCls = "border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080] w-full";
+
+  // For all-day events, Google's end is exclusive — subtract 1 day for display
+  const defaultStart = event
+    ? (isAllDay && !event.start.includes("T") ? event.start : toLocalDateTimeInput(event.start))
+    : (defaultDate ? defaultDate.split("T")[0] : "");
+  const defaultEnd = event
+    ? (isAllDay && !event.end.includes("T") ? allDayEndDisplay(event.end) : toLocalDateTimeInput(event.end))
+    : (defaultDate ? defaultDate.split("T")[0] : "");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -170,41 +186,53 @@ function EventModal({ event, defaultDate, onClose }: {
         <form action={action} className="px-6 py-5 flex flex-col gap-4">
           {isEdit && <input type="hidden" name="event_id" value={event.id} />}
           <input type="hidden" name="is_all_day" value={isAllDay ? "true" : "false"} />
+
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Title</label>
             <input name="title" required defaultValue={event?.title ?? ""}
-              placeholder="e.g. Wash + Wax — Hull Breaker"
+              placeholder="e.g. Wash + Wax"
               className={inputCls} />
           </div>
-          <div className={isAllDay ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"}>
-            <div className="flex flex-col gap-1">
-              <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">
-                {isAllDay ? "Date" : "Start"}
-              </label>
-              <input
-                type={isAllDay ? "date" : "datetime-local"}
-                name="start_time"
-                required
-                defaultValue={event ? (isAllDay ? event.start : toLocalDateTimeInput(event.start)) : defaultDate ?? ""}
-                className={inputCls}
-              />
+
+          {/* All-day toggle */}
+          <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+            <div
+              onClick={() => setIsAllDay(v => !v)}
+              className={`w-8 h-4 rounded-full relative transition-colors ${isAllDay ? "bg-[#000080]" : "bg-slate-200"}`}
+            >
+              <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${isAllDay ? "translate-x-4" : "translate-x-0.5"}`} />
             </div>
-            {!isAllDay && (
+            <span className="text-slate-500 text-xs">All day</span>
+          </label>
+
+          {isAllDay ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Start Date</label>
+                <input type="date" name="start_time" required defaultValue={defaultStart} className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">End Date</label>
+                <input type="date" name="end_time" required defaultValue={defaultEnd} className={inputCls} />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Start</label>
+                <input type="datetime-local" name="start_time" required
+                  defaultValue={event && !event.start.includes("T") ? "" : (event ? toLocalDateTimeInput(event.start) : defaultDate ?? "")}
+                  className={inputCls} />
+              </div>
               <div className="flex flex-col gap-1">
                 <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">End</label>
-                <input
-                  type="datetime-local"
-                  name="end_time"
-                  required
-                  defaultValue={event ? toLocalDateTimeInput(event.end) : defaultDate ?? ""}
-                  className={inputCls}
-                />
+                <input type="datetime-local" name="end_time" required
+                  defaultValue={event && !event.end.includes("T") ? "" : (event ? toLocalDateTimeInput(event.end) : defaultDate ?? "")}
+                  className={inputCls} />
               </div>
-            )}
-            {isAllDay && (
-              <input type="hidden" name="end_time" value={event?.end ?? event?.start ?? ""} />
-            )}
-          </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Location</label>
             <input name="location" defaultValue={event?.location ?? ""}
