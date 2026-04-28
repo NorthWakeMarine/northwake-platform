@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
   const phone = get(cols, "PHONE_NUMBER", "phone_number", "phone");
 
   // Custom question fields from your lead form
-  const vesselType   = get(cols, "VESSEL_TYPE", "vessel_type", "What type of vessel do you have?", "Vessel type");
+  const vesselType   = get(cols, "VESSEL_TYPE", "vessel_type", "Tell us about your vessel", "What type of vessel do you have?", "Vessel type");
   const vesselLength = get(cols, "VESSEL_LENGTH", "vessel_length", "Vessel length (feet)", "Length (ft)");
-  const service      = get(cols, "SERVICE", "service", "What service are you interested in?", "Service needed");
+  const service      = get(cols, "SERVICE", "service", "Request a Free Quote", "What service are you interested in?", "Service needed");
   const message      = get(cols, "MESSAGE", "message", "COMMENTS", "Additional details", "Anything else?");
 
   // Require at least one contact method
