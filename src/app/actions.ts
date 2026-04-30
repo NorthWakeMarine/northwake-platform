@@ -1070,6 +1070,133 @@ export async function scheduleFromInvoice({
   }
 }
 
+// ─── Pipeline Board ──────────────────────────────────────────────────────────
+
+import type { PipelineStage } from "@/types/pipeline";
+
+export async function updatePipelineStage(
+  id: string,
+  sourceType: "contact" | "lead",
+  newStage: PipelineStage
+): Promise<{ ok: boolean; contactId?: string; contactName?: string; vesselName?: string; error?: string }> {
+  const supabase = await svc();
+
+  if (sourceType === "lead") {
+    const { data: lead, error: leadErr } = await supabase
+      .from("leads")
+      .select("id, name, email, phone, vessel_type, vessel_length, source, waiver_signed")
+      .eq("id", id)
+      .single();
+    if (leadErr || !lead) return { ok: false, error: "Lead not found." };
+
+    let contactId: string | null = null;
+    const { data: existing } = await supabase
+      .from("contacts")
+      .select("id")
+      .eq("email", lead.email)
+      .maybeSingle();
+
+    if (existing) {
+      contactId = existing.id;
+      await supabase.from("contacts").update({
+        ...(lead.name  ? { name: lead.name }  : {}),
+        ...(lead.phone ? { phone: normalizePhone(lead.phone) ?? lead.phone } : {}),
+        pipeline_stage: newStage,
+        status: "client",
+      }).eq("id", contactId);
+    } else {
+      const { data: newContact, error: cErr } = await supabase
+        .from("contacts")
+        .insert({
+          name: lead.name, email: lead.email,
+          phone: normalizePhone(lead.phone),
+          vessel_type: lead.vessel_type, vessel_length: lead.vessel_length,
+          waiver_signed: lead.waiver_signed ?? false,
+          source: lead.source ?? "website",
+          status: "client",
+          pipeline_stage: newStage,
+        })
+        .select("id")
+        .single();
+      if (cErr || !newContact) return { ok: false, error: cErr?.message ?? "Failed to create contact." };
+      contactId = newContact.id;
+    }
+
+    if (contactId) await insertVessel(supabase, contactId, lead);
+
+    await supabase.from("timeline_events").insert({
+      contact_id: contactId,
+      event_type: "lead_converted",
+      title: "Converted via Pipeline board",
+      body: `Lead moved to ${newStage.replace(/_/g, " ")} stage.`,
+      created_by: "pro",
+    });
+
+    await supabase.from("leads").update({ status: "converted" }).eq("id", id);
+
+    const { data: vessel } = await supabase
+      .from("vessels")
+      .select("name")
+      .eq("owner_id", contactId!)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    revalidatePath("/pro/dashboard");
+    revalidatePath("/pro/leads");
+    return { ok: true, contactId: contactId!, contactName: lead.name ?? "Unknown", vesselName: vessel?.name ?? null };
+  }
+
+  // Contact
+  const { data: contact, error: cErr } = await supabase
+    .from("contacts")
+    .select("id, name")
+    .eq("id", id)
+    .single();
+  if (cErr || !contact) return { ok: false, error: "Contact not found." };
+
+  await supabase.from("contacts").update({ pipeline_stage: newStage }).eq("id", id);
+
+  const { data: vessel } = await supabase
+    .from("vessels")
+    .select("name")
+    .eq("owner_id", id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  revalidatePath("/pro/dashboard");
+  return { ok: true, contactId: id, contactName: contact.name ?? "Unknown", vesselName: vessel?.name ?? null };
+}
+
+export async function createQuickBooksInvoiceDraft(
+  contactId: string
+): Promise<{ name: string; email: string | null; phone: string | null; vesselName: string | null; error?: never } | { error: string }> {
+  const supabase = await svc();
+  const { data: contact, error } = await supabase
+    .from("contacts")
+    .select("name, email, phone")
+    .eq("id", contactId)
+    .single();
+  if (error || !contact) return { error: "Contact not found." };
+
+  const { data: vessel } = await supabase
+    .from("vessels")
+    .select("name")
+    .eq("owner_id", contactId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // TODO: wire QBO_CLIENT_ID, QBO_CLIENT_SECRET, QBO_REALM_ID, QBO_REFRESH_TOKEN for live QB invoicing
+  return {
+    name: contact.name ?? "Unknown",
+    email: contact.email,
+    phone: contact.phone,
+    vesselName: vessel?.name ?? null,
+  };
+}
+
 // ─── Conflict Detection ───────────────────────────────────────────────────────
 
 export async function detectServiceConflicts(): Promise<{ flagged: number; error?: string }> {

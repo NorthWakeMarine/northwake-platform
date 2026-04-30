@@ -8,6 +8,17 @@ const nextConfig: NextConfig = {
     qualities: [75, 90, 100],
   },
 
+  async redirects() {
+    return [
+      { source: "/index.html", destination: "/", permanent: true },
+      { source: "/services.html", destination: "/services", permanent: true },
+      { source: "/about-us.html", destination: "/about", permanent: true },
+      { source: "/Contact-Us", destination: "/contact", permanent: true },
+      { source: "/:path*.php", destination: "/", permanent: true },
+      { source: "/:path*.asp", destination: "/", permanent: true },
+    ];
+  },
+
   // Prevent the /pro route from appearing in search engines at the config level
   async headers() {
     return [
