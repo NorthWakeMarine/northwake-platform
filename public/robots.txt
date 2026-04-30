@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /pro
+Disallow: /pro/
+
+Sitemap: https://northwakemarine.com/sitemap.xml
