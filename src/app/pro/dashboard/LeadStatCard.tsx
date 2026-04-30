@@ -4,11 +4,6 @@ import { useState } from "react";
 
 type Range = "month" | "year" | "all";
 
-const LABELS: Record<Range, string> = {
-  month: "This Month",
-  year:  "This Year",
-  all:   "All Time",
-};
 
 export default function LeadStatCard({
   monthCount,

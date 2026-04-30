@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import NoteForm from "./NoteForm";
 import CopyWaiverLink from "./CopyWaiverLink";
-import FleetGallery, { type Asset, type VesselService } from "./FleetGallery";
+import FleetGallery, { type Asset } from "./FleetGallery";
 import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
 import EditableField from "./EditableField";
 import ContactDocuments from "./ContactDocuments";

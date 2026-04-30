@@ -4,23 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import ConvertButton from "./ConvertButton";
 
-type Lead = {
-  id: string;
-  created_at: string;
-  name: string | null;
-  email: string;
-  phone: string | null;
-  vessel_type: string | null;
-  vessel_length: string | null;
-  service: string | null;
-  referral_source: string | null;
-  message: string | null;
-  source: string | null;
-  status: string | null;
-  waiver_signed: boolean | null;
-  last_service_date: string | null;
-};
-
 type TimelineEvent = {
   id: string;
   created_at: string;

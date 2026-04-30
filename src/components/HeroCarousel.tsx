@@ -4,7 +4,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, startTransition, useState } from "react";
 
 const slides = [
   {
@@ -51,13 +51,14 @@ interface HeroCarouselProps {
 }
 
 export default function HeroCarousel({ showHeroOverlay = true }: HeroCarouselProps) {
-  const autoplayRef = useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true })
+  const autoplayPlugin = useMemo(
+    () => Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true }),
+    []
   );
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true, duration: 40, dragFree: false },
-    [autoplayRef.current]
+    [autoplayPlugin]
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -70,7 +71,7 @@ export default function HeroCarousel({ showHeroOverlay = true }: HeroCarouselPro
 
   useEffect(() => {
     if (!emblaApi) return;
-    onSelect();
+    startTransition(onSelect);
     emblaApi.on("select", onSelect);
     return () => { emblaApi.off("select", onSelect); };
   }, [emblaApi, onSelect]);

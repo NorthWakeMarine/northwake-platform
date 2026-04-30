@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, startTransition } from "react";
 import {
   addAsset, updateAssetNotes, type AssetState,
   addVesselService, markServiced, deleteVesselService, type VesselServiceState,
@@ -116,7 +116,7 @@ function AddAssetForm({ contactId, onDone }: { contactId: string; onDone: () => 
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset();
-      setAssetType("vessel");
+      startTransition(() => setAssetType("vessel"));
       onDone();
     }
   }, [state.success, onDone]);
@@ -269,7 +269,7 @@ function ServiceScheduleSection({ asset, contactId, services }: {
   const addRef = useRef<HTMLFormElement>(null);
   const [showAdd, setShowAdd] = useState(false);
 
-  useEffect(() => { if (addState.success) { addRef.current?.reset(); setShowAdd(false); } }, [addState.success]);
+  useEffect(() => { if (addState.success) { addRef.current?.reset(); startTransition(() => setShowAdd(false)); } }, [addState.success]);
 
   const SERVICE_SUGGESTIONS = ["Full Detail", "Exterior Wash", "Wax / Sealant", "Bottom Paint", "Engine Service", "Isinglass Treatment", "Teak Restoration", "One-Off Wash"];
 

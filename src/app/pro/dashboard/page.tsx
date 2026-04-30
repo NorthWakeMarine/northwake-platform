@@ -36,6 +36,14 @@ function startOfYear() {
   return new Date(new Date().getFullYear(), 0, 1).toISOString();
 }
 
+function ninetyDaysAgo() {
+  return new Date(new Date().getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function currentTimestamp() {
+  return new Date().getTime();
+}
+
 function parseName(email: string, meta: Record<string, string> = {}) {
   const raw = meta?.full_name || meta?.name || email.split("@")[0] || "Admin";
   return raw.charAt(0).toUpperCase() + raw.slice(1);
@@ -54,7 +62,7 @@ async function fetchUpcomingEvents(): Promise<CalendarEvent[]> {
 export default async function ProDashboardPage() {
   const supabase = await createServerSupabase();
 
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const ninetyDaysAgoIso = ninetyDaysAgo();
 
   const [
     { data: leads },
@@ -99,7 +107,7 @@ export default async function ProDashboardPage() {
     supabase
       .from("timeline_events")
       .select("contact_id")
-      .gte("created_at", ninetyDaysAgo),
+      .gte("created_at", ninetyDaysAgoIso),
   ]);
 
   const upcomingEvents = await fetchUpcomingEvents();
@@ -110,7 +118,7 @@ export default async function ProDashboardPage() {
     (user?.user_metadata ?? {}) as Record<string, string>
   );
 
-  const now = Date.now();
+  const now = currentTimestamp();
   const overdueCount = (rawVessels ?? []).filter((v) => {
     if (!v.last_service_date) return false;
     const interval = v.service_interval_days ?? 90;
