@@ -18,6 +18,11 @@ const siteUrl = "https://northwakemarine.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
   title: {
     default: "NorthWake Marine | Premium Boat Detailing & Vessel Management: Jacksonville, FL",
     template: "%s | NorthWake Marine",
