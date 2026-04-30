@@ -1,24 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
 // Google Ads Lead Form Extension webhook
 // Docs: https://support.google.com/google-ads/answer/9423234
 
-type GoogleAdsLeadPayload = {
-  google_key?: string;
-  lead_id?: string;
-  campaign_id?: string;
-  campaign_name?: string;
-  adgroup_id?: string;
-  adgroup_name?: string;
-  form_id?: string;
-  form_name?: string;
-  user_column_data?: {
-    column_id: string;
-    column_name: string;
-    string_value?: string;
-  }[];
-};
+const ColumnSchema = z.object({
+  column_id: z.string(),
+  column_name: z.string(),
+  string_value: z.string().optional(),
+});
+
+const GoogleAdsLeadSchema = z.object({
+  google_key:        z.string().optional(),
+  lead_id:           z.string().optional(),
+  campaign_id:       z.string().optional(),
+  campaign_name:     z.string().optional(),
+  adgroup_id:        z.string().optional(),
+  adgroup_name:      z.string().optional(),
+  form_id:           z.string().optional(),
+  form_name:         z.string().optional(),
+  user_column_data:  z.array(ColumnSchema).optional(),
+});
+
+type GoogleAdsLeadPayload = z.infer<typeof GoogleAdsLeadSchema>;
 
 function get(columns: GoogleAdsLeadPayload["user_column_data"], ...ids: string[]): string | null {
   for (const id of ids) {
@@ -38,7 +43,12 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   let body: GoogleAdsLeadPayload;
   try {
-    body = await req.json();
+    const raw = await req.json();
+    const parsed = GoogleAdsLeadSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+    body = parsed.data;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
