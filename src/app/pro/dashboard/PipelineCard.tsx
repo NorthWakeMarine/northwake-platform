@@ -32,11 +32,14 @@ function AssetIcon({ type }: { type: PipelineCardType["assetType"] }) {
   );
 }
 
+function getHours(lastContactAt: string | null): number | null {
+  if (!lastContactAt) return null;
+  return Math.floor((new Date().getTime() - new Date(lastContactAt).getTime()) / 3_600_000);
+}
+
 function HeatDot({ heat, lastContactAt }: { heat: PipelineCardType["heat"]; lastContactAt: string | null }) {
   if (!heat) return null;
-  const hours = lastContactAt
-    ? Math.floor((Date.now() - new Date(lastContactAt).getTime()) / 3_600_000)
-    : null;
+  const hours = getHours(lastContactAt);
   const title = hours !== null ? `Last contact ${hours}h ago` : "No contact recorded";
 
   return (
