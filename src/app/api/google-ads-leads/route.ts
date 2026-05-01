@@ -7,7 +7,7 @@ import { z } from "zod";
 
 const ColumnSchema = z.object({
   column_id: z.string(),
-  column_name: z.string(),
+  column_name: z.string().optional(),
   string_value: z.string().optional(),
 });
 
@@ -44,8 +44,10 @@ export async function POST(req: NextRequest) {
   let body: GoogleAdsLeadPayload;
   try {
     const raw = await req.json();
+    console.log("[google-ads] raw payload:", JSON.stringify(raw, null, 2));
     const parsed = GoogleAdsLeadSchema.safeParse(raw);
     if (!parsed.success) {
+      console.error("[google-ads] Zod validation failed:", JSON.stringify(parsed.error.issues));
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
     body = parsed.data;
