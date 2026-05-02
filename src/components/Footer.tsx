@@ -112,6 +112,10 @@ export default function Footer() {
       {/* ── Bottom bar ── */}
       <div className="border-t border-steel-dark px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-steel tracking-wide max-w-7xl mx-auto w-full">
         <p>© {new Date().getFullYear()} NorthWake Marine. All rights reserved.</p>
+        <div className="flex items-center gap-4">
+          <Link href="/terms" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-[9px]">Terms</Link>
+          <Link href="/privacy-policy" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-[9px]">Privacy</Link>
+        </div>
         <Link
           href="/pro"
           className="flex items-center gap-2 border border-steel-dark px-4 py-1.5 text-steel hover:border-navy hover:text-wake transition-colors duration-300 tracking-[0.2em] uppercase text-[9px]"

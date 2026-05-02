@@ -6,51 +6,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, startTransition, useState } from "react";
 
-const slides = [
-  {
-    id: "slide-1",
-    src: "/images/HatterasBoatImage.JPG",
-    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
-    caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
-    service: "NorthWake Marine",
-    tagline: "",
-    href: "/services",
-  },
-  {
-    id: "slide-2",
-    src: "/images/RegalBoatImage.JPG",
-    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
-    caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
-    service: "NorthWake Marine",
-    tagline: "",
-    href: "/services",
-  },
-  {
-    id: "slide-3",
-    src: "/images/RobaloBoatImage.JPG",
-    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
-    caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
-    service: "NorthWake Marine",
-    tagline: "",
-    href: "/services",
-  },
-  {
-    id: "slide-4",
-    src: "/images/TiaraBoatImage.JPG",
-    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
-    caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
-    service: "NorthWake Marine",
-    tagline: "",
-    href: "/services",
-  },
-];
-
 interface HeroCarouselProps {
   /** When false the "Premium Marine Care" headline + CTAs are hidden, use for bottom-of-page showcase */
   showHeroOverlay?: boolean;
+  images?: string[];
 }
 
-export default function HeroCarousel({ showHeroOverlay = true }: HeroCarouselProps) {
+export default function HeroCarousel({ showHeroOverlay = true, images = [] }: HeroCarouselProps) {
+  const slides = images.map((src, i) => ({
+    id: `slide-${i + 1}`,
+    src,
+    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
+    caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
+    service: "NorthWake Marine",
+    tagline: "",
+    href: "/services",
+  }));
   const autoplayPlugin = useMemo(
     () => Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true }),
     []

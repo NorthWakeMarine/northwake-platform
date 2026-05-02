@@ -6,6 +6,8 @@ import HeroCarousel from "@/components/HeroCarousel";
 import HeroQuoteForm from "@/components/HeroQuoteForm";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import fs from "fs";
+import path from "path";
 
 async function getCMS(): Promise<Record<string, string>> {
   try {
@@ -69,8 +71,22 @@ const services = [
 ];
 
 
+function getCarouselImages(): string[] {
+  try {
+    const dir = path.join(process.cwd(), "public", "images");
+    const exts = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
+    return fs
+      .readdirSync(dir)
+      .filter((f) => exts.has(path.extname(f).toLowerCase()))
+      .map((f) => `/images/${f}`);
+  } catch {
+    return [];
+  }
+}
+
 export default async function Home() {
   const cms = await getCMS();
+  const carouselImages = getCarouselImages();
   const heroHeadline    = cms.hero_headline    ?? "From Dock to Destination";
   const heroSubheadline = cms.hero_subheadline ?? "Your Yacht Is Our Priority";
 
@@ -243,7 +259,7 @@ export default async function Home() {
               View all services →
             </Link>
           </div>
-          <HeroCarousel showHeroOverlay={false} />
+          <HeroCarousel showHeroOverlay={false} images={carouselImages} />
         </section>
 
       </main>
