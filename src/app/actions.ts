@@ -241,11 +241,14 @@ export async function updateTimelineNote(
     .eq("id", id)
     .single();
 
-  type EditEntry = { edited_at: string };
+  const { data: { user } } = await supabase.auth.getUser();
+  const editor = user?.email?.split("@")[0] ?? "pro";
+
+  type EditEntry = { edited_at: string; edited_by: string };
   const prev = (existing?.metadata as Record<string, unknown> | null) ?? {};
   const editHistory: EditEntry[] = Array.isArray(prev.edit_history)
-    ? [...(prev.edit_history as EditEntry[]), { edited_at: new Date().toISOString() }]
-    : [{ edited_at: new Date().toISOString() }];
+    ? [...(prev.edit_history as EditEntry[]), { edited_at: new Date().toISOString(), edited_by: editor }]
+    : [{ edited_at: new Date().toISOString(), edited_by: editor }];
 
   const { error } = await supabase
     .from("timeline_events")
