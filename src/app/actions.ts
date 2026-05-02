@@ -210,18 +210,74 @@ export async function addTimelineNote(
   if (!body) return { error: "Note cannot be empty." };
 
   const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  const username = user?.email?.split("@")[0] ?? "pro";
+
   const { error } = await supabase.from("timeline_events").insert({
     contact_id,
     event_type: "note",
     title: "Note added",
     body,
-    created_by: "pro",
+    created_by: username,
   });
 
   if (error) return { error: error.message };
 
   revalidatePath(`/pro/contacts/${contact_id}`);
   return { success: true };
+}
+
+export async function updateTimelineNote(
+  id: string,
+  body: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!body.trim()) return { ok: false, error: "Note cannot be empty." };
+
+  const supabase = await createServerSupabase();
+
+  const { data: existing } = await supabase
+    .from("timeline_events")
+    .select("metadata, contact_id")
+    .eq("id", id)
+    .single();
+
+  type EditEntry = { edited_at: string };
+  const prev = (existing?.metadata as Record<string, unknown> | null) ?? {};
+  const editHistory: EditEntry[] = Array.isArray(prev.edit_history)
+    ? [...(prev.edit_history as EditEntry[]), { edited_at: new Date().toISOString() }]
+    : [{ edited_at: new Date().toISOString() }];
+
+  const { error } = await supabase
+    .from("timeline_events")
+    .update({ body: body.trim(), metadata: { ...prev, edit_history: editHistory } })
+    .eq("id", id)
+    .eq("event_type", "note");
+
+  if (error) return { ok: false, error: error.message };
+  if (existing?.contact_id) revalidatePath(`/pro/contacts/${existing.contact_id}`);
+  return { ok: true };
+}
+
+export async function deleteTimelineNote(
+  id: string
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabase();
+
+  const { data: existing } = await supabase
+    .from("timeline_events")
+    .select("contact_id")
+    .eq("id", id)
+    .single();
+
+  const { error } = await supabase
+    .from("timeline_events")
+    .delete()
+    .eq("id", id)
+    .eq("event_type", "note");
+
+  if (error) return { ok: false, error: error.message };
+  if (existing?.contact_id) revalidatePath(`/pro/contacts/${existing.contact_id}`);
+  return { ok: true };
 }
 
 // ─── Waiver Submission ────────────────────────────────────────────────────────

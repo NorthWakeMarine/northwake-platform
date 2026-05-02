@@ -10,6 +10,7 @@ import FleetGallery, { type Asset } from "./FleetGallery";
 import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
 import EditableField from "./EditableField";
 import ContactDocuments from "./ContactDocuments";
+import ActivityTimeline from "./ActivityTimeline";
 import type { DriveFile } from "@/lib/google-drive";
 
 type Contact = {
@@ -42,35 +43,6 @@ function fmt(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short", day: "numeric", year: "numeric",
   });
-}
-
-function fmtFull(iso: string) {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
-    hour: "numeric", minute: "2-digit",
-  });
-}
-
-const eventConfig: Record<string, { dot: string; label: string }> = {
-  lead_created:            { dot: "bg-blue-500",    label: "Lead Created" },
-  form_submission:         { dot: "bg-blue-400",    label: "Form Submitted" },
-  note:                    { dot: "bg-slate-400",   label: "Note" },
-  call:                    { dot: "bg-purple-500",  label: "Call" },
-  waiver_signed:           { dot: "bg-emerald-500", label: "Waiver Signed" },
-  invoice:                 { dot: "bg-amber-500",   label: "Invoice" },
-  lead_converted:          { dot: "bg-emerald-600", label: "Converted to Client" },
-  web_lead:                { dot: "bg-blue-300",    label: "Web Lead Merged" },
-  appointment_scheduled:   { dot: "bg-indigo-500",  label: "Appointment Scheduled" },
-  calendar_discrepancy:    { dot: "bg-red-400",     label: "Calendar Discrepancy" },
-};
-
-function EventDot({ type }: { type: string }) {
-  const cfg = eventConfig[type] ?? { dot: "bg-slate-300" };
-  return <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 ${cfg.dot}`} />;
-}
-
-function EventLabel({ type }: { type: string }) {
-  return (eventConfig[type] ?? { label: type }).label;
 }
 
 type HealthItem = { label: string; ok: boolean };
@@ -326,40 +298,7 @@ export default async function ContactProfilePage({
                   <h3 className="text-slate-800 text-sm font-semibold">Activity Timeline</h3>
                   <span className="text-slate-400 text-[11px]">{(events ?? []).length} events</span>
                 </div>
-
-                {!events || events.length === 0 ? (
-                  <p className="text-slate-400 text-sm px-6 py-8">No activity yet.</p>
-                ) : (
-                  <ul className="px-6 py-4 flex flex-col gap-0">
-                    {(events as TimelineEvent[]).map((ev, i) => (
-                      <li key={ev.id} className="flex gap-4 relative">
-                        {i < events.length - 1 && (
-                          <div className="absolute left-[5px] top-4 bottom-0 w-px bg-slate-100" />
-                        )}
-                        <div className="pt-0.5 shrink-0">
-                          <EventDot type={ev.event_type} />
-                        </div>
-                        <div className="pb-5 flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-slate-700 text-xs font-medium">
-                              <EventLabel type={ev.event_type} />
-                            </span>
-                            {ev.title && !["Lead created", "Note added", "New form submission"].includes(ev.title) && (
-                              <span className="text-slate-500 text-xs">{ev.title}</span>
-                            )}
-                            <span className="text-slate-300 text-[10px] ml-auto whitespace-nowrap">{fmtFull(ev.created_at)}</span>
-                          </div>
-                          {ev.body && (
-                            <p className="text-slate-500 text-xs mt-1 leading-relaxed">{ev.body}</p>
-                          )}
-                          {ev.created_by && ev.created_by !== "system" && (
-                            <p className="text-slate-300 text-[10px] mt-0.5">by {ev.created_by}</p>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <ActivityTimeline events={(events as TimelineEvent[]) ?? []} />
               </div>
 
             </div>
