@@ -78,6 +78,12 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [userName, setUserName] = useState("Admin");
   const [userEmail, setUserEmail] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("sidebar-collapsed");
+    if (stored === "true") setCollapsed(true);
+  }, []);
 
   useEffect(() => {
     const supabase = createBrowserSupabase();
@@ -89,15 +95,22 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  function toggle() {
+    setCollapsed((prev) => {
+      localStorage.setItem("sidebar-collapsed", String(!prev));
+      return !prev;
+    });
+  }
+
   return (
     <div className="flex min-h-screen bg-slate-50">
 
       {/* ── Sidebar ── */}
-      <aside className="hidden md:flex w-60 shrink-0 flex-col bg-[#06061a] sticky top-0 h-screen">
+      <aside className={`hidden md:flex ${collapsed ? "w-14" : "w-60"} shrink-0 flex-col bg-[#06061a] sticky top-0 h-screen transition-all duration-200 overflow-hidden`}>
 
         {/* Logo */}
-        <div className="px-5 py-5 border-b border-white/[0.07]">
-          <Link href="/pro/dashboard" className="flex items-center gap-3">
+        <div className="px-3 py-5 border-b border-white/[0.07] flex items-center justify-center">
+          <Link href="/pro/dashboard" className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 bg-[#000080] flex items-center justify-center shrink-0">
               <Image
                 src="/brand/nwmlogowhite.svg"
@@ -107,55 +120,81 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
                 className="w-5 h-5 opacity-90"
               />
             </div>
-            <div className="leading-none">
-              <p className="text-white text-[11px] font-bold tracking-wide">NorthWake</p>
-              <p className="text-white/35 text-[9px] tracking-[0.3em] uppercase mt-0.5">Marine Pro</p>
-            </div>
+            {!collapsed && (
+              <div className="leading-none">
+                <p className="text-white text-[11px] font-bold tracking-wide">NorthWake</p>
+                <p className="text-white/35 text-[9px] tracking-[0.3em] uppercase mt-0.5">Marine Pro</p>
+              </div>
+            )}
           </Link>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5" aria-label="Pro portal">
+        <nav className="flex-1 px-2 py-4 flex flex-col gap-0.5" aria-label="Pro portal">
           {navLinks.map(({ href, label, icon }) => {
             const active = pathname === href;
             return (
               <Link
                 key={href}
                 href={href}
+                title={collapsed ? label : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-medium transition-colors duration-150 ${
+                  collapsed ? "justify-center" : ""
+                } ${
                   active
                     ? "bg-[#000080] text-white"
                     : "text-white/45 hover:text-white/80 hover:bg-white/[0.05]"
                 }`}
               >
                 <span className="shrink-0">{icon}</span>
-                {label}
+                {!collapsed && label}
               </Link>
             );
           })}
         </nav>
 
+        {/* Collapse toggle */}
+        <div className="px-2 pb-2">
+          <button
+            onClick={toggle}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={`w-full flex items-center gap-3 px-3 py-2 text-white/25 hover:text-white/60 text-xs transition-colors duration-150 rounded-sm hover:bg-white/[0.04] ${collapsed ? "justify-center" : ""}`}
+          >
+            <svg
+              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+              className={`shrink-0 transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`}
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            {!collapsed && <span>Collapse</span>}
+          </button>
+        </div>
+
         {/* User + sign out */}
-        <div className="px-3 pb-4 border-t border-white/[0.07] pt-4 flex flex-col gap-1">
-          <div className="flex items-center gap-2.5 px-3 py-2">
-            <div className="w-7 h-7 rounded-full bg-[#000080] flex items-center justify-center shrink-0">
+        <div className="px-2 pb-4 border-t border-white/[0.07] pt-4 flex flex-col gap-1">
+          <div className={`flex items-center gap-2.5 px-3 py-2 ${collapsed ? "justify-center" : ""}`}>
+            <div className="w-7 h-7 rounded-full bg-[#000080] flex items-center justify-center shrink-0" title={collapsed ? userName : undefined}>
               <span className="text-white text-[10px] font-bold">{userName.charAt(0)}</span>
             </div>
-            <div className="leading-none min-w-0">
-              <p className="text-white/80 text-[11px] font-semibold truncate">{userName}</p>
-              <p className="text-white/30 text-[9px] truncate mt-0.5">{userEmail || "northwakemarine.com"}</p>
-            </div>
+            {!collapsed && (
+              <div className="leading-none min-w-0">
+                <p className="text-white/80 text-[11px] font-semibold truncate">{userName}</p>
+                <p className="text-white/30 text-[9px] truncate mt-0.5">{userEmail || "northwakemarine.com"}</p>
+              </div>
+            )}
           </div>
           <form action={signOut}>
             <button
               type="submit"
-              className="w-full flex items-center gap-3 px-3 py-2 text-white/35 hover:text-white/70 text-xs transition-colors duration-150 rounded-sm hover:bg-white/[0.04]"
+              title={collapsed ? "Sign Out" : undefined}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-white/35 hover:text-white/70 text-xs transition-colors duration-150 rounded-sm hover:bg-white/[0.04] ${collapsed ? "justify-center" : ""}`}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
               </svg>
-              Sign Out
+              {!collapsed && "Sign Out"}
             </button>
           </form>
         </div>

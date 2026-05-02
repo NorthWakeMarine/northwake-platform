@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
+import { createBrowserSupabase } from "@/lib/supabase/client";
 import {
   DndContext,
   DragOverlay,
@@ -33,6 +34,7 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
     groupByStage(initialCards)
   );
   const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
+  const [userName, setUserName] = useState("");
   const [schedulingCard, setSchedulingCard] = useState<{
     contactId: string;
     contactName: string;
@@ -40,6 +42,16 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
   } | null>(null);
   const [invoiceCard, setInvoiceCard] = useState<PipelineCard | null>(null);
   const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    const supabase = createBrowserSupabase();
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? "";
+      const meta = (data.user?.user_metadata ?? {}) as Record<string, string>;
+      const raw = meta?.full_name || meta?.name || email.split("@")[0] || "";
+      setUserName(raw.charAt(0).toUpperCase() + raw.slice(1));
+    });
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -120,7 +132,9 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
     <div className="flex-1 flex flex-col min-h-0">
       <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight">Pipeline</h1>
+          <h1 className="text-slate-900 text-xl font-bold tracking-tight">
+            {userName ? `Welcome back, ${userName}` : "Welcome back"}
+          </h1>
           <p className="text-slate-400 text-xs mt-0.5">Drag leads through your service workflow.</p>
         </div>
       </div>
