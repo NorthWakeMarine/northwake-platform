@@ -14,14 +14,18 @@ const ColumnSchema = z.object({
 const GoogleAdsLeadSchema = z.object({
   google_key:        z.string().optional(),
   lead_id:           z.string().optional(),
-  campaign_id:       z.string().optional(),
+  campaign_id:       z.union([z.string(), z.number()]).optional(),
   campaign_name:     z.string().optional(),
-  adgroup_id:        z.string().optional(),
+  adgroup_id:        z.union([z.string(), z.number()]).optional(),
   adgroup_name:      z.string().optional(),
-  form_id:           z.string().optional(),
+  form_id:           z.union([z.string(), z.number()]).optional(),
   form_name:         z.string().optional(),
+  creative_id:       z.union([z.string(), z.number()]).optional(),
+  gcl_id:            z.string().optional(),
+  api_version:       z.string().optional(),
+  is_test:           z.boolean().optional(),
   user_column_data:  z.array(ColumnSchema).optional(),
-});
+}).passthrough();
 
 type GoogleAdsLeadPayload = z.infer<typeof GoogleAdsLeadSchema>;
 
@@ -64,7 +68,9 @@ export async function POST(req: NextRequest) {
 
   const cols = body.user_column_data ?? [];
 
-  const name  = get(cols, "FULL_NAME", "full_name");
+  const firstName = get(cols, "FIRST_NAME", "first_name", "First Name");
+  const lastName  = get(cols, "LAST_NAME", "last_name", "Last Name");
+  const name  = get(cols, "FULL_NAME", "full_name") || [firstName, lastName].filter(Boolean).join(" ") || null;
   const email = get(cols, "EMAIL", "email");
   const phone = get(cols, "PHONE_NUMBER", "phone_number", "phone");
 
