@@ -78,12 +78,9 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [userName, setUserName] = useState("Admin");
   const [userEmail, setUserEmail] = useState("");
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("sidebar-collapsed");
-    if (stored === "true") setCollapsed(true);
-  }, []);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem("sidebar-collapsed") === "true"
+  );
 
   useEffect(() => {
     const supabase = createBrowserSupabase();
