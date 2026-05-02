@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, startTransition, useState } from "reac
 const slides = [
   {
     id: "slide-1",
-    src: "/images/IMG_6468.JPG",
+    src: "/images/HatterasBoatImage.JPG",
     alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
     caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
     service: "NorthWake Marine",
@@ -18,7 +18,7 @@ const slides = [
   },
   {
     id: "slide-2",
-    src: "/images/IMG_6469.JPG",
+    src: "/images/RegalBoatImage.JPG",
     alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
     caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
     service: "NorthWake Marine",
@@ -27,7 +27,7 @@ const slides = [
   },
   {
     id: "slide-3",
-    src: "/images/IMG_6497.JPG",
+    src: "/images/RobaloBoatImage.JPG",
     alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
     caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
     service: "NorthWake Marine",
@@ -36,7 +36,7 @@ const slides = [
   },
   {
     id: "slide-4",
-    src: "/images/IMG_6515.JPG",
+    src: "/images/TiaraBoatImage.JPG",
     alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
     caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
     service: "NorthWake Marine",
