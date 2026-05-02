@@ -18,8 +18,6 @@ import { updatePipelineStage } from "@/app/actions";
 import PipelineColumn from "./PipelineColumn";
 import PipelineCardComponent from "./PipelineCard";
 import SummaryBar from "./SummaryBar";
-import ScheduleModal from "@/components/ScheduleModal";
-import InvoiceDraftModal from "./InvoiceDraftModal";
 
 function groupByStage(cards: PipelineCard[]): Record<PipelineStage, PipelineCard[]> {
   const result = Object.fromEntries(STAGES.map((s) => [s, [] as PipelineCard[]])) as Record<PipelineStage, PipelineCard[]>;
@@ -35,12 +33,6 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
   );
   const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
   const [userName, setUserName] = useState("");
-  const [schedulingCard, setSchedulingCard] = useState<{
-    contactId: string;
-    contactName: string;
-    vesselName: string | null;
-  } | null>(null);
-  const [invoiceCard, setInvoiceCard] = useState<PipelineCard | null>(null);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -105,24 +97,6 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
           });
         }
 
-        if (targetStage === "work_scheduled" && result.contactId) {
-          setSchedulingCard({
-            contactId: result.contactId,
-            contactName: result.contactName ?? card.name,
-            vesselName: result.vesselName ?? card.vesselName,
-          });
-        }
-
-        if (targetStage === "done_invoiced" && result.contactId) {
-          const updatedCard: PipelineCard = {
-            ...card,
-            id: result.contactId,
-            sourceType: "contact",
-            contactId: result.contactId,
-            stage: "done_invoiced",
-          };
-          setInvoiceCard(updatedCard);
-        }
       });
     },
     [columns]
@@ -164,19 +138,6 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
         </DragOverlay>
       </DndContext>
 
-      {schedulingCard && (
-        <ScheduleModal
-          card={schedulingCard}
-          onClose={() => setSchedulingCard(null)}
-        />
-      )}
-
-      {invoiceCard && (
-        <InvoiceDraftModal
-          card={invoiceCard}
-          onClose={() => setInvoiceCard(null)}
-        />
-      )}
     </div>
   );
 }
