@@ -30,6 +30,7 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
       .from("contacts")
       .select("id, name, email, phone, status, pipeline_stage, last_contact_at, created_at, contact_type, health_flags, vessels ( id, name, asset_type, last_service_date, service_interval_days )")
       .eq("contact_type", "customer")
+      .not("pipeline_stage", "is", null)
       .order("created_at", { ascending: false }),
     supabase
       .from("leads")
