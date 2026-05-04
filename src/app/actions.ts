@@ -1330,6 +1330,38 @@ export async function detectServiceConflicts(): Promise<{ flagged: number; error
   return { flagged };
 }
 
+// ─── QuickBooks Contact Sync ──────────────────────────────────────────────────
+
+export async function syncContactToQuickBooks(
+  contactId: string
+): Promise<{ ok: boolean; qbCustomerId?: string; error?: string }> {
+  const supabase = await svc();
+  const { data: contact, error } = await supabase
+    .from("contacts")
+    .select("id, name, email, phone")
+    .eq("id", contactId)
+    .single();
+  if (error || !contact) return { ok: false, error: "Contact not found." };
+
+  try {
+    const { findOrCreateQbCustomer, getQbTokens } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { ok: false, error: "QuickBooks not connected." };
+
+    const qbCustomerId = await findOrCreateQbCustomer({
+      id: contact.id,
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone,
+    });
+
+    revalidatePath(`/pro/contacts/${contactId}`);
+    return { ok: true, qbCustomerId };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Sync failed." };
+  }
+}
+
 // ─── Contact Type ─────────────────────────────────────────────────────────────
 
 export async function updateContactType(

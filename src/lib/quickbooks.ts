@@ -146,9 +146,9 @@ export async function createQbInvoiceDraft(opts: {
       {
         DetailType: "SalesItemLineDetail",
         Amount: opts.amount ?? 0,
+        Description: opts.lineDescription,
         SalesItemLineDetail: {
-          ItemRef: { value: "1", name: "Services" },
-          Description: opts.lineDescription,
+          ItemRef: { value: "1" },
         },
       },
     ],

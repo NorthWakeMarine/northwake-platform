@@ -12,6 +12,7 @@ import EditableField from "./EditableField";
 import ContactDocuments from "./ContactDocuments";
 import ActivityTimeline from "./ActivityTimeline";
 import LogCallModal from "./LogCallModal";
+import SyncToQbButton from "./SyncToQbButton";
 import type { DriveFile } from "@/lib/google-drive";
 
 type Contact = {
@@ -187,9 +188,7 @@ export default async function ContactProfilePage({
                     View in QB
                   </a>
                 ) : (
-                  <span className="border border-slate-100 text-slate-300 text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm font-medium">
-                    QB Not Linked
-                  </span>
+                  <SyncToQbButton contactId={contact.id} />
                 )}
               </>
             )}
