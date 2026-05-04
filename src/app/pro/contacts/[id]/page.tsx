@@ -11,6 +11,7 @@ import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
 import EditableField from "./EditableField";
 import ContactDocuments from "./ContactDocuments";
 import ActivityTimeline from "./ActivityTimeline";
+import LogCallModal from "./LogCallModal";
 import type { DriveFile } from "@/lib/google-drive";
 
 type Contact = {
@@ -25,6 +26,8 @@ type Contact = {
   waiver_signed: boolean | null;
   status: string | null;
   source: string | null;
+  contact_type: string | null;
+  qb_customer_id: string | null;
   drive_folder_id: string | null;
   drive_folder_url: string | null;
 };
@@ -107,7 +110,7 @@ export default async function ContactProfilePage({
   ] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, created_at, name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source, drive_folder_id, drive_folder_url")
+      .select("id, created_at, name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source, contact_type, qb_customer_id, drive_folder_id, drive_folder_url")
       .eq("id", id)
       .single(),
     supabase
@@ -172,20 +175,25 @@ export default async function ContactProfilePage({
             {contact.name || contact.email || "Unknown Contact"}
           </h1>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              disabled
-              title="Coming soon"
-              className="border border-slate-200 text-slate-400 text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm cursor-not-allowed font-medium"
-            >
-              Create Invoice
-            </button>
-            <button
-              disabled
-              title="Coming soon"
-              className="border border-slate-200 text-slate-400 text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm cursor-not-allowed font-medium"
-            >
-              Log Call
-            </button>
+            {contact.contact_type !== "vendor" && (
+              <>
+                {contact.qb_customer_id ? (
+                  <a
+                    href={`https://app.qbo.intuit.com/app/customerdetail?nameId=${contact.qb_customer_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-800 text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm font-medium transition-colors"
+                  >
+                    View in QB
+                  </a>
+                ) : (
+                  <span className="border border-slate-100 text-slate-300 text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm font-medium">
+                    QB Not Linked
+                  </span>
+                )}
+              </>
+            )}
+            <LogCallModal contactId={contact.id} />
           </div>
         </div>
 

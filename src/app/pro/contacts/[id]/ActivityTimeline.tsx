@@ -20,13 +20,19 @@ const eventConfig: Record<string, { dot: string; label: string }> = {
   form_submission:        { dot: "bg-blue-400",    label: "Form Submitted" },
   note:                   { dot: "bg-slate-400",   label: "Note" },
   call:                   { dot: "bg-purple-500",  label: "Call" },
+  sms:                    { dot: "bg-purple-400",  label: "SMS" },
   waiver_signed:          { dot: "bg-emerald-500", label: "Waiver Signed" },
   invoice:                { dot: "bg-amber-500",   label: "Invoice" },
+  payment:                { dot: "bg-green-600",   label: "Payment Received" },
   lead_converted:         { dot: "bg-emerald-600", label: "Converted to Client" },
   web_lead:               { dot: "bg-blue-300",    label: "Web Lead Merged" },
   appointment_scheduled:  { dot: "bg-indigo-500",  label: "Appointment Scheduled" },
   calendar_discrepancy:   { dot: "bg-red-400",     label: "Calendar Discrepancy" },
 };
+
+const HUMAN_EVENT_TYPES = new Set([
+  "note", "call", "sms", "invoice", "payment", "waiver_signed", "appointment_scheduled",
+]);
 
 function fmtFull(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
@@ -209,19 +215,46 @@ function StaticItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
 }
 
 export default function ActivityTimeline({ events }: { events: TimelineEvent[] }) {
-  if (!events || events.length === 0) {
-    return <p className="text-slate-400 text-sm px-6 py-8">No activity yet.</p>;
+  const [cleanView, setCleanView] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("nwm_clean_view") === "1"; } catch { return false; }
+  });
+
+  function toggleCleanView() {
+    const next = !cleanView;
+    setCleanView(next);
+    try { localStorage.setItem("nwm_clean_view", next ? "1" : "0"); } catch { /* ignore */ }
   }
 
+  const visible = cleanView
+    ? events.filter((ev) => HUMAN_EVENT_TYPES.has(ev.event_type) && ev.created_by !== "system")
+    : events;
+
   return (
-    <ul className="px-6 py-4 flex flex-col gap-0">
-      {events.map((ev, i) =>
-        ev.event_type === "note" ? (
-          <NoteItem key={ev.id} ev={ev} isLast={i === events.length - 1} />
-        ) : (
-          <StaticItem key={ev.id} ev={ev} isLast={i === events.length - 1} />
-        )
+    <div>
+      <div className="px-6 py-2 border-b border-slate-50 flex justify-end">
+        <button
+          onClick={toggleCleanView}
+          className={`text-[10px] tracking-widest uppercase font-medium transition-colors ${
+            cleanView ? "text-[#000080]" : "text-slate-300 hover:text-slate-500"
+          }`}
+        >
+          {cleanView ? "Clean View On" : "Clean View"}
+        </button>
+      </div>
+      {visible.length === 0 ? (
+        <p className="text-slate-400 text-sm px-6 py-8">No activity yet.</p>
+      ) : (
+        <ul className="px-6 py-4 flex flex-col gap-0">
+          {visible.map((ev, i) =>
+            ev.event_type === "note" ? (
+              <NoteItem key={ev.id} ev={ev} isLast={i === visible.length - 1} />
+            ) : (
+              <StaticItem key={ev.id} ev={ev} isLast={i === visible.length - 1} />
+            )
+          )}
+        </ul>
       )}
-    </ul>
+    </div>
   );
 }

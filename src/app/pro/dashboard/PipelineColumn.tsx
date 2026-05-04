@@ -7,11 +7,12 @@ import { STAGE_LABELS } from "@/types/pipeline";
 import PipelineCardComponent from "./PipelineCard";
 
 const ACCENT: Record<PipelineStage, string> = {
-  new_leads:      "border-l-2 border-emerald-400",
-  discovery:      "border-l-2 border-blue-400",
-  estimate_sent:  "border-l-2 border-amber-400",
-  work_scheduled: "border-l-2 border-[#000080]",
-  done_invoiced:  "border-l-2 border-slate-300",
+  new_leads:       "border-l-2 border-emerald-400",
+  discovery:       "border-l-2 border-blue-400",
+  estimate_sent:   "border-l-2 border-amber-400",
+  needs_attention: "border-l-2 border-red-400",
+  work_scheduled:  "border-l-2 border-[#000080]",
+  done_invoiced:   "border-l-2 border-slate-300",
 };
 
 export default function PipelineColumn({

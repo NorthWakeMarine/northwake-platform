@@ -1209,12 +1209,16 @@ export async function updatePipelineStage(
   // Contact
   const { data: contact, error: cErr } = await supabase
     .from("contacts")
-    .select("id, name")
+    .select("id, name, pipeline_stage")
     .eq("id", id)
     .single();
   if (cErr || !contact) return { ok: false, error: "Contact not found." };
 
-  await supabase.from("contacts").update({ pipeline_stage: newStage }).eq("id", id);
+  const updatePayload: Record<string, unknown> = { pipeline_stage: newStage };
+  if (contact.pipeline_stage === "needs_attention") {
+    updatePayload.health_flags = [];
+  }
+  await supabase.from("contacts").update(updatePayload).eq("id", id);
 
   const { data: vessel } = await supabase
     .from("vessels")
@@ -1229,31 +1233,58 @@ export async function updatePipelineStage(
 }
 
 export async function createQuickBooksInvoiceDraft(
-  contactId: string
-): Promise<{ name: string; email: string | null; phone: string | null; vesselName: string | null; error?: never } | { error: string }> {
+  contactId: string,
+  assetId?: string
+): Promise<{ invoiceId?: string; invoiceUrl?: string; docNumber?: string; error?: string }> {
   const supabase = await svc();
   const { data: contact, error } = await supabase
     .from("contacts")
-    .select("name, email, phone")
+    .select("id, name, email, phone")
     .eq("id", contactId)
     .single();
   if (error || !contact) return { error: "Contact not found." };
 
-  const { data: vessel } = await supabase
-    .from("vessels")
-    .select("name")
-    .eq("owner_id", contactId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const { data: vessel } = assetId
+    ? await supabase.from("vessels").select("name, make_model, length_ft").eq("id", assetId).maybeSingle()
+    : await supabase.from("vessels").select("name, make_model, length_ft").eq("owner_id", contactId).order("created_at", { ascending: false }).limit(1).maybeSingle();
 
-  // TODO: wire QBO_CLIENT_ID, QBO_CLIENT_SECRET, QBO_REALM_ID, QBO_REFRESH_TOKEN for live QB invoicing
-  return {
-    name: contact.name ?? "Unknown",
-    email: contact.email,
-    phone: contact.phone,
-    vesselName: vessel?.name ?? null,
-  };
+  try {
+    const { findOrCreateQbCustomer, createQbInvoiceDraft, getQbInvoiceUrl, getQbTokens } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { error: "QuickBooks not connected. Visit Integrations to authorize." };
+
+    const qbCustomerId = await findOrCreateQbCustomer({
+      id: contact.id,
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone,
+    });
+
+    const assetDesc = vessel
+      ? [vessel.name, vessel.make_model, vessel.length_ft ? `${vessel.length_ft}ft` : null].filter(Boolean).join(" ")
+      : "Marine Services";
+
+    const { invoiceId, docNumber } = await createQbInvoiceDraft({
+      qbCustomerId,
+      lineDescription: `Services: ${assetDesc}`,
+    });
+
+    const invoiceUrl = getQbInvoiceUrl(tokens.realm_id, invoiceId);
+
+    await supabase.from("timeline_events").insert({
+      contact_id:  contactId,
+      event_type:  "invoice",
+      title:       "Draft Invoice Created",
+      body:        `QB Invoice #${docNumber} created for ${assetDesc}.`,
+      metadata:    { qb_invoice_id: invoiceId, doc_number: docNumber, asset_id: assetId ?? null },
+      created_by:  "pro",
+    });
+
+    revalidatePath(`/pro/contacts/${contactId}`);
+    return { invoiceId, invoiceUrl, docNumber };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to create invoice." };
+  }
 }
 
 // ─── Conflict Detection ───────────────────────────────────────────────────────
@@ -1297,4 +1328,167 @@ export async function detectServiceConflicts(): Promise<{ flagged: number; error
   }
 
   return { flagged };
+}
+
+// ─── Contact Type ─────────────────────────────────────────────────────────────
+
+export async function updateContactType(
+  contactId: string,
+  type: "customer" | "vendor"
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await svc();
+  const { error } = await supabase
+    .from("contacts")
+    .update({ contact_type: type })
+    .eq("id", contactId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/pro/contacts/${contactId}`);
+  revalidatePath("/pro/contacts");
+  revalidatePath("/pro/dashboard");
+  return { ok: true };
+}
+
+// ─── Manual Call Log ──────────────────────────────────────────────────────────
+
+export async function logManualCall(
+  contactId: string,
+  direction: "inbound" | "outbound",
+  notes: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!notes.trim()) return { ok: false, error: "Notes are required." };
+  const supabase = await svc();
+  const session = await createServerSupabase();
+  const { data: { user } } = await session.auth.getUser();
+  const email = user?.email ?? "";
+  const createdBy = email.split("@")[0] || "pro";
+
+  const { error } = await supabase.from("timeline_events").insert({
+    contact_id:  contactId,
+    event_type:  "call",
+    title:       direction === "outbound" ? "Outbound Call" : "Inbound Call",
+    body:        notes.trim(),
+    metadata:    { direction, source: "manual" },
+    created_by:  createdBy,
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  await supabase
+    .from("contacts")
+    .update({ last_contact_at: new Date().toISOString() })
+    .eq("id", contactId);
+
+  revalidatePath(`/pro/contacts/${contactId}`);
+  return { ok: true };
+}
+
+// ─── Integrity Engine ─────────────────────────────────────────────────────────
+
+type IntegrityFlag = { type: string; label: string };
+
+export async function runIntegrityCheck(): Promise<{ checked: number; flagged: number; error?: string }> {
+  const supabase = await svc();
+
+  const { data: contacts, error } = await supabase
+    .from("contacts")
+    .select("id, pipeline_stage, qb_customer_id, waiver_signed, vessels ( id )")
+    .eq("contact_type", "customer")
+    .not("pipeline_stage", "eq", "done_invoiced");
+
+  if (error) return { checked: 0, flagged: 0, error: error.message };
+  if (!contacts?.length) return { checked: 0, flagged: 0 };
+
+  const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+
+  let flagged = 0;
+
+  for (const contact of contacts) {
+    const flags: IntegrityFlag[] = [];
+
+    if (!contact.qb_customer_id) {
+      flags.push({ type: "missing_qb", label: "No QB Link" });
+    }
+
+    if (!contact.waiver_signed && contact.pipeline_stage === "work_scheduled") {
+      flags.push({ type: "missing_waiver", label: "Unsigned Waiver" });
+    }
+
+    const vessels = Array.isArray(contact.vessels) ? contact.vessels : [];
+    if (vessels.length === 0) {
+      flags.push({ type: "incomplete_profile", label: "Vessel Missing" });
+    }
+
+    // Check for unreturned inbound communication in the last 4 hours
+    const { data: recentEvents } = await supabase
+      .from("timeline_events")
+      .select("id, metadata")
+      .eq("contact_id", contact.id)
+      .in("event_type", ["call", "sms"])
+      .gte("created_at", fourHoursAgo)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (recentEvents && recentEvents.length > 0) {
+      const hasUnrepliedInbound = recentEvents.some(
+        (ev) => (ev.metadata as Record<string, unknown> | null)?.direction === "inbound"
+      );
+      const hasOutbound = recentEvents.some(
+        (ev) => (ev.metadata as Record<string, unknown> | null)?.direction === "outbound"
+      );
+      if (hasUnrepliedInbound && !hasOutbound) {
+        flags.push({ type: "comms_gap", label: "Unreturned Message" });
+      }
+    }
+
+    const hadFlags = flags.length > 0;
+
+    await supabase
+      .from("contacts")
+      .update({
+        health_flags: flags,
+        ...(hadFlags && contact.pipeline_stage !== "needs_attention"
+          ? { pipeline_stage: "needs_attention" }
+          : {}),
+      })
+      .eq("id", contact.id);
+
+    if (hadFlags) flagged++;
+  }
+
+  revalidatePath("/pro/dashboard");
+  return { checked: contacts.length, flagged };
+}
+
+// ─── Dialpad Contact Sync ─────────────────────────────────────────────────────
+
+export async function syncDialpadContacts(): Promise<{ synced: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { listDialpadContacts } = await import("@/lib/dialpad");
+    const dpContacts = await listDialpadContacts();
+
+    let synced = 0;
+    for (const dp of dpContacts) {
+      const phones = dp.phone_numbers ?? [];
+      for (const phone of phones) {
+        const normalized = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
+        const { data: match } = await supabase
+          .from("contacts")
+          .select("id")
+          .eq("phone", normalized)
+          .maybeSingle();
+        if (match) {
+          await supabase
+            .from("contacts")
+            .update({ dialpad_contact_id: dp.id })
+            .eq("id", match.id);
+          synced++;
+          break;
+        }
+      }
+    }
+    return { synced };
+  } catch (err) {
+    return { synced: 0, error: err instanceof Error ? err.message : "Dialpad sync failed." };
+  }
 }

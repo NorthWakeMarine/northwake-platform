@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, startTransition } from "react";
+import { useActionState, useEffect, useRef, useState, startTransition, useTransition } from "react";
 import {
   addAsset, updateAssetNotes, type AssetState,
   addVesselService, markServiced, deleteVesselService, type VesselServiceState,
+  createQuickBooksInvoiceDraft,
 } from "@/app/actions";
 
 export type VesselService = {
@@ -376,6 +377,8 @@ function AssetModal({ asset, contactId, services, onClose }: {
   asset: Asset; contactId: string; services: VesselService[]; onClose: () => void;
 }) {
   const [notesState, notesAction, isSaving] = useActionState<AssetState, FormData>(updateAssetNotes, {});
+  const [invoicePending, startInvoiceTransition] = useTransition();
+  const [invoiceResult, setInvoiceResult] = useState<{ invoiceUrl?: string; docNumber?: string; error?: string } | null>(null);
   const cfg = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
   const displayName = asset.name || asset.make_model || `${cfg.label} Asset`;
 
@@ -446,6 +449,43 @@ function AssetModal({ asset, contactId, services, onClose }: {
                 {isSaving ? "Saving..." : "Save Notes"}
               </button>
             </form>
+          </div>
+
+          {/* Generate Invoice */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+            <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">QuickBooks</p>
+            {invoiceResult?.invoiceUrl ? (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-emerald-600 text-xs font-medium">Draft invoice created.</p>
+                <a
+                  href={invoiceResult.invoiceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] tracking-widest uppercase text-[#000080] underline font-medium"
+                >
+                  Open Invoice #{invoiceResult.docNumber} in QuickBooks
+                </a>
+              </div>
+            ) : (
+              <>
+                {invoiceResult?.error && (
+                  <p className="text-red-500 text-[10px]">{invoiceResult.error}</p>
+                )}
+                <button
+                  type="button"
+                  disabled={invoicePending}
+                  onClick={() => {
+                    startInvoiceTransition(async () => {
+                      const res = await createQuickBooksInvoiceDraft(contactId, asset.id);
+                      setInvoiceResult(res);
+                    });
+                  }}
+                  className="border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-800 text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {invoicePending ? "Creating..." : "Generate Draft Invoice"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

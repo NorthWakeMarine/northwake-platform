@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import SearchBar from "./SearchBar";
+import TypeFilter from "./TypeFilter";
 import DeleteContactButton from "./DeleteContactButton";
 
 type Contact = {
@@ -48,10 +49,11 @@ function StatusBadges({ contact }: { contact: Contact }) {
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string }>;
+  searchParams?: Promise<{ q?: string; type?: string }>;
 }) {
-  const { q } = (await searchParams) ?? {};
+  const { q, type } = (await searchParams) ?? {};
   const term = q?.trim() ?? "";
+  const typeFilter = type?.trim() ?? "";
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -83,10 +85,14 @@ export default async function ContactsPage({
     searchHit = true;
 
     // Direct contact matches
-    const { data: direct } = await supabase
+    let directQuery = supabase
       .from("contacts")
       .select(COLS)
       .or(`name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`);
+    if (typeFilter === "customer" || typeFilter === "vendor") {
+      directQuery = directQuery.eq("contact_type", typeFilter);
+    }
+    const { data: direct } = await directQuery;
 
     // Linked contact matches
     const { data: linked } = await supabase
@@ -113,22 +119,31 @@ export default async function ContactsPage({
     ];
 
     if (allIds.length > 0) {
-      const { data, error: err } = await supabase
+      let q = supabase
         .from("contacts")
         .select(COLS)
         .in("id", allIds)
         .order("created_at", { ascending: false });
+      if (typeFilter === "customer" || typeFilter === "vendor") {
+        q = q.eq("contact_type", typeFilter);
+      }
+      const { data, error: err } = await q;
       contacts = (data ?? []) as Contact[];
       if (err) error = err.message;
     }
   } else {
-    const { data, error: err } = await supabase
+    let q = supabase
       .from("contacts")
       .select(COLS)
       .order("created_at", { ascending: false });
+    if (typeFilter === "customer" || typeFilter === "vendor") {
+      q = q.eq("contact_type", typeFilter);
+    }
+    const { data, error: err } = await q;
     contacts = (data ?? []) as Contact[];
     if (err) error = err.message;
   }
+
 
   return (
     <ProShell>
@@ -141,7 +156,10 @@ export default async function ContactsPage({
               {term ? `Showing results for "${term}"` : "All contacts with status flags for missing waivers or incomplete info."}
             </p>
           </div>
-          <SearchBar initialQ={term} />
+          <div className="flex items-center gap-3 flex-wrap">
+            <TypeFilter current={typeFilter} />
+            <SearchBar initialQ={term} />
+          </div>
         </div>
 
         <div className="px-8 py-6 flex flex-col gap-5">
