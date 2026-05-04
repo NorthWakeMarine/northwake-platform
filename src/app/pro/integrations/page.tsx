@@ -75,8 +75,6 @@ export default async function IntegrationsPage({
   const { connected: calendarConnected, webhookExpiry } = await getCalendarStatus();
   const { qb, dialpad } = await getOAuthStatus();
 
-  const hasQbCreds = !!(process.env.QB_CLIENT_ID);
-  const hasDpCreds = !!(process.env.DIALPAD_CLIENT_ID);
 
   return (
     <ProShell>
@@ -165,20 +163,13 @@ export default async function IntegrationsPage({
                     Re-authorize
                   </a>
                 </div>
-              ) : hasQbCreds ? (
+              ) : (
                 <a
                   href="/api/auth/quickbooks"
                   className="w-full bg-[#000080] text-white text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-semibold hover:bg-blue-900 transition-colors text-center"
                 >
                   Connect QuickBooks
                 </a>
-              ) : (
-                <button
-                  disabled
-                  className="w-full border border-slate-200 text-slate-400 text-[10px] tracking-widest uppercase py-2.5 rounded-sm cursor-not-allowed font-medium"
-                >
-                  Requires QB OAuth Credentials
-                </button>
               )}
             </div>
 
@@ -215,7 +206,7 @@ export default async function IntegrationsPage({
                     Re-authorize
                   </a>
                 </div>
-              ) : hasDpCreds ? (
+              ) : (
                 <div className="flex flex-col gap-2">
                   <a
                     href="/api/auth/dialpad"
@@ -227,13 +218,6 @@ export default async function IntegrationsPage({
                     After connecting, register the webhook in Dialpad: {process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/dialpad
                   </p>
                 </div>
-              ) : (
-                <button
-                  disabled
-                  className="w-full border border-slate-200 text-slate-400 text-[10px] tracking-widest uppercase py-2.5 rounded-sm cursor-not-allowed font-medium"
-                >
-                  Requires Dialpad OAuth Credentials
-                </button>
               )}
             </div>
 
