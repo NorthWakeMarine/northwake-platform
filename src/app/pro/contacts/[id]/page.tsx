@@ -8,7 +8,7 @@ import NoteForm from "./NoteForm";
 import CopyWaiverLink from "./CopyWaiverLink";
 import FleetGallery, { type Asset } from "./FleetGallery";
 import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
-import EditableField from "./EditableField";
+import ContactDetailsCard from "./ContactDetailsCard";
 import ContactDocuments from "./ContactDocuments";
 import ActivityTimeline from "./ActivityTimeline";
 import LogCallModal from "./LogCallModal";
@@ -228,58 +228,17 @@ export default async function ContactProfilePage({
 
               <HealthCheck contact={contact} assetCount={assets.length} />
 
-              {/* Contact details */}
-              <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-4">
-                <h3 className="text-slate-800 text-sm font-semibold">Contact Details</h3>
-                <dl className="flex flex-col gap-3 text-xs">
-                  <div>
-                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Name</dt>
-                    <dd>
-                      <EditableField contactId={contact.id} field="name" value={contact.name} placeholder="Click to add name" />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Email</dt>
-                    <dd>
-                      <EditableField contactId={contact.id} field="email" value={contact.email} placeholder="Click to add email" />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Phone</dt>
-                    <dd>
-                      <EditableField contactId={contact.id} field="phone" value={contact.phone} placeholder="Click to add phone" />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Address</dt>
-                    <dd>
-                      <EditableField contactId={contact.id} field="address" value={contact.address} placeholder="Click to add address" />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Waiver</dt>
-                    <dd>
-                      {contact.waiver_signed ? (
-                        <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">Signed</span>
-                      ) : (
-                        <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-red-50 text-red-600 border border-red-200">Pending</span>
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Status</dt>
-                    <dd className="text-slate-700 capitalize">{contact.status || "lead"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Source</dt>
-                    <dd className="text-slate-700 capitalize">{contact.source || "website"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Created</dt>
-                    <dd className="text-slate-700">{fmt(contact.created_at)}</dd>
-                  </div>
-                </dl>
-              </div>
+              <ContactDetailsCard
+                contactId={contact.id}
+                name={contact.name}
+                email={contact.email}
+                phone={contact.phone}
+                address={contact.address}
+                waiverSigned={contact.waiver_signed}
+                status={contact.status}
+                source={contact.source}
+                createdAt={contact.created_at}
+              />
 
               {/* Household */}
               <LinkedContacts contactId={contact.id} linkedContacts={linkedContacts} />

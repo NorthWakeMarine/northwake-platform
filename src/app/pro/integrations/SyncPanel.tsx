@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, syncDialpadContacts, runIntegrityCheck, createContactFromQb } from "@/app/actions";
+import { importQbCustomers, syncDialpadContacts, runIntegrityCheck, createContactFromQb, pushCrmToDialpad, updateContactFields } from "@/app/actions";
+import type { FieldMismatch } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
 
 type SyncResult = {
-  qb?: { linked: number; alreadyLinked: number; unmatched: QbUnmatched[]; error?: string };
-  dialpad?: { synced: number; error?: string };
+  qb?: { linked: number; alreadyLinked: number; unmatched: QbUnmatched[]; mismatches: FieldMismatch[]; error?: string };
+  dialpad?: { synced: number; mismatches: FieldMismatch[]; error?: string };
   integrity?: { checked: number; flagged: number; error?: string };
-  error?: string;
+  dpPush?: { updated: number; created: number; error?: string };
 };
 
 export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnected: boolean; dialpadConnected: boolean }) {
@@ -17,6 +18,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
   const [isPending, startTransition] = useTransition();
   const [importingQbId, setImportingQbId] = useState<string | null>(null);
   const [imported, setImported] = useState<Set<string>>(new Set());
+  const [resolvedMismatches, setResolvedMismatches] = useState<Set<string>>(new Set());
 
   function handleSyncAll() {
     startTransition(async () => {
@@ -48,24 +50,49 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
     });
   }
 
+  function handleResolveMismatch(m: FieldMismatch) {
+    startTransition(async () => {
+      const res = await updateContactFields(m.contactId, { [m.field]: m.sourceValue });
+      if (res.ok) setResolvedMismatches((prev) => new Set([...prev, `${m.contactId}:${m.field}`]));
+    });
+  }
+
+  function handlePushToDialpad() {
+    startTransition(async () => {
+      const dpPush = await pushCrmToDialpad();
+      setResult((prev) => ({ ...prev, dpPush }));
+    });
+  }
+
   const nothingConnected = !qbConnected && !dialpadConnected;
 
   return (
     <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-slate-800 text-sm font-semibold">Data Sync</h2>
           <p className="text-slate-400 text-[11px] mt-0.5">
             Import contacts from QuickBooks, match Dialpad numbers, and run the integrity check.
           </p>
         </div>
-        <button
-          onClick={handleSyncAll}
-          disabled={isPending || nothingConnected}
-          className="bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase px-5 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors shrink-0"
-        >
-          {isPending ? "Syncing..." : "Sync All"}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {dialpadConnected && (
+            <button
+              onClick={handlePushToDialpad}
+              disabled={isPending}
+              className="border border-slate-200 text-slate-600 hover:border-slate-300 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
+            >
+              {isPending ? "Pushing..." : "Push to Dialpad"}
+            </button>
+          )}
+          <button
+            onClick={handleSyncAll}
+            disabled={isPending || nothingConnected}
+            className="bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase px-5 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
+          >
+            {isPending ? "Syncing..." : "Sync All"}
+          </button>
+        </div>
       </div>
 
       {nothingConnected && (
@@ -97,11 +124,27 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
                       <span className="text-amber-700 text-xs">{result.qb.unmatched.length} QB customers not in CRM</span>
                     </div>
                   )}
+                  {result.qb.mismatches.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-orange-400" />
+                      <span className="text-orange-700 text-xs">{result.qb.mismatches.length} field mismatches</span>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Unmatched QB customers */}
-              {(result.qb.unmatched.length > 0) && (
+              {result.qb.mismatches.length > 0 && (
+                <MismatchList
+                  title="QB Field Mismatches"
+                  mismatches={result.qb.mismatches}
+                  resolvedMismatches={resolvedMismatches}
+                  onResolve={handleResolveMismatch}
+                  isPending={isPending}
+                  sourceLabel="QB"
+                />
+              )}
+
+              {result.qb.unmatched.length > 0 && (
                 <div className="flex flex-col gap-1.5 mt-1">
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] tracking-widest uppercase font-medium text-amber-600">QB Customers Missing from CRM</p>
@@ -153,6 +196,40 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
                   <span className="text-slate-700 text-xs">{result.dialpad.synced} contacts matched by phone</span>
                 </div>
               )}
+
+              {(result.dialpad.mismatches?.length ?? 0) > 0 && (
+                <MismatchList
+                  title="Dialpad Field Mismatches"
+                  mismatches={result.dialpad.mismatches}
+                  resolvedMismatches={resolvedMismatches}
+                  onResolve={handleResolveMismatch}
+                  isPending={isPending}
+                  sourceLabel="Dialpad"
+                />
+              )}
+            </div>
+          )}
+
+          {/* Push to Dialpad results */}
+          {result.dpPush && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">Push to Dialpad</p>
+              {result.dpPush.error ? (
+                <p className="text-red-500 text-xs">{result.dpPush.error}</p>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-700 text-xs">{result.dpPush.updated} contacts updated in Dialpad</span>
+                  </div>
+                  {result.dpPush.created > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-400" />
+                      <span className="text-slate-700 text-xs">{result.dpPush.created} new contacts created in Dialpad</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -185,6 +262,54 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function MismatchList({
+  title,
+  mismatches,
+  resolvedMismatches,
+  onResolve,
+  isPending,
+  sourceLabel,
+}: {
+  title: string;
+  mismatches: FieldMismatch[];
+  resolvedMismatches: Set<string>;
+  onResolve: (m: FieldMismatch) => void;
+  isPending: boolean;
+  sourceLabel: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5 mt-1">
+      <p className="text-[10px] tracking-widest uppercase font-medium text-orange-600">{title}</p>
+      <div className="flex flex-col divide-y divide-slate-100 border border-slate-100 rounded-sm overflow-hidden">
+        {mismatches.map((m) => {
+          const key = `${m.contactId}:${m.field}`;
+          const resolved = resolvedMismatches.has(key);
+          return (
+            <div key={key} className="flex items-start justify-between px-3 py-2 gap-3">
+              <div className="min-w-0 flex flex-col gap-0.5">
+                <p className="text-slate-800 text-xs font-medium truncate">{m.contactName || "Unknown"}</p>
+                <p className="text-[10px] text-slate-400 capitalize">{m.field}: <span className="text-slate-500">{m.crmValue || <span className="italic">empty</span>}</span></p>
+                <p className="text-[10px] text-orange-600">{sourceLabel}: {m.sourceValue}</p>
+              </div>
+              {resolved ? (
+                <span className="text-emerald-600 text-[10px] tracking-widest uppercase font-medium shrink-0 mt-0.5">Updated</span>
+              ) : (
+                <button
+                  onClick={() => onResolve(m)}
+                  disabled={isPending}
+                  className="text-[10px] tracking-widest uppercase text-[#000080] hover:text-[#0000a0] font-semibold shrink-0 disabled:opacity-50 mt-0.5"
+                >
+                  Use {sourceLabel}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

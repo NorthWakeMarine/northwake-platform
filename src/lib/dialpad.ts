@@ -106,6 +106,27 @@ export async function listDialpadContacts(limit = 100): Promise<DialpadContact[]
   return data.items ?? [];
 }
 
+export async function updateDialpadContact(
+  dpId: string,
+  data: { display_name?: string; emails?: string[]; phone_numbers?: string[] }
+): Promise<void> {
+  await dpRequest(`/contacts/${dpId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function createDialpadContact(
+  data: { display_name: string; emails?: string[]; phone_numbers?: string[] }
+): Promise<string | null> {
+  type Resp = { id: string };
+  const res = await dpRequest<Resp>("/contacts", {
+    method: "POST",
+    body: JSON.stringify({ ...data, type: "company" }),
+  });
+  return res.id ?? null;
+}
+
 export async function isDialpadConnected(): Promise<boolean> {
   const tokens = await getDialpadTokens();
   return !!tokens;

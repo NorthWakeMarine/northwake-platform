@@ -707,6 +707,22 @@ export async function updateContactField(
   return { success: true };
 }
 
+export async function updateContactFields(
+  contactId: string,
+  fields: { name?: string | null; email?: string | null; phone?: string | null; address?: string | null }
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await svc();
+  const patch: Record<string, string | null> = {};
+  if ("name"    in fields) patch.name    = fields.name?.trim()    || null;
+  if ("email"   in fields) patch.email   = fields.email?.trim()   || null;
+  if ("phone"   in fields) patch.phone   = fields.phone?.trim()   || null;
+  if ("address" in fields) patch.address = fields.address?.trim() || null;
+  const { error } = await supabase.from("contacts").update(patch).eq("id", contactId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/pro/contacts/${contactId}`);
+  return { ok: true };
+}
+
 // ─── Vessel Service Schedules ─────────────────────────────────────────────────
 
 export type VesselServiceState = { error?: string; success?: boolean };
@@ -1500,10 +1516,19 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
 
 // ─── QuickBooks Customer Import ───────────────────────────────────────────────
 
+export type FieldMismatch = {
+  contactId: string;
+  contactName: string | null;
+  field: "name" | "email" | "phone";
+  crmValue: string | null;
+  sourceValue: string;
+};
+
 export async function importQbCustomers(): Promise<{
   linked: number;
   alreadyLinked: number;
   unmatched: QbUnmatched[];
+  mismatches: FieldMismatch[];
   error?: string;
 }> {
   const supabase = await svc();
@@ -1511,13 +1536,13 @@ export async function importQbCustomers(): Promise<{
   try {
     const { listQbCustomers, getQbTokens } = await import("@/lib/quickbooks");
     const tokens = await getQbTokens();
-    if (!tokens) return { linked: 0, alreadyLinked: 0, unmatched: [], error: "QuickBooks not connected." };
+    if (!tokens) return { linked: 0, alreadyLinked: 0, unmatched: [], mismatches: [], error: "QuickBooks not connected." };
 
     const qbCustomers = await listQbCustomers();
 
     const { data: crmContacts } = await supabase
       .from("contacts")
-      .select("id, name, email, qb_customer_id");
+      .select("id, name, email, phone, qb_customer_id");
 
     const contacts = crmContacts ?? [];
     const emailMap = new Map(contacts.filter(c => c.email).map(c => [c.email!.toLowerCase(), c]));
@@ -1526,14 +1551,30 @@ export async function importQbCustomers(): Promise<{
     let linked = 0;
     let alreadyLinked = 0;
     const unmatched: QbUnmatched[] = [];
+    const mismatches: FieldMismatch[] = [];
 
     for (const qbC of qbCustomers) {
-      const qbEmail = qbC.PrimaryEmailAddr?.Address?.toLowerCase();
+      const qbEmailRaw = qbC.PrimaryEmailAddr?.Address;
+      const qbPhoneRaw = qbC.PrimaryPhone?.FreeFormNumber;
+      const qbEmail = qbEmailRaw?.toLowerCase();
       const qbName  = qbC.DisplayName?.toLowerCase().trim();
 
-      const match = (qbEmail && emailMap.get(qbEmail)) || (qbName && nameMap.get(qbName));
+      const emailMatch = qbEmail ? emailMap.get(qbEmail) : undefined;
+      const nameMatch  = !emailMatch && qbName ? nameMap.get(qbName) : undefined;
+      const match = emailMatch ?? nameMatch;
 
       if (match) {
+        // Compare all fields and collect mismatches
+        if (nameMatch && qbEmailRaw && qbEmailRaw.toLowerCase() !== (match.email?.toLowerCase() ?? "")) {
+          mismatches.push({ contactId: match.id, contactName: match.name, field: "email", crmValue: match.email, sourceValue: qbEmailRaw });
+        }
+        if (qbPhoneRaw) {
+          const normQb = normalizePhone(qbPhoneRaw) ?? qbPhoneRaw;
+          if (normQb !== (match.phone ?? "")) {
+            mismatches.push({ contactId: match.id, contactName: match.name, field: "phone", crmValue: match.phone, sourceValue: normQb });
+          }
+        }
+
         if (match.qb_customer_id === qbC.Id) {
           alreadyLinked++;
         } else {
@@ -1544,8 +1585,8 @@ export async function importQbCustomers(): Promise<{
         unmatched.push({
           qbId:        qbC.Id,
           name:        qbC.DisplayName,
-          email:       qbC.PrimaryEmailAddr?.Address ?? null,
-          phone:       qbC.PrimaryPhone?.FreeFormNumber ?? null,
+          email:       qbEmailRaw ?? null,
+          phone:       qbPhoneRaw ?? null,
           companyName: qbC.CompanyName ?? null,
         });
       }
@@ -1553,9 +1594,9 @@ export async function importQbCustomers(): Promise<{
 
     revalidatePath("/pro/contacts");
     revalidatePath("/pro/dashboard");
-    return { linked, alreadyLinked, unmatched };
+    return { linked, alreadyLinked, unmatched, mismatches };
   } catch (err) {
-    return { linked: 0, alreadyLinked: 0, unmatched: [], error: err instanceof Error ? err.message : "Import failed." };
+    return { linked: 0, alreadyLinked: 0, unmatched: [], mismatches: [], error: err instanceof Error ? err.message : "Import failed." };
   }
 }
 
@@ -1605,20 +1646,22 @@ export async function createContactFromQb(
 
 // ─── Dialpad Contact Sync ─────────────────────────────────────────────────────
 
-export async function syncDialpadContacts(): Promise<{ synced: number; error?: string }> {
+export async function syncDialpadContacts(): Promise<{ synced: number; mismatches: FieldMismatch[]; error?: string }> {
   const supabase = await svc();
   try {
     const { listDialpadContacts } = await import("@/lib/dialpad");
     const dpContacts = await listDialpadContacts();
 
     let synced = 0;
+    const mismatches: FieldMismatch[] = [];
+
     for (const dp of dpContacts) {
       const phones = dp.phone_numbers ?? [];
       for (const phone of phones) {
         const normalized = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
         const { data: match } = await supabase
           .from("contacts")
-          .select("id")
+          .select("id, name, email, phone")
           .eq("phone", normalized)
           .maybeSingle();
         if (match) {
@@ -1627,12 +1670,61 @@ export async function syncDialpadContacts(): Promise<{ synced: number; error?: s
             .update({ dialpad_contact_id: dp.id })
             .eq("id", match.id);
           synced++;
+
+          // Compare all fields Dialpad has against CRM
+          const dpEmail = dp.emails?.[0];
+          if (dpEmail && dpEmail.toLowerCase() !== (match.email?.toLowerCase() ?? "")) {
+            mismatches.push({ contactId: match.id, contactName: match.name, field: "email", crmValue: match.email, sourceValue: dpEmail });
+          }
+          const dpName = dp.display_name;
+          if (dpName && dpName.toLowerCase() !== (match.name?.toLowerCase() ?? "")) {
+            mismatches.push({ contactId: match.id, contactName: match.name, field: "name", crmValue: match.name, sourceValue: dpName });
+          }
           break;
         }
       }
     }
-    return { synced };
+    return { synced, mismatches };
   } catch (err) {
-    return { synced: 0, error: err instanceof Error ? err.message : "Dialpad sync failed." };
+    return { synced: 0, mismatches: [], error: err instanceof Error ? err.message : "Dialpad sync failed." };
+  }
+}
+
+export async function pushCrmToDialpad(): Promise<{ updated: number; created: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { updateDialpadContact, createDialpadContact } = await import("@/lib/dialpad");
+
+    const { data: contacts } = await supabase
+      .from("contacts")
+      .select("id, name, email, phone, dialpad_contact_id")
+      .eq("contact_type", "customer")
+      .not("name", "is", null);
+
+    let updated = 0;
+    let created = 0;
+
+    for (const c of contacts ?? []) {
+      const payload = {
+        display_name: c.name ?? "",
+        ...(c.email ? { emails: [c.email] } : {}),
+        ...(c.phone ? { phone_numbers: [c.phone] } : {}),
+      };
+
+      if (c.dialpad_contact_id) {
+        await updateDialpadContact(c.dialpad_contact_id, payload);
+        updated++;
+      } else {
+        const newId = await createDialpadContact(payload);
+        if (newId) {
+          await supabase.from("contacts").update({ dialpad_contact_id: newId }).eq("id", c.id);
+          created++;
+        }
+      }
+    }
+
+    return { updated, created };
+  } catch (err) {
+    return { updated: 0, created: 0, error: err instanceof Error ? err.message : "Push failed." };
   }
 }
