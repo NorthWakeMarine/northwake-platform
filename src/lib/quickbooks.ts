@@ -85,7 +85,8 @@ const QB_BASE = "https://quickbooks.api.intuit.com/v3";
 
 async function qbRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const tokens = await getValidTokens();
-  const url = `${QB_BASE}/company/${tokens.realm_id}${path}?minorversion=70`;
+  const sep = path.includes("?") ? "&" : "?";
+  const url = `${QB_BASE}/company/${tokens.realm_id}${path}${sep}minorversion=70`;
   const res = await fetch(url, {
     ...options,
     headers: {
