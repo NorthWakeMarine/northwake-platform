@@ -34,7 +34,48 @@ function fmt(iso: string) {
   });
 }
 
-export default async function LeadsPage() {
+const SORTABLE_COLS: Record<string, string> = {
+  Date: "created_at",
+  Name: "name",
+  Email: "email",
+  Phone: "phone",
+};
+
+function SortableHeader({ label, field, currentSort, currentDir }: {
+  label: string;
+  field: string | null;
+  currentSort: string;
+  currentDir: string;
+}) {
+  if (!field) {
+    return (
+      <th className="text-left text-slate-400 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
+        {label}
+      </th>
+    );
+  }
+  const isActive = currentSort === field;
+  const nextDir = isActive && currentDir === "asc" ? "desc" : "asc";
+  const params = new URLSearchParams({ sort: field, dir: nextDir }).toString();
+  return (
+    <th className="text-left text-slate-400 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
+      <a href={`?${params}`} className={`flex items-center gap-1 hover:text-slate-600 transition-colors ${isActive ? "text-slate-600" : ""}`}>
+        {label}
+        {isActive && <span className="text-slate-400">{currentDir === "asc" ? "↑" : "↓"}</span>}
+      </a>
+    </th>
+  );
+}
+
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ sort?: string; dir?: string }>;
+}) {
+  const { sort, dir } = (await searchParams) ?? {};
+  const sortField = Object.values(SORTABLE_COLS).includes(sort ?? "") ? (sort ?? "created_at") : "created_at";
+  const sortDir = dir === "asc" ? "asc" : "desc";
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!
@@ -43,7 +84,7 @@ export default async function LeadsPage() {
   const { data: leads, error } = await supabase
     .from("leads")
     .select("id, created_at, name, email, phone, vessel_type, vessel_length, service, source")
-    .order("created_at", { ascending: false });
+    .order(sortField, { ascending: sortDir === "asc" });
 
   const total = leads?.length ?? 0;
   const thisMonth = leads?.filter((l) => {
@@ -79,10 +120,14 @@ export default async function LeadsPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      {["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source", ""].map((h) => (
-                        <th key={h} className="text-left text-slate-400 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
-                          {h}
-                        </th>
+                      {(["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source", ""] as const).map((h) => (
+                        <SortableHeader
+                          key={h}
+                          label={h}
+                          field={SORTABLE_COLS[h] ?? null}
+                          currentSort={sortField}
+                          currentDir={sortDir}
+                        />
                       ))}
                     </tr>
                   </thead>

@@ -18,15 +18,17 @@ const ACCENT: Record<PipelineStage, string> = {
 export default function PipelineColumn({
   stage,
   cards,
+  onRemoveCard,
 }: {
   stage: PipelineStage;
   cards: PipelineCard[];
+  onRemoveCard?: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   const cardIds = cards.map((c) => c.id);
 
   return (
-    <div className="w-60 shrink-0 flex flex-col gap-2">
+    <div className="flex-1 min-w-48 flex flex-col gap-2">
       <div className={`flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 ${ACCENT[stage]}`}>
         <span className="text-slate-500 text-[11px] font-semibold tracking-widest uppercase">
           {STAGE_LABELS[stage]}
@@ -44,7 +46,7 @@ export default function PipelineColumn({
           }`}
         >
           {cards.map((card) => (
-            <PipelineCardComponent key={card.id} card={card} />
+            <PipelineCardComponent key={card.id} card={card} onRemove={onRemoveCard} />
           ))}
         </div>
       </SortableContext>

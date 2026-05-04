@@ -233,25 +233,27 @@ export default async function ContactProfilePage({
                 <h3 className="text-slate-800 text-sm font-semibold">Contact Details</h3>
                 <dl className="flex flex-col gap-3 text-xs">
                   <div>
-                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Address</dt>
+                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Name</dt>
                     <dd>
-                      <EditableField contactId={contact.id} field="address" value={contact.address} placeholder="Click to add address" />
+                      <EditableField contactId={contact.id} field="name" value={contact.name} placeholder="Click to add name" />
                     </dd>
                   </div>
                   <div>
                     <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Email</dt>
-                    <dd className="text-slate-700">
-                      {contact.email
-                        ? <a href={`mailto:${contact.email}`} className="hover:text-blue-600 transition-colors">{contact.email}</a>
-                        : <span className="text-slate-300">Not provided</span>}
+                    <dd>
+                      <EditableField contactId={contact.id} field="email" value={contact.email} placeholder="Click to add email" />
                     </dd>
                   </div>
                   <div>
                     <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Phone</dt>
-                    <dd className="text-slate-700">
-                      {contact.phone
-                        ? <a href={`tel:${contact.phone}`} className="hover:text-blue-600 transition-colors">{contact.phone}</a>
-                        : <span className="text-slate-300">Not provided</span>}
+                    <dd>
+                      <EditableField contactId={contact.id} field="phone" value={contact.phone} placeholder="Click to add phone" />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Address</dt>
+                    <dd>
+                      <EditableField contactId={contact.id} field="address" value={contact.address} placeholder="Click to add address" />
                     </dd>
                   </div>
                   <div>

@@ -24,7 +24,7 @@ export default function SummaryBar({
         {totalRed > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block" />
-            <span className="text-red-600 text-xs font-medium">{totalRed} need contact</span>
+            <span className="text-red-600 text-xs font-medium">{totalRed} need review</span>
           </div>
         )}
         {totalOverdue > 0 && (

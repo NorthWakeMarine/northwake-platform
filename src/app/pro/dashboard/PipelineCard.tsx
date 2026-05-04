@@ -3,7 +3,9 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import type { PipelineCard as PipelineCardType } from "@/types/pipeline";
+import { removeFromPipeline } from "@/app/actions";
 
 function AssetIcon({ type }: { type: PipelineCardType["assetType"] }) {
   return (
@@ -69,8 +71,9 @@ function HealthWarningIcon({ flags }: { flags: PipelineCardType["healthFlags"] }
   );
 }
 
-export default function PipelineCard({ card }: { card: PipelineCardType }) {
+export default function PipelineCard({ card, onRemove }: { card: PipelineCardType; onRemove?: (id: string) => void }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { card },
@@ -86,6 +89,15 @@ export default function PipelineCard({ card }: { card: PipelineCardType }) {
     else if (card.leadId) router.push(`/pro/leads/${card.leadId}`);
   }
 
+  function handleRemove(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!card.contactId) return;
+    startTransition(async () => {
+      await removeFromPipeline(card.contactId!);
+      onRemove?.(card.id);
+    });
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -94,7 +106,7 @@ export default function PipelineCard({ card }: { card: PipelineCardType }) {
       {...listeners}
       onClick={handleClick}
       className={`bg-white rounded-xl shadow-sm px-4 py-3.5 flex flex-col gap-2 cursor-grab active:cursor-grabbing select-none transition-opacity ${
-        isDragging ? "opacity-40" : "opacity-100"
+        isDragging || isPending ? "opacity-40" : "opacity-100"
       }`}
     >
       <div className="flex items-center gap-2.5">
@@ -104,6 +116,16 @@ export default function PipelineCard({ card }: { card: PipelineCardType }) {
         </span>
         <HealthWarningIcon flags={card.healthFlags} />
         <HeatDot heat={card.heat} lastContactAt={card.lastContactAt} />
+        {card.contactId && (
+          <button
+            onClick={handleRemove}
+            disabled={isPending}
+            className="text-slate-300 hover:text-red-400 text-xs leading-none shrink-0 transition-colors"
+            title="Remove from pipeline"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       {(card.vesselName || card.isReturningClient) && (

@@ -179,6 +179,7 @@ export async function isQbConnected(): Promise<boolean> {
 export type QbCustomer = {
   Id: string;
   DisplayName: string;
+  CompanyName?: string;
   PrimaryEmailAddr?: { Address: string };
   PrimaryPhone?: { FreeFormNumber: string };
   Active: boolean;

@@ -1232,6 +1232,13 @@ export async function updatePipelineStage(
   return { ok: true, contactId: id, contactName: contact.name ?? "Unknown", vesselName: vessel?.name ?? null };
 }
 
+export async function removeFromPipeline(contactId: string): Promise<{ ok: boolean }> {
+  const supabase = await svc();
+  await supabase.from("contacts").update({ pipeline_stage: null }).eq("id", contactId);
+  revalidatePath("/pro/dashboard");
+  return { ok: true };
+}
+
 export async function createQuickBooksInvoiceDraft(
   contactId: string,
   assetId?: string
@@ -1535,10 +1542,11 @@ export async function importQbCustomers(): Promise<{
         }
       } else {
         unmatched.push({
-          qbId:   qbC.Id,
-          name:   qbC.DisplayName,
-          email:  qbC.PrimaryEmailAddr?.Address ?? null,
-          phone:  qbC.PrimaryPhone?.FreeFormNumber ?? null,
+          qbId:        qbC.Id,
+          name:        qbC.DisplayName,
+          email:       qbC.PrimaryEmailAddr?.Address ?? null,
+          phone:       qbC.PrimaryPhone?.FreeFormNumber ?? null,
+          companyName: qbC.CompanyName ?? null,
         });
       }
     }
@@ -1551,13 +1559,26 @@ export async function importQbCustomers(): Promise<{
   }
 }
 
-type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null };
+type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
+
+function parseVesselsFromCompanyName(companyName: string): { name: string; asset_type: string; length_ft: number | null }[] {
+  return companyName
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      const lenMatch = s.match(/(\d+\.?\d*)\s*(?:ft|feet|')\s*$/i);
+      const length_ft = lenMatch ? parseFloat(lenMatch[1]) : null;
+      const vesselName = lenMatch ? s.slice(0, -lenMatch[0].length).trim() : s;
+      return { name: vesselName || s, asset_type: "boat", length_ft };
+    });
+}
 
 export async function createContactFromQb(
-  qbId: string, name: string, email: string | null, phone: string | null
+  qbId: string, name: string, email: string | null, phone: string | null, companyName?: string | null
 ): Promise<{ ok: boolean; error?: string }> {
   const supabase = await svc();
-  const { error } = await supabase.from("contacts").insert({
+  const { data: newContact, error } = await supabase.from("contacts").insert({
     name,
     email,
     phone: normalizePhone(phone),
@@ -1567,8 +1588,16 @@ export async function createContactFromQb(
     contact_type: "customer",
     pipeline_stage: "new_leads",
     waiver_signed: false,
-  });
-  if (error) return { ok: false, error: error.message };
+  }).select("id").single();
+  if (error || !newContact) return { ok: false, error: error?.message ?? "Insert failed." };
+
+  if (companyName?.trim()) {
+    const vessels = parseVesselsFromCompanyName(companyName);
+    for (const v of vessels) {
+      await supabase.from("vessels").insert({ owner_id: newContact.id, ...v });
+    }
+  }
+
   revalidatePath("/pro/contacts");
   revalidatePath("/pro/dashboard");
   return { ok: true };

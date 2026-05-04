@@ -46,14 +46,51 @@ function StatusBadges({ contact }: { contact: Contact }) {
   );
 }
 
+const SORTABLE_COLS: Record<string, string> = {
+  Date: "created_at",
+  Name: "name",
+  Email: "email",
+  Phone: "phone",
+  Length: "vessel_length",
+};
+
+function SortableHeader({ label, field, currentSort, currentDir, baseParams }: {
+  label: string;
+  field: string | null;
+  currentSort: string;
+  currentDir: string;
+  baseParams: Record<string, string>;
+}) {
+  if (!field) {
+    return (
+      <th className="text-left text-slate-400 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
+        {label}
+      </th>
+    );
+  }
+  const isActive = currentSort === field;
+  const nextDir = isActive && currentDir === "asc" ? "desc" : "asc";
+  const params = new URLSearchParams({ ...baseParams, sort: field, dir: nextDir }).toString();
+  return (
+    <th className="text-left text-slate-400 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
+      <a href={`?${params}`} className={`flex items-center gap-1 hover:text-slate-600 transition-colors ${isActive ? "text-slate-600" : ""}`}>
+        {label}
+        {isActive && <span className="text-slate-400">{currentDir === "asc" ? "↑" : "↓"}</span>}
+      </a>
+    </th>
+  );
+}
+
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; type?: string }>;
+  searchParams?: Promise<{ q?: string; type?: string; sort?: string; dir?: string }>;
 }) {
-  const { q, type } = (await searchParams) ?? {};
+  const { q, type, sort, dir } = (await searchParams) ?? {};
   const term = q?.trim() ?? "";
   const typeFilter = type?.trim() ?? "";
+  const sortField = SORTABLE_COLS[Object.keys(SORTABLE_COLS).find((k) => SORTABLE_COLS[k] === (sort ?? "")) ?? ""] ? (sort ?? "created_at") : "created_at";
+  const sortDir = dir === "asc" ? "asc" : "desc";
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -123,7 +160,7 @@ export default async function ContactsPage({
         .from("contacts")
         .select(COLS)
         .in("id", allIds)
-        .order("created_at", { ascending: false });
+        .order(sortField, { ascending: sortDir === "asc" });
       if (typeFilter === "customer" || typeFilter === "vendor") {
         q = q.eq("contact_type", typeFilter);
       }
@@ -135,7 +172,7 @@ export default async function ContactsPage({
     let q = supabase
       .from("contacts")
       .select(COLS)
-      .order("created_at", { ascending: false });
+      .order(sortField, { ascending: sortDir === "asc" });
     if (typeFilter === "customer" || typeFilter === "vendor") {
       q = q.eq("contact_type", typeFilter);
     }
@@ -226,10 +263,15 @@ export default async function ContactsPage({
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      {["Date", "Name", "Email", "Phone", "Vessel", "Length", "Status", ""].map((h) => (
-                        <th key={h} className="text-left text-slate-400 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
-                          {h}
-                        </th>
+                      {(["Date", "Name", "Email", "Phone", "Vessel", "Length", "Status", ""] as const).map((h) => (
+                        <SortableHeader
+                          key={h}
+                          label={h}
+                          field={SORTABLE_COLS[h] ?? null}
+                          currentSort={sortField}
+                          currentDir={sortDir}
+                          baseParams={{ ...(term ? { q: term } : {}), ...(typeFilter ? { type: typeFilter } : {}) }}
+                        />
                       ))}
                     </tr>
                   </thead>

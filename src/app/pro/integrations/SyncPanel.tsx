@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { importQbCustomers, syncDialpadContacts, runIntegrityCheck, createContactFromQb } from "@/app/actions";
 
-type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null };
+type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
 
 type SyncResult = {
   qb?: { linked: number; alreadyLinked: number; unmatched: QbUnmatched[]; error?: string };
@@ -32,9 +32,19 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
   function handleImportContact(u: QbUnmatched) {
     setImportingQbId(u.qbId);
     startTransition(async () => {
-      const res = await createContactFromQb(u.qbId, u.name, u.email, u.phone);
+      const res = await createContactFromQb(u.qbId, u.name, u.email, u.phone, u.companyName);
       if (res.ok) setImported((prev) => new Set([...prev, u.qbId]));
       setImportingQbId(null);
+    });
+  }
+
+  function handleImportAll(unmatched: QbUnmatched[]) {
+    startTransition(async () => {
+      for (const u of unmatched) {
+        if (imported.has(u.qbId)) continue;
+        const res = await createContactFromQb(u.qbId, u.name, u.email, u.phone, u.companyName);
+        if (res.ok) setImported((prev) => new Set([...prev, u.qbId]));
+      }
     });
   }
 
@@ -93,7 +103,18 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
               {/* Unmatched QB customers */}
               {(result.qb.unmatched.length > 0) && (
                 <div className="flex flex-col gap-1.5 mt-1">
-                  <p className="text-[10px] tracking-widest uppercase font-medium text-amber-600">QB Customers Missing from CRM</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] tracking-widest uppercase font-medium text-amber-600">QB Customers Missing from CRM</p>
+                    {result.qb.unmatched.filter((u) => !imported.has(u.qbId)).length > 0 && (
+                      <button
+                        onClick={() => handleImportAll(result.qb!.unmatched)}
+                        disabled={isPending}
+                        className="text-[10px] tracking-widest uppercase text-[#000080] hover:text-[#0000a0] font-semibold disabled:opacity-50"
+                      >
+                        {isPending ? "Importing..." : `Import All (${result.qb.unmatched.filter((u) => !imported.has(u.qbId)).length})`}
+                      </button>
+                    )}
+                  </div>
                   <div className="flex flex-col divide-y divide-slate-100 border border-slate-100 rounded-sm overflow-hidden">
                     {result.qb.unmatched.map((u) => (
                       <div key={u.qbId} className="flex items-center justify-between px-3 py-2 gap-3">

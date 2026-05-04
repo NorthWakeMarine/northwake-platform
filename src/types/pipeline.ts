@@ -18,8 +18,8 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
 export const STAGES: PipelineStage[] = [
   "new_leads",
   "discovery",
-  "estimate_sent",
   "needs_attention",
+  "estimate_sent",
   "work_scheduled",
   "done_invoiced",
 ];

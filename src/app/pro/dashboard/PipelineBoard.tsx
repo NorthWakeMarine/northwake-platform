@@ -122,9 +122,19 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
         onDragEnd={handleDragEnd}
       >
         <div className="flex-1 overflow-x-auto">
-          <div className="flex gap-4 px-6 py-5 items-start min-w-max">
+          <div className="flex gap-4 px-6 py-5 items-start">
             {STAGES.map((stage) => (
-              <PipelineColumn key={stage} stage={stage} cards={columns[stage]} />
+              <PipelineColumn
+                key={stage}
+                stage={stage}
+                cards={columns[stage]}
+                onRemoveCard={(id) =>
+                  setColumns((prev) => ({
+                    ...prev,
+                    [stage]: prev[stage].filter((c) => c.id !== id),
+                  }))
+                }
+              />
             ))}
           </div>
         </div>
