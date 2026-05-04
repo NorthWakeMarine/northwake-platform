@@ -174,3 +174,19 @@ export async function isQbConnected(): Promise<boolean> {
   const tokens = await getQbTokens();
   return !!tokens;
 }
+
+export type QbCustomer = {
+  Id: string;
+  DisplayName: string;
+  PrimaryEmailAddr?: { Address: string };
+  PrimaryPhone?: { FreeFormNumber: string };
+  Active: boolean;
+};
+
+export async function listQbCustomers(): Promise<QbCustomer[]> {
+  type Resp = { QueryResponse: { Customer?: QbCustomer[] } };
+  const data = await qbRequest<Resp>(
+    "/query?query=SELECT%20*%20FROM%20Customer%20WHERE%20Active%20%3D%20true%20MAXRESULTS%20500"
+  );
+  return data.QueryResponse.Customer ?? [];
+}

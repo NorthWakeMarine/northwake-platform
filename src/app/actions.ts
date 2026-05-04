@@ -1491,6 +1491,89 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
   return { checked: contacts.length, flagged };
 }
 
+// ─── QuickBooks Customer Import ───────────────────────────────────────────────
+
+export async function importQbCustomers(): Promise<{
+  linked: number;
+  alreadyLinked: number;
+  unmatched: QbUnmatched[];
+  error?: string;
+}> {
+  const supabase = await svc();
+
+  try {
+    const { listQbCustomers, getQbTokens } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { linked: 0, alreadyLinked: 0, unmatched: [], error: "QuickBooks not connected." };
+
+    const qbCustomers = await listQbCustomers();
+
+    const { data: crmContacts } = await supabase
+      .from("contacts")
+      .select("id, name, email, qb_customer_id");
+
+    const contacts = crmContacts ?? [];
+    const emailMap = new Map(contacts.filter(c => c.email).map(c => [c.email!.toLowerCase(), c]));
+    const nameMap  = new Map(contacts.filter(c => c.name).map(c => [c.name!.toLowerCase().trim(), c]));
+
+    let linked = 0;
+    let alreadyLinked = 0;
+    const unmatched: QbUnmatched[] = [];
+
+    for (const qbC of qbCustomers) {
+      const qbEmail = qbC.PrimaryEmailAddr?.Address?.toLowerCase();
+      const qbName  = qbC.DisplayName?.toLowerCase().trim();
+
+      const match = (qbEmail && emailMap.get(qbEmail)) || (qbName && nameMap.get(qbName));
+
+      if (match) {
+        if (match.qb_customer_id === qbC.Id) {
+          alreadyLinked++;
+        } else {
+          await supabase.from("contacts").update({ qb_customer_id: qbC.Id }).eq("id", match.id);
+          linked++;
+        }
+      } else {
+        unmatched.push({
+          qbId:   qbC.Id,
+          name:   qbC.DisplayName,
+          email:  qbC.PrimaryEmailAddr?.Address ?? null,
+          phone:  qbC.PrimaryPhone?.FreeFormNumber ?? null,
+        });
+      }
+    }
+
+    revalidatePath("/pro/contacts");
+    revalidatePath("/pro/dashboard");
+    return { linked, alreadyLinked, unmatched };
+  } catch (err) {
+    return { linked: 0, alreadyLinked: 0, unmatched: [], error: err instanceof Error ? err.message : "Import failed." };
+  }
+}
+
+type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null };
+
+export async function createContactFromQb(
+  qbId: string, name: string, email: string | null, phone: string | null
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await svc();
+  const { error } = await supabase.from("contacts").insert({
+    name,
+    email,
+    phone: normalizePhone(phone),
+    qb_customer_id: qbId,
+    source: "quickbooks",
+    status: "client",
+    contact_type: "customer",
+    pipeline_stage: "new_leads",
+    waiver_signed: false,
+  });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/pro/contacts");
+  revalidatePath("/pro/dashboard");
+  return { ok: true };
+}
+
 // ─── Dialpad Contact Sync ─────────────────────────────────────────────────────
 
 export async function syncDialpadContacts(): Promise<{ synced: number; error?: string }> {
