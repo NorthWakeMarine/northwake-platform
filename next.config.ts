@@ -5,7 +5,9 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    qualities: [75, 90, 100],
+    qualities: [75, 80],
+    deviceSizes: [640, 750, 828, 1080, 1280],
+    imageSizes: [16, 32, 64, 96, 128, 256],
   },
 
   async redirects() {
@@ -19,14 +21,25 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Prevent the /pro route from appearing in search engines at the config level
   async headers() {
     return [
       {
         source: "/pro/:path*",
         headers: [
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
-          { key: "Cache-Control",  value: "no-store, no-cache, must-revalidate" },
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
+        ],
+      },
+      {
+        source: "/brand/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/images/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
     ];

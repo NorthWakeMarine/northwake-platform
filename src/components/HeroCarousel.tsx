@@ -88,9 +88,9 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
                     alt={slide.alt}
                     fill
                     priority={i === 0}
-                    sizes="100vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 100vw, 1280px"
                     className="object-contain object-center"
-                    quality={100}
+                    quality={80}
                   />
 
                   {/* Bottom-to-top gradient for text legibility */}
