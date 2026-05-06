@@ -49,7 +49,7 @@ async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: st
 
   return {
     qb: { connected: !!qbRow, realmId: qbRow?.realm_id ?? null },
-    dialpad: { connected: !!dpRow },
+    dialpad: { connected: !!dpRow || !!process.env.DIALPAD_API_KEY },
   };
 }
 
@@ -132,7 +132,7 @@ export default async function IntegrationsPage({
               <p className="text-slate-500 text-xs leading-relaxed flex-1">
                 Push booked jobs to Google Calendar in real time. Changes made on your phone sync back to the CRM automatically.
               </p>
-              <CalendarRegisterButton expires={webhookExpiry} />
+              <CalendarRegisterButton expires={webhookExpiry} calendarConnected={calendarConnected} />
             </div>
 
             {/* QuickBooks */}
@@ -196,17 +196,11 @@ export default async function IntegrationsPage({
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    Webhook active
+                    Connected via API key
                   </div>
-                  <p className="text-slate-400 text-[10px]">
-                    Webhook URL: {process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/dialpad
+                  <p className="text-slate-400 text-[10px] leading-relaxed">
+                    Register this webhook URL in Dialpad to enable call logging: https://northwakemarine.com/api/webhooks/dialpad
                   </p>
-                  <a
-                    href="/api/auth/dialpad"
-                    className="w-full border border-slate-200 text-slate-500 text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-medium hover:border-slate-300 transition-colors text-center"
-                  >
-                    Re-authorize
-                  </a>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">

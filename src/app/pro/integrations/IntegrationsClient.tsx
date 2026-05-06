@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react";
 import { registerCalendarWebhook } from "@/app/actions";
 
-export default function CalendarRegisterButton({ expires }: { expires: string | null }) {
+export default function CalendarRegisterButton({ expires, calendarConnected }: { expires: string | null; calendarConnected: boolean }) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ ok?: boolean; expires?: string; error?: string } | null>(null);
 
-  const isConnected = expires && new Date(expires) > new Date();
+  const isConnected = calendarConnected || (expires && new Date(expires) > new Date());
 
   function handleRegister() {
     startTransition(async () => {
