@@ -1747,6 +1747,104 @@ export async function createContactFromQb(
   return { ok: true };
 }
 
+// ─── Dialpad Contact Import ───────────────────────────────────────────────────
+
+export type DpUnmatched = {
+  dpId: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+};
+
+export async function importDialpadContacts(): Promise<{
+  linked: number;
+  alreadyLinked: number;
+  unmatched: DpUnmatched[];
+  mismatches: FieldMismatch[];
+  error?: string;
+}> {
+  const supabase = await svc();
+  try {
+    const { listDialpadContacts } = await import("@/lib/dialpad");
+    const dpContacts = await listDialpadContacts(500);
+
+    const { data: crmContacts } = await supabase
+      .from("contacts")
+      .select("id, name, email, phone, dialpad_contact_id");
+
+    const contacts = crmContacts ?? [];
+    const emailMap = new Map(contacts.filter(c => c.email).map(c => [c.email!.toLowerCase(), c]));
+    const phoneMap = new Map(contacts.filter(c => c.phone).map(c => [c.phone!, c]));
+    const nameMap  = new Map(contacts.filter(c => c.name).map(c => [c.name!.toLowerCase().trim(), c]));
+
+    let linked = 0;
+    let alreadyLinked = 0;
+    const unmatched: DpUnmatched[] = [];
+    const mismatches: FieldMismatch[] = [];
+
+    for (const dp of dpContacts) {
+      const dpEmail = dp.emails?.[0]?.toLowerCase() ?? null;
+      const dpPhone = dp.phone_numbers?.[0]
+        ? (dp.phone_numbers[0].startsWith("+") ? dp.phone_numbers[0] : `+1${dp.phone_numbers[0].replace(/\D/g, "")}`)
+        : null;
+      const dpName = dp.display_name?.toLowerCase().trim() ?? "";
+
+      const match =
+        (dpEmail ? emailMap.get(dpEmail) : undefined) ??
+        (dpPhone ? phoneMap.get(dpPhone) : undefined) ??
+        (dpName ? nameMap.get(dpName) : undefined);
+
+      if (match) {
+        if (match.dialpad_contact_id === dp.id) {
+          alreadyLinked++;
+        } else {
+          await supabase.from("contacts").update({ dialpad_contact_id: dp.id }).eq("id", match.id);
+          linked++;
+        }
+        if (dpEmail && dpEmail !== (match.email?.toLowerCase() ?? "")) {
+          mismatches.push({ contactId: match.id, contactName: match.name, field: "email", crmValue: match.email, sourceValue: dp.emails![0] });
+        }
+        if (dpPhone && dpPhone !== (match.phone ?? "")) {
+          mismatches.push({ contactId: match.id, contactName: match.name, field: "phone", crmValue: match.phone, sourceValue: dpPhone });
+        }
+      } else {
+        unmatched.push({
+          dpId:  dp.id,
+          name:  dp.display_name ?? "Unknown",
+          email: dp.emails?.[0] ?? null,
+          phone: dpPhone,
+        });
+      }
+    }
+
+    return { linked, alreadyLinked, unmatched, mismatches };
+  } catch (err) {
+    return { linked: 0, alreadyLinked: 0, unmatched: [], mismatches: [], error: err instanceof Error ? err.message : "Dialpad import failed." };
+  }
+}
+
+export async function createContactFromDialpad(
+  dpId: string,
+  name: string,
+  email: string | null,
+  phone: string | null,
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { error } = await supabase.from("contacts").insert({
+      name,
+      email: email || null,
+      phone: phone || null,
+      dialpad_contact_id: dpId,
+      source: "dialpad",
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to create contact." };
+  }
+}
+
 // ─── Dialpad Contact Sync ─────────────────────────────────────────────────────
 
 export async function syncDialpadContacts(): Promise<{ synced: number; mismatches: FieldMismatch[]; error?: string }> {

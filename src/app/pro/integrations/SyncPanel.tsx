@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, syncDialpadContacts, runIntegrityCheck, createContactFromQb, pushCrmToDialpad, updateContactFields } from "@/app/actions";
-import type { FieldMismatch } from "@/app/actions";
+import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, pushCrmToDialpad, updateContactFields } from "@/app/actions";
+import type { FieldMismatch, DpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
 
 type SyncResult = {
   qb?: { linked: number; alreadyLinked: number; unmatched: QbUnmatched[]; mismatches: FieldMismatch[]; error?: string };
-  dialpad?: { synced: number; mismatches: FieldMismatch[]; error?: string };
+  dialpad?: { linked: number; alreadyLinked: number; unmatched: DpUnmatched[]; mismatches: FieldMismatch[]; error?: string };
   integrity?: { checked: number; flagged: number; error?: string };
   dpPush?: { updated: number; created: number; error?: string };
 };
@@ -17,6 +17,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
   const [result, setResult] = useState<SyncResult | null>(null);
   const [isPending, startTransition] = useTransition();
   const [importingQbId, setImportingQbId] = useState<string | null>(null);
+  const [importingDpId, setImportingDpId] = useState<string | null>(null);
   const [imported, setImported] = useState<Set<string>>(new Set());
   const [resolvedMismatches, setResolvedMismatches] = useState<Set<string>>(new Set());
 
@@ -24,7 +25,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
     startTransition(async () => {
       const [qb, dialpad, integrity] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
-        dialpadConnected ? syncDialpadContacts() : Promise.resolve(undefined),
+        dialpadConnected ? importDialpadContacts() : Promise.resolve(undefined),
         runIntegrityCheck(),
       ]);
       setResult({ qb: qb ?? undefined, dialpad: dialpad ?? undefined, integrity });
@@ -54,6 +55,25 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
     startTransition(async () => {
       const res = await updateContactFields(m.contactId, { [m.field]: m.sourceValue });
       if (res.ok) setResolvedMismatches((prev) => new Set([...prev, `${m.contactId}:${m.field}`]));
+    });
+  }
+
+  function handleImportDialpadContact(u: DpUnmatched) {
+    setImportingDpId(u.dpId);
+    startTransition(async () => {
+      const res = await createContactFromDialpad(u.dpId, u.name, u.email, u.phone);
+      if (res.ok) setImported((prev) => new Set([...prev, `dp:${u.dpId}`]));
+      setImportingDpId(null);
+    });
+  }
+
+  function handleImportAllDialpad(unmatched: DpUnmatched[]) {
+    startTransition(async () => {
+      for (const u of unmatched) {
+        if (imported.has(`dp:${u.dpId}`)) continue;
+        const res = await createContactFromDialpad(u.dpId, u.name, u.email, u.phone);
+        if (res.ok) setImported((prev) => new Set([...prev, `dp:${u.dpId}`]));
+      }
     });
   }
 
@@ -191,9 +211,60 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
               {result.dialpad.error ? (
                 <p className="text-red-500 text-xs">{result.dialpad.error}</p>
               ) : (
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-slate-700 text-xs">{result.dialpad.synced} contacts matched by phone</span>
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-700 text-xs">{result.dialpad.linked} newly linked</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-300" />
+                    <span className="text-slate-500 text-xs">{result.dialpad.alreadyLinked} already linked</span>
+                  </div>
+                  {result.dialpad.unmatched.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      <span className="text-amber-700 text-xs">{result.dialpad.unmatched.length} Dialpad contacts not in CRM</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {result.dialpad.unmatched && result.dialpad.unmatched.length > 0 && (
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] tracking-widest uppercase font-medium text-amber-600">Dialpad Contacts Missing from CRM</p>
+                    {result.dialpad.unmatched.filter((u) => !imported.has(`dp:${u.dpId}`)).length > 0 && (
+                      <button
+                        onClick={() => handleImportAllDialpad(result.dialpad!.unmatched)}
+                        disabled={isPending}
+                        className="text-[10px] tracking-widest uppercase text-[#000080] hover:text-[#0000a0] font-semibold disabled:opacity-50"
+                      >
+                        {isPending ? "Importing..." : `Import All (${result.dialpad.unmatched.filter((u) => !imported.has(`dp:${u.dpId}`)).length})`}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col divide-y divide-slate-100 border border-slate-100 rounded-sm overflow-hidden">
+                    {result.dialpad.unmatched.map((u) => (
+                      <div key={u.dpId} className="flex items-center justify-between px-3 py-2 gap-3">
+                        <div className="min-w-0">
+                          <p className="text-slate-800 text-xs font-medium truncate">{u.name}</p>
+                          {u.email && <p className="text-slate-400 text-[10px] truncate">{u.email}</p>}
+                          {u.phone && <p className="text-slate-400 text-[10px] truncate">{u.phone}</p>}
+                        </div>
+                        {imported.has(`dp:${u.dpId}`) ? (
+                          <span className="text-emerald-600 text-[10px] tracking-widest uppercase font-medium shrink-0">Imported</span>
+                        ) : (
+                          <button
+                            onClick={() => handleImportDialpadContact(u)}
+                            disabled={importingDpId === u.dpId}
+                            className="text-[10px] tracking-widest uppercase text-[#000080] hover:text-[#0000a0] font-semibold shrink-0 disabled:opacity-50"
+                          >
+                            {importingDpId === u.dpId ? "Importing..." : "Import"}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
