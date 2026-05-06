@@ -15,9 +15,9 @@
   --color-navy:        #3535dd;
   --color-navy-light:  #5050ff;
   --color-navy-dark:   #1a1aaa;
-  --color-steel:       #686A6C;
-  --color-steel-light: #8a8c8e;
-  --color-steel-dark:  #4a4c4e;
+  --color-steel:       #a0a2a4;
+  --color-steel-light: #c2c4c6;
+  --color-steel-dark:  #686A6C;
   --color-obsidian:    #000000;
   --color-wake:        #ffffff;
   --color-link:        #6b9fff;
@@ -92,7 +92,7 @@ body {
 .accent-rule {
   border: none;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #000080, #686a6c, transparent);
+  background: linear-gradient(90deg, transparent, #000080, #a0a2a4, transparent);
 }
 
 /* Chrome stage — carousel border with gradient chrome effect */
