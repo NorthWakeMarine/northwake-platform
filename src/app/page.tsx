@@ -1,23 +1,13 @@
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingCTA from "@/components/FloatingCTA";
 import HeroQuoteForm from "@/components/HeroQuoteForm";
+import HeroCarouselClient from "@/components/HeroCarouselClient";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import fs from "fs";
 import path from "path";
-
-const HeroCarousel = dynamic(() => import("@/components/HeroCarousel"), {
-  ssr: false,
-  loading: () => (
-    <div
-      aria-hidden="true"
-      className="w-full h-[52vh] sm:h-[60vh] lg:h-[72vh] bg-obsidian"
-    />
-  ),
-});
 
 async function getCMS(): Promise<Record<string, string>> {
   try {
@@ -339,7 +329,7 @@ export default async function Home() {
               View all services →
             </Link>
           </div>
-          <HeroCarousel showHeroOverlay={false} images={carouselImages} />
+          <HeroCarouselClient showHeroOverlay={false} images={carouselImages} />
         </section>
 
       </main>
