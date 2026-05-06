@@ -156,6 +156,9 @@ export default async function Home() {
                 <p className="text-steel text-[10px] tracking-[0.45em] uppercase">
                   Jacksonville, FL &nbsp;·&nbsp; Est. 2025
                 </p>
+                <p className="sr-only">
+                  NorthWake Marine is Jacksonville&apos;s premier marine services company, offering ceramic coating, monthly maintenance plans, full detail, and yacht management on the St. Johns River. We serve vessels from 18 to 80+ feet across Northeast Florida. All jobs include photo documentation. Free, no-obligation quotes returned same day. Call (904) 606-5454.
+                </p>
               </div>
               <div className="hidden md:flex gap-4 justify-center">
                 <Link

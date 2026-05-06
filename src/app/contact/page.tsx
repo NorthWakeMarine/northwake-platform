@@ -48,9 +48,60 @@ const contactInfo = [
   },
 ];
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "How quickly can you schedule a service?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Most standard detailing and maintenance jobs can be scheduled within 3–5 business days. Ceramic coating and larger packages typically require 5–10 days lead time depending on vessel size and current bookings.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do you service boats at the marina or do I bring it to you?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "We come to your vessel at your marina, boatyard, or private slip throughout the Jacksonville area. There is no need to move your boat unless a haul-out is required for the service (e.g., gel coat restoration or hull work).",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What vessels are too large or too small for your services?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "We service boats from 18 feet to 80+ feet. Our yacht management and ceramic coating services are particularly well-suited to vessels from 28 feet and above, but we evaluate every inquiry individually.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Are your products safe for fiberglass, painted hulls, and teak?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. We always assess the substrate type before selecting products. Every surface is evaluated to identify and protect painted hulls, varnished teak, vinyl faux-teak, and factory gelcoat finishes.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How does the monthly maintenance plan billing work?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "We never lock you into a contract. Plans are billed on a recurring basis with a rate and schedule agreed upon upfront. Adjustments are handled with direct communication.",
+      },
+    },
+  ],
+};
+
 export default function ContactPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <Header />
       <FloatingCTA />
 
@@ -60,6 +111,7 @@ export default function ContactPage() {
           aria-labelledby="contact-form-heading"
           className="pt-32 pb-16 px-6"
         >
+          <h1 className="sr-only">Contact NorthWake Marine, Get a Free Quote in Jacksonville, FL</h1>
           <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.6fr] gap-16 items-start">
 
             {/* Left column, contact info + map */}

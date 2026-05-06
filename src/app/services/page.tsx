@@ -541,6 +541,59 @@ export default function ServicesPage() {
           </div>
         </section>
 
+        {/* ── COMPARISON TABLE ── */}
+        <section aria-labelledby="comparison-heading" className="py-20 px-6 border-t border-steel-dark">
+          <div className="max-w-4xl mx-auto flex flex-col gap-10">
+            <header className="flex flex-col items-center text-center gap-2">
+              <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Side by Side</p>
+              <h2
+                id="comparison-heading"
+                className="text-wake text-2xl sm:text-3xl font-bold tracking-tight"
+              >
+                Ceramic Coating vs. <span className="chrome-text">Wax Application</span>
+              </h2>
+              <p className="text-steel text-sm max-w-lg mt-1">
+                Both protect your hull. The difference is how long, how hard, and how much work you want to do next year.
+              </p>
+              <hr className="accent-rule w-48 mt-2" />
+            </header>
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-steel-dark">
+                    <th className="text-left text-steel text-[10px] tracking-[0.3em] uppercase py-3 pr-6 font-semibold w-1/3">Feature</th>
+                    <th className="text-left py-3 pr-6 w-1/3">
+                      <span className="chrome-text font-bold text-xs tracking-wide">Ceramic Coating</span>
+                    </th>
+                    <th className="text-left py-3 w-1/3">
+                      <span className="text-wake font-bold text-xs tracking-wide">Wax Application</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-steel-dark/40">
+                  {[
+                    ["Durability", "3 to 5 years", "3 to 6 months"],
+                    ["UV Protection", "Yes, nano-bond barrier", "Limited"],
+                    ["Salt Water Resistance", "High", "Moderate"],
+                    ["Hardness Rating", "9H ceramic", "Soft wax layer"],
+                    ["Finish Quality", "Mirror-grade gloss", "Good shine"],
+                    ["Application Time", "Full-day professional job", "2 to 4 hours"],
+                    ["Maintenance After", "Rinse only", "Re-wax every season"],
+                    ["Best For", "Long-term hull protection", "Seasonal upkeep"],
+                  ].map(([feature, ceramic, wax]) => (
+                    <tr key={feature} className="hover:bg-navy-dark/30 transition-colors duration-150">
+                      <td className="text-steel text-[11px] tracking-wide py-3.5 pr-6 font-medium">{feature}</td>
+                      <td className="text-steel-light text-xs py-3.5 pr-6">{ceramic}</td>
+                      <td className="text-steel text-xs py-3.5">{wax}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <Footer />

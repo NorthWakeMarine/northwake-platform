@@ -154,8 +154,21 @@ const jsonLd = {
   ],
   sameAs: [
     "https://www.instagram.com/northwakemarine",
-    "https://www.facebook.com/northwakemarine",
+    "https://www.facebook.com/profile.php?id=61577308802144",
+    "https://www.youtube.com/@northwakemarine",
+    "https://www.tiktok.com/@northwakemarine",
+    "https://g.page/r/CdvYJ9aDJv8NEAE/review",
   ],
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${siteUrl}/#website`,
+  name: "NorthWake Marine",
+  url: siteUrl,
+  publisher: { "@id": `${siteUrl}/#business` },
+  dateModified: new Date().toISOString(),
 };
 
 export default function RootLayout({
@@ -169,6 +182,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
       </head>
       <body className="min-h-full flex flex-col bg-obsidian text-wake">
