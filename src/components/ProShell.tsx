@@ -89,8 +89,12 @@ function parseName(email: string, meta: Record<string, string>) {
 
 export default function ProShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [userName, setUserName] = useState("Admin");
-  const [userEmail, setUserEmail] = useState("");
+  const [userName, setUserName] = useState(
+    () => (typeof window !== "undefined" && localStorage.getItem("pro-user-name")) || "Admin"
+  );
+  const [userEmail, setUserEmail] = useState(
+    () => (typeof window !== "undefined" && localStorage.getItem("pro-user-email")) || ""
+  );
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("sidebar-collapsed") === "true"
   );
@@ -100,8 +104,11 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
     supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? "";
       const meta = (data.user?.user_metadata ?? {}) as Record<string, string>;
-      setUserName(parseName(email, meta));
+      const name = parseName(email, meta);
+      setUserName(name);
       setUserEmail(email);
+      localStorage.setItem("pro-user-name", name);
+      localStorage.setItem("pro-user-email", email);
     });
   }, []);
 
