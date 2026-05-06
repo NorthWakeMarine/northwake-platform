@@ -110,45 +110,23 @@ function FocalPicker({
 
 function PreviewModal({ image, onClose }: { image: CarouselImage; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80" onClick={onClose}>
       <div
-        className="relative bg-[#06061a] border border-white/10 rounded-sm overflow-hidden"
-        style={{ maxWidth: "95vw", width: 1100 }}
+        className="bg-[#06061a] border border-white/10 rounded-sm overflow-hidden"
+        style={{ maxWidth: "90vw", width: 600 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-          <p className="text-white text-sm font-semibold">Preview — as it appears in the carousel</p>
-          <button onClick={onClose} className="text-white/40 hover:text-white text-xl leading-none">×</button>
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
+          <p className="text-white text-xs font-semibold">Preview</p>
+          <button onClick={onClose} className="text-white/40 hover:text-white text-lg leading-none">×</button>
         </div>
-
-        {/* Simulated carousel frame */}
-        <div className="relative overflow-hidden" style={{ height: 420 }}>
+        <div className="bg-black" style={{ height: 280 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={image.public_url}
             alt="Preview"
-            className="w-full h-full object-cover"
-            style={{ objectPosition: `${image.focal_x}% ${image.focal_y}%` }}
+            className="w-full h-full object-contain"
           />
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 45%, transparent 100%)",
-            }}
-          />
-          <div className="absolute bottom-6 left-8 text-white/60 text-[10px] tracking-[0.3em] uppercase">
-            Focal point: {image.focal_x}% / {image.focal_y}%
-          </div>
-        </div>
-
-        <div className="px-4 py-3 border-t border-white/10 text-right">
-          <button
-            onClick={onClose}
-            className="text-white/40 hover:text-white text-xs px-4 py-2 border border-white/10 hover:border-white/30 transition-colors"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
@@ -324,18 +302,25 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
               </div>
 
               {/* Always-visible action buttons */}
-              <div className="flex items-center gap-1 px-2 py-2 border-t border-slate-100">
+              <div className="flex items-center border-t border-slate-100 divide-x divide-slate-100">
                 <button
                   title="Preview"
                   onClick={() => setPreviewTarget(img)}
-                  className="flex-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-[10px] px-1.5 py-1.5 rounded-sm transition-colors font-medium"
+                  className="flex-1 text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] py-2 transition-colors font-medium"
                 >
                   Preview
                 </button>
                 <button
+                  title="Position / crop"
+                  onClick={() => setFocalTarget(img)}
+                  className="flex-1 text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] py-2 transition-colors font-medium"
+                >
+                  Edit
+                </button>
+                <button
                   title="Toggle visibility"
                   onClick={() => handleToggleActive(img)}
-                  className="flex-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-[10px] px-1.5 py-1.5 rounded-sm transition-colors font-medium"
+                  className="flex-1 text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] py-2 transition-colors font-medium"
                 >
                   {img.active ? "Hide" : "Show"}
                 </button>
@@ -343,7 +328,7 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
                   title="Delete"
                   onClick={() => handleDelete(img)}
                   disabled={saving === img.id}
-                  className="flex-1 text-red-400 hover:text-red-600 hover:bg-red-50 text-[10px] px-1.5 py-1.5 rounded-sm transition-colors font-medium disabled:opacity-50"
+                  className="flex-1 text-red-400 hover:text-red-600 hover:bg-red-50 text-[10px] py-2 transition-colors font-medium disabled:opacity-50"
                 >
                   Delete
                 </button>
