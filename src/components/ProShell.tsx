@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { signOut } from "@/app/actions";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 
@@ -89,15 +89,18 @@ function parseName(email: string, meta: Record<string, string>) {
 
 export default function ProShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [userName, setUserName] = useState(
-    () => (typeof window !== "undefined" && localStorage.getItem("pro-user-name")) || "Admin"
-  );
-  const [userEmail, setUserEmail] = useState(
-    () => (typeof window !== "undefined" && localStorage.getItem("pro-user-email")) || ""
-  );
-  const [collapsed, setCollapsed] = useState(
-    () => typeof window !== "undefined" && localStorage.getItem("sidebar-collapsed") === "true"
-  );
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Runs synchronously before first paint — no visible flash
+  useLayoutEffect(() => {
+    const name = localStorage.getItem("pro-user-name") ?? "";
+    const email = localStorage.getItem("pro-user-email") ?? "";
+    if (name) setUserName(name);
+    if (email) setUserEmail(email);
+    setCollapsed(localStorage.getItem("sidebar-collapsed") === "true");
+  }, []);
 
   useEffect(() => {
     const supabase = createBrowserSupabase();
@@ -201,12 +204,12 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
                   {userName}
                 </span>
               )}
-              <span className="text-white text-[10px] font-bold">{userName.charAt(0)}</span>
+              {userName && <span className="text-white text-[10px] font-bold" suppressHydrationWarning>{userName.charAt(0)}</span>}
             </div>
             {!collapsed && (
               <div className="leading-none min-w-0">
-                <p className="text-white/80 text-[11px] font-semibold truncate">{userName}</p>
-                <p className="text-white/30 text-[9px] truncate mt-0.5">{userEmail || "northwakemarine.com"}</p>
+                <p className="text-white/80 text-[11px] font-semibold truncate" suppressHydrationWarning>{userName}</p>
+                <p className="text-white/30 text-[9px] truncate mt-0.5" suppressHydrationWarning>{userEmail || "northwakemarine.com"}</p>
               </div>
             )}
           </div>
