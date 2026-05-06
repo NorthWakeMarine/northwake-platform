@@ -299,75 +299,63 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
               onDragStart={() => handleDragStart(index)}
               onDragEnter={() => handleDragEnter(index)}
               onDragEnd={() => setDragIndex(null)}
-              className={`group relative bg-slate-100 rounded-sm overflow-hidden border-2 cursor-grab transition-all duration-150 ${
-                dragIndex === index ? "opacity-40 scale-95" : "border-transparent"
+              className={`bg-white border border-slate-200 rounded-sm overflow-hidden cursor-grab transition-all duration-150 flex flex-col ${
+                dragIndex === index ? "opacity-40 scale-95" : ""
               } ${!img.active ? "opacity-50" : ""}`}
-              style={{ aspectRatio: "16/9" }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img.public_url}
-                alt="Carousel image"
-                className="w-full h-full object-cover"
-                style={{ objectPosition: `${img.focal_x}% ${img.focal_y}%` }}
-                draggable={false}
-              />
-
-              {/* Order badge */}
-              <div className="absolute top-2 left-2 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm tracking-widest">
-                #{img.display_order}
+              {/* Thumbnail */}
+              <div className="relative bg-slate-100" style={{ aspectRatio: "16/9" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img.public_url}
+                  alt="Carousel image"
+                  className="w-full h-full object-contain"
+                  draggable={false}
+                />
+                {/* Order badge */}
+                <div className="absolute top-2 left-2 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm tracking-widest">
+                  #{img.display_order}
+                </div>
+                {!img.active && (
+                  <div className="absolute top-2 right-2 bg-red-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm tracking-widest">
+                    HIDDEN
+                  </div>
+                )}
               </div>
 
-              {/* Inactive badge */}
-              {!img.active && (
-                <div className="absolute top-2 right-2 bg-red-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm tracking-widest">
-                  HIDDEN
-                </div>
-              )}
-
-              {/* Actions overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-200 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                <div className="flex gap-1.5">
-                  <button
-                    title="Preview"
-                    onClick={() => setPreviewTarget(img)}
-                    className="bg-white/10 hover:bg-white/20 text-white text-[10px] px-2.5 py-1.5 rounded-sm border border-white/20 backdrop-blur-sm transition-colors"
-                  >
-                    Preview
-                  </button>
-                  <button
-                    title="Set focal point"
-                    onClick={() => setFocalTarget(img)}
-                    className="bg-white/10 hover:bg-white/20 text-white text-[10px] px-2.5 py-1.5 rounded-sm border border-white/20 backdrop-blur-sm transition-colors"
-                  >
-                    Focal
-                  </button>
-                </div>
-                <div className="flex gap-1.5">
-                  <button
-                    title={img.active ? "Hide from carousel" : "Show in carousel"}
-                    onClick={() => handleToggleActive(img)}
-                    className="bg-white/10 hover:bg-white/20 text-white text-[10px] px-2.5 py-1.5 rounded-sm border border-white/20 backdrop-blur-sm transition-colors"
-                  >
-                    {img.active ? "Hide" : "Show"}
-                  </button>
-                  <button
-                    title="Delete"
-                    onClick={() => handleDelete(img)}
-                    disabled={saving === img.id}
-                    className="bg-red-600/70 hover:bg-red-600/90 text-white text-[10px] px-2.5 py-1.5 rounded-sm border border-red-400/30 backdrop-blur-sm transition-colors disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
-                </div>
+              {/* Always-visible action buttons */}
+              <div className="flex items-center gap-1 px-2 py-2 border-t border-slate-100">
+                <button
+                  title="Preview"
+                  onClick={() => setPreviewTarget(img)}
+                  className="flex-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-[10px] px-1.5 py-1.5 rounded-sm transition-colors font-medium"
+                >
+                  Preview
+                </button>
+                <button
+                  title="Toggle visibility"
+                  onClick={() => handleToggleActive(img)}
+                  className="flex-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-[10px] px-1.5 py-1.5 rounded-sm transition-colors font-medium"
+                >
+                  {img.active ? "Hide" : "Show"}
+                </button>
+                <button
+                  title="Delete"
+                  onClick={() => handleDelete(img)}
+                  disabled={saving === img.id}
+                  className="flex-1 text-red-400 hover:text-red-600 hover:bg-red-50 text-[10px] px-1.5 py-1.5 rounded-sm transition-colors font-medium disabled:opacity-50"
+                >
+                  Delete
+                </button>
               </div>
+
             </div>
           ))}
         </div>
       )}
 
       <p className="text-slate-400 text-[11px] text-center">
-        Drag images to reorder. Hover for focal point, preview, hide, or delete options.
+        Drag images to reorder. Use the buttons below each photo to preview, hide, or delete.
       </p>
 
       {focalTarget && (

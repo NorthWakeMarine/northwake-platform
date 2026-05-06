@@ -103,8 +103,7 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
                     fill
                     priority={i === 0}
                     sizes="(max-width: 768px) 100vw, (max-width: 1280px) 100vw, 1280px"
-                    className="object-cover"
-                    style={{ objectPosition: `${slide.focalX}% ${slide.focalY}%` }}
+                    className="object-contain object-center"
                     quality={80}
                   />
 
