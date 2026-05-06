@@ -283,6 +283,27 @@ export async function deleteTimelineNote(
   return { ok: true };
 }
 
+export async function deleteTimelineEvent(
+  id: string
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabase();
+
+  const { data: existing } = await supabase
+    .from("timeline_events")
+    .select("contact_id")
+    .eq("id", id)
+    .single();
+
+  const { error } = await supabase
+    .from("timeline_events")
+    .delete()
+    .eq("id", id);
+
+  if (error) return { ok: false, error: error.message };
+  if (existing?.contact_id) revalidatePath(`/pro/contacts/${existing.contact_id}`);
+  return { ok: true };
+}
+
 // ─── Waiver Submission ────────────────────────────────────────────────────────
 
 export type WaiverState = { success?: boolean; error?: string };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateTimelineNote, deleteTimelineNote } from "@/app/actions";
+import { updateTimelineNote, deleteTimelineNote, deleteTimelineEvent } from "@/app/actions";
 
 type EditEntry = { edited_at: string; edited_by?: string };
 
@@ -189,8 +189,17 @@ function NoteItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
 
 function StaticItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
   const cfg = eventConfig[ev.event_type] ?? { dot: "bg-slate-300", label: ev.event_type };
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function handleDelete() {
+    startTransition(async () => {
+      await deleteTimelineEvent(ev.id);
+    });
+  }
+
   return (
-    <li className="flex gap-4 relative">
+    <li className="flex gap-4 relative group">
       {!isLast && <div className="absolute left-[5px] top-4 bottom-0 w-px bg-slate-100" />}
       <div className="pt-0.5 shrink-0">
         <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 block ${cfg.dot}`} />
@@ -202,12 +211,44 @@ function StaticItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
             <span className="text-slate-500 text-xs">{ev.title}</span>
           )}
           <span className="text-slate-300 text-[10px] ml-auto whitespace-nowrap">{fmtFull(ev.created_at)}</span>
+          {!confirmDelete && (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-400 transition-all p-0.5 ml-1"
+              title="Delete event"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4h6v2" />
+              </svg>
+            </button>
+          )}
         </div>
         {ev.body && (
           <p className="text-slate-500 text-xs mt-1 leading-relaxed">{ev.body}</p>
         )}
         {ev.created_by && ev.created_by !== "system" && (
           <p className="text-slate-300 text-[10px] mt-0.5">by {capitalize(ev.created_by)}</p>
+        )}
+        {confirmDelete && (
+          <div className="mt-1.5 flex items-center gap-2">
+            <span className="text-red-500 text-[10px]">Delete this event?</span>
+            <button
+              onClick={handleDelete}
+              disabled={isPending}
+              className="text-white bg-red-500 hover:bg-red-600 text-[10px] tracking-widest uppercase px-3 py-1 rounded-sm disabled:opacity-50 transition-colors font-medium"
+            >
+              {isPending ? "Deleting..." : "Delete"}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="text-slate-400 hover:text-slate-600 text-[10px] tracking-widest uppercase px-2 py-1 rounded-sm transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         )}
       </div>
     </li>
