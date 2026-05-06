@@ -59,7 +59,7 @@ const navLinks = [
   },
   {
     href: "/pro/editor",
-    label: "CMS Editor",
+    label: "Site Editor",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -116,7 +116,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-slate-50">
 
       {/* ── Sidebar ── */}
-      <aside className={`hidden md:flex ${collapsed ? "w-14" : "w-60"} shrink-0 flex-col bg-[#06061a] sticky top-0 h-screen transition-all duration-200 overflow-hidden`}>
+      <aside className={`hidden md:flex ${collapsed ? "w-14" : "w-60"} shrink-0 flex-col bg-[#06061a] sticky top-0 h-screen transition-all duration-200 ${collapsed ? "overflow-visible" : "overflow-hidden"}`}>
 
         {/* Logo */}
         <div className="px-3 py-5 border-b border-white/[0.07] flex items-center justify-center">
@@ -147,8 +147,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                title={collapsed ? label : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-medium transition-colors duration-150 ${
+                className={`group/navitem relative flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-medium transition-colors duration-150 ${
                   collapsed ? "justify-center" : ""
                 } ${
                   active
@@ -158,6 +157,11 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
               >
                 <span className="shrink-0">{icon}</span>
                 {!collapsed && label}
+                {collapsed && (
+                  <span className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 whitespace-nowrap bg-[#1a1a3a] text-white text-[11px] font-medium px-2.5 py-1.5 rounded-sm border border-white/10 opacity-0 group-hover/navitem:opacity-100 transition-opacity duration-150 shadow-lg">
+                    {label}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -183,8 +187,13 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
 
         {/* User + sign out */}
         <div className="px-2 pb-4 border-t border-white/[0.07] pt-4 flex flex-col gap-1">
-          <div className={`flex items-center gap-2.5 px-3 py-2 ${collapsed ? "justify-center" : ""}`}>
-            <div className="w-7 h-7 rounded-full bg-[#000080] flex items-center justify-center shrink-0" title={collapsed ? userName : undefined}>
+          <div className={`group/useravatar relative flex items-center gap-2.5 px-3 py-2 ${collapsed ? "justify-center" : ""}`}>
+            <div className="w-7 h-7 rounded-full bg-[#000080] flex items-center justify-center shrink-0">
+              {collapsed && (
+                <span className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 whitespace-nowrap bg-[#1a1a3a] text-white text-[11px] font-medium px-2.5 py-1.5 rounded-sm border border-white/10 opacity-0 group-hover/useravatar:opacity-100 transition-opacity duration-150 shadow-lg">
+                  {userName}
+                </span>
+              )}
               <span className="text-white text-[10px] font-bold">{userName.charAt(0)}</span>
             </div>
             {!collapsed && (
@@ -197,14 +206,18 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
           <form action={signOut}>
             <button
               type="submit"
-              title={collapsed ? "Sign Out" : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-white/35 hover:text-white/70 text-xs transition-colors duration-150 rounded-sm hover:bg-white/[0.04] ${collapsed ? "justify-center" : ""}`}
+              className={`group/signout relative w-full flex items-center gap-3 px-3 py-2 text-white/35 hover:text-white/70 text-xs transition-colors duration-150 rounded-sm hover:bg-white/[0.04] ${collapsed ? "justify-center" : ""}`}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
               </svg>
               {!collapsed && "Sign Out"}
+              {collapsed && (
+                <span className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 whitespace-nowrap bg-[#1a1a3a] text-white text-[11px] font-medium px-2.5 py-1.5 rounded-sm border border-white/10 opacity-0 group-hover/signout:opacity-100 transition-opacity duration-150 shadow-lg">
+                  Sign Out
+                </span>
+              )}
             </button>
           </form>
         </div>

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import ProShell from "@/components/ProShell";
 import { updateSiteContent, type ContentUpdateState } from "@/app/actions";
+import CarouselManager, { type CarouselImage } from "./CarouselManager";
 
 type ContentItem = {
   id: string;
@@ -59,32 +60,48 @@ function ContentRow({ item }: { item: ContentItem }) {
   );
 }
 
-export default function EditorPageClient({ items }: { items: ContentItem[] }) {
+export default function EditorPageClient({
+  items,
+  carouselImages,
+}: {
+  items: ContentItem[];
+  carouselImages: CarouselImage[];
+}) {
   return (
     <ProShell>
       <div className="flex-1 flex flex-col">
 
         <div className="bg-white border-b border-slate-200 px-8 py-5">
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight">CMS Editor</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Edit live text on the public site. Changes publish instantly.</p>
+          <h1 className="text-slate-900 text-xl font-bold tracking-tight">Site Editor</h1>
+          <p className="text-slate-400 text-xs mt-0.5">Edit live content and manage homepage images. Changes publish instantly.</p>
         </div>
 
-        <div className="px-8 py-6">
-          {items.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-sm p-8 text-center">
-              <p className="text-slate-500 text-sm">No content entries found.</p>
-              <p className="text-slate-400 text-xs mt-2 leading-relaxed">
-                Run the SQL migration to create and seed the{" "}
-                <code className="text-slate-600 bg-slate-100 px-1 rounded">site_content</code> table.
-              </p>
+        <div className="px-8 py-8 flex flex-col gap-10">
+
+          {/* ── Carousel Images ── */}
+          <section>
+            <div className="mb-4">
+              <h2 className="text-slate-800 text-base font-bold tracking-tight">Homepage Carousel</h2>
+              <p className="text-slate-400 text-xs mt-0.5">Upload, reorder, and position images shown in the featured work section.</p>
             </div>
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {items.map((item) => (
-                <ContentRow key={item.key} item={item} />
-              ))}
-            </div>
+            <CarouselManager initialImages={carouselImages} />
+          </section>
+
+          {/* ── Site Content ── */}
+          {items.length > 0 && (
+            <section>
+              <div className="mb-4">
+                <h2 className="text-slate-800 text-base font-bold tracking-tight">Site Content</h2>
+                <p className="text-slate-400 text-xs mt-0.5">Edit live text on the public site.</p>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {items.map((item) => (
+                  <ContentRow key={item.key} item={item} />
+                ))}
+              </div>
+            </section>
           )}
+
         </div>
       </div>
     </ProShell>

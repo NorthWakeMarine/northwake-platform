@@ -6,8 +6,7 @@ import HeroQuoteForm from "@/components/HeroQuoteForm";
 import HeroCarouselClient from "@/components/HeroCarouselClient";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
-import fs from "fs";
-import path from "path";
+import type { CarouselSlideSource } from "@/components/HeroCarousel";
 
 async function getCMS(): Promise<Record<string, string>> {
   try {
@@ -71,14 +70,30 @@ const services = [
 ];
 
 
-function getCarouselImages(): string[] {
+async function getCarouselImages(): Promise<CarouselSlideSource[]> {
   try {
+    const supabase = await createServerSupabase();
+    const { data } = await supabase
+      .from("carousel_images")
+      .select("public_url, focal_x, focal_y")
+      .eq("active", true)
+      .order("display_order");
+    if (data && data.length > 0) {
+      return data.map((r) => ({ src: r.public_url, focalX: r.focal_x, focalY: r.focal_y }));
+    }
+  } catch {
+    // fall through to filesystem fallback
+  }
+  // Filesystem fallback for local dev / before any images uploaded
+  try {
+    const { default: fs } = await import("fs");
+    const { default: path } = await import("path");
     const dir = path.join(process.cwd(), "public", "images");
     const exts = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
     return fs
       .readdirSync(dir)
       .filter((f) => exts.has(path.extname(f).toLowerCase()))
-      .map((f) => `/images/${f}`);
+      .map((f) => ({ src: `/images/${f}`, focalX: 50, focalY: 50 }));
   } catch {
     return [];
   }
@@ -86,7 +101,7 @@ function getCarouselImages(): string[] {
 
 export default async function Home() {
   const cms = await getCMS();
-  const carouselImages = getCarouselImages();
+  const carouselImages = await getCarouselImages();
   const heroHeadline    = cms.hero_headline    ?? "From Dock to Destination";
   const heroSubheadline = cms.hero_subheadline ?? "Your Yacht Is Our Priority";
 

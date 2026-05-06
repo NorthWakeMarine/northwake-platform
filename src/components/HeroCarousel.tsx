@@ -6,22 +6,35 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, startTransition, useState } from "react";
 
+export type CarouselSlideSource = {
+  src: string;
+  focalX?: number;
+  focalY?: number;
+};
+
 interface HeroCarouselProps {
   /** When false the "Premium Marine Care" headline + CTAs are hidden, use for bottom-of-page showcase */
   showHeroOverlay?: boolean;
-  images?: string[];
+  images?: string[] | CarouselSlideSource[];
 }
 
 export default function HeroCarousel({ showHeroOverlay = true, images = [] }: HeroCarouselProps) {
-  const slides = images.map((src, i) => ({
-    id: `slide-${i + 1}`,
-    src,
-    alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
-    caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
-    service: "NorthWake Marine",
-    tagline: "",
-    href: "/services",
-  }));
+  const slides = (images as Array<string | CarouselSlideSource>).map((item, i) => {
+    const src = typeof item === "string" ? item : item.src;
+    const focalX = typeof item === "string" ? 50 : (item.focalX ?? 50);
+    const focalY = typeof item === "string" ? 50 : (item.focalY ?? 50);
+    return {
+      id: `slide-${i + 1}`,
+      src,
+      focalX,
+      focalY,
+      alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
+      caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
+      service: "NorthWake Marine",
+      tagline: "",
+      href: "/services",
+    };
+  });
   const autoplayPlugin = useMemo(
     () => Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true }),
     []
@@ -89,7 +102,8 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
                     fill
                     priority={i === 0}
                     sizes="(max-width: 768px) 100vw, (max-width: 1280px) 100vw, 1280px"
-                    className="object-contain object-center"
+                    className="object-cover"
+                    style={{ objectPosition: `${slide.focalX}% ${slide.focalY}%` }}
                     quality={80}
                   />
 
