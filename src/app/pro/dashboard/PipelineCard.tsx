@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import type { PipelineCard as PipelineCardType } from "@/types/pipeline";
-import { removeFromPipeline } from "@/app/actions";
+import { removeFromPipeline, deleteLead } from "@/app/actions";
 
 function AssetIcon({ type }: { type: PipelineCardType["assetType"] }) {
   return (
@@ -91,9 +91,12 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
 
   function handleRemove(e: React.MouseEvent) {
     e.stopPropagation();
-    if (!card.contactId) return;
     startTransition(async () => {
-      await removeFromPipeline(card.contactId!);
+      if (card.sourceType === "lead" && card.leadId) {
+        await deleteLead(card.leadId);
+      } else if (card.contactId) {
+        await removeFromPipeline(card.contactId);
+      }
       onRemove?.(card.id);
     });
   }
@@ -116,12 +119,12 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
         </span>
         <HealthWarningIcon flags={card.healthFlags} />
         <HeatDot heat={card.heat} lastContactAt={card.lastContactAt} />
-        {card.contactId && (
+        {(card.contactId || (card.sourceType === "lead" && card.leadId)) && (
           <button
             onClick={handleRemove}
             disabled={isPending}
             className="text-slate-300 hover:text-red-400 text-xs leading-none shrink-0 transition-colors"
-            title="Remove from pipeline"
+            title={card.sourceType === "lead" ? "Dismiss lead" : "Remove from pipeline"}
           >
             ×
           </button>

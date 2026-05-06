@@ -204,12 +204,19 @@ export default async function LeadDetailPage({
                 <dl className="flex flex-col gap-4">
                   <InfoRow label="Service Requested" value={lead.service} />
                   <InfoRow label="Referral Source"   value={lead.referral_source} />
-                  {lead.message && (
-                    <div className="flex flex-col gap-1">
-                      <dt className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Message</dt>
-                      <dd className="text-slate-700 text-sm leading-relaxed bg-slate-50 border border-slate-100 rounded-sm px-3 py-2.5">{lead.message}</dd>
-                    </div>
-                  )}
+                  {(() => {
+                    const cleaned = lead.message
+                      ?.split("\n\n")
+                      .filter((p: string) => !/^(Campaign:|Form:|Lead ID:)/.test(p.trim()))
+                      .join("\n\n")
+                      .trim();
+                    return cleaned ? (
+                      <div className="flex flex-col gap-1">
+                        <dt className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Message</dt>
+                        <dd className="text-slate-700 text-sm leading-relaxed bg-slate-50 border border-slate-100 rounded-sm px-3 py-2.5 whitespace-pre-wrap">{cleaned}</dd>
+                      </div>
+                    ) : null;
+                  })()}
                 </dl>
               </div>
 

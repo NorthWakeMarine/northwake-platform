@@ -85,13 +85,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No usable lead data in payload" }, { status: 400 });
   }
 
-  // Build a note about which campaign this came from
-  const campaignNote = [
-    body.campaign_name ? `Campaign: ${body.campaign_name}` : null,
-    body.form_name     ? `Form: ${body.form_name}`         : null,
-    body.lead_id       ? `Lead ID: ${body.lead_id}`        : null,
-  ].filter(Boolean).join(" | ");
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!
@@ -104,8 +97,8 @@ export async function POST(req: NextRequest) {
     vessel_type:     vesselType || null,
     vessel_length:   vesselLength || null,
     service:         service || null,
-    message:         [message, campaignNote].filter(Boolean).join("\n\n") || null,
-    referral_source: body.campaign_name || "Google Ads",
+    message:         message || null,
+    referral_source: [body.campaign_name, body.form_name].filter(Boolean).join(" / ") || "Google Ads",
     source:          "google_ads",
   });
 
