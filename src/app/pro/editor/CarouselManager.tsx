@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import Image from "next/image";
 
 export type CarouselImage = {
   id: string;
