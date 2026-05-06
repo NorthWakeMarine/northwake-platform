@@ -2,6 +2,7 @@ import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingCTA from "@/components/FloatingCTA";
+import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import HeroQuoteForm from "@/components/HeroQuoteForm";
 import HeroCarouselClient from "@/components/HeroCarouselClient";
 import Link from "next/link";
@@ -109,6 +110,7 @@ export default async function Home() {
     <>
       <Header />
       <FloatingCTA />
+      <ScrollDepthTracker />
 
       {/* ─── MAIN ────────────────────────────────────────────────── */}
       <main>

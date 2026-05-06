@@ -5,6 +5,7 @@ import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, startTransition, useState } from "react";
+import { trackCarouselNavigate, trackCtaClick } from "@/lib/analytics";
 
 export type CarouselSlideSource = {
   src: string;
@@ -60,8 +61,8 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
     return () => { emblaApi.off("select", onSelect); };
   }, [emblaApi, onSelect]);
 
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+  const scrollPrev = useCallback(() => { emblaApi?.scrollPrev(); trackCarouselNavigate("prev"); }, [emblaApi]);
+  const scrollNext = useCallback(() => { emblaApi?.scrollNext(); trackCarouselNavigate("next"); }, [emblaApi]);
 
   const active = slides[activeIndex];
 
@@ -145,12 +146,14 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
               <div className="flex gap-4 mt-1">
                 <Link
                   href="/contact"
+                  onClick={() => trackCtaClick("Book Now", "carousel_overlay_desktop")}
                   className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-8 py-3.5 transition-all duration-300 hover:scale-105"
                 >
                   Book Now
                 </Link>
                 <Link
                   href="/services"
+                  onClick={() => trackCtaClick("View Services", "carousel_overlay_desktop")}
                   className="border border-steel text-steel-light text-xs font-semibold tracking-[0.3em] uppercase px-8 py-3.5 hover:border-wake hover:text-wake transition-colors duration-300"
                 >
                   View Services

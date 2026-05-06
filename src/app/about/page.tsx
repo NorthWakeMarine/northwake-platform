@@ -3,6 +3,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingCTA from "@/components/FloatingCTA";
+import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 async function getCMS(): Promise<Record<string, string>> {
@@ -59,6 +60,7 @@ export default async function AboutPage() {
     <>
       <Header />
       <FloatingCTA />
+      <ScrollDepthTracker />
 
       <main>
         {/* ── Hero ── */}

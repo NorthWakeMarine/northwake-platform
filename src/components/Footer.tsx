@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { trackNavClick, trackCtaClick, trackPhoneClick, trackEmailClick } from "@/lib/analytics";
 
 const navLinks = [
   { label: "Home",     href: "/"         },
@@ -40,12 +43,14 @@ export default function Footer() {
           <div className="flex flex-col sm:flex-row gap-4 shrink-0">
             <Link
               href="/contact"
+              onClick={() => trackCtaClick("Get a Free Quote", "footer_cta_band")}
               className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-9 py-4 transition-all duration-300 hover:scale-105 text-center"
             >
               Get a Free Quote
             </Link>
             <a
               href="tel:+19046065454"
+              onClick={() => trackPhoneClick("footer_cta_band")}
               className="border border-steel text-steel-light text-xs font-semibold tracking-[0.3em] uppercase px-9 py-4 hover:border-wake hover:text-wake transition-colors duration-300 text-center"
             >
               Call (904) 606-5454
@@ -81,6 +86,7 @@ export default function Footer() {
               <li key={href}>
                 <Link
                   href={href}
+                  onClick={() => trackNavClick(label, href, "footer")}
                   className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
                 >
                   {label}
@@ -95,12 +101,14 @@ export default function Footer() {
           <p className="text-steel text-[9px] tracking-[0.35em] uppercase mb-2">Contact</p>
           <a
             href="tel:+19046065454"
+            onClick={() => trackPhoneClick("footer")}
             className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
           >
             (904) 606-5454
           </a>
           <a
             href="mailto:info@northwakemarine.com"
+            onClick={() => trackEmailClick("footer")}
             className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
           >
             info@northwakemarine.com

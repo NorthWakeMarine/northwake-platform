@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { submitLead, type LeadFormState } from "@/app/actions";
+import { trackFormStart, trackFormSubmit, trackFormSuccess, trackFormError } from "@/lib/analytics";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -22,15 +23,27 @@ function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
   if (!e.currentTarget.checkValidity()) {
     e.preventDefault();
     e.currentTarget.reportValidity();
+    return;
   }
+  const service = (e.currentTarget.elements.namedItem("service") as HTMLSelectElement)?.value;
+  trackFormSubmit("hero_quote_form", service);
 }
 
 export default function HeroQuoteForm() {
   const [state, action] = useActionState<LeadFormState, FormData>(submitLead, {
     success: false,
   });
+  const started = useRef(false);
+
+  function handleFirstInteraction() {
+    if (!started.current) {
+      started.current = true;
+      trackFormStart("hero_quote_form");
+    }
+  }
 
   if (state.success) {
+    trackFormSuccess("hero_quote_form");
     return (
       <div className="flex flex-col items-center justify-center gap-5 py-10 text-center">
         <span aria-hidden="true" className="chrome-text text-3xl">◈</span>
@@ -50,10 +63,13 @@ export default function HeroQuoteForm() {
     );
   }
 
+  if (state.error) trackFormError("hero_quote_form", state.error);
+
   return (
     <form
       action={action}
       onSubmit={handleSubmit}
+      onFocus={handleFirstInteraction}
       aria-label="Free quote request form"
       className="flex flex-col gap-2.5"
     >

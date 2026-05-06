@@ -1458,6 +1458,88 @@ export async function logManualCall(
   return { ok: true };
 }
 
+export async function syncDialpadCallsForContact(
+  contactId: string
+): Promise<{ ok: boolean; synced: number; error?: string }> {
+  const supabase = await svc();
+
+  // Get the contact's phone
+  const { data: contact, error: contactErr } = await supabase
+    .from("contacts")
+    .select("phone")
+    .eq("id", contactId)
+    .single();
+  if (contactErr || !contact?.phone) {
+    return { ok: false, synced: 0, error: "Contact not found or has no phone number." };
+  }
+
+  const contactPhone = normalizePhone(contact.phone);
+  if (!contactPhone) return { ok: false, synced: 0, error: "Could not normalize contact phone." };
+
+  // Fetch up to 90 days of calls from Dialpad
+  const { listDialpadCalls } = await import("@/lib/dialpad");
+  let calls;
+  try {
+    calls = await listDialpadCalls({
+      limit: 200,
+      started_after: Date.now() - 90 * 24 * 60 * 60 * 1000,
+    });
+  } catch (e) {
+    return { ok: false, synced: 0, error: e instanceof Error ? e.message : "Dialpad API error." };
+  }
+
+  // Filter to calls involving this contact's phone
+  const matched = calls.filter((c) => {
+    const ext = normalizePhone(c.external_number ?? "");
+    return ext === contactPhone;
+  });
+  if (matched.length === 0) return { ok: true, synced: 0 };
+
+  // Get existing dialpad_call_ids already in the timeline for this contact
+  const { data: existing } = await supabase
+    .from("timeline_events")
+    .select("metadata")
+    .eq("contact_id", contactId)
+    .eq("event_type", "call");
+
+  const knownIds = new Set(
+    (existing ?? [])
+      .map((e) => (e.metadata as Record<string, unknown>)?.dialpad_call_id as string | undefined)
+      .filter(Boolean)
+  );
+
+  // Insert only calls not already in the timeline
+  const toInsert = matched.filter((c) => !knownIds.has(c.id));
+  if (toInsert.length === 0) return { ok: true, synced: 0 };
+
+  const rows = toInsert.map((c) => {
+    const dir = c.direction ?? "inbound";
+    const dur = c.duration ?? null;
+    const durText = dur ? `Duration: ${Math.floor(dur / 60)}m ${dur % 60}s` : null;
+    return {
+      contact_id: contactId,
+      event_type: "call",
+      title: dir === "outbound" ? "Outbound Call" : "Inbound Call",
+      body: durText,
+      created_at: new Date(c.date_started).toISOString(),
+      metadata: {
+        direction: dir,
+        duration: dur,
+        recording_url: c.recording_url ?? null,
+        dialpad_call_id: c.id,
+        source: "dialpad_sync",
+      },
+      created_by: "system",
+    };
+  });
+
+  const { error: insertErr } = await supabase.from("timeline_events").insert(rows);
+  if (insertErr) return { ok: false, synced: 0, error: insertErr.message };
+
+  revalidatePath(`/pro/contacts/${contactId}`);
+  return { ok: true, synced: toInsert.length };
+}
+
 // ─── Integrity Engine ─────────────────────────────────────────────────────────
 
 type IntegrityFlag = { type: string; label: string };

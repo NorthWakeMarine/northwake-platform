@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { submitLead, type LeadFormState } from "@/app/actions";
+import { trackFormStart, trackFormSubmit, trackFormSuccess, trackFormError } from "@/lib/analytics";
 
 const vesselTypes = [
   "Center Console", "Bowrider", "Pontoon", "Cruiser",
@@ -53,6 +54,14 @@ export default function QuoteForm({
   const [state, action] = useActionState<LeadFormState, FormData>(submitLead, {
     success: false,
   });
+  const started = useRef(false);
+
+  function handleFirstInteraction() {
+    if (!started.current) {
+      started.current = true;
+      trackFormStart(formId);
+    }
+  }
 
   const fieldClass =
     "bg-transparent border border-steel-dark text-wake placeholder-steel text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full [&:user-invalid]:border-red-500";
@@ -61,14 +70,20 @@ export default function QuoteForm({
   const labelClass =
     "text-steel-light text-[10px] tracking-[0.3em] uppercase font-medium";
 
+  if (state.error) trackFormError(formId, state.error);
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     if (!e.currentTarget.checkValidity()) {
       e.preventDefault();
       e.currentTarget.reportValidity();
+      return;
     }
+    const service = (e.currentTarget.elements.namedItem("service") as HTMLSelectElement)?.value;
+    trackFormSubmit(formId, service);
   }
 
   if (state.success) {
+    trackFormSuccess(formId);
     return (
       <div className="w-full flex flex-col items-center justify-center gap-5 py-12 text-center">
         <span aria-hidden="true" className="chrome-text text-4xl">◈</span>
@@ -93,6 +108,7 @@ export default function QuoteForm({
       id={formId}
       action={action}
       onSubmit={handleSubmit}
+      onFocus={handleFirstInteraction}
       aria-label="Quote request form"
       className="w-full flex flex-col gap-5"
     >

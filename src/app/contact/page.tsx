@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingCTA from "@/components/FloatingCTA";
+import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import QuoteForm from "@/components/QuoteForm";
 
 export const metadata: Metadata = {
@@ -104,6 +105,7 @@ export default function ContactPage() {
       />
       <Header />
       <FloatingCTA />
+      <ScrollDepthTracker />
 
       <main>
         {/* ── Main contact layout ── */}

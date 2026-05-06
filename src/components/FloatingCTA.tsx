@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { trackCtaClick } from "@/lib/analytics";
 
 export default function FloatingCTA() {
   const [visible, setVisible] = useState(false);
@@ -23,6 +24,7 @@ export default function FloatingCTA() {
     >
       <Link
         href="/contact"
+        onClick={() => trackCtaClick("Get a Free Quote", "floating_cta")}
         className="chrome-btn flex items-center gap-2.5 font-bold text-[10px] tracking-[0.25em] uppercase px-5 py-3.5 shadow-xl shadow-black/60 transition-all duration-300 hover:scale-105 active:scale-95"
       >
         <svg

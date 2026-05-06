@@ -3,6 +3,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingCTA from "@/components/FloatingCTA";
+import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 
 export const metadata: Metadata = {
   title: "Marine Services, Detailing, Ceramic Coating & Yacht Management",
@@ -430,6 +431,7 @@ export default function ServicesPage() {
 
       <Header />
       <FloatingCTA />
+      <ScrollDepthTracker />
 
       <main>
         {/* ── Hero ── */}

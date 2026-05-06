@@ -131,3 +131,27 @@ export async function isDialpadConnected(): Promise<boolean> {
   const tokens = await getDialpadTokens();
   return !!tokens;
 }
+
+export type DialpadCall = {
+  id: string;
+  date_started: number; // epoch ms
+  duration: number | null;
+  direction: "inbound" | "outbound";
+  external_number: string | null;
+  recording_url: string | null;
+  voicemail_url: string | null;
+};
+
+export async function listDialpadCalls(options: {
+  limit?: number;
+  started_after?: number; // epoch ms
+} = {}): Promise<DialpadCall[]> {
+  const params = new URLSearchParams({ limit: String(options.limit ?? 200) });
+  if (options.started_after) {
+    // Dialpad API expects epoch seconds
+    params.set("started_after", String(Math.floor(options.started_after / 1000)));
+  }
+  type Resp = { items?: DialpadCall[] };
+  const data = await dpRequest<Resp>(`/calls?${params}`);
+  return data.items ?? [];
+}

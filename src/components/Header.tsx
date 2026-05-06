@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { trackNavClick, trackCtaClick } from "@/lib/analytics";
 
 const navLinks = [
   { label: "Home",     href: "/"         },
@@ -39,6 +40,7 @@ export default function Header() {
               <li key={href}>
                 <Link
                   href={href}
+                  onClick={() => trackNavClick(label, href, "header")}
                   className={`transition-colors duration-200 hover:text-wake ${
                     pathname === href ? "text-wake border-b border-navy pb-0.5" : ""
                   }`}
@@ -53,6 +55,7 @@ export default function Header() {
         {/* Desktop CTA */}
         <Link
           href="/contact"
+          onClick={() => trackCtaClick("Get a Quote", "header")}
           className="hidden md:inline-block chrome-btn text-[10px] font-bold tracking-[0.25em] uppercase px-5 py-2.5 transition-all duration-300 hover:scale-105"
         >
           Get a Quote
@@ -91,7 +94,7 @@ export default function Header() {
             <Link
               key={href}
               href={href}
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); trackNavClick(label, href, "mobile_menu"); }}
               className={`text-sm tracking-[0.2em] uppercase transition-colors duration-200 hover:text-wake ${
                 pathname === href ? "text-wake" : "text-steel-light"
               }`}
@@ -101,7 +104,7 @@ export default function Header() {
           ))}
           <Link
             href="/contact"
-            onClick={() => setOpen(false)}
+            onClick={() => { setOpen(false); trackCtaClick("Get a Quote", "mobile_menu"); }}
             className="chrome-btn text-[10px] font-bold tracking-[0.25em] uppercase px-5 py-3 text-center mt-2 transition-all duration-300"
           >
             Get a Quote
