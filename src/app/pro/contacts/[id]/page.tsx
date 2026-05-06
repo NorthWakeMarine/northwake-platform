@@ -47,12 +47,6 @@ type TimelineEvent = {
   metadata?: Record<string, string> | null;
 };
 
-function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
-  });
-}
-
 type HealthItem = { label: string; ok: boolean };
 
 function HealthCheck({ contact, assetCount }: { contact: Contact; assetCount: number }) {

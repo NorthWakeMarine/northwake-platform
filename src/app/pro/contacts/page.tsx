@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import SearchBar from "./SearchBar";
