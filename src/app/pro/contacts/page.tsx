@@ -282,12 +282,12 @@ export default async function ContactsPage({
                         <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{c.name || "—"}</td>
                         <td className="py-3 px-4 text-slate-500">
                           {c.email
-                            ? <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()} className="hover:text-blue-600 transition-colors">{c.email}</a>
+                            ? <a href={`mailto:${c.email}`} className="hover:text-blue-600 transition-colors">{c.email}</a>
                             : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
                           {c.phone
-                            ? <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} className="hover:text-blue-600 transition-colors">{c.phone}</a>
+                            ? <a href={`tel:${c.phone}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
                             : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="py-3 px-4 text-slate-500">{c.vessel_type || <span className="text-slate-300">—</span>}</td>

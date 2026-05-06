@@ -138,11 +138,11 @@ export default async function LeadsPage({
                           <td className="py-3 px-4 first:pl-6 text-slate-400 whitespace-nowrap">{fmt(lead.created_at)}</td>
                           <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{lead.name || <span className="text-slate-300">—</span>}</td>
                           <td className="py-3 px-4 text-slate-500">
-                            <a href={`mailto:${lead.email}`} onClick={(e) => e.stopPropagation()} className="hover:text-blue-600 transition-colors">{lead.email}</a>
+                            <a href={`mailto:${lead.email}`} className="hover:text-blue-600 transition-colors">{lead.email}</a>
                           </td>
                           <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
                             {lead.phone
-                              ? <a href={`tel:${lead.phone}`} onClick={(e) => e.stopPropagation()} className="hover:text-blue-600 transition-colors">{lead.phone}</a>
+                              ? <a href={`tel:${lead.phone}`} className="hover:text-blue-600 transition-colors">{lead.phone}</a>
                               : <span className="text-slate-300">—</span>}
                           </td>
                           <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
