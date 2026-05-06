@@ -18,6 +18,7 @@ import { updatePipelineStage } from "@/app/actions";
 import PipelineColumn from "./PipelineColumn";
 import PipelineCardComponent from "./PipelineCard";
 import SummaryBar from "./SummaryBar";
+import MobileBoard from "./MobileBoard";
 
 function groupByStage(cards: PipelineCard[]): Record<PipelineStage, PipelineCard[]> {
   const result = Object.fromEntries(STAGES.map((s) => [s, [] as PipelineCard[]])) as Record<PipelineStage, PipelineCard[]>;
@@ -54,17 +55,9 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
     if (card) setActiveCard(card);
   }
 
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      setActiveCard(null);
-      const { active, over } = event;
-      if (!over) return;
-
-      const targetStage = over.id as PipelineStage;
-      if (!STAGES.includes(targetStage)) return;
-
-      const card = active.data.current?.card as PipelineCard;
-      if (!card || card.stage === targetStage) return;
+  const moveCard = useCallback(
+    (card: PipelineCard, targetStage: PipelineStage) => {
+      if (card.stage === targetStage) return;
 
       const prevColumns = columns;
 
@@ -96,10 +89,43 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
             return next;
           });
         }
-
       });
     },
     [columns]
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveCard(null);
+      const { active, over } = event;
+      if (!over) return;
+
+      const targetStage = over.id as PipelineStage;
+      if (!STAGES.includes(targetStage)) return;
+
+      const card = active.data.current?.card as PipelineCard;
+      if (!card) return;
+
+      moveCard(card, targetStage);
+    },
+    [moveCard]
+  );
+
+  const handleMoveCard = useCallback(
+    (_cardId: string, card: PipelineCard, newStage: PipelineStage) => {
+      moveCard(card, newStage);
+    },
+    [moveCard]
+  );
+
+  const handleRemoveCard = useCallback(
+    (stage: PipelineStage, cardId: string) => {
+      setColumns((prev) => ({
+        ...prev,
+        [stage]: prev[stage].filter((c) => c.id !== cardId),
+      }));
+    },
+    []
   );
 
   return (
@@ -109,44 +135,49 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
           <h1 className="text-slate-900 text-xl font-bold tracking-tight">
             {userName ? `Welcome back, ${userName}` : "Welcome back"}
           </h1>
-          <p className="text-slate-400 text-xs mt-0.5">Drag leads through your service workflow.</p>
+          <p className="text-slate-400 text-xs mt-0.5 hidden md:block">Drag leads through your service workflow.</p>
+          <p className="text-slate-400 text-xs mt-0.5 md:hidden">Tap a stage to view and move cards.</p>
         </div>
       </div>
 
       <SummaryBar columns={columns} />
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="flex-1 overflow-x-auto">
-          <div className="flex gap-4 px-6 py-5 items-start">
-            {STAGES.map((stage) => (
-              <PipelineColumn
-                key={stage}
-                stage={stage}
-                cards={columns[stage]}
-                onRemoveCard={(id) =>
-                  setColumns((prev) => ({
-                    ...prev,
-                    [stage]: prev[stage].filter((c) => c.id !== id),
-                  }))
-                }
-              />
-            ))}
-          </div>
-        </div>
+      <MobileBoard
+        columns={columns}
+        onMoveCard={handleMoveCard}
+        onRemoveCard={handleRemoveCard}
+        className="flex md:hidden flex-1 flex-col min-h-0"
+      />
 
-        <DragOverlay>
-          {activeCard ? (
-            <div className="shadow-xl ring-1 ring-[#000080]/20 rounded-xl rotate-1 opacity-95">
-              <PipelineCardComponent card={activeCard} />
+      <div className="hidden md:flex flex-1 flex-col min-h-0">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="flex-1 overflow-x-auto">
+            <div className="flex gap-4 px-6 py-5 items-start">
+              {STAGES.map((stage) => (
+                <PipelineColumn
+                  key={stage}
+                  stage={stage}
+                  cards={columns[stage]}
+                  onRemoveCard={(id) => handleRemoveCard(stage, id)}
+                />
+              ))}
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+          </div>
+
+          <DragOverlay>
+            {activeCard ? (
+              <div className="shadow-xl ring-1 ring-[#000080]/20 rounded-xl rotate-1 opacity-95">
+                <PipelineCardComponent card={activeCard} />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
 
     </div>
   );
