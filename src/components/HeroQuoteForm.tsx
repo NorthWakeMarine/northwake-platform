@@ -13,7 +13,7 @@ function SubmitButton() {
       disabled={pending}
       className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-3 transition-all duration-300 hover:scale-[1.02] w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
     >
-      {pending ? "Submitting…" : "Submit"}
+      {pending ? "Submitting…" : "Get My Free Quote →"}
     </button>
   );
 }

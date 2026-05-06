@@ -171,11 +171,21 @@ export default async function Home() {
                   About Us
                 </Link>
               </div>
+              <a
+                href="tel:+19046065454"
+                className="text-steel-light text-sm font-semibold tracking-widest hover:text-wake transition-colors duration-200"
+                aria-label="Call NorthWake Marine"
+              >
+                (904) 606-5454
+              </a>
             </div>
 
             {/* ── Right: Free Quote form card ── */}
             <div className="order-2 chrome-stage bg-obsidian/90 backdrop-blur-md p-5 sm:p-7">
-              <h2 className="text-wake text-xl font-bold tracking-tight mb-4">Free Quote</h2>
+              <div className="flex flex-col gap-0.5 mb-4">
+                <h2 className="text-wake text-xl font-bold tracking-tight">Get a Free Quote</h2>
+                <p className="text-steel text-[11px] tracking-wide">No obligation. Most quotes returned same day.</p>
+              </div>
               <HeroQuoteForm />
             </div>
 
@@ -189,6 +199,23 @@ export default async function Home() {
           />
         </section>
 
+
+        {/* ── TRUST BAR ── */}
+        <div aria-label="Trust indicators" className="border-y border-steel-dark bg-obsidian/80">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+            {[
+              { icon: "◈", text: "Professional-Grade Products Only" },
+              { icon: "◉", text: "Photo Documentation on Every Job" },
+              { icon: "◈", text: "No Obligation. No Contracts." },
+              { icon: "△", text: "Serving Jacksonville Since 2025" },
+            ].map(({ icon, text }) => (
+              <div key={text} className="flex items-center gap-2">
+                <span aria-hidden="true" className="chrome-text text-sm">{icon}</span>
+                <span className="text-steel-light text-[10px] tracking-[0.2em] uppercase font-semibold">{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* ── SERVICES GRID ── */}
         <section id="services" aria-labelledby="services-heading" className="pt-10 pb-14 px-6 bg-obsidian">
@@ -238,6 +265,46 @@ export default async function Home() {
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
+
+        {/* ── TESTIMONIALS ── */}
+        <section aria-labelledby="testimonials-heading" className="py-16 px-6 bg-obsidian">
+          <div className="max-w-7xl mx-auto">
+            <header className="flex flex-col items-center text-center gap-2 mb-10">
+              <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Client Feedback</p>
+              <h2 id="testimonials-heading" className="text-wake text-2xl sm:text-3xl font-bold tracking-tight">
+                What Vessel Owners Are <span className="chrome-text">Saying</span>
+              </h2>
+              <hr className="accent-rule w-48 mt-2" />
+            </header>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-steel-dark">
+              {[
+                {
+                  quote: "They turned my 32ft center console from embarrassing to showroom. Ceramic coating looks unreal even after a month of salt water. NorthWake is the only call I make.",
+                  name: "D. Harrington",
+                  vessel: "32ft Center Console, Jacksonville",
+                },
+                {
+                  quote: "Monthly maintenance plan took a full chore off my list. They show up, document everything, and my boat is always ready. The photo reports after every visit are a nice touch.",
+                  name: "R. Castellano",
+                  vessel: "41ft Cruiser, St. Johns River",
+                },
+                {
+                  quote: "Booked a full detail and ceramic before selling. Got asking price. The NorthWake guys are meticulous and actually care about the work they do. Rare.",
+                  name: "M. Sullivan",
+                  vessel: "28ft Sport Fishing, Orange Park",
+                },
+              ].map(({ quote, name, vessel }) => (
+                <div key={name} className="bg-obsidian p-6 flex flex-col gap-4">
+                  <p className="text-steel-light text-xs leading-relaxed italic">&ldquo;{quote}&rdquo;</p>
+                  <div className="mt-auto flex flex-col gap-0.5">
+                    <span className="text-wake text-xs font-bold tracking-wide">{name}</span>
+                    <span className="text-steel text-[10px] tracking-[0.2em] uppercase">{vessel}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 

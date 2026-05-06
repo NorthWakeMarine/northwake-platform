@@ -110,6 +110,9 @@ export default function ContactPage() {
                   Tell us about your vessel and what you&apos;re looking for. The more detail you
                   provide, the more accurate and useful your estimate will be.
                 </p>
+                <p className="text-steel text-xs tracking-wide mt-1">
+                  Most quotes returned same day. No obligation, no pressure.
+                </p>
                 <hr className="accent-rule w-32" />
               </header>
 

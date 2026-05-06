@@ -94,7 +94,7 @@ export default async function AboutPage() {
                   href="/contact"
                   className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-9 py-4 transition-all duration-300 hover:scale-105 text-center"
                 >
-                  Work With Us
+                  Get a Free Quote
                 </Link>
                 <Link
                   href="/services"
@@ -160,7 +160,7 @@ export default async function AboutPage() {
                   href="/contact"
                   className="self-start chrome-btn text-[10px] font-bold tracking-[0.3em] uppercase px-9 py-4 transition-all duration-300 hover:scale-105 mt-2"
                 >
-                  Start a Conversation
+                  Get a Free Quote
                 </Link>
               </div>
               <div className="flex flex-col gap-5 md:w-1/2">
