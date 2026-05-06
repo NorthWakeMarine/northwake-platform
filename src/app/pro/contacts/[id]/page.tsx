@@ -12,6 +12,7 @@ import ContactDetailsCard from "./ContactDetailsCard";
 import ContactDocuments from "./ContactDocuments";
 import ActivityTimeline from "./ActivityTimeline";
 import LogCallModal from "./LogCallModal";
+import SyncCallsButton from "./SyncCallsButton";
 import SyncToQbButton from "./SyncToQbButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteContactButton from "../DeleteContactButton";
@@ -191,6 +192,7 @@ export default async function ContactProfilePage({
               </>
             )}
             <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
+            <SyncCallsButton contactId={contact.id} />
             <LogCallModal contactId={contact.id} />
             <DeleteContactButton contactId={contact.id} redirectTo="/pro/contacts" />
           </div>
