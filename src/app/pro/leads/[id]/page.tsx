@@ -5,6 +5,8 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import ConvertButton from "./ConvertButton";
+import AddToPipelineButton from "@/components/AddToPipelineButton";
+import DeleteLeadButton from "../DeleteLeadButton";
 
 type TimelineEvent = {
   id: string;
@@ -148,6 +150,7 @@ export default async function LeadDetailPage({
             <span className={`text-[9px] tracking-widest uppercase px-2.5 py-1 rounded-sm font-semibold ${src.cls}`}>
               {src.label}
             </span>
+            <DeleteLeadButton leadId={lead.id} redirectTo="/pro/leads" />
             {lead.status === "converted" && contact ? (
               <Link
                 href={`/pro/contacts/${contact.id}`}
@@ -159,7 +162,10 @@ export default async function LeadDetailPage({
                 View Client Profile
               </Link>
             ) : (
-              <ConvertButton leadId={lead.id} />
+              <>
+                <AddToPipelineButton id={lead.id} sourceType="lead" />
+                <ConvertButton leadId={lead.id} />
+              </>
             )}
           </div>
         </div>
@@ -241,21 +247,6 @@ export default async function LeadDetailPage({
                 </div>
               )}
 
-              {/* Future: Google Ads data */}
-              {lead.source === "google_ads" ? (
-                <div className="bg-white border border-slate-200 rounded-sm p-5">
-                  <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-3">Ad Campaign Details</p>
-                  <p className="text-slate-400 text-xs leading-relaxed">Campaign data will appear here once Google Ads is connected.</p>
-                </div>
-              ) : (
-                <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Ad Campaign</p>
-                    <span className="text-[9px] tracking-widest uppercase text-slate-300 border border-slate-200 px-2 py-0.5 rounded-sm">Google Ads</span>
-                  </div>
-                  <p className="text-slate-400 text-xs leading-relaxed">Connect Google Ads to see which campaign, ad group, and keyword drove this lead.</p>
-                </div>
-              )}
 
               {/* Timeline if contact matched */}
               {contact && (

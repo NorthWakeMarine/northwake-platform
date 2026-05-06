@@ -1,9 +1,8 @@
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
-import DeleteLeadButton from "./DeleteLeadButton";
+import ClickableRow from "@/components/ClickableRow";
 
 type Lead = {
   id: string;
@@ -120,7 +119,7 @@ export default async function LeadsPage({
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      {(["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source", ""] as const).map((h) => (
+                      {(["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source"] as const).map((h) => (
                         <SortableHeader
                           key={h}
                           label={h}
@@ -135,15 +134,15 @@ export default async function LeadsPage({
                     {(leads as Lead[]).map((lead) => {
                       const src = sourceConfig[lead.source ?? "website"] ?? sourceConfig.website;
                       return (
-                        <tr key={lead.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
+                        <ClickableRow key={lead.id} href={`/pro/leads/${lead.id}`} className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
                           <td className="py-3 px-4 first:pl-6 text-slate-400 whitespace-nowrap">{fmt(lead.created_at)}</td>
                           <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{lead.name || <span className="text-slate-300">—</span>}</td>
                           <td className="py-3 px-4 text-slate-500">
-                            <a href={`mailto:${lead.email}`} className="hover:text-blue-600 transition-colors">{lead.email}</a>
+                            <a href={`mailto:${lead.email}`} onClick={(e) => e.stopPropagation()} className="hover:text-blue-600 transition-colors">{lead.email}</a>
                           </td>
                           <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
                             {lead.phone
-                              ? <a href={`tel:${lead.phone}`} className="hover:text-blue-600 transition-colors">{lead.phone}</a>
+                              ? <a href={`tel:${lead.phone}`} onClick={(e) => e.stopPropagation()} className="hover:text-blue-600 transition-colors">{lead.phone}</a>
                               : <span className="text-slate-300">—</span>}
                           </td>
                           <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
@@ -152,23 +151,12 @@ export default async function LeadsPage({
                               : <span className="text-slate-300">—</span>}
                           </td>
                           <td className="py-3 px-4 text-slate-500 whitespace-nowrap">{lead.service || <span className="text-slate-300">—</span>}</td>
-                          <td className="py-3 px-4 whitespace-nowrap">
+                          <td className="py-3 px-4 last:pr-6 whitespace-nowrap">
                             <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium ${src.cls}`}>
                               {src.label}
                             </span>
                           </td>
-                          <td className="py-3 px-4 last:pr-6">
-                            <div className="flex items-center gap-3">
-                              <Link
-                                href={`/pro/leads/${lead.id}`}
-                                className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap"
-                              >
-                                View
-                              </Link>
-                              <DeleteLeadButton leadId={lead.id} />
-                            </div>
-                          </td>
-                        </tr>
+                        </ClickableRow>
                       );
                     })}
                   </tbody>

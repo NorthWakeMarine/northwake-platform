@@ -13,6 +13,9 @@ import ContactDocuments from "./ContactDocuments";
 import ActivityTimeline from "./ActivityTimeline";
 import LogCallModal from "./LogCallModal";
 import SyncToQbButton from "./SyncToQbButton";
+import AddToPipelineButton from "@/components/AddToPipelineButton";
+import DeleteContactButton from "../DeleteContactButton";
+import type { PipelineStage } from "@/types/pipeline";
 import type { DriveFile } from "@/lib/google-drive";
 
 type Contact = {
@@ -31,6 +34,7 @@ type Contact = {
   qb_customer_id: string | null;
   drive_folder_id: string | null;
   drive_folder_url: string | null;
+  pipeline_stage: PipelineStage | null;
 };
 
 type TimelineEvent = {
@@ -111,7 +115,7 @@ export default async function ContactProfilePage({
   ] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, created_at, name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source, contact_type, qb_customer_id, drive_folder_id, drive_folder_url")
+      .select("id, created_at, name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source, contact_type, qb_customer_id, drive_folder_id, drive_folder_url, pipeline_stage")
       .eq("id", id)
       .single(),
     supabase
@@ -192,7 +196,9 @@ export default async function ContactProfilePage({
                 )}
               </>
             )}
+            <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
             <LogCallModal contactId={contact.id} />
+            <DeleteContactButton contactId={contact.id} redirectTo="/pro/contacts" />
           </div>
         </div>
 

@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteContact } from "@/app/actions";
 
-export default function DeleteContactButton({ contactId }: { contactId: string }) {
+export default function DeleteContactButton({
+  contactId,
+  redirectTo,
+}: {
+  contactId: string;
+  redirectTo?: string;
+}) {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -12,7 +18,7 @@ export default function DeleteContactButton({ contactId }: { contactId: string }
   if (!confirm) {
     return (
       <button
-        onClick={(e) => { e.preventDefault(); setConfirm(true); }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirm(true); }}
         className="text-[10px] tracking-widest uppercase text-red-400 hover:text-red-600 font-medium transition-colors whitespace-nowrap"
       >
         Delete
@@ -26,17 +32,22 @@ export default function DeleteContactButton({ contactId }: { contactId: string }
         disabled={busy}
         onClick={async (e) => {
           e.preventDefault();
+          e.stopPropagation();
           setBusy(true);
           const res = await deleteContact(contactId);
-          if (!res.error) router.refresh();
-          else setBusy(false);
+          if (!res.error) {
+            if (redirectTo) router.push(redirectTo);
+            else router.refresh();
+          } else {
+            setBusy(false);
+          }
         }}
         className="text-[10px] tracking-widest uppercase text-red-600 font-semibold whitespace-nowrap disabled:opacity-50"
       >
         {busy ? "..." : "Confirm"}
       </button>
       <button
-        onClick={(e) => { e.preventDefault(); setConfirm(false); }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirm(false); }}
         className="text-[10px] text-slate-400 hover:text-slate-600"
       >
         Cancel

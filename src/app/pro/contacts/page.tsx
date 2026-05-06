@@ -1,11 +1,10 @@
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import SearchBar from "./SearchBar";
 import TypeFilter from "./TypeFilter";
-import DeleteContactButton from "./DeleteContactButton";
+import ClickableRow from "@/components/ClickableRow";
 
 type Contact = {
   id: string;
@@ -263,7 +262,7 @@ export default async function ContactsPage({
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      {(["Date", "Name", "Email", "Phone", "Vessel", "Length", "Status", ""] as const).map((h) => (
+                      {(["Date", "Name", "Email", "Phone", "Vessel", "Length", "Status"] as const).map((h) => (
                         <SortableHeader
                           key={h}
                           label={h}
@@ -277,34 +276,23 @@ export default async function ContactsPage({
                   </thead>
                   <tbody>
                     {contacts.map((c) => (
-                      <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
+                      <ClickableRow key={c.id} href={`/pro/contacts/${c.id}`} className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
                         <td className="py-3 px-4 first:pl-6 text-slate-400 whitespace-nowrap">{fmt(c.created_at)}</td>
                         <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{c.name || "—"}</td>
                         <td className="py-3 px-4 text-slate-500">
                           {c.email
-                            ? <a href={`mailto:${c.email}`} className="hover:text-blue-600 transition-colors">{c.email}</a>
+                            ? <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()} className="hover:text-blue-600 transition-colors">{c.email}</a>
                             : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
                           {c.phone
-                            ? <a href={`tel:${c.phone}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
+                            ? <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} className="hover:text-blue-600 transition-colors">{c.phone}</a>
                             : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="py-3 px-4 text-slate-500">{c.vessel_type || <span className="text-slate-300">—</span>}</td>
                         <td className="py-3 px-4 text-slate-500">{c.vessel_length ? `${c.vessel_length} ft` : <span className="text-slate-300">—</span>}</td>
-                        <td className="py-3 px-4"><StatusBadges contact={c} /></td>
-                        <td className="py-3 px-4 last:pr-6">
-                          <div className="flex items-center gap-3">
-                            <Link
-                              href={`/pro/contacts/${c.id}`}
-                              className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap"
-                            >
-                              View
-                            </Link>
-                            <DeleteContactButton contactId={c.id} />
-                          </div>
-                        </td>
-                      </tr>
+                        <td className="py-3 px-4 last:pr-6"><StatusBadges contact={c} /></td>
+                      </ClickableRow>
                     ))}
                   </tbody>
                 </table>
