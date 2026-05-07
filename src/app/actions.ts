@@ -1757,6 +1757,7 @@ export type DpUnmatched = {
 };
 
 export async function importDialpadContacts(): Promise<{
+  fetched: number;
   linked: number;
   alreadyLinked: number;
   unmatched: DpUnmatched[];
@@ -1774,7 +1775,9 @@ export async function importDialpadContacts(): Promise<{
 
     const contacts = crmContacts ?? [];
     const emailMap = new Map(contacts.filter(c => c.email).map(c => [c.email!.toLowerCase(), c]));
-    const phoneMap = new Map(contacts.filter(c => c.phone).map(c => [c.phone!, c]));
+    const phoneMap = new Map(
+      contacts.filter(c => c.phone).map(c => [normalizePhone(c.phone!), c])
+    );
     const nameMap  = new Map(contacts.filter(c => c.name).map(c => [c.name!.toLowerCase().trim(), c]));
 
     let linked = 0;
@@ -1784,9 +1787,7 @@ export async function importDialpadContacts(): Promise<{
 
     for (const dp of dpContacts) {
       const dpEmail = dp.emails?.[0]?.toLowerCase() ?? null;
-      const dpPhone = dp.phone_numbers?.[0]
-        ? (dp.phone_numbers[0].startsWith("+") ? dp.phone_numbers[0] : `+1${dp.phone_numbers[0].replace(/\D/g, "")}`)
-        : null;
+      const dpPhone = dp.phone_numbers?.[0] ? normalizePhone(dp.phone_numbers[0]) : null;
       const dpName = dp.display_name?.toLowerCase().trim() ?? "";
 
       const match =
@@ -1804,7 +1805,7 @@ export async function importDialpadContacts(): Promise<{
         if (dpEmail && dpEmail !== (match.email?.toLowerCase() ?? "")) {
           mismatches.push({ contactId: match.id, contactName: match.name, field: "email", crmValue: match.email, sourceValue: dp.emails![0] });
         }
-        if (dpPhone && dpPhone !== (match.phone ?? "")) {
+        if (dpPhone && normalizePhone(match.phone ?? "") !== dpPhone) {
           mismatches.push({ contactId: match.id, contactName: match.name, field: "phone", crmValue: match.phone, sourceValue: dpPhone });
         }
       } else {
@@ -1817,9 +1818,9 @@ export async function importDialpadContacts(): Promise<{
       }
     }
 
-    return { linked, alreadyLinked, unmatched, mismatches };
+    return { fetched: dpContacts.length, linked, alreadyLinked, unmatched, mismatches };
   } catch (err) {
-    return { linked: 0, alreadyLinked: 0, unmatched: [], mismatches: [], error: err instanceof Error ? err.message : "Dialpad import failed." };
+    return { fetched: 0, linked: 0, alreadyLinked: 0, unmatched: [], mismatches: [], error: err instanceof Error ? err.message : "Dialpad import failed." };
   }
 }
 
@@ -1927,5 +1928,58 @@ export async function pushCrmToDialpad(): Promise<{ updated: number; created: nu
     return { updated, created };
   } catch (err) {
     return { updated: 0, created: 0, error: err instanceof Error ? err.message : "Push failed." };
+  }
+}
+
+export async function promoteDialpadLocalToCompany(): Promise<{
+  promoted: number;
+  alreadyShared: number;
+  error?: string;
+}> {
+  try {
+    const { listDialpadContactsByType, createDialpadContact } = await import("@/lib/dialpad");
+    const [localContacts, companyContacts] = await Promise.all([
+      listDialpadContactsByType("local", 500),
+      listDialpadContactsByType("company", 500),
+    ]);
+
+    // Build dedup sets from existing company contacts
+    const sharedPhones = new Set(
+      companyContacts.flatMap((c) => (c.phone_numbers ?? []).map((p: string) => normalizePhone(p) ?? p))
+    );
+    const sharedEmails = new Set(
+      companyContacts.flatMap((c) => (c.emails ?? []).map((e: string) => e.toLowerCase()))
+    );
+
+    let promoted = 0;
+    let alreadyShared = 0;
+
+    for (const c of localContacts) {
+      const phones: string[] = c.phone_numbers ?? [];
+      const emails: string[] = c.emails ?? [];
+      const alreadyInCompany =
+        phones.some((p: string) => sharedPhones.has(normalizePhone(p) ?? p)) ||
+        emails.some((e: string) => sharedEmails.has(e.toLowerCase()));
+
+      if (alreadyInCompany) {
+        alreadyShared++;
+        continue;
+      }
+
+      const newId = await createDialpadContact({
+        display_name: c.display_name,
+        ...(emails.length ? { emails } : {}),
+        ...(phones.length ? { phone_numbers: phones } : {}),
+      });
+      if (newId) {
+        phones.forEach((p: string) => sharedPhones.add(normalizePhone(p) ?? p));
+        emails.forEach((e: string) => sharedEmails.add(e.toLowerCase()));
+        promoted++;
+      }
+    }
+
+    return { promoted, alreadyShared };
+  } catch (err) {
+    return { promoted: 0, alreadyShared: 0, error: err instanceof Error ? err.message : "Promotion failed." };
   }
 }

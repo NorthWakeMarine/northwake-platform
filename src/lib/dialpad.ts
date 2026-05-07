@@ -105,7 +105,7 @@ export type DialpadContact = {
   emails?: string[];
 };
 
-async function listDialpadContactsByType(type: "company" | "local", maxTotal: number): Promise<DialpadContact[]> {
+export async function listDialpadContactsByType(type: "company" | "local", maxTotal: number): Promise<DialpadContact[]> {
   type Resp = { items?: DialpadContact[]; cursor?: string };
   const all: DialpadContact[] = [];
   let cursor: string | undefined;

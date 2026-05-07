@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, pushCrmToDialpad, updateContactFields } from "@/app/actions";
+import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, pushCrmToDialpad, updateContactFields, promoteDialpadLocalToCompany } from "@/app/actions";
 import type { FieldMismatch, DpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
 
 type SyncResult = {
   qb?: { linked: number; alreadyLinked: number; unmatched: QbUnmatched[]; mismatches: FieldMismatch[]; error?: string };
-  dialpad?: { linked: number; alreadyLinked: number; unmatched: DpUnmatched[]; mismatches: FieldMismatch[]; error?: string };
+  dialpad?: { fetched: number; linked: number; alreadyLinked: number; unmatched: DpUnmatched[]; mismatches: FieldMismatch[]; error?: string };
   integrity?: { checked: number; flagged: number; error?: string };
   dpPush?: { updated: number; created: number; error?: string };
+  dpPromote?: { promoted: number; alreadyShared: number; error?: string };
 };
 
 export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnected: boolean; dialpadConnected: boolean }) {
@@ -84,6 +85,13 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
     });
   }
 
+  function handlePromoteLocalToCompany() {
+    startTransition(async () => {
+      const dpPromote = await promoteDialpadLocalToCompany();
+      setResult((prev) => ({ ...prev, dpPromote }));
+    });
+  }
+
   const nothingConnected = !qbConnected && !dialpadConnected;
 
   return (
@@ -97,13 +105,22 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {dialpadConnected && (
-            <button
-              onClick={handlePushToDialpad}
-              disabled={isPending}
-              className="border border-slate-200 text-slate-600 hover:border-slate-300 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
-            >
-              {isPending ? "Pushing..." : "Push to Dialpad"}
-            </button>
+            <>
+              <button
+                onClick={handlePromoteLocalToCompany}
+                disabled={isPending}
+                className="border border-slate-200 text-slate-600 hover:border-slate-300 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
+              >
+                {isPending ? "Promoting..." : "Promote Local → Shared"}
+              </button>
+              <button
+                onClick={handlePushToDialpad}
+                disabled={isPending}
+                className="border border-slate-200 text-slate-600 hover:border-slate-300 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
+              >
+                {isPending ? "Pushing..." : "Push to Dialpad"}
+              </button>
+            </>
           )}
           <button
             onClick={handleSyncAll}
@@ -213,6 +230,10 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
               ) : (
                 <div className="flex flex-wrap gap-4">
                   <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-400" />
+                    <span className="text-slate-400 text-xs">{result.dialpad.fetched} fetched from Dialpad</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="text-slate-700 text-xs">{result.dialpad.linked} newly linked</span>
                   </div>
@@ -277,6 +298,27 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
                   isPending={isPending}
                   sourceLabel="Dialpad"
                 />
+              )}
+            </div>
+          )}
+
+          {/* Promote Local → Shared results */}
+          {result.dpPromote && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">Promote Local to Shared</p>
+              {result.dpPromote.error ? (
+                <p className="text-red-500 text-xs">{result.dpPromote.error}</p>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-700 text-xs">{result.dpPromote.promoted} contacts promoted to shared</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-300" />
+                    <span className="text-slate-500 text-xs">{result.dpPromote.alreadyShared} already in shared</span>
+                  </div>
+                </div>
               )}
             </div>
           )}

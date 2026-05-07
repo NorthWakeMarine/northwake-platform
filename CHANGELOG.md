@@ -2,6 +2,9 @@
 
 ## May 2026
 
+### May 7 | Dialpad local-to-shared contact promotion | Integrations,Fix
+Sync All now shows how many contacts were fetched from Dialpad (before matching) so you can tell if the API returned zero vs. matching failed. A new "Promote Local to Shared" button copies personal userline contacts into company-shared contacts in Dialpad so the whole team can see them and the API can sync them. Phone normalization now handles all common formats (parentheses, dashes, 10-digit, 11-digit) using libphonenumber-js.
+
 ### May 7 | Dialpad API pagination fix | Fix,Integrations
 Dialpad's contacts and calls endpoints cap the `limit` parameter at 100. All API calls now page through results in batches of 100 (up to 500 total) instead of sending an oversized limit that caused a 400 error on Sync All.
 
