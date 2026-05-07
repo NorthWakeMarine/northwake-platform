@@ -137,6 +137,8 @@ const PAGES_TRACKED = [
   { path: "/contact", label: "Contact", tracking: ["scroll_depth", "nav_click", "cta_click", "quote_form_*", "phone_click", "email_click"] },
 ];
 
+const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
 export default function AnalyticsReferencePage() {
   return (
     <ProShell>
@@ -151,22 +153,34 @@ export default function AnalyticsReferencePage() {
           <div className="max-w-4xl flex flex-col gap-10">
 
             {/* Setup status */}
-            <section className="bg-amber-50 border border-amber-200 rounded-sm p-5 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-amber-600 text-sm font-bold">Setup Required</span>
-              </div>
-              <p className="text-amber-700 text-xs leading-relaxed">
-                Add your GA4 Measurement ID to Vercel environment variables as{" "}
-                <code className="bg-amber-100 px-1 rounded font-mono">NEXT_PUBLIC_GA_MEASUREMENT_ID</code>{" "}
-                (e.g. <code className="bg-amber-100 px-1 rounded font-mono">G-XXXXXXXXXX</code>).
-                The script loads automatically once the variable is set. No code changes needed.
-              </p>
-              <p className="text-amber-700 text-xs mt-1">
-                In GA4, go to <strong>Admin → Data Streams → your stream → Enhanced Measurement</strong> and disable
-                automatic scroll tracking to avoid double-counting with the custom{" "}
-                <code className="bg-amber-100 px-1 rounded font-mono">scroll_depth</code> event.
-              </p>
-            </section>
+            {GA_ID ? (
+              <section className="bg-green-50 border border-green-200 rounded-sm p-5 flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                <div>
+                  <span className="text-green-700 text-sm font-bold">GA4 Connected</span>
+                  <p className="text-green-600 text-xs mt-0.5">
+                    Measurement ID <code className="bg-green-100 px-1 rounded font-mono">{GA_ID}</code> is active. Events are being sent to Google Analytics.
+                  </p>
+                </div>
+              </section>
+            ) : (
+              <section className="bg-amber-50 border border-amber-200 rounded-sm p-5 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-600 text-sm font-bold">Setup Required</span>
+                </div>
+                <p className="text-amber-700 text-xs leading-relaxed">
+                  Add your GA4 Measurement ID to Vercel environment variables as{" "}
+                  <code className="bg-amber-100 px-1 rounded font-mono">NEXT_PUBLIC_GA_MEASUREMENT_ID</code>{" "}
+                  (e.g. <code className="bg-amber-100 px-1 rounded font-mono">G-XXXXXXXXXX</code>).
+                  The script loads automatically once the variable is set. No code changes needed.
+                </p>
+                <p className="text-amber-700 text-xs mt-1">
+                  In GA4, go to <strong>Admin &rarr; Data Streams &rarr; your stream &rarr; Enhanced Measurement</strong> and disable
+                  automatic scroll tracking to avoid double-counting with the custom{" "}
+                  <code className="bg-amber-100 px-1 rounded font-mono">scroll_depth</code> event.
+                </p>
+              </section>
+            )}
 
             {/* Event catalog */}
             {CATEGORIES.map((cat) => (

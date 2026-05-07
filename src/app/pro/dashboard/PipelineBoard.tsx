@@ -33,7 +33,9 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
     groupByStage(initialCards)
   );
   const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
-  const [userName, setUserName] = useState("");
+  const [userName, setUserName] = useState(
+    () => (typeof window !== "undefined" && localStorage.getItem("pro-user-name")) || ""
+  );
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -42,7 +44,9 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
       const email = data.user?.email ?? "";
       const meta = (data.user?.user_metadata ?? {}) as Record<string, string>;
       const raw = meta?.full_name || meta?.name || email.split("@")[0] || "";
-      setUserName(raw.charAt(0).toUpperCase() + raw.slice(1));
+      const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+      setUserName(name);
+      localStorage.setItem("pro-user-name", name);
     });
   }, []);
 
