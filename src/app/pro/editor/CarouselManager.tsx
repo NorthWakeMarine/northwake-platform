@@ -138,6 +138,7 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
     [...initialImages].sort((a, b) => a.display_order - b.display_order)
   );
   const [uploading, setUploading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [focalTarget, setFocalTarget] = useState<CarouselImage | null>(null);
   const [previewTarget, setPreviewTarget] = useState<CarouselImage | null>(null);
@@ -196,6 +197,14 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: img.id, focal_x: x, focal_y: y }),
     });
+  }
+
+  async function handleSyncStorage() {
+    setSyncing(true);
+    const res = await fetch("/api/carousel/sync", { method: "POST" });
+    const json = await res.json();
+    if (json.images?.length) setImages((prev) => [...prev, ...json.images]);
+    setSyncing(false);
   }
 
   // Drag-to-reorder
@@ -263,6 +272,17 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
           className="hidden"
           onChange={(e) => e.target.files && uploadFiles(e.target.files)}
         />
+      </div>
+
+      {/* Sync from storage */}
+      <div className="flex justify-end -mt-2">
+        <button
+          onClick={handleSyncStorage}
+          disabled={syncing}
+          className="text-xs text-slate-400 hover:text-slate-700 underline underline-offset-2 disabled:opacity-50 transition-colors"
+        >
+          {syncing ? "Scanning storage…" : "Sync images from Supabase Storage"}
+        </button>
       </div>
 
       {/* Image grid */}
