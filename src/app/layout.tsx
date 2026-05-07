@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import GoogleAdsTag from "@/components/GoogleAdsTag";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -195,6 +196,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-obsidian text-wake">
         {children}
         <GoogleAnalytics />
+        <GoogleAdsTag />
         <Analytics />
         <SpeedInsights />
       </body>
