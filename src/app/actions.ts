@@ -1481,7 +1481,7 @@ export async function syncDialpadCallsForContact(
   let calls;
   try {
     calls = await listDialpadCalls({
-      limit: 200,
+      maxTotal: 500,
       started_after: Date.now() - 90 * 24 * 60 * 60 * 1000,
     });
   } catch (e) {
@@ -1766,7 +1766,7 @@ export async function importDialpadContacts(): Promise<{
   const supabase = await svc();
   try {
     const { listDialpadContacts } = await import("@/lib/dialpad");
-    const dpContacts = await listDialpadContacts(500);
+    const dpContacts = await listDialpadContacts();
 
     const { data: crmContacts } = await supabase
       .from("contacts")

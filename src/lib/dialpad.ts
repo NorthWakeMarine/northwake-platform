@@ -105,10 +105,18 @@ export type DialpadContact = {
   emails?: string[];
 };
 
-export async function listDialpadContacts(limit = 100): Promise<DialpadContact[]> {
-  type Resp = { items?: DialpadContact[] };
-  const data = await dpRequest<Resp>(`/contacts?type=company&limit=${limit}`);
-  return data.items ?? [];
+export async function listDialpadContacts(maxTotal = 500): Promise<DialpadContact[]> {
+  type Resp = { items?: DialpadContact[]; cursor?: string };
+  const all: DialpadContact[] = [];
+  let cursor: string | undefined;
+  do {
+    const params = new URLSearchParams({ type: "company", limit: "100" });
+    if (cursor) params.set("cursor", cursor);
+    const data = await dpRequest<Resp>(`/contacts?${params}`);
+    all.push(...(data.items ?? []));
+    cursor = data.cursor;
+  } while (cursor && all.length < maxTotal);
+  return all;
 }
 
 export async function updateDialpadContact(
@@ -149,15 +157,20 @@ export type DialpadCall = {
 };
 
 export async function listDialpadCalls(options: {
-  limit?: number;
+  maxTotal?: number;
   started_after?: number; // epoch ms
 } = {}): Promise<DialpadCall[]> {
-  const params = new URLSearchParams({ limit: String(options.limit ?? 200) });
-  if (options.started_after) {
-    // Dialpad API expects epoch seconds
-    params.set("started_after", String(Math.floor(options.started_after / 1000)));
-  }
-  type Resp = { items?: DialpadCall[] };
-  const data = await dpRequest<Resp>(`/calls?${params}`);
-  return data.items ?? [];
+  type Resp = { items?: DialpadCall[]; cursor?: string };
+  const all: DialpadCall[] = [];
+  const maxTotal = options.maxTotal ?? 500;
+  let cursor: string | undefined;
+  do {
+    const params = new URLSearchParams({ limit: "100" });
+    if (options.started_after) params.set("started_after", String(Math.floor(options.started_after / 1000)));
+    if (cursor) params.set("cursor", cursor);
+    const data = await dpRequest<Resp>(`/calls?${params}`);
+    all.push(...(data.items ?? []));
+    cursor = data.cursor;
+  } while (cursor && all.length < maxTotal);
+  return all;
 }

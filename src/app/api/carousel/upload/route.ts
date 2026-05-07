@@ -7,43 +7,42 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const formData = await req.formData();
-  const file = formData.get("file") as File | null;
-  if (!file) return NextResponse.json({ error: "No file provided." }, { status: 400 });
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!
   );
 
+  const formData = await req.formData();
+  const file = formData.get("file") as File | null;
+  if (!file) return NextResponse.json({ error: "No file provided." }, { status: 400 });
+
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
   const bytes = await file.arrayBuffer();
-  const { error: uploadError } = await supabase.storage
+
+  const { error: uploadErr } = await supabase.storage
     .from("carousel")
-    .upload(filename, bytes, { contentType: file.type, upsert: false });
+    .upload(safeName, bytes, { contentType: file.type, upsert: false });
 
-  if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 500 });
-  }
+  if (uploadErr) return NextResponse.json({ error: uploadErr.message }, { status: 500 });
 
-  const { data: urlData } = supabase.storage.from("carousel").getPublicUrl(filename);
+  const { data: { publicUrl } } = supabase.storage.from("carousel").getPublicUrl(safeName);
 
-  const { data: existing } = await supabase
+  const { data: last } = await supabase
     .from("carousel_images")
     .select("display_order")
     .order("display_order", { ascending: false })
     .limit(1)
     .single();
 
-  const nextOrder = ((existing?.display_order as number) ?? 0) + 1;
+  const nextOrder = ((last?.display_order as number) ?? 0) + 1;
 
-  const { data: row, error: insertError } = await supabase
+  const { data: row, error: insertErr } = await supabase
     .from("carousel_images")
     .insert({
-      storage_path: filename,
-      public_url: urlData.publicUrl,
+      storage_path: safeName,
+      public_url: publicUrl,
       display_order: nextOrder,
       focal_x: 50,
       focal_y: 50,
@@ -52,9 +51,7 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
 
-  if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
-  }
+  if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
 
   return NextResponse.json({ ok: true, image: row });
 }
