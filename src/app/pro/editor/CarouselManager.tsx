@@ -269,7 +269,7 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
       {images.length === 0 ? (
         <p className="text-slate-400 text-sm text-center py-8">No carousel images yet. Upload one above.</p>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
           {images.map((img, index) => (
             <div
               key={img.id}
