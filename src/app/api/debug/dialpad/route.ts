@@ -22,11 +22,13 @@ export async function GET(req: NextRequest) {
   const token = process.env.DIALPAD_API_KEY;
   if (!token) return NextResponse.json({ error: "DIALPAD_API_KEY not set" }, { status: 500 });
 
-  const [noType, company, local] = await Promise.all([
+  const [me, noType, company, local, calls] = await Promise.all([
+    rawRequest("/users/me", token),
     rawRequest("/contacts?limit=5", token),
     rawRequest("/contacts?type=company&limit=5", token),
     rawRequest("/contacts?type=local&limit=5", token),
+    rawRequest("/calls?limit=3", token),
   ]);
 
-  return NextResponse.json({ noType, company, local });
+  return NextResponse.json({ me, noType, company, local, calls });
 }
