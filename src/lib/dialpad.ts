@@ -105,17 +105,31 @@ export type DialpadContact = {
   emails?: string[];
 };
 
-export async function listDialpadContacts(maxTotal = 500): Promise<DialpadContact[]> {
+async function listDialpadContactsByType(type: "company" | "local", maxTotal: number): Promise<DialpadContact[]> {
   type Resp = { items?: DialpadContact[]; cursor?: string };
   const all: DialpadContact[] = [];
   let cursor: string | undefined;
   do {
-    const params = new URLSearchParams({ type: "company", limit: "100" });
+    const params = new URLSearchParams({ type, limit: "100" });
     if (cursor) params.set("cursor", cursor);
     const data = await dpRequest<Resp>(`/contacts?${params}`);
     all.push(...(data.items ?? []));
     cursor = data.cursor;
   } while (cursor && all.length < maxTotal);
+  return all;
+}
+
+export async function listDialpadContacts(maxTotal = 500): Promise<DialpadContact[]> {
+  const [company, local] = await Promise.all([
+    listDialpadContactsByType("company", maxTotal),
+    listDialpadContactsByType("local", maxTotal),
+  ]);
+  // Dedupe by id in case any contacts appear in both lists
+  const seen = new Set<string>();
+  const all: DialpadContact[] = [];
+  for (const c of [...company, ...local]) {
+    if (!seen.has(c.id)) { seen.add(c.id); all.push(c); }
+  }
   return all;
 }
 

@@ -76,37 +76,46 @@ export default function ReleaseNotesPage() {
                   {month.label}
                 </h2>
 
-                <ol className="flex flex-col gap-6">
-                  {month.entries.map((entry, i) => (
-                    <li key={i} className="flex gap-5">
+                <ol className="flex flex-col gap-8">
+                  {Object.entries(
+                    month.entries.reduce<Record<string, Entry[]>>((acc, e) => {
+                      (acc[e.date] ??= []).push(e);
+                      return acc;
+                    }, {})
+                  ).map(([date, entries]) => (
+                    <li key={date} className="flex gap-5">
 
                       <time
-                        dateTime={entry.date}
+                        dateTime={date}
                         className="text-[11px] text-slate-400 font-medium whitespace-nowrap w-12 pt-0.5 shrink-0"
                       >
-                        {entry.date}
+                        {date}
                       </time>
 
-                      <article className="flex-1 min-w-0">
-                        <div className="flex items-start gap-3 flex-wrap mb-1.5">
-                          <h3 className="text-slate-800 text-sm font-semibold leading-snug">
-                            {entry.headline}
-                          </h3>
-                          <div className="flex flex-wrap gap-1.5">
-                            {entry.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className={`text-[9px] tracking-widest uppercase font-medium px-2 py-0.5 rounded-sm border ${TAG_COLORS[tag] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-slate-500 text-xs leading-relaxed">
-                          {entry.detail}
-                        </p>
-                      </article>
+                      <div className="flex-1 min-w-0 flex flex-col gap-5">
+                        {entries.map((entry, i) => (
+                          <article key={i}>
+                            <div className="flex items-start gap-3 flex-wrap mb-1.5">
+                              <h3 className="text-slate-800 text-sm font-semibold leading-snug">
+                                {entry.headline}
+                              </h3>
+                              <div className="flex flex-wrap gap-1.5">
+                                {entry.tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className={`text-[9px] tracking-widest uppercase font-medium px-2 py-0.5 rounded-sm border ${TAG_COLORS[tag] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-slate-500 text-xs leading-relaxed">
+                              {entry.detail}
+                            </p>
+                          </article>
+                        ))}
+                      </div>
 
                     </li>
                   ))}
