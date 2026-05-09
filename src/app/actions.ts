@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ingestContact } from "@/lib/ingest";
+import { sendLeadNotification } from "@/lib/gmail";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 function normalizePhone(raw: string | null | undefined): string | null {
@@ -85,16 +86,14 @@ export async function submitLead(
   }).catch((err) => console.error("Ingest error:", err));
 
   // Email notification (fire-and-forget)
-  import("@/lib/gmail").then(({ sendLeadNotification }) =>
-    sendLeadNotification({
-      name,
-      email: d.email ?? null,
-      phone: d.phone ?? null,
-      service: d.service ?? null,
-      vesselType: d.vessel_type ?? null,
-      message: d.message ?? d.comments ?? null,
-    })
-  ).catch((err) => console.error("Lead email error:", err));
+  sendLeadNotification({
+    name,
+    email: d.email ?? null,
+    phone: d.phone ?? null,
+    service: d.service ?? null,
+    vesselType: d.vessel_type ?? null,
+    message: d.message ?? d.comments ?? null,
+  }).catch((err) => console.error("Lead email error:", err));
 
   return { success: true };
 }

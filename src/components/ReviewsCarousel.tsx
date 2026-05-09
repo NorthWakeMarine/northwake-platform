@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { GoogleReview } from "@/lib/google-places";
 
 const STATIC_REVIEWS: GoogleReview[] = [
@@ -56,12 +56,22 @@ export default function ReviewsCarousel({
 
   const [page, setPage] = useState(0);
   const [paused, setPaused] = useState(false);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (paused || pages.length <= 1) return;
     const t = setInterval(() => setPage((p) => (p + 1) % pages.length), 6000);
     return () => clearInterval(t);
   }, [paused, pages.length]);
+
+  useEffect(() => () => clearTimeout(resumeTimer.current), []);
+
+  function handlePageClick(i: number) {
+    setPage(i);
+    setPaused(true);
+    clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => setPaused(false), 8000);
+  }
 
   const currentPage = pages[page] ?? [];
 
@@ -93,11 +103,13 @@ export default function ReviewsCarousel({
       </div>
 
       {pages.length > 1 && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" role="tablist" aria-label="Review pages">
           {pages.map((_, i) => (
             <button
               key={i}
-              onClick={() => { setPage(i); setPaused(true); }}
+              role="tab"
+              aria-selected={i === page}
+              onClick={() => handlePageClick(i)}
               className={`rounded-full transition-all duration-200 ${i === page ? "w-4 h-1.5 bg-navy" : "w-1.5 h-1.5 bg-steel/40 hover:bg-steel"}`}
               aria-label={`Page ${i + 1}`}
             />
