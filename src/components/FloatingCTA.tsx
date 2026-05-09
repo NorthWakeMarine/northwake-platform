@@ -4,20 +4,51 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { trackCtaClick } from "@/lib/analytics";
 
+const DISMISSED_KEY = "floating_cta_dismissed";
+
 export default function FloatingCTA() {
   const [visible, setVisible] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(false);
 
   useEffect(() => {
+    if (sessionStorage.getItem(DISMISSED_KEY) === "1") {
+      setDismissed(true);
+      return;
+    }
     const handleScroll = () => setVisible(window.scrollY > 500);
     window.addEventListener("scroll", handleScroll, { passive: true });
+
+    const footer = document.querySelector("footer");
+    if (footer) {
+      const observer = new IntersectionObserver(
+        ([entry]) => setFooterVisible(entry.isIntersecting),
+        { threshold: 0 }
+      );
+      observer.observe(footer);
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+        observer.disconnect();
+      };
+    }
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  function handleDismiss(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    sessionStorage.setItem(DISMISSED_KEY, "1");
+    setDismissed(true);
+    setVisible(false);
+  }
+
+  if (dismissed) return null;
 
   return (
     <div
       aria-label="Get a free quote"
-      className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ${
-        visible
+      className={`fixed bottom-6 right-6 z-50 transition-all duration-300 flex items-center gap-2 ${
+        visible && !footerVisible
           ? "opacity-100 translate-y-0 pointer-events-auto"
           : "opacity-0 translate-y-4 pointer-events-none"
       }`}
@@ -45,6 +76,13 @@ export default function FloatingCTA() {
         </svg>
         Get a Free Quote
       </Link>
+      <button
+        onClick={handleDismiss}
+        aria-label="Dismiss"
+        className="w-6 h-6 flex items-center justify-center bg-black/60 text-steel-light hover:text-wake hover:bg-black/80 transition-colors rounded-full text-xs shadow-lg backdrop-blur-sm"
+      >
+        ×
+      </button>
     </div>
   );
 }
