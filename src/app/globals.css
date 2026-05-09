@@ -29,6 +29,35 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Keyboard focus indicator for all interactive elements */
+:focus-visible {
+  outline: 2px solid #000080;
+  outline-offset: 2px;
+}
+
+/* Chrome button focus uses a dark outline on its light surface */
+.chrome-btn:focus-visible {
+  outline: 2px solid #1a1aaa;
+  outline-offset: 3px;
+}
+
+/* Touch active state for chrome button */
+.chrome-btn:active {
+  transform: scale(0.95);
+}
+
+/* Shimmer loading skeleton animation */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes shimmer {
+    0%, 100% { transform: translateX(0); opacity: 0; }
+  }
+}
+
 /* Chrome / liquid-metal text effect */
 .chrome-text {
   background: linear-gradient(
@@ -73,11 +102,16 @@ body {
     transparent 70%
   );
   transform: translateX(-100%);
-  transition: transform 0.5s ease;
+  transition: none;
 }
 
-.chrome-btn:hover::after {
-  transform: translateX(100%);
+@media (prefers-reduced-motion: no-preference) {
+  .chrome-btn::after {
+    transition: transform 0.5s ease;
+  }
+  .chrome-btn:hover::after {
+    transform: translateX(100%);
+  }
 }
 
 /* Subtle grid overlay for hero depth */

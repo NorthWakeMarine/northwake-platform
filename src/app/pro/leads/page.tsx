@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import ClickableRow from "@/components/ClickableRow";
+import { clientConfig } from "@/config/client";
 
 type Lead = {
   id: string;
@@ -113,7 +114,20 @@ export default async function LeadsPage({
             {error ? (
               <p className="text-red-500 text-xs px-6 py-6">Failed to load leads: {error.message}</p>
             ) : !leads || leads.length === 0 ? (
-              <p className="text-slate-400 text-sm px-6 py-10 text-center">No leads yet. They will appear here as they come in.</p>
+              <div className="px-6 py-12 flex flex-col items-center gap-3 text-center">
+                <p className="text-slate-400 text-sm">No leads yet.</p>
+                <p className="text-slate-300 text-xs max-w-xs leading-relaxed">
+                  Leads appear here automatically when someone submits a quote request on the website. Share your contact page link to start receiving them.
+                </p>
+                <a
+                  href={`${clientConfig.siteUrl}/contact`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] tracking-widest uppercase text-[#000080] font-semibold hover:underline mt-1"
+                >
+                  View Contact Page →
+                </a>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">

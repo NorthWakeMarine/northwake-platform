@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { google, calendar_v3 } from "googleapis";
+import { clientConfig } from "@/config/client";
 
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID ?? "primary";
 
@@ -348,7 +349,7 @@ export async function GET(request: NextRequest) {
     const res = await calendar.events.watch({
       calendarId: CALENDAR_ID,
       requestBody: {
-        id:      `northwake-crm-${Date.now()}`,
+        id:      `${clientConfig.companyShortName.toLowerCase().replace(/\s+/g, "")}-crm-${Date.now()}`,
         type:    "web_hook",
         address: webhookUrl,
         token:   process.env.GOOGLE_WEBHOOK_TOKEN ?? "",

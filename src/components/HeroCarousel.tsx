@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, startTransition, useState } from "react";
 import { trackCarouselNavigate, trackCtaClick } from "@/lib/analytics";
+import { clientConfig } from "@/config/client";
 
 export type CarouselSlideSource = {
   src: string;
@@ -29,9 +30,9 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
       src,
       focalX,
       focalY,
-      alt: "NorthWake Marine, professional marine detailing and vessel care, Jacksonville FL",
-      caption: "Professional marine detailing by NorthWake Marine, Jacksonville, FL.",
-      service: "NorthWake Marine",
+      alt: `${clientConfig.companyName}, professional services, ${clientConfig.city}, ${clientConfig.state}`,
+      caption: `Professional services by ${clientConfig.companyName}, ${clientConfig.city}, ${clientConfig.state}.`,
+      service: clientConfig.companyName,
       tagline: "",
       href: "/services",
     };
@@ -70,10 +71,15 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
     <>
       {/* ─── CAROUSEL STAGE ─────────────────────────────────────── */}
       <section
-        aria-label="NorthWake Marine, featured work carousel"
-        className="relative w-full overflow-visible"
+        aria-label={`${clientConfig.companyName}, featured work carousel`}
+        className="relative w-full overflow-visible focus:outline-none"
+        tabIndex={0}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") { e.preventDefault(); scrollPrev(); }
+          else if (e.key === "ArrowRight") { e.preventDefault(); scrollNext(); }
+        }}
       >
         {/* Chrome border wrapper */}
         <div className={`chrome-stage relative w-full overflow-hidden ${
@@ -138,9 +144,8 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
                 <span className="text-wake">Uncompromised.</span>
               </h1>
               <p className="text-steel-light text-base max-w-xl leading-relaxed">
-                NorthWake Marine delivers concierge-level detailing, ceramic coating, and
-                full-service vessel management to Jacksonville&apos;s most discerning boat
-                owners, on the St. Johns River and beyond.
+                {clientConfig.companyName} delivers concierge-level services to {clientConfig.city}&apos;s most discerning clients,
+                in {clientConfig.serviceArea}.
               </p>
               <div className="flex gap-4 mt-1">
                 <Link
@@ -271,8 +276,7 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
             <span className="text-wake">Uncompromised.</span>
           </h1>
           <p className="text-steel-light text-sm max-w-sm leading-relaxed">
-            NorthWake Marine delivers concierge-level detailing, ceramic coating, and
-            vessel management to Jacksonville&apos;s most discerning boat owners.
+            {clientConfig.companyName} delivers concierge-level services to {clientConfig.city}&apos;s most discerning clients.
           </p>
           <p className="text-steel text-[10px] tracking-[0.3em] uppercase">
             Currently viewing: <span className="text-steel-light">{active.service}</span>

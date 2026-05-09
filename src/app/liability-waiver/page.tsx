@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import WaiverForm from "./WaiverForm";
+import { clientConfig } from "@/config/client";
 
 type SearchParams = Promise<{ contact_id?: string }>;
 
@@ -21,8 +22,8 @@ async function getContactPrefill(contact_id: string) {
 }
 
 export const metadata = {
-  title: "Liability Waiver & Service Agreement | NorthWake Marine",
-  description: "NorthWake Marine General Liability Waiver and Service Agreement. Please read and complete this form carefully before participation.",
+  title: `Liability Waiver & Service Agreement | ${clientConfig.companyName}`,
+  description: `${clientConfig.companyName} General Liability Waiver and Service Agreement. Please read and complete this form carefully before participation.`,
   robots: { index: false, follow: false },
 };
 

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useState } from "react";
 import { login, type LoginState } from "@/app/actions";
+import { clientConfig } from "@/config/client";
 
 export default function LoginForm() {
   const [state, formAction, isPending] = useActionState<LoginState, FormData>(
@@ -12,7 +13,7 @@ export default function LoginForm() {
   const [showPass, setShowPass] = useState(false);
 
   return (
-    <form action={formAction} aria-label="NorthWakePro sign in" className="flex flex-col gap-4" noValidate>
+    <form action={formAction} aria-label={`${clientConfig.proPortalName} sign in`} className="flex flex-col gap-4" noValidate>
 
       {state.error && (
         <div
@@ -42,7 +43,7 @@ export default function LoginForm() {
           autoCorrect="off"
           spellCheck={false}
           maxLength={256}
-          placeholder="you@northwakemarine.com"
+          placeholder={`you@${clientConfig.email.split("@")[1]}`}
           disabled={isPending}
           className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3.5 py-2.5 focus:outline-none focus:border-navy transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         />

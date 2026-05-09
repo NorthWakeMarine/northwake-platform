@@ -2,20 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { clientConfig } from "@/config/client";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description:
-    "Privacy policy for NorthWake Marine. We do not track you, sell your data, or use advertising cookies.",
+  description: `Privacy policy for ${clientConfig.companyName}. We do not track you, sell your data, or use advertising cookies.`,
   robots: { index: false, follow: false },
-  alternates: { canonical: "https://northwakemarine.com/privacy-policy" },
+  alternates: { canonical: `${clientConfig.siteUrl}/privacy-policy` },
 };
 
-const EFFECTIVE_DATE = "April 27, 2025";
-const COMPANY = "NorthWake Marine";
-const EMAIL = "info@northwakemarine.com";
-const PHONE = "(904) 606-5454";
-const LOCATION = "Jacksonville, FL";
+const EFFECTIVE_DATE = clientConfig.privacyEffectiveDate;
+const COMPANY = clientConfig.companyName;
+const EMAIL = clientConfig.email;
+const PHONE = clientConfig.phone;
+const LOCATION = `${clientConfig.city}, ${clientConfig.state}`;
 
 const sections = [
   {

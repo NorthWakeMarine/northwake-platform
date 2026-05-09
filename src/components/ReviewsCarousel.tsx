@@ -7,7 +7,7 @@ const STATIC_REVIEWS: GoogleReview[] = [
   {
     author: "D. Harrington",
     rating: 5,
-    text: "They turned my 32ft center console from embarrassing to showroom. Ceramic coating looks unreal even after a month of salt water. NorthWake is the only call I make.",
+    text: "They turned my 32ft center console from embarrassing to showroom. Ceramic coating looks unreal even after a month of salt water. The only call I make.",
     relativeTime: "32ft Center Console, Jacksonville",
   },
   {
@@ -19,7 +19,7 @@ const STATIC_REVIEWS: GoogleReview[] = [
   {
     author: "M. Sullivan",
     rating: 5,
-    text: "Booked a full detail and ceramic before selling. Got asking price. The NorthWake guys are meticulous and actually care about the work they do. Rare.",
+    text: "Booked a full detail and ceramic before selling. Got asking price. These guys are meticulous and actually care about the work they do. Rare.",
     relativeTime: "28ft Sport Fishing, Orange Park",
   },
 ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { updateContactField, type ContactFieldState } from "@/app/actions";
 
 export default function EditableField({
@@ -19,6 +19,16 @@ export default function EditableField({
     updateContactField,
     {}
   );
+
+  useEffect(() => {
+    if (!editing) return;
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [editing]);
 
   if (!editing) {
     return (

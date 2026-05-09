@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import FloatingCTA from "@/components/FloatingCTA";
 import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { clientConfig } from "@/config/client";
 
 async function getCMS(): Promise<Record<string, string>> {
   try {
@@ -17,49 +17,26 @@ async function getCMS(): Promise<Record<string, string>> {
 }
 
 export const metadata: Metadata = {
-  title: "About NorthWake Marine, Jacksonville's Premier Marine Services",
-  description:
-    "Learn about NorthWake Marine's story, the NorthWake Standard, and our commitment to delivering yacht-club-level care to every boat owner on Jacksonville's St. Johns River waterway.",
-  keywords: [
-    "NorthWake Marine Jacksonville",
-    "marine services company Jacksonville FL",
-    "boat detailing company Jacksonville",
-    "certified marine professionals Florida",
-    "St Johns River boat care",
-  ],
+  title: `About ${clientConfig.companyName}, ${clientConfig.city}'s Premier Services`,
+  description: `Learn about ${clientConfig.companyName}'s story and commitment to delivering the highest level of care in ${clientConfig.city}, ${clientConfig.state}.`,
+  keywords: clientConfig.seoKeywords,
   openGraph: {
-    title: "About NorthWake Marine | Jacksonville's Premier Marine Services",
-    description:
-      "Founded on the banks of the St. Johns River, NorthWake Marine was built to set a new standard for marine care in Northeast Florida.",
-    url: "https://www.northwakemarine.com/about",
+    title: `About ${clientConfig.companyName} | ${clientConfig.city}'s Premier Services`,
+    description: `Founded in ${clientConfig.city}, ${clientConfig.companyName} was built to set a new standard for service.`,
+    url: `${clientConfig.siteUrl}/about`,
   },
-  alternates: { canonical: "https://www.northwakemarine.com/about" },
+  alternates: { canonical: `${clientConfig.siteUrl}/about` },
 };
 
-
-const team = [
-  {
-    name: "Alexander S.",
-    role: "Co-Founder & Development",
-    bio: "A licensed captain with firsthand knowledge of what boat owners actually need on the water, Alexander shapes the direction NorthWake grows. He leads strategy, client partnerships, and the business side of building something worth being proud of.",
-    initial: "A",
-  },
-  {
-    name: "Ian W.",
-    role: "Co-Founder & Operations",
-    bio: "NorthWake started as a shared vision between close friends who wanted to build something real together. Ian brings an engineering and technical mindset to everything the company touches, from how services are structured to the precision behind every job on the water.",
-    initial: "I",
-  },
-];
+const { team } = clientConfig;
 
 export default async function AboutPage() {
   const cms = await getCMS();
   const aboutHeroIntro = cms.about_hero_intro ??
-    "NorthWake Marine was founded in Jacksonville with a single conviction: boat owners in Northeast Florida deserve the same level of care that world-class yacht yards deliver, without the world-class distance or wait list.";
+    `${clientConfig.companyName} was founded in ${clientConfig.city} with a single conviction: clients in ${clientConfig.state} deserve the same level of care that world-class service companies deliver, without the world-class distance or wait list.`;
   return (
     <>
       <Header />
-      <FloatingCTA />
       <ScrollDepthTracker />
 
       <main>
@@ -150,7 +127,7 @@ export default async function AboutPage() {
             {/* Headline + intro */}
             <div className="flex flex-col md:flex-row gap-16 items-start">
               <div className="flex flex-col gap-5 md:w-1/2 md:sticky md:top-28">
-                <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Why NorthWake Marine</p>
+                <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Why {clientConfig.companyName}</p>
                 <h2
                   id="standard-heading"
                   className="text-wake text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight"

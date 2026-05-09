@@ -42,12 +42,20 @@ export default function PipelineColumn({
         <div
           ref={setNodeRef}
           className={`flex flex-col gap-2 min-h-[120px] rounded-xl p-2 transition-colors ${
-            isOver ? "bg-slate-100/80" : "bg-slate-50/60"
+            isOver ? "bg-slate-100/80 ring-1 ring-slate-300 ring-dashed" : "bg-slate-50/60"
           }`}
         >
-          {cards.map((card) => (
-            <PipelineCardComponent key={card.id} card={card} onRemove={onRemoveCard} />
-          ))}
+          {cards.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center min-h-[80px]">
+              <p className="text-slate-300 text-[10px] tracking-widest uppercase text-center leading-relaxed">
+                Drag cards here
+              </p>
+            </div>
+          ) : (
+            cards.map((card) => (
+              <PipelineCardComponent key={card.id} card={card} onRemove={onRemoveCard} />
+            ))
+          )}
         </div>
       </SortableContext>
     </div>

@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import FloatingCTA from "@/components/FloatingCTA";
 import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import HeroQuoteForm from "@/components/HeroQuoteForm";
 import HeroCarouselClient from "@/components/HeroCarouselClient";
@@ -12,6 +11,7 @@ import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import type { CarouselSlideSource } from "@/components/HeroCarousel";
 import { getGoogleReviews } from "@/lib/google-places";
+import { clientConfig } from "@/config/client";
 
 async function getCMS(): Promise<Record<string, string>> {
   try {
@@ -22,57 +22,6 @@ async function getCMS(): Promise<Record<string, string>> {
     return {};
   }
 }
-
-const services = [
-  {
-    icon: "◉",
-    title: "Yacht Management",
-    tagline: "Full-Service Concierge Care",
-    description:
-      "Complete end-to-end management for serious yacht owners. Crew sourcing, provisioning, insurance coordination, compliance, and voyage planning, all handled by our dedicated captains and marine professionals.",
-    details: ["Crew & captain coordination", "Provisioning & logistics", "Insurance & compliance management"],
-  },
-  {
-    icon: "◈",
-    title: "Ceramic Coating",
-    tagline: "Armor-Grade Hull Protection",
-    description:
-      "Professional-grade nano-ceramic coating bonds permanently to your hull, gelcoat, and topside surfaces. Repels water, salt, and UV damage for up to 5 years, leaving a mirror-grade finish that turns heads at every marina.",
-    details: ["9H hardness rating", "UV & salt-water resistance", "5-year protection warranty"],
-  },
-  {
-    icon: "⬡",
-    title: "Monthly Maintenance",
-    tagline: "Zero Effort. Perfect Condition.",
-    description:
-      "Bespoke maintenance programs designed around your schedule and vessel. From weekly wash-downs to seasonal engine checks and hull inspections, we handle every detail so your boat is always ready to launch.",
-    details: ["Custom maintenance schedules", "Priority booking & storage coordination", "Detailed condition reports"],
-  },
-  {
-    icon: "◈",
-    title: "Full Detail",
-    tagline: "Bow-to-Stern Perfection",
-    description:
-      "Clay bar, multi-stage compound, polish, and sealant on every exterior surface — then interior vacuum, wipe-down, and stainless polishing. Showroom condition, stem to stern.",
-    details: ["Clay bar & multi-stage compound polish", "Marine wax or polymer sealant coat", "Interior vacuum, wipe-down & stainless polish"],
-  },
-  {
-    icon: "△",
-    title: "Marine Transport",
-    tagline: "Safe, Reliable. On Schedule.",
-    description:
-      "Licensed vessel transport across Florida and beyond, moving slips, hauling for service, or full relocations. Experienced crew, coordinated scheduling, and full in-transit protection for your investment.",
-    details: ["Licensed & insured transport team", "Local & statewide Florida moves", "Haul-out & launch coordination"],
-  },
-  {
-    icon: "⬖",
-    title: "Captain & Crew Services",
-    tagline: "Experienced Professionals, On Demand",
-    description:
-      "USCG-licensed captains and qualified crew available on a day-rate or contract basis. Delivery captaining, charter support, new vessel pickups, reliable marine professionals whenever you need them.",
-    details: ["USCG-licensed captains", "Day-rate & contract crew", "Delivery & relocation captaining"],
-  },
-];
 
 
 const getCarouselImages = unstable_cache(
@@ -114,13 +63,12 @@ const getCarouselImages = unstable_cache(
 export default async function Home() {
   const cms = await getCMS();
   const [carouselImages, googleReviews] = await Promise.all([getCarouselImages(), getGoogleReviews()]);
-  const heroHeadline    = cms.hero_headline    ?? "From Dock to Destination";
-  const heroSubheadline = cms.hero_subheadline ?? "Your Yacht Is Our Priority";
+  const heroHeadline    = cms.hero_headline    ?? clientConfig.tagline;
+  const heroSubheadline = cms.hero_subheadline ?? clientConfig.subTagline;
 
   return (
     <>
       <Header />
-      <FloatingCTA />
       <ScrollDepthTracker />
 
       {/* ─── MAIN ────────────────────────────────────────────────── */}
@@ -165,8 +113,8 @@ export default async function Home() {
             {/* ── Left: logo + tagline ── */}
             <div className="flex flex-col gap-4 order-1 text-center items-center">
               <Image
-                src="/brand/nwmlogofullwhite.png"
-                alt="NorthWake Marine, Premium Boat Detailing and Vessel Management, Jacksonville FL"
+                src={clientConfig.logoFullWhitePng}
+                alt={`${clientConfig.companyName}, ${clientConfig.seoDescription}`}
                 width={260}
                 height={70}
                 className="w-full max-w-[320px] sm:max-w-[420px]"
@@ -182,10 +130,10 @@ export default async function Home() {
                   </span>
                 </h1>
                 <p className="text-steel text-[10px] tracking-[0.45em] uppercase">
-                  Jacksonville, FL &nbsp;·&nbsp; Est. 2025
+                  {clientConfig.city}, {clientConfig.state} &nbsp;·&nbsp; Est. {clientConfig.foundedYear}
                 </p>
                 <p className="sr-only">
-                  NorthWake Marine is Jacksonville&apos;s premier marine services company, offering ceramic coating, monthly maintenance plans, full detail, and yacht management on the St. Johns River. We serve vessels from 18 to 80+ feet across Northeast Florida. All jobs include photo documentation. Free, no-obligation quotes returned same day. Call (904) 606-5454.
+                  {clientConfig.companyName} is {clientConfig.city}&apos;s premier marine services company. {clientConfig.seoDescription} Free, no-obligation quotes returned same day. Call {clientConfig.phone}.
                 </p>
               </div>
               <div className="hidden md:flex gap-4 justify-center">
@@ -203,19 +151,19 @@ export default async function Home() {
                 </Link>
               </div>
               <a
-                href="tel:+19046065454"
+                href={`tel:${clientConfig.phoneE164}`}
                 className="text-steel-light text-sm font-semibold tracking-widest hover:text-wake transition-colors duration-200"
-                aria-label="Call NorthWake Marine"
+                aria-label={`Call ${clientConfig.companyName}`}
               >
-                (904) 606-5454
+                {clientConfig.phone}
               </a>
             </div>
 
             {/* ── Right: Free Quote form card ── */}
             <div className="order-2 chrome-stage bg-obsidian/90 backdrop-blur-md p-5 sm:p-7">
               <div className="flex flex-col gap-0.5 mb-4">
-                <h2 className="text-wake text-xl font-bold tracking-tight">Get a Free Quote</h2>
-                <p className="text-steel text-[11px] tracking-wide">No obligation. Most quotes returned same day.</p>
+                <h2 className="text-wake text-xl font-bold tracking-tight">{clientConfig.ctaText}</h2>
+                <p className="text-steel text-[11px] tracking-wide">{clientConfig.ctaSubtext}</p>
               </div>
               <HeroQuoteForm />
             </div>
@@ -234,13 +182,7 @@ export default async function Home() {
         {/* ── TRUST BAR ── */}
         <div aria-label="Trust indicators" className="border-y border-steel-dark bg-obsidian/80">
           <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-            {[
-              { icon: "◈", text: "Professional-Grade Products Only" },
-              { icon: "◉", text: "Photo Documentation on Every Job" },
-              { icon: "◈", text: "No Obligation. No Contracts." },
-              { icon: "★", text: "5-Star Rated Service" },
-            { icon: "△", text: "Serving Jacksonville Since 2025" },
-            ].map(({ icon, text }) => (
+            {clientConfig.trustBadges.map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-2">
                 <span aria-hidden="true" className="chrome-text text-sm">{icon}</span>
                 <span className="text-steel-light text-[10px] tracking-[0.2em] uppercase font-semibold">{text}</span>
@@ -271,7 +213,7 @@ export default async function Home() {
             </header>
 
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-steel-dark list-none" role="list">
-              {services.map((svc) => (
+              {clientConfig.services.slice(0, 6).map((svc) => (
                 <li
                   key={svc.title}
                   className="group bg-obsidian p-5 flex flex-col gap-3 hover:bg-navy-dark transition-colors duration-300"
@@ -287,7 +229,7 @@ export default async function Home() {
                   </div>
                   <p className="text-steel-light text-xs leading-relaxed">{svc.description}</p>
                   <ul className="flex flex-col gap-1 mt-auto list-none">
-                    {svc.details.map((d) => (
+                    {svc.includes.slice(0, 3).map((d) => (
                       <li key={d} className="flex items-start gap-2 text-steel text-[11px]">
                         <span aria-hidden="true" className="text-navy mt-0.5">▸</span>
                         {d}

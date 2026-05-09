@@ -5,6 +5,28 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { submitLead, type LeadFormState } from "@/app/actions";
 import { trackFormStart, trackFormSubmit, trackFormSuccess, trackFormError } from "@/lib/analytics";
+import { clientConfig } from "@/config/client";
+
+const inputCls =
+  "bg-obsidian/60 border border-steel-dark text-wake placeholder-steel-light/50 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 peer [&:user-invalid]:border-red-500";
+const selectCls =
+  "bg-obsidian border border-steel-dark text-wake text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer peer [&:user-invalid]:border-red-500";
+const fieldErr =
+  "hidden peer-[&:user-invalid]:block text-red-400 text-[9px] tracking-wide mt-0.5";
+
+function Spinner() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="animate-spin h-3 w-3 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+    </svg>
+  );
+}
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -12,10 +34,22 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-3 transition-all duration-300 hover:scale-[1.02] w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+      className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-3 transition-all duration-300 hover:scale-[1.02] active:scale-95 w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
     >
+      {pending && <Spinner />}
       {pending ? "Submitting…" : "Get My Free Quote →"}
     </button>
+  );
+}
+
+function FormOverlay() {
+  const { pending } = useFormStatus();
+  if (!pending) return null;
+  return (
+    <div
+      aria-hidden="true"
+      className="absolute inset-0 bg-black/10 cursor-wait pointer-events-auto z-10 rounded-sm"
+    />
   );
 }
 
@@ -54,10 +88,10 @@ export default function HeroQuoteForm() {
           Thank you. Our team will review your request and be in touch shortly.
         </p>
         <a
-          href="tel:+19046065454"
+          href={`tel:${clientConfig.phoneE164}`}
           className="text-link text-xs hover:text-wake transition-colors tracking-wide"
         >
-          (904) 606-5454
+          {clientConfig.phone}
         </a>
       </div>
     );
@@ -71,8 +105,9 @@ export default function HeroQuoteForm() {
       onSubmit={handleSubmit}
       onFocus={handleFirstInteraction}
       aria-label="Free quote request form"
-      className="flex flex-col gap-2.5"
+      className="flex flex-col gap-2.5 relative"
     >
+      <FormOverlay />
       <input type="hidden" name="source" value="hero" />
 
       {state.error && (
@@ -88,14 +123,16 @@ export default function HeroQuoteForm() {
             Full Name <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-name" name="name" type="text" required autoComplete="name" placeholder="John Harrington"
-            className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 [&:user-invalid]:border-red-500" />
+            className={inputCls} />
+          <span className={fieldErr}>Please enter your full name.</span>
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="hero-email" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
             Email <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-email" name="email" type="email" required autoComplete="email" placeholder="john@example.com"
-            className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 [&:user-invalid]:border-red-500" />
+            className={inputCls} />
+          <span className={fieldErr}>Please enter a valid email address.</span>
         </div>
       </div>
 
@@ -105,15 +142,17 @@ export default function HeroQuoteForm() {
           <label htmlFor="hero-phone" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
             Phone <span aria-hidden="true" className="text-navy">*</span>
           </label>
-          <input id="hero-phone" name="phone" type="tel" required autoComplete="tel" placeholder="(904) 606-5454"
-            className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 [&:user-invalid]:border-red-500" />
+          <input id="hero-phone" name="phone" type="tel" required autoComplete="tel" placeholder={clientConfig.phone}
+            className={inputCls} />
+          <span className={fieldErr}>Please enter your phone number.</span>
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="hero-vessel-length" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
             Vessel Length (ft) <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-vessel-length" name="vessel_length" type="text" required placeholder="e.g. 28"
-            className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 [&:user-invalid]:border-red-500" />
+            className={inputCls} />
+          <span className={fieldErr}>Please enter your vessel length in feet.</span>
         </div>
       </div>
 
@@ -124,24 +163,26 @@ export default function HeroQuoteForm() {
             Vessel Type <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <select id="hero-vessel" name="vessel_type" required defaultValue=""
-            className="bg-obsidian border border-steel-dark text-wake text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer [&:user-invalid]:border-red-500">
+            className={selectCls}>
             <option value="" disabled className="text-steel">Select type…</option>
             {["Center Console","Bowrider","Pontoon","Cruiser","Motor Yacht","Sailboat","Sport Fishing","Other"].map(v => (
               <option key={v} value={v} className="bg-obsidian text-wake">{v}</option>
             ))}
           </select>
+          <span className={fieldErr}>Please select a vessel type.</span>
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="hero-service" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
             Service Needed <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <select id="hero-service" name="service" required defaultValue=""
-            className="bg-obsidian border border-steel-dark text-wake text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer [&:user-invalid]:border-red-500">
+            className={selectCls}>
             <option value="" disabled className="text-steel">Select service…</option>
             {["Maintenance Wash","One-Off Wash","Full Detail","Exterior Detailing","Interior Cleaning & Cabin Detailing","Canvas Cleaning & Treatment","Vinyl & Upholstery Conditioning","Teak Cleaning & Brightening","Stainless Polish","Engine Bay & Bilge Cleaning","Water Spot & Mineral Deposit Removal","Ceramic Coating","Wax Application","Gel Coat Restoration","Monthly Maintenance Plan","Marine Transport","Captain & Crew Services","Yacht Management","Custom Request","Not Sure, Need Consultation"].map(s => (
               <option key={s} value={s} className="bg-obsidian text-wake">{s}</option>
             ))}
           </select>
+          <span className={fieldErr}>Please select a service.</span>
         </div>
       </div>
 
@@ -151,7 +192,7 @@ export default function HeroQuoteForm() {
           How Did You Hear About Us?
         </label>
         <select id="hero-referral" name="referral_source" defaultValue=""
-          className="bg-obsidian border border-steel-dark text-wake text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer [&:user-invalid]:border-red-500">
+          className={selectCls}>
           <option value="" className="text-steel">Prefer not to say</option>
           {["Google Search","Google Maps","Instagram","Facebook","TikTok","Friend / Word of Mouth","Boat Show","Marina Referral","Other"].map(r => (
             <option key={r} value={r} className="bg-obsidian text-wake">{r}</option>
@@ -166,19 +207,19 @@ export default function HeroQuoteForm() {
         </label>
         <textarea id="hero-comments" name="comments" rows={2}
           placeholder="Vessel length, condition, preferred dates…"
-          className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 resize-none" />
+          className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel-light/50 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 resize-none" />
       </div>
 
       {/* Terms */}
       <label className="flex items-start gap-2.5 cursor-pointer">
         <input type="checkbox" name="terms" required
-          className="mt-0.5 w-3 h-3 border border-steel-dark bg-obsidian/60 accent-navy shrink-0 cursor-pointer" />
+          className="mt-0.5 w-3 h-3 border border-steel-dark bg-obsidian/60 accent-navy shrink-0 cursor-pointer peer" />
         <span className="text-steel-light text-[10px] leading-relaxed">
           I agree to the{" "}
           <Link href="/terms" target="_blank" className="text-link hover:text-wake transition-colors underline underline-offset-2">
             terms &amp; conditions
           </Link>
-          . By providing my phone number I agree to receive communications from NorthWake Marine.
+          . By providing my phone number I agree to receive communications from {clientConfig.companyName}.
         </span>
       </label>
 

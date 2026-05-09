@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { signOut } from "@/app/actions";
 import { createBrowserSupabase } from "@/lib/supabase/client";
+import { clientConfig } from "@/config/client";
 
 const navLinks = [
   {
@@ -139,8 +140,8 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
           <Link href="/pro/dashboard" className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 bg-[#000080] flex items-center justify-center shrink-0">
               <Image
-                src="/brand/nwmlogowhite.svg"
-                alt="NorthWake Marine"
+                src={clientConfig.logoWhiteSvg}
+                alt={clientConfig.companyName}
                 width={22}
                 height={22}
                 className="w-5 h-5 opacity-90"
@@ -148,7 +149,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
             </div>
             {!collapsed && (
               <div className="leading-none">
-                <p className="text-white text-[11px] font-bold tracking-wide">NorthWake</p>
+                <p className="text-white text-[11px] font-bold tracking-wide">{clientConfig.companyShortName}</p>
                 <p className="text-white/35 text-[9px] tracking-[0.3em] uppercase mt-0.5">Marine Pro</p>
               </div>
             )}
@@ -215,7 +216,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
             {!collapsed && (
               <div className="leading-none min-w-0">
                 <p className="text-white/80 text-[11px] font-semibold truncate" suppressHydrationWarning>{userName}</p>
-                <p className="text-white/30 text-[9px] truncate mt-0.5" suppressHydrationWarning>{userEmail || "northwakemarine.com"}</p>
+                <p className="text-white/30 text-[9px] truncate mt-0.5" suppressHydrationWarning>{userEmail || clientConfig.email}</p>
               </div>
             )}
           </div>
@@ -243,9 +244,9 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
       <div className="md:hidden fixed top-0 inset-x-0 z-50 bg-[#06061a] border-b border-white/[0.07] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-[#000080] flex items-center justify-center">
-            <Image src="/brand/nwmlogowhite.svg" alt="NorthWake Marine" width={16} height={16} className="opacity-90" />
+            <Image src={clientConfig.logoWhiteSvg} alt={clientConfig.companyName} width={16} height={16} className="opacity-90" />
           </div>
-          <p className="text-white text-xs font-bold tracking-wide">NorthWake Pro</p>
+          <p className="text-white text-xs font-bold tracking-wide">{clientConfig.proPortalName}</p>
         </div>
         <nav className="flex gap-1">
           {navLinks.map(({ href, label }) => {

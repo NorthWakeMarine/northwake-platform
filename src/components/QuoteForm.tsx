@@ -5,20 +5,12 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { submitLead, type LeadFormState } from "@/app/actions";
 import { trackFormStart, trackFormSubmit, trackFormSuccess, trackFormError } from "@/lib/analytics";
+import { clientConfig } from "@/config/client";
 
-const vesselTypes = [
-  "Center Console", "Bowrider", "Pontoon", "Cruiser",
-  "Motor Yacht", "Sailboat", "Sport Fishing", "Other",
-];
+const vesselTypes = clientConfig.assetTypes;
 
 const serviceOptions = [
-  "Maintenance Wash", "One-Off Wash", "Full Detail", "Exterior Detailing",
-  "Interior Cleaning & Cabin Detailing", "Canvas Cleaning & Treatment",
-  "Vinyl & Upholstery Conditioning", "Teak Cleaning & Brightening",
-  "Stainless Polish", "Engine Bay & Bilge Cleaning",
-  "Water Spot & Mineral Deposit Removal", "Ceramic Coating", "Wax Application",
-  "Gel Coat Restoration", "Monthly Maintenance Plan", "Marine Transport",
-  "Captain & Crew Services", "Yacht Management", "Custom Request",
+  ...clientConfig.services.map((s) => s.title),
   "Not Sure, Need Consultation",
 ];
 
@@ -33,14 +25,40 @@ interface QuoteFormProps {
   formId?: string;
 }
 
+function Spinner() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="animate-spin h-3.5 w-3.5 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+    </svg>
+  );
+}
+
+function FormOverlay() {
+  const { pending } = useFormStatus();
+  if (!pending) return null;
+  return (
+    <div
+      aria-hidden="true"
+      className="absolute inset-0 bg-black/10 cursor-wait pointer-events-auto z-10"
+    />
+  );
+}
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-4 transition-all duration-300 hover:scale-[1.02] mt-2 w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+      className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-4 transition-all duration-300 hover:scale-[1.02] active:scale-95 mt-2 w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
     >
+      {pending && <Spinner />}
       {pending ? "Submitting…" : "Get My Free Quote →"}
     </button>
   );
@@ -64,9 +82,11 @@ export default function QuoteForm({
   }
 
   const fieldClass =
-    "bg-transparent border border-steel-dark text-wake placeholder-steel text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full [&:user-invalid]:border-red-500";
+    "bg-transparent border border-steel-dark text-wake placeholder-steel-light/50 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full peer [&:user-invalid]:border-red-500";
   const selectClass =
-    "bg-obsidian border border-steel-dark text-wake text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full [&:user-invalid]:border-red-500";
+    "bg-obsidian border border-steel-dark text-wake text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full peer [&:user-invalid]:border-red-500";
+  const fieldErr =
+    "hidden peer-[&:user-invalid]:block text-red-400 text-[9px] tracking-wide mt-0.5";
   const labelClass =
     "text-steel-light text-[10px] tracking-[0.3em] uppercase font-medium";
 
@@ -95,8 +115,8 @@ export default function QuoteForm({
         </p>
         <p className="text-steel text-xs tracking-wide">
           Questions? Call us at{" "}
-          <a href="tel:+19046065454" className="text-link hover:text-wake transition-colors">
-            (904) 606-5454
+          <a href={`tel:${clientConfig.phoneE164}`} className="text-link hover:text-wake transition-colors">
+            {clientConfig.phone}
           </a>
         </p>
       </div>
@@ -110,8 +130,9 @@ export default function QuoteForm({
       onSubmit={handleSubmit}
       onFocus={handleFirstInteraction}
       aria-label="Quote request form"
-      className="w-full flex flex-col gap-5"
+      className="w-full flex flex-col gap-5 relative"
     >
+      <FormOverlay />
       <input type="hidden" name="source" value="contact" />
 
       {state.error && (
@@ -135,6 +156,7 @@ export default function QuoteForm({
             placeholder="John Harrington"
             className={fieldClass}
           />
+          <span className={fieldErr}>Please enter your full name.</span>
         </div>
         <div className="flex flex-col gap-2">
           <label htmlFor={`${formId}-email`} className={labelClass}>
@@ -149,6 +171,7 @@ export default function QuoteForm({
             placeholder="john@example.com"
             className={fieldClass}
           />
+          <span className={fieldErr}>Please enter a valid email address.</span>
         </div>
       </div>
 
@@ -164,9 +187,10 @@ export default function QuoteForm({
             type="tel"
             required
             autoComplete="tel"
-            placeholder="(904) 606-5454"
+            placeholder={clientConfig.phone}
             className={fieldClass}
           />
+          <span className={fieldErr}>Please enter your phone number.</span>
         </div>
         <div className="flex flex-col gap-2">
           <label htmlFor={`${formId}-vessel-length`} className={labelClass}>
@@ -180,6 +204,7 @@ export default function QuoteForm({
             placeholder="e.g. 28"
             className={fieldClass}
           />
+          <span className={fieldErr}>Please enter your vessel length in feet.</span>
         </div>
       </div>
 
@@ -201,6 +226,7 @@ export default function QuoteForm({
               <option key={v} value={v} className="bg-obsidian text-wake">{v}</option>
             ))}
           </select>
+          <span className={fieldErr}>Please select a vessel type.</span>
         </div>
         <div className="flex flex-col gap-2">
           <label htmlFor={`${formId}-service`} className={labelClass}>
@@ -218,6 +244,7 @@ export default function QuoteForm({
               <option key={s} value={s} className="bg-obsidian text-wake">{s}</option>
             ))}
           </select>
+          <span className={fieldErr}>Please select a service.</span>
         </div>
       </div>
 
@@ -251,7 +278,7 @@ export default function QuoteForm({
           name="message"
           rows={4}
           placeholder="Vessel condition, preferred service dates, specific concerns, or anything else we should know…"
-          className="bg-transparent border border-steel-dark text-wake placeholder-steel text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 resize-none w-full"
+          className="bg-transparent border border-steel-dark text-wake placeholder-steel-light/50 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 resize-none w-full"
         />
       </div>
 
@@ -268,7 +295,7 @@ export default function QuoteForm({
           <Link href="/terms" target="_blank" className="text-link hover:text-wake transition-colors underline underline-offset-2">
             terms &amp; conditions
           </Link>
-          . By providing my phone number I agree to receive communications from NorthWake Marine.
+          . By providing my phone number I agree to receive communications from {clientConfig.companyName}.
         </span>
       </label>
 

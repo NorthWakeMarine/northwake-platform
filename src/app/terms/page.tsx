@@ -2,20 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { clientConfig } from "@/config/client";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions",
-  description:
-    "Terms and conditions for NorthWake Marine services. Please read carefully before requesting a quote or engaging our marine services.",
+  description: `Terms and conditions for ${clientConfig.companyName} services. Please read carefully before requesting a quote or engaging our services.`,
   robots: { index: false, follow: false },
-  alternates: { canonical: "https://northwakemarine.com/terms" },
+  alternates: { canonical: `${clientConfig.siteUrl}/terms` },
 };
 
-const EFFECTIVE_DATE = "April 17, 2025";
-const COMPANY = "NorthWake Marine";
-const EMAIL = "info@northwakemarine.com";
-const PHONE = "(904) 606-5454";
-const LOCATION = "Jacksonville, FL";
+const EFFECTIVE_DATE = clientConfig.privacyEffectiveDate;
+const COMPANY = clientConfig.companyName;
+const EMAIL = clientConfig.email;
+const PHONE = clientConfig.phone;
+const LOCATION = `${clientConfig.city}, ${clientConfig.state}`;
 
 const sections = [
   {

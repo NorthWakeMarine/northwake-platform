@@ -8,6 +8,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { ingestContact } from "@/lib/ingest";
 import { sendLeadNotification } from "@/lib/gmail";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { clientConfig } from "@/config/client";
 
 function normalizePhone(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -415,7 +416,7 @@ export async function submitWaiver(
     }
 
     const waiverText = [
-      "NORTHWAKE MARINE - LIABILITY WAIVER",
+      clientConfig.waiverTitle,
       "=====================================",
       "",
       `Full Name:    ${name}`,
@@ -429,7 +430,7 @@ export async function submitWaiver(
       "---------------------",
       signature,
       "",
-      "The signer acknowledged and agreed to the NorthWake Marine Liability",
+      `The signer acknowledged and agreed to the ${clientConfig.companyName} Liability`,
       "Waiver and Release of Claims on the date above.",
     ].join("\n");
 
@@ -983,7 +984,7 @@ export async function registerCalendarWebhook(): Promise<{ ok?: boolean; expires
     const res = await calendar.events.watch({
       calendarId: CALENDAR_ID,
       requestBody: {
-        id:      `northwake-crm-${Date.now()}`,
+        id:      `${clientConfig.companyShortName.toLowerCase().replace(/\s+/g, "")}-crm-${Date.now()}`,
         type:    "web_hook",
         address: webhookUrl,
         token:   process.env.GOOGLE_WEBHOOK_TOKEN ?? "",

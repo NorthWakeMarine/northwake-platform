@@ -5,14 +5,16 @@ export type GoogleReview = {
   relativeTime: string;
 };
 
+import { clientConfig } from "@/config/client";
+
 const MAPS_BASE = "https://maps.googleapis.com/maps/api/place";
 
 async function findPlaceId(apiKey: string): Promise<string | null> {
-  // Nearby search at the exact coordinates from the Google Maps listing
+  const { latitude, longitude } = clientConfig.geo;
   const params = new URLSearchParams({
-    location: "28.566997,-81.683107",
+    location: `${latitude},${longitude}`,
     radius: "200",
-    keyword: "NorthWake Marine",
+    keyword: clientConfig.companyName,
     key: apiKey,
   });
   const res = await fetch(`${MAPS_BASE}/nearbysearch/json?${params}`, {

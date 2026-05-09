@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { trackNavClick, trackCtaClick } from "@/lib/analytics";
+import { clientConfig } from "@/config/client";
 
 const navLinks = [
   { label: "Home",     href: "/"         },
@@ -22,10 +23,10 @@ export default function Header() {
     <header className="fixed top-0 inset-x-0 z-50 bg-obsidian/90 backdrop-blur-md border-b border-steel-dark">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" aria-label="NorthWake Marine, home">
+        <Link href="/" aria-label={`${clientConfig.companyName}, home`}>
           <Image
-            src="/brand/nwmlogowhite.svg"
-            alt="NorthWake Marine"
+            src={clientConfig.logoWhiteSvg}
+            alt={clientConfig.companyName}
             width={44}
             height={44}
             className="h-11 w-auto"

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { clientConfig } from "@/config/client";
 
-const BASE = "https://www.northwakemarine.com";
+const BASE = clientConfig.siteUrl;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

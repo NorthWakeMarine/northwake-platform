@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { trackNavClick, trackCtaClick, trackPhoneClick, trackEmailClick } from "@/lib/analytics";
+import { clientConfig } from "@/config/client";
 
 const navLinks = [
   { label: "Home",     href: "/"         },
@@ -49,11 +50,11 @@ export default function Footer() {
               Get a Free Quote
             </Link>
             <a
-              href="tel:+19046065454"
+              href={`tel:${clientConfig.phoneE164}`}
               onClick={() => trackPhoneClick("footer_cta_band")}
               className="border border-steel text-steel-light text-xs font-semibold tracking-[0.3em] uppercase px-9 py-4 hover:border-wake hover:text-wake transition-colors duration-300 text-center"
             >
-              Call (904) 606-5454
+              Call {clientConfig.phone}
             </a>
           </div>
         </div>
@@ -65,8 +66,8 @@ export default function Footer() {
         <div className="flex flex-col gap-4 sm:w-56">
           <Link href="/" className="w-fit">
             <Image
-              src="/brand/nwmlogowhite.svg"
-              alt="NorthWake Marine"
+              src={clientConfig.logoWhiteSvg}
+              alt={clientConfig.companyName}
               width={160}
               height={48}
               className="h-12 w-auto"
@@ -74,7 +75,7 @@ export default function Footer() {
           </Link>
           <p className="text-steel text-xs leading-relaxed max-w-xs">
             Yacht management, expert detailing, ceramic coating, and full vessel
-            services on the St. Johns River. Jacksonville&apos;s premier marine company.
+            services on the St. Johns River. {clientConfig.city}&apos;s premier marine company.
           </p>
         </div>
 
@@ -100,26 +101,26 @@ export default function Footer() {
         <address className="flex flex-col gap-3 not-italic sm:w-48">
           <p className="text-steel text-[9px] tracking-[0.35em] uppercase mb-2">Contact</p>
           <a
-            href="tel:+19046065454"
+            href={`tel:${clientConfig.phoneE164}`}
             onClick={() => trackPhoneClick("footer")}
             className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
           >
-            (904) 606-5454
+            {clientConfig.phone}
           </a>
           <a
-            href="mailto:info@northwakemarine.com"
+            href={`mailto:${clientConfig.email}`}
             onClick={() => trackEmailClick("footer")}
             className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
           >
-            info@northwakemarine.com
+            {clientConfig.email}
           </a>
-          <p className="text-steel text-xs">Jacksonville, FL</p>
+          <p className="text-steel text-xs">{clientConfig.city}, {clientConfig.state}</p>
         </address>
       </div>
 
       {/* ── Bottom bar ── */}
-      <div className="border-t border-steel-dark px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-steel tracking-wide max-w-7xl mx-auto w-full">
-        <p>© {new Date().getFullYear()} NorthWake Marine. All rights reserved.</p>
+      <div className="border-t border-steel-dark px-6 sm:pr-48 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-steel tracking-wide max-w-7xl mx-auto w-full">
+        <p>© {new Date().getFullYear()} {clientConfig.companyName}. All rights reserved.</p>
         <div className="flex items-center gap-4">
           <Link href="/terms" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-[9px]">Terms</Link>
           <Link href="/privacy-policy" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-[9px]">Privacy</Link>
@@ -129,9 +130,9 @@ export default function Footer() {
           className="flex items-center gap-2 border border-steel-dark px-4 py-1.5 text-steel hover:border-navy hover:text-wake transition-colors duration-300 tracking-[0.2em] uppercase text-[9px]"
         >
           <span aria-hidden="true" className="text-navy text-[7px]">◈</span>
-          NorthWakePro
+          {clientConfig.proPortalName}
         </Link>
-        <p>Premium Marine Services · Jacksonville, FL</p>
+        <p>{clientConfig.footerTagline}</p>
       </div>
     </footer>
   );

@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import GoogleAdsTag from "@/components/GoogleAdsTag";
+import { clientConfig } from "@/config/client";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,33 +20,24 @@ const geistMono = Geist_Mono({
   preload: false,
 });
 
-const siteUrl = "https://www.northwakemarine.com";
+const { siteUrl, companyName, seoTitle, seoDescription, seoKeywords, ogImagePath, faviconPath, geo, businessHours, sameAs, services, email, phoneE164, city, state, localBusinessType } = clientConfig;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    icon: faviconPath,
+    shortcut: faviconPath,
+    apple: faviconPath,
   },
   title: {
-    default: "NorthWake Marine | Premium Boat Detailing & Vessel Management: Jacksonville, FL",
-    template: "%s | NorthWake Marine",
+    default: seoTitle,
+    template: `%s | ${companyName}`,
   },
-  description:
-    "Jacksonville's premier marine services company. Expert ceramic coating, monthly boat maintenance, and full-service yacht management on the St. Johns River and beyond.",
-  keywords: [
-    "boat detailing Jacksonville FL",
-    "ceramic coating marine Jacksonville",
-    "yacht management Jacksonville",
-    "vessel maintenance Florida",
-    "boat cleaning Jacksonville",
-    "marine services St Johns River",
-    "NorthWake Marine",
-  ],
-  authors: [{ name: "NorthWake Marine", url: siteUrl }],
-  creator: "NorthWake Marine",
-  publisher: "NorthWake Marine",
+  description: seoDescription,
+  keywords: seoKeywords,
+  authors: [{ name: companyName, url: siteUrl }],
+  creator: companyName,
+  publisher: companyName,
   robots: {
     index: true,
     follow: true,
@@ -55,25 +47,23 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: siteUrl,
-    siteName: "NorthWake Marine",
-    title: "NorthWake Marine | Premium Boat Detailing & Vessel Management: Jacksonville, FL",
-    description:
-      "Ceramic coating, monthly maintenance plans, and full-service yacht management for discerning boat owners in Jacksonville, FL.",
+    siteName: companyName,
+    title: seoTitle,
+    description: seoDescription,
     images: [
       {
-        url: "/og-image.png",
+        url: ogImagePath,
         width: 1200,
         height: 630,
-        alt: "NorthWake Marine: Jacksonville's Premier Marine Services",
+        alt: `${companyName}: ${city}'s Premier Marine Services`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "NorthWake Marine | Premium Boat Detailing & Vessel Management",
-    description:
-      "Ceramic coating, monthly maintenance plans, and full-service yacht management in Jacksonville, FL.",
-    images: ["/og-image.png"],
+    title: seoTitle,
+    description: seoDescription,
+    images: [ogImagePath],
   },
   alternates: {
     canonical: siteUrl,
@@ -82,100 +72,59 @@ export const metadata: Metadata = {
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "LocalBusiness",
+  "@type": localBusinessType,
   "@id": `${siteUrl}/#business`,
-  name: "NorthWake Marine",
-  description:
-    "Premium boat detailing, ceramic coating, monthly maintenance plans, and full-service yacht management in Jacksonville, FL.",
+  name: companyName,
+  description: seoDescription,
   url: siteUrl,
-  telephone: "+1-904-606-5454",
-  email: "info@northwakemarine.com",
+  telephone: phoneE164,
+  email,
   address: {
     "@type": "PostalAddress",
-    addressLocality: "Jacksonville",
-    addressRegion: "FL",
+    addressLocality: city,
+    addressRegion: state,
     addressCountry: "US",
   },
   geo: {
     "@type": "GeoCoordinates",
-    latitude: 30.3322,
-    longitude: -81.6557,
+    latitude: geo.latitude,
+    longitude: geo.longitude,
   },
   areaServed: {
     "@type": "GeoCircle",
     geoMidpoint: {
       "@type": "GeoCoordinates",
-      latitude: 30.3322,
-      longitude: -81.6557,
+      latitude: geo.latitude,
+      longitude: geo.longitude,
     },
-    geoRadius: "80000",
+    geoRadius: String(geo.radiusMeters),
   },
   hasOfferCatalog: {
     "@type": "OfferCatalog",
-    name: "Marine Services",
-    itemListElement: [
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: "Ceramic Coating",
-          description:
-            "Professional-grade ceramic coating for hulls and surfaces, providing years of protection and a mirror-like finish.",
-        },
+    name: `${companyName} Services`,
+    itemListElement: services.slice(0, 3).map((s) => ({
+      "@type": "Offer",
+      itemOffered: {
+        "@type": "Service",
+        name: s.title,
+        description: s.schemaDescription,
       },
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: "Monthly Maintenance Plans",
-          description:
-            "Scheduled maintenance packages to keep your vessel in peak condition year-round.",
-        },
-      },
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: "Yacht Management",
-          description:
-            "Full-service concierge yacht management including crew coordination, provisioning, and scheduling.",
-        },
-      },
-    ],
+    })),
   },
-  openingHoursSpecification: [
-    {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      opens: "08:00",
-      closes: "18:00",
-    },
-    {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: "Saturday",
-      opens: "09:00",
-      closes: "14:00",
-    },
-  ],
-  sameAs: [
-    "https://www.instagram.com/northwakemarine",
-    "https://www.facebook.com/profile.php?id=61577308802144",
-    "https://www.youtube.com/@northwakemarine",
-    "https://www.tiktok.com/@northwakemarine",
-    "https://g.page/r/CdvYJ9aDJv8NEAE/review",
-    "https://x.com/NorthWakeMarine",
-    "https://www.linkedin.com/company/northwake-marine/",
-    "https://www.yelp.com/biz/northwake-marine-jacksonville",
-    "https://www.mapquest.com/us/florida/northwake-marine-790166236",
-    "https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultDetail?inquirytype=EntityName&directionType=ForwardList&searchNameOrder=NORTHWAKEMARINE%20L250002625010&aggregateId=flal-l25000262501-7e8ea010-7082-4425-8ab4-ae674e60d19e&searchTerm=NORTHWALL%20BENEFIT%20HOLDINGS%2C%20INC.&listNameOrder=NORTHWAAL%20P190000412970",
-  ],
+  openingHoursSpecification: businessHours.map((h) => ({
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: h.dayOfWeek,
+    opens: h.opens,
+    closes: h.closes,
+  })),
+  sameAs,
 };
 
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "@id": `${siteUrl}/#website`,
-  name: "NorthWake Marine",
+  name: companyName,
   url: siteUrl,
   publisher: { "@id": `${siteUrl}/#business` },
   dateModified: new Date().toISOString(),
@@ -191,9 +140,9 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://nwyrfobdsdhptkdirqxp.supabase.co" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="me" href="https://x.com/NorthWakeMarine" />
-        <link rel="me" href="https://www.linkedin.com/company/northwake-marine/" />
-        <link rel="me" href="https://www.instagram.com/northwakemarine" />
+        {sameAs.slice(0, 3).map((url) => (
+          <link key={url} rel="me" href={url} />
+        ))}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

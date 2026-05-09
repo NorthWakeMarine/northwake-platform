@@ -1,51 +1,45 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import FloatingCTA from "@/components/FloatingCTA";
 import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import QuoteForm from "@/components/QuoteForm";
+import { clientConfig } from "@/config/client";
 
 export const metadata: Metadata = {
-  title: "Contact NorthWake Marine, Get a Free Quote in Jacksonville, FL",
+  title: `Contact ${clientConfig.companyName}, Get a Free Quote in ${clientConfig.city}, ${clientConfig.state}`,
   description:
-    "Contact NorthWake Marine for a free, no-obligation quote on boat detailing, ceramic coating, or yacht management in Jacksonville, FL. Call, email, or submit your vessel details online.",
-  keywords: [
-    "contact NorthWake Marine",
-    "boat detailing quote Jacksonville",
-    "free marine services quote Florida",
-    "ceramic coating estimate Jacksonville",
-    "yacht management inquiry Florida",
-  ],
+    `Contact ${clientConfig.companyName} for a free, no-obligation quote in ${clientConfig.city}, ${clientConfig.state}. Call, email, or submit your details online.`,
+  keywords: clientConfig.seoKeywords,
   openGraph: {
-    title: "Contact NorthWake Marine | Free Quote, Jacksonville, FL",
+    title: `Contact ${clientConfig.companyName} | Free Quote, ${clientConfig.city}, ${clientConfig.state}`,
     description:
-      "Ready to elevate your vessel? Contact NorthWake Marine for a free, no-obligation estimate on any of our professional marine services.",
-    url: "https://www.northwakemarine.com/contact",
+      `Ready to get started? Contact ${clientConfig.companyName} for a free, no-obligation estimate on any of our professional services.`,
+    url: `${clientConfig.siteUrl}/contact`,
   },
-  alternates: { canonical: "https://www.northwakemarine.com/contact" },
+  alternates: { canonical: `${clientConfig.siteUrl}/contact` },
 };
 
 const contactInfo = [
   {
     icon: "◉",
     label: "Phone",
-    value: "(904) 606-5454",
-    href: "tel:+19046065454",
+    value: clientConfig.phone,
+    href: `tel:${clientConfig.phoneE164}`,
     sub: null,
   },
   {
     icon: "◈",
     label: "Email",
-    value: "info@northwakemarine.com",
-    href: "mailto:info@northwakemarine.com",
+    value: clientConfig.email,
+    href: `mailto:${clientConfig.email}`,
     sub: null,
   },
   {
     icon: "◇",
     label: "Location",
-    value: "Jacksonville, FL",
+    value: `${clientConfig.city}, ${clientConfig.state}`,
     href: null,
-    sub: "St. Johns River Corridor & Surrounding Areas",
+    sub: clientConfig.serviceArea,
   },
 ];
 
@@ -104,7 +98,6 @@ export default function ContactPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <Header />
-      <FloatingCTA />
       <ScrollDepthTracker />
 
       <main>
@@ -113,7 +106,7 @@ export default function ContactPage() {
           aria-labelledby="contact-form-heading"
           className="pt-32 pb-16 px-6"
         >
-          <h1 className="sr-only">Contact NorthWake Marine, Get a Free Quote in Jacksonville, FL</h1>
+          <h1 className="sr-only">Contact {clientConfig.companyName}, Get a Free Quote in {clientConfig.city}, {clientConfig.state}</h1>
           <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.6fr] gap-16 items-start">
 
             {/* Left column, contact info + map */}

@@ -3,6 +3,7 @@
 import { useActionState, useRef } from "react";
 import { submitWaiver, type WaiverState } from "@/app/actions";
 import Image from "next/image";
+import { clientConfig } from "@/config/client";
 
 type Segment = { text: string; bold?: boolean };
 type RichPara = Segment[];
@@ -221,10 +222,10 @@ export default function WaiverForm({ contactId, prefill }: Props) {
           <div>
             <h2 className="text-slate-900 text-xl font-bold">Waiver Submitted</h2>
             <p className="text-slate-500 text-sm mt-2 leading-relaxed">
-              Your liability waiver has been received and recorded. NorthWake Marine will be in touch to confirm your service details.
+              Your liability waiver has been received and recorded. {clientConfig.companyName} will be in touch to confirm your service details.
             </p>
           </div>
-          <p className="text-slate-400 text-xs">NorthWake Marine, Jacksonville, FL</p>
+          <p className="text-slate-400 text-xs">{clientConfig.companyName}, {clientConfig.city}, {clientConfig.state}</p>
         </div>
       </div>
     );
@@ -237,11 +238,11 @@ export default function WaiverForm({ contactId, prefill }: Props) {
       <header className="bg-[#06061a] border-b border-white/[0.07]">
         <div className="max-w-3xl mx-auto px-6 py-5 flex items-center gap-4">
           <div className="w-9 h-9 bg-[#000080] flex items-center justify-center shrink-0">
-            <Image src="/brand/nwmlogowhite.svg" alt="NorthWake Marine" width={20} height={20} className="opacity-90" />
+            <Image src={clientConfig.logoWhiteSvg} alt={clientConfig.companyName} width={20} height={20} className="opacity-90" />
           </div>
           <div className="leading-none">
-            <p className="text-white text-[11px] font-bold tracking-wide">NorthWake Marine</p>
-            <p className="text-white/35 text-[9px] tracking-[0.3em] uppercase mt-0.5">Jacksonville, FL</p>
+            <p className="text-white text-[11px] font-bold tracking-wide">{clientConfig.companyName}</p>
+            <p className="text-white/35 text-[9px] tracking-[0.3em] uppercase mt-0.5">{clientConfig.city}, {clientConfig.state}</p>
           </div>
         </div>
       </header>
@@ -251,7 +252,7 @@ export default function WaiverForm({ contactId, prefill }: Props) {
         {/* Document title */}
         <div className="mb-8">
           <h1 className="text-slate-900 text-2xl sm:text-3xl font-bold tracking-tight leading-tight">
-            NorthWake Marine General Liability<br />Waiver &amp; Service Agreement
+            {clientConfig.companyName} General Liability<br />Waiver &amp; Service Agreement
           </h1>
           <p className="text-slate-500 text-sm mt-3 leading-relaxed">
             Please read and complete this form carefully before services. All fields marked with an asterisk (*) are required.

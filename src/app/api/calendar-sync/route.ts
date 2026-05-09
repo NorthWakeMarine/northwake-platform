@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { detectCalendarDiscrepancies } from "@/lib/google-calendar";
 import { google } from "googleapis";
+import { clientConfig } from "@/config/client";
 
 function db() {
   return createClient(
@@ -69,7 +70,7 @@ async function renewWebhookIfNeeded(supabase: ReturnType<typeof db>): Promise<st
   const res = await calendar.events.watch({
     calendarId: CALENDAR_ID,
     requestBody: {
-      id:      `northwake-crm-${Date.now()}`,
+      id:      `${clientConfig.companyShortName.toLowerCase().replace(/\s+/g, "")}-crm-${Date.now()}`,
       type:    "web_hook",
       address: webhookUrl,
       token:   process.env.GOOGLE_WEBHOOK_TOKEN ?? "",

@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { clientConfig } from "@/config/client";
 
 function getTransport() {
   const user = process.env.GMAIL_USER;
@@ -32,9 +33,9 @@ export async function sendLeadNotification(lead: {
   ].filter(Boolean).join("\n");
 
   await transport.sendMail({
-    from: `"NorthWake CRM" <${to}>`,
+    from: `"${clientConfig.companyName} CRM" <${to}>`,
     to,
     subject: `New Website Lead: ${lead.name}`,
-    text: `New lead from the website form.\n\n${lines}\n\nView in CRM: https://northwakemarine.com/pro/leads`,
+    text: `New lead from the website form.\n\n${lines}\n\nView in CRM: ${clientConfig.crmUrl}/leads`,
   });
 }

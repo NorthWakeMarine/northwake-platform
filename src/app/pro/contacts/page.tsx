@@ -255,9 +255,16 @@ export default async function ContactsPage({
             {error ? (
               <p className="text-red-500 text-xs px-6 py-6">Failed to load contacts: {error}</p>
             ) : contacts.length === 0 ? (
-              <p className="text-slate-400 text-sm px-6 py-8">
-                {searchHit ? `No results found for "${term}".` : "No contacts yet."}
-              </p>
+              <div className="px-6 py-12 flex flex-col items-center gap-3 text-center">
+                <p className="text-slate-400 text-sm">
+                  {searchHit ? `No results found for "${term}".` : "No contacts yet."}
+                </p>
+                {!searchHit && (
+                  <p className="text-slate-300 text-xs max-w-xs leading-relaxed">
+                    Contacts are created automatically when a lead converts, or you can add them from a lead record.
+                  </p>
+                )}
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">

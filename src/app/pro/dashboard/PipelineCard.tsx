@@ -3,7 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import type { PipelineCard as PipelineCardType } from "@/types/pipeline";
 import { removeFromPipeline, deleteLead } from "@/app/actions";
 
@@ -74,6 +74,7 @@ function HealthWarningIcon({ flags }: { flags: PipelineCardType["healthFlags"] }
 export default function PipelineCard({ card, onRemove }: { card: PipelineCardType; onRemove?: (id: string) => void }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [confirming, setConfirming] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { card },
@@ -89,8 +90,14 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
     else if (card.leadId) router.push(`/pro/leads/${card.leadId}`);
   }
 
-  function handleRemove(e: React.MouseEvent) {
+  function handleRemoveClick(e: React.MouseEvent) {
     e.stopPropagation();
+    setConfirming(true);
+  }
+
+  function handleConfirmRemove(e: React.MouseEvent) {
+    e.stopPropagation();
+    setConfirming(false);
     startTransition(async () => {
       if (card.sourceType === "lead" && card.leadId) {
         await deleteLead(card.leadId);
@@ -99,6 +106,11 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
       }
       onRemove?.(card.id);
     });
+  }
+
+  function handleCancelRemove(e: React.MouseEvent) {
+    e.stopPropagation();
+    setConfirming(false);
   }
 
   return (
@@ -120,14 +132,33 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
         <HealthWarningIcon flags={card.healthFlags} />
         <HeatDot heat={card.heat} lastContactAt={card.lastContactAt} />
         {(card.contactId || (card.sourceType === "lead" && card.leadId)) && (
-          <button
-            onClick={handleRemove}
-            disabled={isPending}
-            className="text-slate-300 hover:text-red-400 text-xs leading-none shrink-0 transition-colors"
-            title={card.sourceType === "lead" ? "Dismiss lead" : "Remove from pipeline"}
-          >
-            ×
-          </button>
+          confirming ? (
+            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={handleConfirmRemove}
+                disabled={isPending}
+                className="text-red-400 hover:text-red-600 text-[9px] font-semibold tracking-wide uppercase transition-colors"
+              >
+                Remove
+              </button>
+              <span className="text-slate-300 text-[9px]">/</span>
+              <button
+                onClick={handleCancelRemove}
+                className="text-slate-400 hover:text-slate-600 text-[9px] tracking-wide uppercase transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleRemoveClick}
+              disabled={isPending}
+              className="text-slate-300 hover:text-red-400 text-xs leading-none shrink-0 transition-colors"
+              title={card.sourceType === "lead" ? "Dismiss lead" : "Remove from pipeline"}
+            >
+              ×
+            </button>
+          )
         )}
       </div>
 
