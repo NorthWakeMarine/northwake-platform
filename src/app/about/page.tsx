@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     "NorthWake Marine Jacksonville",
     "marine services company Jacksonville FL",
     "boat detailing company Jacksonville",
-    "certified marine technicians Florida",
+    "certified marine professionals Florida",
     "St Johns River boat care",
   ],
   openGraph: {
