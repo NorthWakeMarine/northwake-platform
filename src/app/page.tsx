@@ -5,9 +5,11 @@ import FloatingCTA from "@/components/FloatingCTA";
 import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import HeroQuoteForm from "@/components/HeroQuoteForm";
 import HeroCarouselClient from "@/components/HeroCarouselClient";
+import ReviewsCarousel from "@/components/ReviewsCarousel";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { CarouselSlideSource } from "@/components/HeroCarousel";
+import { getGoogleReviews } from "@/lib/google-places";
 
 async function getCMS(): Promise<Record<string, string>> {
   try {
@@ -102,7 +104,7 @@ async function getCarouselImages(): Promise<CarouselSlideSource[]> {
 
 export default async function Home() {
   const cms = await getCMS();
-  const carouselImages = await getCarouselImages();
+  const [carouselImages, googleReviews] = await Promise.all([getCarouselImages(), getGoogleReviews()]);
   const heroHeadline    = cms.hero_headline    ?? "From Dock to Destination";
   const heroSubheadline = cms.hero_subheadline ?? "Your Yacht Is Our Priority";
 
@@ -298,33 +300,11 @@ export default async function Home() {
               </h2>
               <hr className="accent-rule w-48 mt-2" />
             </header>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-steel-dark">
-              {[
-                {
-                  quote: "They turned my 32ft center console from embarrassing to showroom. Ceramic coating looks unreal even after a month of salt water. NorthWake is the only call I make.",
-                  name: "D. Harrington",
-                  vessel: "32ft Center Console, Jacksonville",
-                },
-                {
-                  quote: "Monthly maintenance plan took a full chore off my list. They show up, document everything, and my boat is always ready. The photo reports after every visit are a nice touch.",
-                  name: "R. Castellano",
-                  vessel: "41ft Cruiser, St. Johns River",
-                },
-                {
-                  quote: "Booked a full detail and ceramic before selling. Got asking price. The NorthWake guys are meticulous and actually care about the work they do. Rare.",
-                  name: "M. Sullivan",
-                  vessel: "28ft Sport Fishing, Orange Park",
-                },
-              ].map(({ quote, name, vessel }) => (
-                <div key={name} className="bg-obsidian p-6 flex flex-col gap-4">
-                  <p className="text-steel-light text-xs leading-relaxed italic">&ldquo;{quote}&rdquo;</p>
-                  <div className="mt-auto flex flex-col gap-0.5">
-                    <span className="text-wake text-xs font-bold tracking-wide">{name}</span>
-                    <span className="text-steel text-[10px] tracking-[0.2em] uppercase">{vessel}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ReviewsCarousel
+              reviews={googleReviews.reviews}
+              rating={googleReviews.rating}
+              count={googleReviews.count}
+            />
           </div>
         </section>
 

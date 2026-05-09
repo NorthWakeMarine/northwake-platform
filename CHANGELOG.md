@@ -14,6 +14,9 @@ When a visitor submits a quote request form on the public site, an email notific
 ### May 9 | SEO and entity links | SEO,Site
 Added X (Twitter), LinkedIn, Yelp, MapQuest, and Florida Sunbiz registration to the JSON-LD sameAs array. Added link rel=me tags in the site head for X, LinkedIn, and Instagram. These signals help AI search engines and crawlers identify NorthWake Marine across the web.
 
+### May 9 | Google Reviews carousel on homepage | Site
+The testimonials section now pulls real reviews from Google Places API and cycles through them automatically every 5 seconds. Pauses on hover. Shows star rating, overall rating score, and review count. Falls back to handwritten testimonials if no reviews are available yet. Includes a link to leave a review on Google. Reviews are cached for 24 hours.
+
 ### May 9 | OAuth-only Dialpad, dead code removed | Fix,Integrations
 Removed the DIALPAD_API_KEY fallback from all Dialpad API calls. OAuth is now the only connection path. Deleted the unused ProNav component that was replaced by ProShell.
 
