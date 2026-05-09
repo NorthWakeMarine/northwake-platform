@@ -8,28 +8,19 @@ export type GoogleReview = {
 const MAPS_BASE = "https://maps.googleapis.com/maps/api/place";
 
 async function findPlaceId(apiKey: string): Promise<string | null> {
-  // Try progressively simpler queries until one matches
-  const queries = [
-    "NorthWake Marine",
-    "NorthWake Marine Florida",
-    "NorthWake Marine Jacksonville",
-  ];
-  for (const input of queries) {
-    const params = new URLSearchParams({
-      input,
-      inputtype: "textquery",
-      fields: "place_id,name",
-      locationbias: "circle:80000@28.566997,-81.683107",
-      key: apiKey,
-    });
-    const res = await fetch(`${MAPS_BASE}/findplacefromtext/json?${params}`, {
-      next: { revalidate: 86400 },
-    });
-    if (!res.ok) continue;
-    const data = await res.json() as { candidates?: Array<{ place_id: string }>; status?: string };
-    if (data.candidates?.[0]?.place_id) return data.candidates[0].place_id;
-  }
-  return null;
+  // Nearby search at the exact coordinates from the Google Maps listing
+  const params = new URLSearchParams({
+    location: "28.566997,-81.683107",
+    radius: "200",
+    keyword: "NorthWake Marine",
+    key: apiKey,
+  });
+  const res = await fetch(`${MAPS_BASE}/nearbysearch/json?${params}`, {
+    next: { revalidate: 86400 },
+  });
+  if (!res.ok) return null;
+  const data = await res.json() as { results?: Array<{ place_id: string; name: string }>; status?: string };
+  return data.results?.[0]?.place_id ?? null;
 }
 
 export async function getGoogleReviews(): Promise<{ reviews: GoogleReview[]; rating: number | null; count: number | null }> {
