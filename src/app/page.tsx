@@ -8,6 +8,8 @@ import HeroCarouselClient from "@/components/HeroCarouselClient";
 import ReviewsCarousel from "@/components/ReviewsCarousel";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
 import type { CarouselSlideSource } from "@/components/HeroCarousel";
 import { getGoogleReviews } from "@/lib/google-places";
 
@@ -73,34 +75,41 @@ const services = [
 ];
 
 
-async function getCarouselImages(): Promise<CarouselSlideSource[]> {
-  try {
-    const supabase = await createServerSupabase();
-    const { data } = await supabase
-      .from("carousel_images")
-      .select("public_url, focal_x, focal_y")
-      .eq("active", true)
-      .order("display_order");
-    if (data && data.length > 0) {
-      return data.map((r) => ({ src: r.public_url, focalX: r.focal_x, focalY: r.focal_y }));
+const getCarouselImages = unstable_cache(
+  async (): Promise<CarouselSlideSource[]> => {
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SECRET_KEY!
+      );
+      const { data } = await supabase
+        .from("carousel_images")
+        .select("public_url, focal_x, focal_y")
+        .eq("active", true)
+        .order("display_order");
+      if (data && data.length > 0) {
+        return data.map((r) => ({ src: r.public_url, focalX: r.focal_x, focalY: r.focal_y }));
+      }
+    } catch {
+      // fall through to filesystem fallback
     }
-  } catch {
-    // fall through to filesystem fallback
-  }
-  // Filesystem fallback for local dev / before any images uploaded
-  try {
-    const { default: fs } = await import("fs");
-    const { default: path } = await import("path");
-    const dir = path.join(process.cwd(), "public", "images");
-    const exts = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
-    return fs
-      .readdirSync(dir)
-      .filter((f) => exts.has(path.extname(f).toLowerCase()))
-      .map((f) => ({ src: `/images/${f}`, focalX: 50, focalY: 50 }));
-  } catch {
-    return [];
-  }
-}
+    // Filesystem fallback for local dev / before any images uploaded
+    try {
+      const { default: fs } = await import("fs");
+      const { default: path } = await import("path");
+      const dir = path.join(process.cwd(), "public", "images");
+      const exts = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
+      return fs
+        .readdirSync(dir)
+        .filter((f) => exts.has(path.extname(f).toLowerCase()))
+        .map((f) => ({ src: `/images/${f}`, focalX: 50, focalY: 50 }));
+    } catch {
+      return [];
+    }
+  },
+  ["carousel-images"],
+  { revalidate: 3600 }
+);
 
 export default async function Home() {
   const cms = await getCMS();
@@ -229,7 +238,8 @@ export default async function Home() {
               { icon: "◈", text: "Professional-Grade Products Only" },
               { icon: "◉", text: "Photo Documentation on Every Job" },
               { icon: "◈", text: "No Obligation. No Contracts." },
-              { icon: "△", text: "Serving Jacksonville Since 2025" },
+              { icon: "★", text: "5-Star Rated Service" },
+            { icon: "△", text: "Serving Jacksonville Since 2025" },
             ].map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-2">
                 <span aria-hidden="true" className="chrome-text text-sm">{icon}</span>

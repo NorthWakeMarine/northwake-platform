@@ -2,6 +2,16 @@
 
 ## May 2026
 
+### May 9 | Performance, UX, and KPI improvements | Site,Pro
+Homepage trust bar now includes a 5-Star Rated Service badge. Carousel images are cached server-side for 1 hour via unstable_cache with a service client, eliminating per-request DB queries. Preconnect hints added for the Supabase CDN and Google Fonts to reduce connection latency. Pipeline summary bar expanded with total client count and conversions in the last 30 days. Lead detail pages now have prominent Call and Email action buttons in the top bar so the team can act immediately from the dossier.
+
+### May 9 | UX accessibility and interaction overhaul | UX,Site,Pro
+Comprehensive UX pass across the public site and Pro portal addressing 17 friction points.
+
+Public site: all interactive elements now show a keyboard focus ring, quote forms display per-field error messages inline when a field is invalid, placeholder text lightened for better readability, submission buttons show a spinner and the form dims during pending state, floating CTA button has a dismiss button that persists for the session, and the hero carousel responds to left/right arrow keys when focused. Chrome button shimmer now respects prefers-reduced-motion. Hero carousel loading state shows a shimmer skeleton instead of a blank bar. Reviews carousel resumes auto-advance 8 seconds after a user interaction.
+
+Pro portal: pipeline card dismiss button requires a confirmation step before removing a card, empty pipeline columns show a "Drag cards here" prompt with a dashed drop zone indicator, Log Call and Schedule Appointment modals trap focus and close on Escape, the all-day toggle in Schedule Appointment is now a proper accessible switch, unsaved edits in contact field inline editors trigger a browser leave-page warning, and leads/contacts empty states include descriptive context instead of a bare message.
+
 ### May 9 | Calls log page | Integrations
 A new Calls page in the sidebar lists all inbound and outbound activity logged from Dialpad: calls, missed calls, voicemails, and SMS. Shows contact name (linked to their dossier), direction, duration, and timestamp. A summary bar at the top shows total call and SMS counts.
 

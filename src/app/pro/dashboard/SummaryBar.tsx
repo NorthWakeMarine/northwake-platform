@@ -7,10 +7,14 @@ export default function SummaryBar({
   columns,
   newLeadsWeek,
   callsWeek,
+  totalContacts,
+  convertedMonth,
 }: {
   columns: Record<PipelineStage, PipelineCard[]>;
   newLeadsWeek: number;
   callsWeek: number;
+  totalContacts: number;
+  convertedMonth: number;
 }) {
   const totalRed = STAGES.flatMap((s) => columns[s]).filter((c) => c.heat === "red").length;
   const totalOverdue = STAGES.flatMap((s) => columns[s]).filter((c) => c.returningReason === "overdue_service").length;
@@ -25,6 +29,14 @@ export default function SummaryBar({
       ))}
 
       <div className="w-px h-4 bg-slate-100 shrink-0" />
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-slate-800 text-sm font-bold">{totalContacts}</span>
+        <span className="text-slate-400 text-xs">total clients</span>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-slate-800 text-sm font-bold">{convertedMonth}</span>
+        <span className="text-slate-400 text-xs">converted (30d)</span>
+      </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <span className="text-slate-800 text-sm font-bold">{newLeadsWeek}</span>
         <span className="text-slate-400 text-xs">new leads (7d)</span>

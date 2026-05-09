@@ -147,6 +147,29 @@ export default async function LeadDetailPage({
             {lead.name || lead.email}
           </h1>
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            {lead.phone && (
+              <a
+                href={`tel:${lead.phone}`}
+                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold transition-colors"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.35 2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.95-1.36a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                Call
+              </a>
+            )}
+            {lead.email && (
+              <a
+                href={`mailto:${lead.email}`}
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold transition-colors"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+                Email
+              </a>
+            )}
             <span className={`text-[9px] tracking-widest uppercase px-2.5 py-1 rounded-sm font-semibold ${src.cls}`}>
               {src.label}
             </span>

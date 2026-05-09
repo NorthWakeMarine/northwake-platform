@@ -189,6 +189,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <head>
+        <link rel="preconnect" href="https://nwyrfobdsdhptkdirqxp.supabase.co" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="me" href="https://x.com/NorthWakeMarine" />
         <link rel="me" href="https://www.linkedin.com/company/northwake-marine/" />
         <link rel="me" href="https://www.instagram.com/northwakemarine" />
