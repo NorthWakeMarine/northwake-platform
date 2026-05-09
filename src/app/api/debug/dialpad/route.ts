@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 const DP_BASE = "https://dialpad.com/api/v2";
@@ -13,7 +13,7 @@ async function rawRequest(path: string, token: string) {
   return { status: res.status, ok: res.ok, body: parsed };
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   // Only accessible to authenticated pro users
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();

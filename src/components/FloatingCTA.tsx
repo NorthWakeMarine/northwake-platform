@@ -8,14 +8,13 @@ const DISMISSED_KEY = "floating_cta_dismissed";
 
 export default function FloatingCTA() {
   const [visible, setVisible] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(
+    () => typeof window !== "undefined" && sessionStorage.getItem(DISMISSED_KEY) === "1"
+  );
   const [footerVisible, setFooterVisible] = useState(false);
 
   useEffect(() => {
-    if (sessionStorage.getItem(DISMISSED_KEY) === "1") {
-      setDismissed(true);
-      return;
-    }
+    if (dismissed) return;
     const handleScroll = () => setVisible(window.scrollY > 500);
     window.addEventListener("scroll", handleScroll, { passive: true });
 
@@ -32,7 +31,7 @@ export default function FloatingCTA() {
       };
     }
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [dismissed]);
 
   function handleDismiss(e: React.MouseEvent) {
     e.preventDefault();
