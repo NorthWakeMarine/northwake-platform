@@ -5,35 +5,21 @@ export type GoogleReview = {
   relativeTime: string;
 };
 
-type PlacesSearchResponse = {
-  places?: Array<{ id: string; displayName?: { text: string } }>;
-};
-
-type PlaceDetailsResponse = {
-  reviews?: Array<{
-    authorAttribution?: { displayName?: string };
-    rating?: number;
-    text?: { text?: string };
-    relativePublishTimeDescription?: string;
-  }>;
-  rating?: number;
-  userRatingCount?: number;
-};
+const MAPS_BASE = "https://maps.googleapis.com/maps/api/place";
 
 async function findPlaceId(apiKey: string): Promise<string | null> {
-  const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": apiKey,
-      "X-Goog-FieldMask": "places.id,places.displayName",
-    },
-    body: JSON.stringify({ textQuery: "NorthWake Marine Jacksonville FL" }),
+  const params = new URLSearchParams({
+    input: "NorthWake Marine Jacksonville FL",
+    inputtype: "textquery",
+    fields: "place_id,name",
+    key: apiKey,
+  });
+  const res = await fetch(`${MAPS_BASE}/findplacefromtext/json?${params}`, {
     next: { revalidate: 86400 },
   });
   if (!res.ok) return null;
-  const data: PlacesSearchResponse = await res.json();
-  return data.places?.[0]?.id ?? null;
+  const data = await res.json() as { candidates?: Array<{ place_id: string }> };
+  return data.candidates?.[0]?.place_id ?? null;
 }
 
 export async function getGoogleReviews(): Promise<{ reviews: GoogleReview[]; rating: number | null; count: number | null }> {
@@ -41,33 +27,50 @@ export async function getGoogleReviews(): Promise<{ reviews: GoogleReview[]; rat
   if (!apiKey) return { reviews: [], rating: null, count: null };
 
   try {
-    const placeId = process.env.GOOGLE_PLACE_ID ?? await findPlaceId(apiKey);
+    // Only use GOOGLE_PLACE_ID if it's in ChIJ format — ignore hex format from Maps URLs
+    const envId = process.env.GOOGLE_PLACE_ID;
+    const placeId = (envId?.startsWith("ChIJ") ? envId : null) ?? await findPlaceId(apiKey);
     if (!placeId) return { reviews: [], rating: null, count: null };
 
-    const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
-      headers: {
-        "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": "reviews,rating,userRatingCount",
-      },
+    const params = new URLSearchParams({
+      place_id: placeId,
+      fields: "reviews,rating,user_ratings_total",
+      key: apiKey,
+    });
+    const res = await fetch(`${MAPS_BASE}/details/json?${params}`, {
       next: { revalidate: 86400 },
     });
-
     if (!res.ok) return { reviews: [], rating: null, count: null };
 
-    const data: PlaceDetailsResponse = await res.json();
-    const reviews: GoogleReview[] = (data.reviews ?? [])
-      .filter((r) => r.text?.text && (r.rating ?? 0) >= 4)
+    const data = await res.json() as {
+      result?: {
+        reviews?: Array<{
+          author_name?: string;
+          rating?: number;
+          text?: string;
+          relative_time_description?: string;
+        }>;
+        rating?: number;
+        user_ratings_total?: number;
+      };
+    };
+
+    const result = data.result;
+    if (!result) return { reviews: [], rating: null, count: null };
+
+    const reviews: GoogleReview[] = (result.reviews ?? [])
+      .filter((r) => r.text && (r.rating ?? 0) >= 4)
       .map((r) => ({
-        author: r.authorAttribution?.displayName ?? "Verified Customer",
+        author: r.author_name ?? "Verified Customer",
         rating: r.rating ?? 5,
-        text: r.text?.text ?? "",
-        relativeTime: r.relativePublishTimeDescription ?? "",
+        text: r.text ?? "",
+        relativeTime: r.relative_time_description ?? "",
       }));
 
     return {
       reviews,
-      rating: data.rating ?? null,
-      count: data.userRatingCount ?? null,
+      rating: result.rating ?? null,
+      count: result.user_ratings_total ?? null,
     };
   } catch {
     return { reviews: [], rating: null, count: null };
