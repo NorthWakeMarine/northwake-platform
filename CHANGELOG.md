@@ -2,15 +2,18 @@
 
 ## May 2026
 
-### May 9 | Performance, UX, and KPI improvements | Site,Pro
-Homepage trust bar now includes a 5-Star Rated Service badge. Carousel images are cached server-side for 1 hour via unstable_cache with a service client, eliminating per-request DB queries. Preconnect hints added for the Supabase CDN and Google Fonts to reduce connection latency. Pipeline summary bar expanded with total client count and conversions in the last 30 days. Lead detail pages now have prominent Call and Email action buttons in the top bar so the team can act immediately from the dossier.
+### May 9 | Remove floating quote button | Site
+The floating "Get a Free Quote" button was removed from all public pages. The site has enough quote entry points (hero form, footer CTA band, contact page) that the persistent button was redundant and covered footer content on scroll.
 
-### May 9 | UX accessibility and interaction overhaul | UX,Site,Pro
-Comprehensive UX pass across the public site and Pro portal addressing 17 friction points.
+### May 9 | Performance, trust bar, and Pro portal KPIs | Site,Pro
+Homepage trust bar now includes a 5-Star Rated Service badge. Carousel images are cached server-side for 1 hour, eliminating a DB query on every page load. Preconnect hints added for the Supabase CDN and Google Fonts to cut connection setup time. Pipeline summary bar expanded with total client count and conversions in the last 30 days alongside the existing 7-day counters. Lead detail pages now have prominent Call and Email action buttons in the top bar.
 
-Public site: all interactive elements now show a keyboard focus ring, quote forms display per-field error messages inline when a field is invalid, placeholder text lightened for better readability, submission buttons show a spinner and the form dims during pending state, floating CTA button has a dismiss button that persists for the session, and the hero carousel responds to left/right arrow keys when focused. Chrome button shimmer now respects prefers-reduced-motion. Hero carousel loading state shows a shimmer skeleton instead of a blank bar. Reviews carousel resumes auto-advance 8 seconds after a user interaction.
+### May 9 | UX and accessibility overhaul | UX,Site,Pro
+Comprehensive UX pass across the public site and Pro portal.
 
-Pro portal: pipeline card dismiss button requires a confirmation step before removing a card, empty pipeline columns show a "Drag cards here" prompt with a dashed drop zone indicator, Log Call and Schedule Appointment modals trap focus and close on Escape, the all-day toggle in Schedule Appointment is now a proper accessible switch, unsaved edits in contact field inline editors trigger a browser leave-page warning, and leads/contacts empty states include descriptive context instead of a bare message.
+Public site: all interactive elements show a keyboard focus ring, quote forms display per-field inline error messages, placeholder text lightened for readability, submission buttons show a spinner and dim the form during pending state, hero carousel responds to left/right arrow keys when focused. Chrome button shimmer respects prefers-reduced-motion. Hero carousel loading state shows a shimmer skeleton. Reviews carousel resumes auto-advance 8 seconds after a manual interaction.
+
+Pro portal: pipeline card dismiss requires a confirmation step, empty columns show a dashed drop zone prompt, Log Call and Schedule Appointment modals trap focus and close on Escape, the all-day toggle is a proper accessible switch, unsaved inline edits trigger a browser leave-page warning, leads and contacts empty states include descriptive context.
 
 ### May 9 | Calls log page | Integrations
 A new Calls page in the sidebar lists all inbound and outbound activity logged from Dialpad: calls, missed calls, voicemails, and SMS. Shows contact name (linked to their dossier), direction, duration, and timestamp. A summary bar at the top shows total call and SMS counts.

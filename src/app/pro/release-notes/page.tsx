@@ -12,6 +12,8 @@ const TAG_COLORS: Record<string, string> = {
   Site:         "bg-amber-50 text-amber-600 border-amber-200",
   Fix:          "bg-slate-100 text-slate-500 border-slate-200",
   SEO:          "bg-green-50 text-green-600 border-green-200",
+  UX:           "bg-pink-50 text-pink-600 border-pink-200",
+  Pro:          "bg-indigo-50 text-indigo-600 border-indigo-200",
 };
 
 type Entry = { date: string; headline: string; detail: string; tags: string[] };
