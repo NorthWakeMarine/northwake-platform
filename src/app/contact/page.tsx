@@ -20,9 +20,9 @@ export const metadata: Metadata = {
     title: "Contact NorthWake Marine | Free Quote, Jacksonville, FL",
     description:
       "Ready to elevate your vessel? Contact NorthWake Marine for a free, no-obligation estimate on any of our professional marine services.",
-    url: "https://northwakemarine.com/contact",
+    url: "https://www.northwakemarine.com/contact",
   },
-  alternates: { canonical: "https://northwakemarine.com/contact" },
+  alternates: { canonical: "https://www.northwakemarine.com/contact" },
 };
 
 const contactInfo = [

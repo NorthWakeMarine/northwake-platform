@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
   preload: false,
 });
 
-const siteUrl = "https://northwakemarine.com";
+const siteUrl = "https://www.northwakemarine.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

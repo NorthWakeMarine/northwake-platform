@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     title: "Marine Services | NorthWake Marine, Jacksonville, FL",
     description:
       "From maintenance washes to full-service yacht management and marine transport, NorthWake Marine offers concierge-level care for every vessel.",
-    url: "https://northwakemarine.com/services",
+    url: "https://www.northwakemarine.com/services",
   },
-  alternates: { canonical: "https://northwakemarine.com/services" },
+  alternates: { canonical: "https://www.northwakemarine.com/services" },
 };
 
 const services = [
@@ -379,21 +379,21 @@ const serviceJsonLd = {
   name: "NorthWake Marine, Marine Services Jacksonville FL",
   description:
     "Complete list of professional marine services offered by NorthWake Marine in Jacksonville, Florida.",
-  url: "https://northwakemarine.com/services",
+  url: "https://www.northwakemarine.com/services",
   numberOfItems: services.length,
   itemListElement: services.map((s, i) => ({
     "@type": "ListItem",
     position: i + 1,
     item: {
       "@type": "Service",
-      "@id": `https://northwakemarine.com/services#${s.id}`,
+      "@id": `https://www.northwakemarine.com/services#${s.id}`,
       name: s.title,
       description: s.schemaDescription,
       serviceType: s.tier,
       provider: {
         "@type": "LocalBusiness",
         name: "NorthWake Marine",
-        "@id": "https://northwakemarine.com/#business",
+        "@id": "https://www.northwakemarine.com/#business",
         address: {
           "@type": "PostalAddress",
           addressLocality: "Jacksonville",

@@ -31,9 +31,9 @@ export const metadata: Metadata = {
     title: "About NorthWake Marine | Jacksonville's Premier Marine Services",
     description:
       "Founded on the banks of the St. Johns River, NorthWake Marine was built to set a new standard for marine care in Northeast Florida.",
-    url: "https://northwakemarine.com/about",
+    url: "https://www.northwakemarine.com/about",
   },
-  alternates: { canonical: "https://northwakemarine.com/about" },
+  alternates: { canonical: "https://www.northwakemarine.com/about" },
 };
 
 
