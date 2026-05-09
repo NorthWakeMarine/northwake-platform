@@ -2,6 +2,21 @@
 
 ## May 2026
 
+### May 9 | Calls log page | Integrations
+A new Calls page in the sidebar lists all inbound and outbound activity logged from Dialpad: calls, missed calls, voicemails, and SMS. Shows contact name (linked to their dossier), direction, duration, and timestamp. A summary bar at the top shows total call and SMS counts.
+
+### May 9 | Pipeline stats bar | Pipeline
+The pipeline summary bar now includes two additional counters: new leads in the last 7 days and calls logged in the last 7 days, alongside the existing per-stage card counts and health flags.
+
+### May 9 | Email alerts for website form submissions | Integrations
+When a visitor submits a quote request form on the public site, an email notification is sent to the admin inbox with the lead name, contact info, service requested, and vessel details. Add GMAIL_USER and GMAIL_APP_PASSWORD to Vercel to activate.
+
+### May 9 | SEO and entity links | SEO,Site
+Added X (Twitter), LinkedIn, Yelp, MapQuest, and Florida Sunbiz registration to the JSON-LD sameAs array. Added link rel=me tags in the site head for X, LinkedIn, and Instagram. These signals help AI search engines and crawlers identify NorthWake Marine across the web.
+
+### May 9 | OAuth-only Dialpad, dead code removed | Fix,Integrations
+Removed the DIALPAD_API_KEY fallback from all Dialpad API calls. OAuth is now the only connection path. Deleted the unused ProNav component that was replaced by ProShell.
+
 ### May 7 | Dialpad local-to-shared contact promotion | Integrations,Fix
 Sync All now shows how many contacts were fetched from Dialpad (before matching) so you can tell if the API returned zero vs. matching failed. A new "Promote Local to Shared" button copies personal userline contacts into company-shared contacts in Dialpad so the whole team can see them and the API can sync them. Phone normalization now handles all common formats (parentheses, dashes, 10-digit, 11-digit) using libphonenumber-js.
 

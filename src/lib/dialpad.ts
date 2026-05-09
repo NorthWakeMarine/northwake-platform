@@ -63,19 +63,21 @@ async function refreshDialpadTokens(tokens: DialpadTokenData): Promise<DialpadTo
 }
 
 async function getBearerToken(): Promise<string> {
-  // API key takes priority — no expiry, no refresh needed
+  // OAuth tokens first — user-level, can read personal (local) contacts
+  const tokens = await getDialpadTokens();
+  if (tokens) {
+    const expiresAt = new Date(tokens.expires_at).getTime();
+    if (Date.now() > expiresAt - 60_000) {
+      return (await refreshDialpadTokens(tokens)).access_token;
+    }
+    return tokens.access_token;
+  }
+
+  // Fall back to API key — company-level, can only read company-shared contacts
   const apiKey = process.env.DIALPAD_API_KEY;
   if (apiKey) return apiKey;
 
-  // Fall back to OAuth tokens for installs that used the old flow
-  const tokens = await getDialpadTokens();
-  if (!tokens) throw new Error("Dialpad not connected. Add DIALPAD_API_KEY to your environment variables.");
-
-  const expiresAt = new Date(tokens.expires_at).getTime();
-  if (Date.now() > expiresAt - 60_000) {
-    return (await refreshDialpadTokens(tokens)).access_token;
-  }
-  return tokens.access_token;
+  throw new Error("Dialpad not connected. Connect via OAuth on the Integrations page.");
 }
 
 const DP_BASE = "https://dialpad.com/api/v2";
@@ -155,7 +157,6 @@ export async function createDialpadContact(
 }
 
 export async function isDialpadConnected(): Promise<boolean> {
-  if (process.env.DIALPAD_API_KEY) return true;
   const tokens = await getDialpadTokens();
   return !!tokens;
 }

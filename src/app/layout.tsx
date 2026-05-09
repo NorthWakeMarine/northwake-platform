@@ -163,6 +163,11 @@ const jsonLd = {
     "https://www.youtube.com/@northwakemarine",
     "https://www.tiktok.com/@northwakemarine",
     "https://g.page/r/CdvYJ9aDJv8NEAE/review",
+    "https://x.com/NorthWakeMarine",
+    "https://www.linkedin.com/company/northwake-marine/",
+    "https://www.yelp.com/biz/northwake-marine-jacksonville",
+    "https://www.mapquest.com/us/florida/northwake-marine-790166236",
+    "https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultDetail?inquirytype=EntityName&directionType=ForwardList&searchNameOrder=NORTHWAKEMARINE%20L250002625010&aggregateId=flal-l25000262501-7e8ea010-7082-4425-8ab4-ae674e60d19e&searchTerm=NORTHWALL%20BENEFIT%20HOLDINGS%2C%20INC.&listNameOrder=NORTHWAAL%20P190000412970",
   ],
 };
 
@@ -184,6 +189,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <head>
+        <link rel="me" href="https://x.com/NorthWakeMarine" />
+        <link rel="me" href="https://www.linkedin.com/company/northwake-marine/" />
+        <link rel="me" href="https://www.instagram.com/northwakemarine" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -33,7 +33,7 @@ async function getCalendarStatus(): Promise<{ connected: boolean; webhookExpiry:
   return { connected, webhookExpiry };
 }
 
-async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: string | null }; dialpad: { connected: boolean } }> {
+async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: string | null }; dialpad: { connected: boolean; oauthConnected: boolean } }> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!
@@ -49,7 +49,7 @@ async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: st
 
   return {
     qb: { connected: !!qbRow, realmId: qbRow?.realm_id ?? null },
-    dialpad: { connected: !!dpRow || !!process.env.DIALPAD_API_KEY },
+    dialpad: { connected: !!dpRow, oauthConnected: !!dpRow },
   };
 }
 
@@ -75,6 +75,8 @@ export default async function IntegrationsPage({
   const params = (await searchParams) ?? {};
   const { connected: calendarConnected, webhookExpiry } = await getCalendarStatus();
   const { qb, dialpad } = await getOAuthStatus();
+  const dialpadOAuthAvailable = !!(process.env.DIALPAD_CLIENT_ID && process.env.DIALPAD_CLIENT_SECRET);
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? null;
 
 
   return (
@@ -192,28 +194,91 @@ export default async function IntegrationsPage({
               <p className="text-slate-500 text-xs leading-relaxed flex-1">
                 Log inbound and outbound calls against contact records. Missed calls from unknown numbers auto-create a new lead with the voicemail transcript.
               </p>
-              {dialpad.connected ? (
+              {dialpad.oauthConnected ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    Connected via API key
+                    Connected via OAuth
                   </div>
                   <p className="text-slate-400 text-[10px] leading-relaxed">
-                    Register this webhook URL in Dialpad to enable call logging: https://northwakemarine.com/api/webhooks/dialpad
+                    Webhook URL for call logging: {process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/dialpad
                   </p>
+                  {dialpadOAuthAvailable && (
+                    <a
+                      href="/api/auth/dialpad"
+                      className="w-full border border-slate-200 text-slate-500 text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-medium hover:border-slate-300 transition-colors text-center"
+                    >
+                      Re-authorize
+                    </a>
+                  )}
+                </div>
+              ) : dialpad.connected ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-amber-600 text-xs font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                    API key only (contacts sync limited)
+                  </div>
+                  <p className="text-slate-400 text-[10px] leading-relaxed">
+                    Connect via OAuth to sync personal contacts from your userline.
+                  </p>
+                  {dialpadOAuthAvailable && (
+                    <a
+                      href="/api/auth/dialpad"
+                      className="w-full bg-[#000080] text-white text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-semibold hover:bg-blue-900 transition-colors text-center"
+                    >
+                      Connect via OAuth
+                    </a>
+                  )}
+                  {!dialpadOAuthAvailable && (
+                    <p className="text-slate-400 text-[10px] leading-relaxed">
+                      Add DIALPAD_CLIENT_ID and DIALPAD_CLIENT_SECRET to Vercel to enable OAuth.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <a
-                    href="/api/auth/dialpad"
-                    className="w-full bg-[#000080] text-white text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-semibold hover:bg-blue-900 transition-colors text-center"
-                  >
-                    Connect Dialpad
-                  </a>
-                  <p className="text-slate-400 text-[10px] leading-relaxed">
-                    After connecting, register the webhook in Dialpad: {process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/dialpad
-                  </p>
+                  {dialpadOAuthAvailable ? (
+                    <a
+                      href="/api/auth/dialpad"
+                      className="w-full bg-[#000080] text-white text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-semibold hover:bg-blue-900 transition-colors text-center"
+                    >
+                      Connect Dialpad
+                    </a>
+                  ) : (
+                    <p className="text-slate-400 text-[10px] leading-relaxed">
+                      Add DIALPAD_CLIENT_ID, DIALPAD_CLIENT_SECRET, and DIALPAD_REDIRECT_URI to Vercel to connect.
+                    </p>
+                  )}
                 </div>
+              )}
+            </div>
+
+            {/* Google Analytics */}
+            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                    <span className="text-slate-500 text-[10px] font-bold tracking-wider">GA</span>
+                  </div>
+                  <div>
+                    <h2 className="text-slate-800 text-sm font-semibold">Google Analytics</h2>
+                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">GA4 event tracking</p>
+                  </div>
+                </div>
+                <StatusBadge connected={!!gaId} />
+              </div>
+              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+                Tracks page views, CTA clicks, form submissions, scroll depth, and phone/email interactions across the landing site.
+              </p>
+              {gaId ? (
+                <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  Measurement ID: {gaId}
+                </div>
+              ) : (
+                <p className="text-slate-400 text-[10px] leading-relaxed">
+                  Add NEXT_PUBLIC_GA_MEASUREMENT_ID to Vercel environment variables to activate.
+                </p>
               )}
             </div>
 

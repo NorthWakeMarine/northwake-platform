@@ -28,7 +28,7 @@ function groupByStage(cards: PipelineCard[]): Record<PipelineStage, PipelineCard
   return result;
 }
 
-export default function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }) {
+export default function PipelineBoard({ initialCards, stats }: { initialCards: PipelineCard[]; stats?: { newLeadsWeek: number; callsWeek: number } }) {
   const [columns, setColumns] = useState<Record<PipelineStage, PipelineCard[]>>(() =>
     groupByStage(initialCards)
   );
@@ -144,7 +144,7 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
         </div>
       </div>
 
-      <SummaryBar columns={columns} />
+      <SummaryBar columns={columns} newLeadsWeek={stats?.newLeadsWeek ?? 0} callsWeek={stats?.callsWeek ?? 0} />
 
       <MobileBoard
         columns={columns}

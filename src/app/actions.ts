@@ -84,6 +84,18 @@ export async function submitLead(
     metadata: { service: d.service, vessel_type: d.vessel_type },
   }).catch((err) => console.error("Ingest error:", err));
 
+  // Email notification (fire-and-forget)
+  import("@/lib/gmail").then(({ sendLeadNotification }) =>
+    sendLeadNotification({
+      name,
+      email: d.email ?? null,
+      phone: d.phone ?? null,
+      service: d.service ?? null,
+      vesselType: d.vessel_type ?? null,
+      message: d.message ?? d.comments ?? null,
+    })
+  ).catch((err) => console.error("Lead email error:", err));
+
   return { success: true };
 }
 
