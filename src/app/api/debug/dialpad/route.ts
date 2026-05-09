@@ -13,7 +13,7 @@ async function rawRequest(path: string, token: string) {
   return { status: res.status, ok: res.ok, body: parsed };
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   // Only accessible to authenticated pro users
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();

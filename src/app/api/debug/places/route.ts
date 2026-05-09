@@ -21,7 +21,7 @@ export async function GET() {
   );
   const searchData = await searchRes.json() as Record<string, unknown>;
   const firstResult = (searchData.results as Array<{place_id: string; name: string}>)?.[0];
-  let placeId: string | null = firstResult?.place_id ?? (process.env.GOOGLE_PLACE_ID?.startsWith("ChIJ") ? process.env.GOOGLE_PLACE_ID : null);
+  const placeId: string | null = firstResult?.place_id ?? (process.env.GOOGLE_PLACE_ID?.startsWith("ChIJ") ? process.env.GOOGLE_PLACE_ID : null);
 
   if (!placeId) {
     return NextResponse.json({ searchStatus: searchData.status, searchData, placeId: null });
