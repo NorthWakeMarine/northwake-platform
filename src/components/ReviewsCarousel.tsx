@@ -28,7 +28,7 @@ function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={i <= rating ? "#f59e0b" : "none"} stroke={i <= rating ? "#f59e0b" : "#686A6C"} strokeWidth="1.5">
+        <svg key={i} width="11" height="11" viewBox="0 0 24 24" fill={i <= rating ? "#f59e0b" : "none"} stroke={i <= rating ? "#f59e0b" : "#686A6C"} strokeWidth="1.5">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
       ))}
@@ -46,17 +46,24 @@ export default function ReviewsCarousel({
   count: number | null;
 }) {
   const items = reviews.length > 0 ? reviews : STATIC_REVIEWS;
-  const [current, setCurrent] = useState(0);
+  const isGoogle = reviews.length > 0;
+
+  // Build pages of 3
+  const pages: GoogleReview[][] = [];
+  for (let i = 0; i < items.length; i += 3) {
+    pages.push(items.slice(i, i + 3));
+  }
+
+  const [page, setPage] = useState(0);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (paused || items.length <= 1) return;
-    const t = setInterval(() => setCurrent((i) => (i + 1) % items.length), 5000);
+    if (paused || pages.length <= 1) return;
+    const t = setInterval(() => setPage((p) => (p + 1) % pages.length), 6000);
     return () => clearInterval(t);
-  }, [paused, items.length]);
+  }, [paused, pages.length]);
 
-  const review = items[current];
-  const isGoogle = reviews.length > 0;
+  const currentPage = pages[page] ?? [];
 
   return (
     <div
@@ -68,30 +75,31 @@ export default function ReviewsCarousel({
         <div className="flex items-center gap-3">
           <StarRating rating={Math.round(rating)} />
           <span className="text-steel-light text-xs font-medium">{rating.toFixed(1)} out of 5</span>
-          <span className="text-steel text-xs">({count} reviews)</span>
-          <span className="text-steel text-[10px] tracking-widest uppercase">Google</span>
+          <span className="text-steel text-xs">({count} Google reviews)</span>
         </div>
       )}
 
-      <div className="max-w-2xl w-full">
-        <div className="bg-obsidian p-8 flex flex-col gap-5 text-center transition-all duration-300">
-          {isGoogle && <StarRating rating={review.rating} />}
-          <p className="text-steel-light text-sm leading-relaxed italic">&ldquo;{review.text}&rdquo;</p>
-          <div className="flex flex-col gap-0.5 items-center mt-auto">
-            <span className="text-wake text-xs font-bold tracking-wide">{review.author}</span>
-            <span className="text-steel text-[10px] tracking-[0.2em] uppercase">{review.relativeTime}</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-steel-dark w-full">
+        {currentPage.map((review, i) => (
+          <div key={i} className="bg-obsidian p-6 flex flex-col gap-4">
+            {isGoogle && <StarRating rating={review.rating} />}
+            <p className="text-steel-light text-xs leading-relaxed italic">&ldquo;{review.text}&rdquo;</p>
+            <div className="mt-auto flex flex-col gap-0.5">
+              <span className="text-wake text-xs font-bold tracking-wide">{review.author}</span>
+              <span className="text-steel text-[10px] tracking-[0.2em] uppercase">{review.relativeTime}</span>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
 
-      {items.length > 1 && (
+      {pages.length > 1 && (
         <div className="flex items-center gap-2">
-          {items.map((_, i) => (
+          {pages.map((_, i) => (
             <button
               key={i}
-              onClick={() => { setCurrent(i); setPaused(true); }}
-              className={`rounded-full transition-all duration-200 ${i === current ? "w-4 h-1.5 bg-navy" : "w-1.5 h-1.5 bg-steel/40 hover:bg-steel"}`}
-              aria-label={`Review ${i + 1}`}
+              onClick={() => { setPage(i); setPaused(true); }}
+              className={`rounded-full transition-all duration-200 ${i === page ? "w-4 h-1.5 bg-navy" : "w-1.5 h-1.5 bg-steel/40 hover:bg-steel"}`}
+              aria-label={`Page ${i + 1}`}
             />
           ))}
         </div>
