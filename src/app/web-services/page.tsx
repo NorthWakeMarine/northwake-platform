@@ -82,7 +82,7 @@ const tiers = [
   {
     name: "Platform",
     price: "$999",
-    monthly: "$49/mo",
+    monthly: "$99/mo",
     tagline: "Everything in Launch, plus a full CRM and the integrations that run your business.",
     badge: "Most Popular",
     includes: [
@@ -102,7 +102,7 @@ const tiers = [
   {
     name: "Command",
     price: "$1,499",
-    monthly: "$99/mo",
+    monthly: "$149/mo",
     tagline: "The complete platform, with call logging, AI-optimized SEO, and location pages.",
     badge: null,
     includes: [
@@ -145,7 +145,7 @@ const addons = [
 
 const comparisons = [
   { label: "Setup fee", us: "Honest flat rate", them: "$3,000-$5,000+" },
-  { label: "Monthly", us: "$49-$99", them: "$150-$400 (site only)" },
+  { label: "Monthly", us: "$49-$149", them: "$150-$400 (site only)" },
   { label: "CRM included", us: "Yes, full pipeline", them: "No" },
   { label: "Calendar sync", us: "Two-way, real time", them: "No" },
   { label: "Accounting integration", us: "Auto-creates customers", them: "No" },
