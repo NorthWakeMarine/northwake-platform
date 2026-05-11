@@ -125,19 +125,17 @@ export default function ServicesPage() {
           <div className="max-w-7xl mx-auto">
             <h2 id="services-grid-heading" className="sr-only">All Services</h2>
 
-            <ul className="flex flex-col gap-0 border border-steel-dark list-none" role="list">
-              {services.map((svc, i) => (
+            <ul className="grid grid-cols-1 lg:grid-cols-2 gap-5 list-none" role="list">
+              {services.map((svc) => (
                 <li
                   key={svc.id}
                   id={svc.id}
-                  className={`group grid md:grid-cols-[1fr_2fr] gap-0 ${
-                    i !== services.length - 1 ? "border-b border-steel-dark" : ""
-                  }`}
+                  className="group flex flex-col rounded-2xl overflow-hidden border border-steel-dark bg-obsidian hover:border-navy transition-colors duration-300"
                 >
-                  {/* Left panel */}
-                  <div className="flex flex-col gap-4 p-8 md:p-10 border-b md:border-b-0 md:border-r border-steel-dark bg-obsidian group-hover:bg-navy-dark transition-colors duration-300">
+                  {/* Card header */}
+                  <div className="flex flex-col gap-4 p-7 border-b border-steel-dark group-hover:bg-navy-dark transition-colors duration-300">
                     <div className="flex items-start justify-between gap-3">
-                      <span aria-hidden="true" className="chrome-text text-4xl leading-none">
+                      <span aria-hidden="true" className="chrome-text text-3xl leading-none">
                         {svc.icon}
                       </span>
                       {svc.badge && (
@@ -155,23 +153,16 @@ export default function ServicesPage() {
                       </h3>
                       <p className="text-steel text-xs mt-1 tracking-wide">{svc.tagline}</p>
                     </div>
-                    <Link
-                      href={`/contact?service=${encodeURIComponent(svc.title)}`}
-                      aria-label={`Request service: ${svc.title}`}
-                      className="chrome-btn self-start text-xs font-bold tracking-[0.25em] uppercase px-5 py-2.5 transition-all duration-300 hover:scale-105 mt-auto"
-                    >
-                      Request Service
-                    </Link>
                   </div>
 
-                  {/* Right panel */}
-                  <div className="flex flex-col gap-6 p-8 md:p-10 bg-obsidian group-hover:bg-[#040408] transition-colors duration-300">
+                  {/* Card body */}
+                  <div className="flex flex-col gap-5 p-7 flex-1">
                     <p className="text-steel-light text-sm leading-relaxed">{svc.description}</p>
                     <div>
-                      <p className="text-steel text-xs tracking-[0.3em] uppercase mb-4">
+                      <p className="text-steel text-xs tracking-[0.3em] uppercase mb-3">
                         What&apos;s Included
                       </p>
-                      <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2.5 list-none">
+                      <ul className="grid grid-cols-2 gap-x-6 gap-y-2 list-none">
                         {svc.includes.map((item) => (
                           <li key={item} className="flex items-start gap-2 text-steel-light text-xs">
                             <span aria-hidden="true" className="text-navy mt-0.5 shrink-0">▸</span>
@@ -180,6 +171,17 @@ export default function ServicesPage() {
                         ))}
                       </ul>
                     </div>
+                  </div>
+
+                  {/* Card footer */}
+                  <div className="px-7 pb-7">
+                    <Link
+                      href={`/contact?service=${encodeURIComponent(svc.title)}`}
+                      aria-label={`Request service: ${svc.title}`}
+                      className="chrome-btn inline-block text-xs font-bold tracking-[0.25em] uppercase px-5 py-2.5 transition-all duration-300 hover:scale-105"
+                    >
+                      Request Service
+                    </Link>
                   </div>
                 </li>
               ))}
