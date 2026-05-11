@@ -8,9 +8,9 @@ import { trackFormStart, trackFormSubmit, trackFormSuccess, trackFormError } fro
 import { clientConfig } from "@/config/client";
 
 const inputCls =
-  "bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400/70 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 peer [&:user-invalid]:border-red-500";
+  "bg-gray-50 border border-gray-500 text-gray-900 placeholder-gray-400/70 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 peer [&:user-invalid]:border-red-500";
 const selectCls =
-  "bg-white border border-gray-300 text-gray-900 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer peer [&:user-invalid]:border-red-500";
+  "bg-white border border-gray-500 text-gray-900 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer peer [&:user-invalid]:border-red-500";
 const fieldErr =
   "hidden peer-[&:user-invalid]:block text-red-600 text-[9px] tracking-wide mt-0.5";
 
@@ -109,6 +109,9 @@ export default function HeroQuoteForm() {
     >
       <FormOverlay />
       <input type="hidden" name="source" value="hero" />
+      <p className="text-gray-500 text-[10px] tracking-wide">
+        Fields marked <span aria-hidden="true" className="text-navy font-bold">*</span> are required.
+      </p>
 
       {state.error && (
         <div role="alert" className="border border-red-300 bg-red-50 px-3 py-2">
@@ -207,13 +210,13 @@ export default function HeroQuoteForm() {
         </label>
         <textarea id="hero-comments" name="comments" rows={2}
           placeholder="Vessel length, condition, preferred dates…"
-          className="bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400/70 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 resize-none" />
+          className="bg-gray-50 border border-gray-500 text-gray-900 placeholder-gray-400/70 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 resize-none" />
       </div>
 
       {/* Terms */}
       <label className="flex items-start gap-2.5 cursor-pointer">
         <input type="checkbox" name="terms" required
-          className="mt-0.5 w-3 h-3 border border-gray-300 bg-gray-50 accent-navy shrink-0 cursor-pointer peer" />
+          className="mt-0.5 w-3 h-3 border border-gray-500 bg-gray-50 accent-navy shrink-0 cursor-pointer peer" />
         <span className="text-gray-600 text-xs leading-relaxed">
           I agree to the{" "}
           <Link href="/terms" target="_blank" className="text-navy hover:text-navy-dark transition-colors underline underline-offset-2">

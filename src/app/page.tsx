@@ -122,7 +122,7 @@ export default async function Home() {
               <div className="hidden md:flex gap-4 justify-center">
                 <Link
                   href="/services"
-                  className="border border-gray-300 text-gray-700 text-xs font-semibold tracking-[0.3em] uppercase px-6 py-3 hover:border-navy hover:text-navy transition-colors duration-300"
+                  className="border border-gray-500 text-gray-700 text-xs font-semibold tracking-[0.3em] uppercase px-6 py-3 hover:border-navy hover:text-navy transition-colors duration-300"
                 >
                   View Services
                 </Link>

@@ -77,7 +77,7 @@ export default async function AboutPage() {
                 </Link>
                 <Link
                   href="/services"
-                  className="border border-gray-300 text-gray-600 text-xs font-semibold tracking-[0.3em] uppercase px-9 py-4 hover:border-navy hover:text-navy transition-colors duration-300 text-center"
+                  className="border border-gray-500 text-gray-600 text-xs font-semibold tracking-[0.3em] uppercase px-9 py-4 hover:border-navy hover:text-navy transition-colors duration-300 text-center"
                 >
                   Our Services
                 </Link>
@@ -85,6 +85,7 @@ export default async function AboutPage() {
             </div>
 
             {/* Team cards */}
+            <h2 className="sr-only">Our Team</h2>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gray-200 list-none">
               {team.map((member) => (
                 <li

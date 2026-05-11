@@ -89,6 +89,7 @@ body {
   );
   color: #000000;
   overflow: hidden;
+  border: 1px solid #686a6c;
 }
 
 .chrome-btn::after {

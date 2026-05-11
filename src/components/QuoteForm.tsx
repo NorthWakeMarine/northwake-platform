@@ -82,9 +82,9 @@ export default function QuoteForm({
   }
 
   const fieldClass =
-    "bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400/70 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full peer [&:user-invalid]:border-red-500";
+    "bg-gray-50 border border-gray-500 text-gray-900 placeholder-gray-400/70 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full peer [&:user-invalid]:border-red-500";
   const selectClass =
-    "bg-white border border-gray-300 text-gray-900 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full peer [&:user-invalid]:border-red-500";
+    "bg-white border border-gray-500 text-gray-900 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full peer [&:user-invalid]:border-red-500";
   const fieldErr =
     "hidden peer-[&:user-invalid]:block text-red-600 text-xs tracking-wide mt-0.5";
   const labelClass =
@@ -134,6 +134,9 @@ export default function QuoteForm({
     >
       <FormOverlay />
       <input type="hidden" name="source" value="contact" />
+      <p className="text-gray-500 text-xs tracking-wide">
+        Fields marked <span aria-hidden="true" className="text-navy font-bold">*</span> are required.
+      </p>
 
       {state.error && (
         <div role="alert" className="border border-red-300 bg-red-50 px-3.5 py-2.5">
@@ -278,7 +281,7 @@ export default function QuoteForm({
           name="message"
           rows={4}
           placeholder="Vessel condition, preferred service dates, specific concerns, or anything else we should know…"
-          className="bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400/70 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 resize-none w-full"
+          className="bg-gray-50 border border-gray-500 text-gray-900 placeholder-gray-400/70 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 resize-none w-full"
         />
       </div>
 
@@ -288,7 +291,7 @@ export default function QuoteForm({
           type="checkbox"
           name="terms"
           required
-          className="mt-0.5 w-3 h-3 border border-gray-300 bg-gray-50 accent-navy shrink-0 cursor-pointer"
+          className="mt-0.5 w-3 h-3 border border-gray-500 bg-gray-50 accent-navy shrink-0 cursor-pointer"
         />
         <span className="text-gray-500 text-xs leading-relaxed">
           I agree to the{" "}
