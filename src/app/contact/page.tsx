@@ -122,7 +122,7 @@ export default function ContactPage() {
                       {item.icon}
                     </span>
                     <div>
-                      <p className="text-gray-400 text-xs tracking-[0.35em] uppercase mb-1">
+                      <p className="text-gray-500 text-xs tracking-[0.35em] uppercase mb-1">
                         {item.label}
                       </p>
                       {item.href ? (
@@ -181,7 +181,7 @@ export default function ContactPage() {
         >
           <div className="max-w-3xl mx-auto flex flex-col gap-10">
             <header className="flex flex-col items-center text-center gap-4">
-              <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">Common Questions</p>
+              <p className="text-gray-500 text-xs tracking-[0.4em] uppercase">Common Questions</p>
               <h2
                 id="faq-heading"
                 className="text-gray-900 text-3xl font-bold tracking-tight"
@@ -216,7 +216,7 @@ export default function ContactPage() {
               ].map(({ q, a }) => (
                 <div key={q} className="bg-white p-7 hover:bg-gray-50 transition-colors duration-200">
                   <dt className="text-gray-900 text-sm font-semibold mb-2.5">{q}</dt>
-                  <dd className="text-gray-600 text-xs leading-relaxed">{a}</dd>
+                  <dd className="text-gray-700 text-sm leading-relaxed">{a}</dd>
                 </div>
               ))}
             </dl>

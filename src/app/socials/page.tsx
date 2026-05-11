@@ -65,7 +65,7 @@ export default function SocialsPage() {
             }}
           />
           <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center gap-5">
-            <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">Stay Connected</p>
+            <p className="text-gray-500 text-xs tracking-[0.4em] uppercase">Stay Connected</p>
             <h1
               id="socials-heading"
               className="chrome-text-dark text-4xl sm:text-5xl font-bold tracking-tight leading-tight"
@@ -110,15 +110,15 @@ export default function SocialsPage() {
                 <div className="flex flex-col gap-1.5 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <span className="text-gray-900 text-base font-bold tracking-tight">{s.platform}</span>
-                    <span className="text-gray-400 text-xs tracking-wide">{s.handle}</span>
+                    <span className="text-gray-500 text-xs tracking-wide">{s.handle}</span>
                   </div>
-                  <p className="text-gray-600 text-xs leading-relaxed max-w-lg">
+                  <p className="text-gray-700 text-sm leading-relaxed max-w-lg">
                     {s.description}
                   </p>
                 </div>
 
                 {/* CTA arrow */}
-                <div className="shrink-0 flex items-center gap-2 text-gray-400 group-hover:text-navy transition-colors duration-300 text-xs tracking-[0.2em] uppercase font-semibold">
+                <div className="shrink-0 flex items-center gap-2 text-gray-500 group-hover:text-navy transition-colors duration-300 text-xs tracking-[0.2em] uppercase font-semibold">
                   <span className="hidden sm:inline">{s.cta}</span>
                   <svg
                     aria-hidden="true"

@@ -55,7 +55,7 @@ export default async function AboutPage() {
           />
           <div className="relative z-10 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
             <div className="flex flex-col gap-7">
-              <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">
+              <p className="text-gray-500 text-xs tracking-[0.4em] uppercase">
                 Est. 2025 &nbsp;·&nbsp; Jacksonville, FL
               </p>
               <h1
@@ -100,11 +100,11 @@ export default async function AboutPage() {
                   </div>
                   <div>
                     <h3 className="text-gray-900 text-sm font-bold">{member.name}</h3>
-                    <p className="text-gray-400 text-xs tracking-[0.25em] uppercase mt-0.5">
+                    <p className="text-gray-500 text-xs tracking-[0.25em] uppercase mt-0.5">
                       {member.role}
                     </p>
                   </div>
-                  <p className="text-gray-600 text-xs leading-relaxed">{member.bio}</p>
+                  <p className="text-gray-700 text-sm leading-relaxed">{member.bio}</p>
                 </li>
               ))}
             </ul>
@@ -126,7 +126,7 @@ export default async function AboutPage() {
             {/* Headline + intro */}
             <div className="flex flex-col md:flex-row gap-16 items-start">
               <div className="flex flex-col gap-5 md:w-1/2 md:sticky md:top-28">
-                <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">Why {clientConfig.companyName}</p>
+                <p className="text-gray-500 text-xs tracking-[0.4em] uppercase">Why {clientConfig.companyName}</p>
                 <h2
                   id="standard-heading"
                   className="text-gray-900 text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight"
@@ -195,7 +195,7 @@ export default async function AboutPage() {
                   <span aria-hidden="true" className="chrome-text-dark text-2xl leading-none">{item.icon}</span>
                   <div>
                     <h3 className="text-gray-900 text-sm font-bold mb-2 leading-snug">{item.title}</h3>
-                    <p className="text-gray-600 text-xs leading-relaxed">{item.body}</p>
+                    <p className="text-gray-700 text-sm leading-relaxed">{item.body}</p>
                   </div>
                 </li>
               ))}

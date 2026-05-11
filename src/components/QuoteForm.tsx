@@ -301,7 +301,7 @@ export default function QuoteForm({
 
       <SubmitButton />
 
-      <p className="text-gray-400 text-xs text-center tracking-wide leading-relaxed">
+      <p className="text-gray-500 text-xs text-center tracking-wide leading-relaxed">
         No obligation. No spam.
       </p>
     </form>

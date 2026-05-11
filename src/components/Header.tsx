@@ -57,7 +57,7 @@ export default function Header() {
         <Link
           href="/contact"
           onClick={() => trackCtaClick("Get a Quote", "header")}
-          className="hidden md:inline-block chrome-btn text-[10px] font-bold tracking-[0.25em] uppercase px-5 py-2.5 transition-all duration-300 hover:scale-105"
+          className="hidden md:inline-block chrome-btn text-xs font-bold tracking-[0.25em] uppercase px-5 py-2.5 transition-all duration-300 hover:scale-105"
         >
           Get a Quote
         </Link>
@@ -106,7 +106,7 @@ export default function Header() {
           <Link
             href="/contact"
             onClick={() => { setOpen(false); trackCtaClick("Get a Quote", "mobile_menu"); }}
-            className="chrome-btn text-[10px] font-bold tracking-[0.25em] uppercase px-5 py-3 text-center mt-2 transition-all duration-300"
+            className="chrome-btn text-xs font-bold tracking-[0.25em] uppercase px-5 py-3 text-center mt-2 transition-all duration-300"
           >
             Get a Quote
           </Link>

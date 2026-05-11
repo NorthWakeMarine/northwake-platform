@@ -119,7 +119,7 @@ export default function HeroQuoteForm() {
       {/* Row: Full Name + Email */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-name" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-name" className="text-gray-700 text-xs tracking-[0.2em] uppercase font-medium">
             Full Name <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-name" name="name" type="text" required autoComplete="name" placeholder="John Harrington"
@@ -127,7 +127,7 @@ export default function HeroQuoteForm() {
           <span className={fieldErr}>Please enter your full name.</span>
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-email" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-email" className="text-gray-700 text-xs tracking-[0.2em] uppercase font-medium">
             Email <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-email" name="email" type="email" required autoComplete="email" placeholder="john@example.com"
@@ -139,7 +139,7 @@ export default function HeroQuoteForm() {
       {/* Row: Phone + Vessel Length */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-phone" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-phone" className="text-gray-700 text-xs tracking-[0.2em] uppercase font-medium">
             Phone <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-phone" name="phone" type="tel" required autoComplete="tel" placeholder={clientConfig.phone}
@@ -147,7 +147,7 @@ export default function HeroQuoteForm() {
           <span className={fieldErr}>Please enter your phone number.</span>
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-vessel-length" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-vessel-length" className="text-gray-700 text-xs tracking-[0.2em] uppercase font-medium">
             Vessel Length (ft) <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-vessel-length" name="vessel_length" type="text" required placeholder="e.g. 28"
@@ -159,7 +159,7 @@ export default function HeroQuoteForm() {
       {/* Row: Vessel Type + Service Needed */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-vessel" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-vessel" className="text-gray-700 text-xs tracking-[0.2em] uppercase font-medium">
             Vessel Type <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <select id="hero-vessel" name="vessel_type" required defaultValue=""
@@ -172,7 +172,7 @@ export default function HeroQuoteForm() {
           <span className={fieldErr}>Please select a vessel type.</span>
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-service" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-service" className="text-gray-700 text-xs tracking-[0.2em] uppercase font-medium">
             Service Needed <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <select id="hero-service" name="service" required defaultValue=""
@@ -188,7 +188,7 @@ export default function HeroQuoteForm() {
 
       {/* Referral */}
       <div className="flex flex-col gap-1">
-        <label htmlFor="hero-referral" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
+        <label htmlFor="hero-referral" className="text-gray-700 text-xs tracking-[0.2em] uppercase font-medium">
           How Did You Hear About Us?
         </label>
         <select id="hero-referral" name="referral_source" defaultValue=""
@@ -202,7 +202,7 @@ export default function HeroQuoteForm() {
 
       {/* Additional details */}
       <div className="flex flex-col gap-1">
-        <label htmlFor="hero-comments" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
+        <label htmlFor="hero-comments" className="text-gray-700 text-xs tracking-[0.2em] uppercase font-medium">
           Additional Details
         </label>
         <textarea id="hero-comments" name="comments" rows={2}
@@ -214,7 +214,7 @@ export default function HeroQuoteForm() {
       <label className="flex items-start gap-2.5 cursor-pointer">
         <input type="checkbox" name="terms" required
           className="mt-0.5 w-3 h-3 border border-gray-300 bg-gray-50 accent-navy shrink-0 cursor-pointer peer" />
-        <span className="text-gray-500 text-[10px] leading-relaxed">
+        <span className="text-gray-600 text-xs leading-relaxed">
           I agree to the{" "}
           <Link href="/terms" target="_blank" className="text-navy hover:text-navy-dark transition-colors underline underline-offset-2">
             terms &amp; conditions

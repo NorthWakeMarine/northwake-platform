@@ -79,21 +79,21 @@ export default function Footer() {
 
       {/* ── Bottom bar ── */}
       <div className="border-t border-steel-dark px-6 lg:px-10 py-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 max-w-7xl mx-auto w-full">
-        <p className="text-steel text-[10px] tracking-wide">
+        <p className="text-steel text-xs tracking-wide">
           © {new Date().getFullYear()} {clientConfig.companyName}. All rights reserved.
         </p>
         <div className="flex items-center gap-4">
-          <Link href="/terms" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-[9px]">Terms</Link>
-          <Link href="/privacy-policy" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-[9px]">Privacy</Link>
+          <Link href="/terms" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-xs">Terms</Link>
+          <Link href="/privacy-policy" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-xs">Privacy</Link>
           <Link
             href="/pro"
-            className="flex items-center gap-1.5 border border-steel-dark px-3 py-1 text-steel hover:border-navy hover:text-wake transition-colors duration-300 tracking-[0.2em] uppercase text-[9px]"
+            className="flex items-center gap-1.5 border border-steel-dark px-3 py-1 text-steel hover:border-navy hover:text-wake transition-colors duration-300 tracking-[0.2em] uppercase text-xs"
           >
-            <span aria-hidden="true" className="text-navy text-[7px]">◈</span>
+            <span aria-hidden="true" className="text-navy text-[9px]">◈</span>
             {clientConfig.proPortalName}
           </Link>
         </div>
-        <p className="text-steel text-[10px] tracking-wide hidden sm:block">{clientConfig.footerTagline}</p>
+        <p className="text-steel text-xs tracking-wide hidden sm:block">{clientConfig.footerTagline}</p>
       </div>
 
     </footer>

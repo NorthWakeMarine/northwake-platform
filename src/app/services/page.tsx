@@ -92,7 +92,7 @@ export default function ServicesPage() {
             }}
           />
           <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center gap-6">
-            <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">
+            <p className="text-gray-500 text-xs tracking-[0.4em] uppercase">
               {city}, {state} &nbsp;·&nbsp; Professional Services
             </p>
             <h1
@@ -215,7 +215,7 @@ export default function ServicesPage() {
 
               {/* Marinas & Facilities */}
               <div>
-                <p className="text-gray-400 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
+                <p className="text-gray-500 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
                   Marinas &amp; Facilities
                 </p>
                 <ul className="columns-2 gap-x-6 list-none space-y-1.5">
@@ -283,7 +283,7 @@ export default function ServicesPage() {
 
               {/* Waterways & Inlets */}
               <div>
-                <p className="text-gray-400 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
+                <p className="text-gray-500 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
                   Waterways &amp; Inlets
                 </p>
                 <ul className="columns-2 gap-x-6 list-none space-y-1.5">
@@ -328,7 +328,7 @@ export default function ServicesPage() {
 
               {/* Communities */}
               <div>
-                <p className="text-gray-400 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
+                <p className="text-gray-500 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
                   Communities &amp; Neighborhoods
                 </p>
                 <ul className="columns-2 gap-x-6 list-none space-y-1.5">
