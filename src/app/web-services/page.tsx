@@ -577,8 +577,8 @@ export default function WebServicesPage() {
       {/* ── Mid CTA 3 ────────────────────────────────────────────────────────── */}
       <div className="bg-obsidian py-10 px-6 border-t border-steel-dark">
         <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-          <p className="chrome-text text-lg font-bold tracking-tight text-center sm:text-left">
-            Not sure which tier is right? We will help you figure it out.
+          <p className="chrome-text text-lg font-bold tracking-tight text-center sm:text-left whitespace-nowrap">
+            Not sure which tier fits your business?
           </p>
           <a
             href="#contact"
