@@ -141,6 +141,35 @@ body {
   background-clip: padding-box, border-box;
 }
 
+/* Dark chrome text — for use on light/white backgrounds */
+.chrome-text-dark {
+  background: linear-gradient(
+    135deg,
+    #2a2d30 0%,
+    #606366 20%,
+    #8a8d90 38%,
+    #3a3d40 52%,
+    #8a8d90 66%,
+    #2a2d30 82%,
+    #505356 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Chrome stage light — white card with chrome gradient border */
+.chrome-stage-light {
+  position: relative;
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(#ffffff, #ffffff),
+    linear-gradient(135deg, #4a4c4e 0%, #a0a3a6 25%, #d8dadc 50%, #a0a3a6 75%, #4a4c4e 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
 /* Carousel dot — active state chrome pill */
 .chrome-btn-dot {
   background: linear-gradient(

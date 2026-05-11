@@ -187,6 +187,184 @@ export default function ServicesPage() {
           </div>
         </section>
 
+        {/* ── Service Areas ── */}
+        <section
+          id="service-areas"
+          aria-labelledby="service-areas-heading"
+          className="border-t border-steel-dark bg-obsidian px-6 py-14"
+        >
+          <div className="max-w-7xl mx-auto flex flex-col gap-10">
+            <header className="flex flex-col gap-1">
+              <p className="text-steel text-[9px] tracking-[0.4em] uppercase">Coverage</p>
+              <h2
+                id="service-areas-heading"
+                className="text-wake text-lg font-bold tracking-tight"
+              >
+                Marinas &amp; Waterways We Serve
+              </h2>
+              <p className="text-steel text-xs max-w-xl leading-relaxed">
+                NorthWake Marine provides mobile marine services throughout the greater Jacksonville
+                area, from Amelia Island and Fernandina Beach to St. Augustine, Palm Coast, and
+                every marina and waterway in between.
+              </p>
+            </header>
+
+            <div className="grid md:grid-cols-3 gap-8">
+
+              {/* Marinas & Facilities */}
+              <div>
+                <p className="text-steel text-[9px] tracking-[0.3em] uppercase mb-4 border-b border-steel-dark pb-2">
+                  Marinas &amp; Facilities
+                </p>
+                <ul className="columns-2 gap-x-6 list-none space-y-1.5">
+                  {[
+                    "Port 32 Jax",
+                    "Queens Harbour Yacht and Country Club",
+                    "The Florida Yacht Club",
+                    "Ortega Yacht Club",
+                    "The Rudder Club",
+                    "Rod-N-Gun Club",
+                    "Harbortown Marina",
+                    "Marina San Pablo",
+                    "Mariners Pointe",
+                    "Arlington Marina",
+                    "Berkman Plaza Marina",
+                    "Yacht Harbor Marina",
+                    "River City Marina",
+                    "Venetian Marina",
+                    "Cedar River Marina",
+                    "Light House Marina",
+                    "Cats Paw Marina",
+                    "Seafarers Marina",
+                    "Bill Dye Marina",
+                    "Bulls Bay Marina",
+                    "Mandarin Holiday Marina",
+                    "Julington Creek Marina",
+                    "Julington Creek Pier 3",
+                    "Doctors Lake Marina",
+                    "Black Creek Marina",
+                    "Palm Cove Marina",
+                    "English Landing Marina",
+                    "Queens Harbor Marina",
+                    "Camachee Cove",
+                    "Marsh Landing Marina",
+                    "Hidden Harbor Marina",
+                    "San Sebastian Marina",
+                    "Beaches Marina Vilano",
+                    "Villages of Vilano Marina",
+                    "The Conch House Marina",
+                    "St. Augustine Municipal Marina",
+                    "St. Augustine Marine Center",
+                    "Oasis Boatyard",
+                    "Fish Island Marina",
+                    "Rivers Edge Marina",
+                    "Palm Coast Marina",
+                    "Hammock Dunes Club",
+                    "Huckins Yacht Corporation",
+                    "Lamb's Yacht Center",
+                    "Jacksonville Shipyard",
+                    "Marina at Ortega Landing",
+                    "Winward at Ortega River Marina",
+                    "Winward at Beach Marine",
+                    "Fernandina Beach Marina",
+                    "Amelia Island Yacht Basin",
+                    "The Bight Marina",
+                    "Green Cove Springs Municipal Marina",
+                    "Tiger Point Marina",
+                  ].map((name) => (
+                    <li key={name} className="text-steel text-[11px] leading-snug break-inside-avoid">
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Waterways & Inlets */}
+              <div>
+                <p className="text-steel text-[9px] tracking-[0.3em] uppercase mb-4 border-b border-steel-dark pb-2">
+                  Waterways &amp; Inlets
+                </p>
+                <ul className="columns-2 gap-x-6 list-none space-y-1.5">
+                  {[
+                    "St. Johns River",
+                    "Ortega River",
+                    "Trout River",
+                    "Ribault River",
+                    "Intercoastal Waterway",
+                    "Julington Creek",
+                    "Governors Creek",
+                    "Sisters Creek",
+                    "Browns Creek",
+                    "Mills Creek",
+                    "Pottsburg Creek",
+                    "Goodby's Creek",
+                    "Christopher Creek",
+                    "Durbin Creek",
+                    "Cedar River",
+                    "Black Creek",
+                    "Doctors Lake",
+                    "Amelia River",
+                    "Nassau River",
+                    "Nassau Sound",
+                    "Lofton Creek",
+                    "Egans Creek",
+                    "Blount Island",
+                    "Fort George Island",
+                    "Mayport Jetties",
+                    "Mill Cove",
+                    "Plumbers Cove",
+                    "Pineapple Point",
+                    "Racine Point",
+                    "Bayard Point",
+                  ].map((name) => (
+                    <li key={name} className="text-steel text-[11px] leading-snug break-inside-avoid">
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Communities */}
+              <div>
+                <p className="text-steel text-[9px] tracking-[0.3em] uppercase mb-4 border-b border-steel-dark pb-2">
+                  Communities &amp; Neighborhoods
+                </p>
+                <ul className="columns-2 gap-x-6 list-none space-y-1.5">
+                  {[
+                    "Jacksonville",
+                    "Mandarin",
+                    "Avondale",
+                    "Ortega",
+                    "San Marco",
+                    "Southside",
+                    "Fort Caroline",
+                    "Palm Valley",
+                    "Fruit Cove",
+                    "Orangedale",
+                    "St. Johns",
+                    "Jacksonville Beach",
+                    "Atlantic Beach",
+                    "Neptune Beach",
+                    "Ponte Vedra",
+                    "Mayport",
+                    "Orange Park",
+                    "Green Cove Springs",
+                    "St. Augustine",
+                    "Amelia Island",
+                    "Fernandina Beach",
+                    "Palm Coast",
+                  ].map((name) => (
+                    <li key={name} className="text-steel text-[11px] leading-snug break-inside-avoid">
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <Footer />

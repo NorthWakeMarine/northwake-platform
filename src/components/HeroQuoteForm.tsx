@@ -8,11 +8,11 @@ import { trackFormStart, trackFormSubmit, trackFormSuccess, trackFormError } fro
 import { clientConfig } from "@/config/client";
 
 const inputCls =
-  "bg-obsidian/60 border border-steel-dark text-wake placeholder-steel-light/50 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 peer [&:user-invalid]:border-red-500";
+  "bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400/70 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 peer [&:user-invalid]:border-red-500";
 const selectCls =
-  "bg-obsidian border border-steel-dark text-wake text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer peer [&:user-invalid]:border-red-500";
+  "bg-white border border-gray-300 text-gray-900 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer peer [&:user-invalid]:border-red-500";
 const fieldErr =
-  "hidden peer-[&:user-invalid]:block text-red-400 text-[9px] tracking-wide mt-0.5";
+  "hidden peer-[&:user-invalid]:block text-red-600 text-[9px] tracking-wide mt-0.5";
 
 function Spinner() {
   return (
@@ -80,16 +80,16 @@ export default function HeroQuoteForm() {
     trackFormSuccess("hero_quote_form");
     return (
       <div className="flex flex-col items-center justify-center gap-5 py-10 text-center">
-        <span aria-hidden="true" className="chrome-text text-3xl">◈</span>
-        <h3 className="text-wake text-lg font-bold tracking-tight">
+        <span aria-hidden="true" className="chrome-text-dark text-3xl">◈</span>
+        <h3 className="text-gray-900 text-lg font-bold tracking-tight">
           Request Received
         </h3>
-        <p className="text-steel-light text-xs leading-relaxed max-w-xs">
+        <p className="text-gray-600 text-xs leading-relaxed max-w-xs">
           Thank you. Our team will review your request and be in touch shortly.
         </p>
         <a
           href={`tel:${clientConfig.phoneE164}`}
-          className="text-link text-xs hover:text-wake transition-colors tracking-wide"
+          className="text-navy text-xs hover:text-navy-dark transition-colors tracking-wide"
         >
           {clientConfig.phone}
         </a>
@@ -111,15 +111,15 @@ export default function HeroQuoteForm() {
       <input type="hidden" name="source" value="hero" />
 
       {state.error && (
-        <div role="alert" className="border border-red-900/60 bg-red-950/20 px-3 py-2">
-          <p className="text-red-400 text-[10px] tracking-wide">{state.error}</p>
+        <div role="alert" className="border border-red-300 bg-red-50 px-3 py-2">
+          <p className="text-red-600 text-[10px] tracking-wide">{state.error}</p>
         </div>
       )}
 
       {/* Row: Full Name + Email */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-name" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-name" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
             Full Name <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-name" name="name" type="text" required autoComplete="name" placeholder="John Harrington"
@@ -127,7 +127,7 @@ export default function HeroQuoteForm() {
           <span className={fieldErr}>Please enter your full name.</span>
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-email" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-email" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
             Email <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-email" name="email" type="email" required autoComplete="email" placeholder="john@example.com"
@@ -139,7 +139,7 @@ export default function HeroQuoteForm() {
       {/* Row: Phone + Vessel Length */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-phone" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-phone" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
             Phone <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-phone" name="phone" type="tel" required autoComplete="tel" placeholder={clientConfig.phone}
@@ -147,7 +147,7 @@ export default function HeroQuoteForm() {
           <span className={fieldErr}>Please enter your phone number.</span>
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-vessel-length" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-vessel-length" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
             Vessel Length (ft) <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input id="hero-vessel-length" name="vessel_length" type="text" required placeholder="e.g. 28"
@@ -159,27 +159,27 @@ export default function HeroQuoteForm() {
       {/* Row: Vessel Type + Service Needed */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-vessel" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-vessel" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
             Vessel Type <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <select id="hero-vessel" name="vessel_type" required defaultValue=""
             className={selectCls}>
             <option value="" disabled className="text-steel">Select type…</option>
             {["Center Console","Bowrider","Pontoon","Cruiser","Motor Yacht","Sailboat","Sport Fishing","Other"].map(v => (
-              <option key={v} value={v} className="bg-obsidian text-wake">{v}</option>
+              <option key={v} value={v} className="bg-white text-gray-900">{v}</option>
             ))}
           </select>
           <span className={fieldErr}>Please select a vessel type.</span>
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="hero-service" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
+          <label htmlFor="hero-service" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
             Service Needed <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <select id="hero-service" name="service" required defaultValue=""
             className={selectCls}>
             <option value="" disabled className="text-steel">Select service…</option>
             {["Maintenance Wash","One-Off Wash","Full Detail","Exterior Detailing","Interior Cleaning & Cabin Detailing","Canvas Cleaning & Treatment","Vinyl & Upholstery Conditioning","Teak Cleaning & Brightening","Stainless Polish","Engine Bay & Bilge Cleaning","Water Spot & Mineral Deposit Removal","Ceramic Coating","Wax Application","Gel Coat Restoration","Monthly Maintenance Plan","Marine Transport","Captain & Crew Services","Yacht Management","Custom Request","Not Sure, Need Consultation"].map(s => (
-              <option key={s} value={s} className="bg-obsidian text-wake">{s}</option>
+              <option key={s} value={s} className="bg-white text-gray-900">{s}</option>
             ))}
           </select>
           <span className={fieldErr}>Please select a service.</span>
@@ -188,35 +188,35 @@ export default function HeroQuoteForm() {
 
       {/* Referral */}
       <div className="flex flex-col gap-1">
-        <label htmlFor="hero-referral" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
+        <label htmlFor="hero-referral" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
           How Did You Hear About Us?
         </label>
         <select id="hero-referral" name="referral_source" defaultValue=""
           className={selectCls}>
           <option value="" className="text-steel">Prefer not to say</option>
           {["Google Search","Google Maps","Instagram","Facebook","TikTok","Friend / Word of Mouth","Boat Show","Marina Referral","Other"].map(r => (
-            <option key={r} value={r} className="bg-obsidian text-wake">{r}</option>
+            <option key={r} value={r} className="bg-white text-gray-900">{r}</option>
           ))}
         </select>
       </div>
 
       {/* Additional details */}
       <div className="flex flex-col gap-1">
-        <label htmlFor="hero-comments" className="text-steel-light text-[10px] tracking-[0.25em] uppercase">
+        <label htmlFor="hero-comments" className="text-gray-500 text-[10px] tracking-[0.25em] uppercase">
           Additional Details
         </label>
         <textarea id="hero-comments" name="comments" rows={2}
           placeholder="Vessel length, condition, preferred dates…"
-          className="bg-obsidian/60 border border-steel-dark text-wake placeholder-steel-light/50 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 resize-none" />
+          className="bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400/70 text-xs px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 resize-none" />
       </div>
 
       {/* Terms */}
       <label className="flex items-start gap-2.5 cursor-pointer">
         <input type="checkbox" name="terms" required
-          className="mt-0.5 w-3 h-3 border border-steel-dark bg-obsidian/60 accent-navy shrink-0 cursor-pointer peer" />
-        <span className="text-steel-light text-[10px] leading-relaxed">
+          className="mt-0.5 w-3 h-3 border border-gray-300 bg-gray-50 accent-navy shrink-0 cursor-pointer peer" />
+        <span className="text-gray-500 text-[10px] leading-relaxed">
           I agree to the{" "}
-          <Link href="/terms" target="_blank" className="text-link hover:text-wake transition-colors underline underline-offset-2">
+          <Link href="/terms" target="_blank" className="text-navy hover:text-navy-dark transition-colors underline underline-offset-2">
             terms &amp; conditions
           </Link>
           . By providing my phone number I agree to receive communications from {clientConfig.companyName}.

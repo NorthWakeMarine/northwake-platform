@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
       { source: "/services.html", destination: "/services", permanent: true },
       { source: "/about-us.html", destination: "/about", permanent: true },
       { source: "/Contact-Us", destination: "/contact", permanent: true },
+      { source: "/contact-us.html", destination: "/contact", permanent: true },
+      { source: "/contact-us", destination: "/contact", permanent: true },
       { source: "/:path*.php", destination: "/", permanent: true },
       { source: "/:path*.asp", destination: "/", permanent: true },
     ];
