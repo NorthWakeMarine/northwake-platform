@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { clientConfig } from "@/config/client";
 import WebServicesForm from "./WebServicesForm";
 
@@ -238,6 +239,7 @@ export default function WebServicesPage() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <section
+        aria-labelledby="hero-heading"
         className="relative bg-obsidian overflow-hidden pt-36 pb-24 px-6"
         style={{
           backgroundImage: "radial-gradient(circle, rgba(0,0,128,0.18) 1px, transparent 1px)",
@@ -245,10 +247,16 @@ export default function WebServicesPage() {
         }}
       >
         <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-6">
+          <Link
+            href="/"
+            className="text-steel text-xs tracking-[0.2em] uppercase hover:text-steel-light transition-colors duration-200 flex items-center gap-1.5"
+          >
+            <span aria-hidden="true">←</span> Back to NorthWake Marine
+          </Link>
           <p className="text-xs tracking-[0.4em] uppercase text-steel-light">
             Marine &nbsp;·&nbsp; Automotive &nbsp;·&nbsp; Aviation
           </p>
-          <h1 className="chrome-text text-5xl lg:text-6xl font-bold tracking-tight leading-none">
+          <h1 id="hero-heading" className="chrome-text text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-none">
             Like our website?<br />
             <span className="text-wake">We built it. We can build yours.</span>
           </h1>
@@ -286,11 +294,11 @@ export default function WebServicesPage() {
       </section>
 
       {/* ── Who it's for ─────────────────────────────────────────────────────── */}
-      <section className="bg-white py-20 px-6">
+      <section aria-labelledby="for-heading" className="bg-white py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Who we build for</p>
-            <h2 className="chrome-text-dark text-4xl font-bold tracking-tight">Built for your industry</h2>
+            <h2 id="for-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Built for your industry</h2>
             <p className="text-gray-600 text-sm mt-3 max-w-xl mx-auto leading-relaxed">
               Generic website builders know nothing about how your clients find you, how your jobs are booked,
               or what makes a service business grow. We do.
@@ -331,11 +339,11 @@ export default function WebServicesPage() {
       </section>
 
       {/* ── The problem ──────────────────────────────────────────────────────── */}
-      <section className="bg-gray-50 py-20 px-6">
+      <section aria-labelledby="problem-heading" className="bg-gray-50 py-20 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="mb-10">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">The real problem</p>
-            <h2 className="chrome-text-dark text-4xl font-bold tracking-tight max-w-2xl">
+            <h2 id="problem-heading" className="chrome-text-dark text-4xl font-bold tracking-tight max-w-2xl">
               Your next client is searching right now. Are they finding you or your competitor?
             </h2>
           </div>
@@ -377,12 +385,27 @@ export default function WebServicesPage() {
         </div>
       </section>
 
+      {/* ── Mid CTA 1 ────────────────────────────────────────────────────────── */}
+      <div className="bg-navy py-10 px-6">
+        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+          <p className="chrome-text text-lg font-bold tracking-tight text-center sm:text-left">
+            Ready to stop losing leads to competitors?
+          </p>
+          <a
+            href="#contact"
+            className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-8 py-3.5 transition-all duration-300 hover:scale-105 whitespace-nowrap"
+          >
+            Get in Touch
+          </a>
+        </div>
+      </div>
+
       {/* ── CRM deep dive ────────────────────────────────────────────────────── */}
-      <section className="bg-white py-20 px-6 border-t border-gray-100">
+      <section aria-labelledby="crm-heading" className="bg-white py-20 px-6 border-t border-gray-100">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-14 items-start">
           <div>
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">The CRM</p>
-            <h2 className="chrome-text-dark text-3xl font-bold tracking-tight mb-5">
+            <h2 id="crm-heading" className="chrome-text-dark text-3xl font-bold tracking-tight mb-5">
               Every lead tracked. Every client remembered.
             </h2>
             <div className="flex flex-col gap-4 text-gray-700 text-sm leading-relaxed">
@@ -421,12 +444,28 @@ export default function WebServicesPage() {
         </div>
       </section>
 
+      {/* ── Mid CTA 2 ────────────────────────────────────────────────────────── */}
+      <div className="bg-gray-50 py-10 px-6 border-t border-gray-100">
+        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div>
+            <p className="font-bold text-sm text-gray-900">See the CRM in action before you commit.</p>
+            <p className="text-xs text-gray-500 mt-0.5">Drop us a line and we will walk you through a live demo.</p>
+          </div>
+          <a
+            href="#contact"
+            className="border border-gray-500 text-gray-700 text-xs font-semibold tracking-[0.3em] uppercase px-8 py-3.5 hover:border-navy hover:text-navy transition-colors duration-200 whitespace-nowrap"
+          >
+            Start a Conversation
+          </a>
+        </div>
+      </div>
+
       {/* ── SEO deep dive ────────────────────────────────────────────────────── */}
-      <section className="bg-obsidian py-20 px-6 border-t border-steel-dark">
+      <section aria-labelledby="seo-heading" className="bg-obsidian py-20 px-6 border-t border-steel-dark">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-14 items-start">
           <div>
             <p className="text-xs tracking-[0.4em] uppercase text-steel mb-3">Search and AI SEO</p>
-            <h2 className="chrome-text text-3xl font-bold tracking-tight mb-5">
+            <h2 id="seo-heading" className="chrome-text text-3xl font-bold tracking-tight mb-5">
               Built to rank on Google and in AI search results.
             </h2>
             <div className="flex flex-col gap-4 text-steel-light text-sm leading-relaxed">
@@ -468,11 +507,11 @@ export default function WebServicesPage() {
       </section>
 
       {/* ── Integrations deep dive ───────────────────────────────────────────── */}
-      <section className="bg-gray-50 py-20 px-6">
+      <section aria-labelledby="integrations-heading" className="bg-gray-50 py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Integrations</p>
-            <h2 className="chrome-text-dark text-4xl font-bold tracking-tight">Your website connects to your whole business</h2>
+            <h2 id="integrations-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Your website connects to your whole business</h2>
             <p className="text-gray-600 text-sm mt-3 max-w-2xl mx-auto leading-relaxed">
               A website that does not talk to your other tools creates work. Every integration we build
               eliminates a manual step you are doing right now.
@@ -512,11 +551,11 @@ export default function WebServicesPage() {
       </section>
 
       {/* ── Feature grid ─────────────────────────────────────────────────────── */}
-      <section className="bg-white py-20 px-6 border-t border-gray-100">
+      <section aria-labelledby="features-heading" className="bg-white py-20 px-6 border-t border-gray-100">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Everything included</p>
-            <h2 className="chrome-text-dark text-4xl font-bold tracking-tight">
+            <h2 id="features-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">
               The details that separate a real platform from a brochure
             </h2>
           </div>
@@ -532,12 +571,27 @@ export default function WebServicesPage() {
         </div>
       </section>
 
+      {/* ── Mid CTA 3 ────────────────────────────────────────────────────────── */}
+      <div className="bg-obsidian py-10 px-6 border-t border-steel-dark">
+        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+          <p className="chrome-text text-lg font-bold tracking-tight text-center sm:text-left">
+            Not sure which tier is right? We will help you figure it out.
+          </p>
+          <a
+            href="#contact"
+            className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-8 py-3.5 transition-all duration-300 hover:scale-105 whitespace-nowrap"
+          >
+            Talk to Us
+          </a>
+        </div>
+      </div>
+
       {/* ── Pricing ───────────────────────────────────────────────────────────── */}
-      <section id="pricing" className="bg-gray-50 py-20 px-6 border-t border-gray-100">
+      <section id="pricing" aria-labelledby="pricing-heading" className="bg-gray-50 py-20 px-6 border-t border-gray-100">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Pricing</p>
-            <h2 className="chrome-text-dark text-4xl font-bold tracking-tight">Three tiers. No surprises.</h2>
+            <h2 id="pricing-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Three tiers. No surprises.</h2>
             <p className="text-gray-600 text-sm mt-3 max-w-xl mx-auto">
               No contracts. No lock-in. Cancel any time. Setup fee covers build and launch.
               Monthly covers hosting, support, and updates.
@@ -598,11 +652,11 @@ export default function WebServicesPage() {
       </section>
 
       {/* ── Add-ons ───────────────────────────────────────────────────────────── */}
-      <section className="bg-white py-16 px-6 border-t border-gray-100">
+      <section aria-labelledby="addons-heading" className="bg-white py-16 px-6 border-t border-gray-100">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Add-ons</p>
-            <h2 className="chrome-text-dark text-3xl font-bold tracking-tight">Available on any tier</h2>
+            <h2 id="addons-heading" className="chrome-text-dark text-3xl font-bold tracking-tight">Available on any tier</h2>
             <p className="text-gray-600 text-sm mt-2 max-w-lg mx-auto">
               One-time additions you can bolt onto any tier at any time, during the build or after launch.
             </p>
@@ -624,11 +678,11 @@ export default function WebServicesPage() {
       </section>
 
       {/* ── VS comparison ────────────────────────────────────────────────────── */}
-      <section className="bg-gray-50 py-20 px-6 border-t border-gray-100">
+      <section aria-labelledby="vs-heading" className="bg-gray-50 py-20 px-6 border-t border-gray-100">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Why not the alternatives</p>
-            <h2 className="chrome-text-dark text-4xl font-bold tracking-tight">
+            <h2 id="vs-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">
               We have looked at what else is out there
             </h2>
             <p className="text-gray-600 text-sm mt-3 max-w-xl mx-auto leading-relaxed">
@@ -653,32 +707,34 @@ export default function WebServicesPage() {
           </div>
 
           {/* Feature comparison table */}
-          <div className="border border-gray-200 overflow-hidden">
-            <div className="grid grid-cols-3 bg-navy px-6 py-3">
-              <span className="text-xs tracking-[0.2em] uppercase text-white">Feature</span>
-              <span className="text-xs tracking-[0.2em] uppercase text-white text-center">Our Platform</span>
-              <span className="text-xs tracking-[0.2em] uppercase text-white/60 text-center">Typical Agency</span>
-            </div>
-            {comparisons.map((row, i) => (
-              <div
-                key={row.label}
-                className={`grid grid-cols-3 px-6 py-3.5 border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-              >
-                <span className="text-xs text-gray-700">{row.label}</span>
-                <span className="text-xs text-navy text-center font-semibold">{row.us}</span>
-                <span className="text-xs text-gray-400 text-center">{row.them}</span>
+          <div className="border border-gray-200 overflow-x-auto">
+            <div className="min-w-[480px]">
+              <div className="grid grid-cols-3 bg-navy px-6 py-3">
+                <span className="text-xs tracking-[0.2em] uppercase text-white">Feature</span>
+                <span className="text-xs tracking-[0.2em] uppercase text-white text-center">Our Platform</span>
+                <span className="text-xs tracking-[0.2em] uppercase text-white/60 text-center">Typical Agency</span>
               </div>
-            ))}
+              {comparisons.map((row, i) => (
+                <div
+                  key={row.label}
+                  className={`grid grid-cols-3 px-6 py-3.5 border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                >
+                  <span className="text-xs text-gray-700">{row.label}</span>
+                  <span className="text-xs text-navy text-center font-semibold">{row.us}</span>
+                  <span className="text-xs text-gray-400 text-center">{row.them}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── How it works ─────────────────────────────────────────────────────── */}
-      <section className="bg-obsidian py-20 px-6 border-t border-steel-dark">
+      <section aria-labelledby="process-heading" className="bg-obsidian py-20 px-6 border-t border-steel-dark">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs tracking-[0.4em] uppercase text-steel mb-3">The process</p>
-            <h2 className="chrome-text text-4xl font-bold tracking-tight">From inquiry to live in three steps</h2>
+            <h2 id="process-heading" className="chrome-text text-4xl font-bold tracking-tight">From inquiry to live in three steps</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -709,11 +765,11 @@ export default function WebServicesPage() {
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
-      <section className="bg-white py-20 px-6">
+      <section aria-labelledby="faq-heading" className="bg-white py-20 px-6">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Common questions</p>
-            <h2 className="chrome-text-dark text-4xl font-bold tracking-tight">Answered honestly</h2>
+            <h2 id="faq-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Answered honestly</h2>
           </div>
           <div className="flex flex-col divide-y divide-gray-100">
             {faqs.map((faq) => (
@@ -726,12 +782,31 @@ export default function WebServicesPage() {
         </div>
       </section>
 
+      {/* ── Mid CTA 4 ────────────────────────────────────────────────────────── */}
+      <div className="bg-navy py-12 px-6 border-t border-navy/50">
+        <div className="max-w-3xl mx-auto text-center flex flex-col items-center gap-5">
+          <p className="chrome-text text-2xl font-bold tracking-tight">
+            Still have questions? Just ask.
+          </p>
+          <p className="text-steel-light text-sm max-w-lg leading-relaxed">
+            Fill out the form below or call us directly. No sales pitch,
+            no commitment, just a straight answer about whether this is the right fit for your business.
+          </p>
+          <a
+            href="#contact"
+            className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-10 py-3.5 transition-all duration-300 hover:scale-105"
+          >
+            Get in Touch
+          </a>
+        </div>
+      </div>
+
       {/* ── Contact form ─────────────────────────────────────────────────────── */}
-      <section id="contact" className="bg-gray-50 py-20 px-6 border-t border-gray-100">
+      <section id="contact" aria-labelledby="contact-heading" className="bg-gray-50 py-20 px-6 border-t border-gray-100">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Get started</p>
-            <h2 className="chrome-text-dark text-4xl font-bold tracking-tight">Let us build yours</h2>
+            <h2 id="contact-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Let us build yours</h2>
             <p className="text-gray-600 text-sm mt-3 leading-relaxed">
               Tell us about your business and the tier you are interested in.
               We will follow up within one business day with next steps.
