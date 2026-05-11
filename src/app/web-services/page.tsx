@@ -63,7 +63,7 @@ const tiers = [
   {
     name: "Launch",
     price: "$499",
-    monthly: "$49/mo",
+    monthly: "$49/mo — hosting, unlimited edits, support",
     tagline: "A high-performance landing site that generates leads and ranks on Google.",
     badge: null,
     includes: [
@@ -83,7 +83,7 @@ const tiers = [
   {
     name: "Platform",
     price: "$999",
-    monthly: "$99/mo",
+    monthly: "$99/mo — hosting, unlimited edits, support",
     tagline: "Everything in Launch, plus a full CRM and the integrations that run your business.",
     badge: "Most Popular",
     includes: [
@@ -103,7 +103,7 @@ const tiers = [
   {
     name: "Command",
     price: "$1,499",
-    monthly: "$149/mo",
+    monthly: "$149/mo — hosting, unlimited edits, priority support",
     tagline: "The complete platform, with call logging, AI-optimized SEO, and location pages.",
     badge: null,
     includes: [
@@ -146,8 +146,11 @@ const addons = [
 
 const comparisons = [
   { label: "Setup fee", us: "$499-$1,499", them: "$3,000-$5,000+" },
-  { label: "Monthly", us: "$49-$149", them: "$150-$400 (site only)" },
-  { label: "CRM included", us: "Yes, full pipeline", them: "No" },
+  { label: "Monthly (site only)", us: "N/A — CRM included", them: "$150-$450/mo" },
+  { label: "Monthly (our all-in price)", us: "$49-$149/mo", them: "Not offered" },
+  { label: "Full CRM included", us: "Yes, full pipeline", them: "No — sold separately" },
+  { label: "Unlimited edits", us: "Included every month", them: "Hourly billing" },
+  { label: "One client per market", us: "Always", them: "Rarely enforced" },
   { label: "Calendar sync", us: "Two-way, real time", them: "No" },
   { label: "Accounting integration", us: "Auto-creates customers", them: "No" },
   { label: "VoIP call logging", us: "Auto-logged to contacts", them: "No" },
@@ -270,7 +273,7 @@ export default function WebServicesPage() {
               See Pricing
             </a>
             <a href="#contact" className="border border-steel text-steel-light text-xs font-semibold tracking-[0.3em] uppercase px-8 py-3.5 hover:border-wake hover:text-wake transition-colors duration-300">
-              Get in Touch
+              Book a Free Strategy Call
             </a>
           </div>
         </div>
@@ -581,7 +584,7 @@ export default function WebServicesPage() {
             href="#contact"
             className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-8 py-3.5 transition-all duration-300 hover:scale-105 whitespace-nowrap"
           >
-            Talk to Us
+            Book a Free Strategy Call
           </a>
         </div>
       </div>
@@ -593,9 +596,15 @@ export default function WebServicesPage() {
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Pricing</p>
             <h2 id="pricing-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Three tiers. No surprises.</h2>
             <p className="text-gray-600 text-sm mt-3 max-w-xl mx-auto">
-              No contracts. No lock-in. Cancel any time. Setup fee covers build and launch.
-              Monthly covers hosting, support, and updates.
+              Setup fee covers build and launch. Monthly covers hosting, unlimited edits, support, and updates.
             </p>
+            <div className="flex flex-wrap justify-center gap-3 mt-5">
+              {["No contracts", "Cancel any time", "One client per market"].map((badge) => (
+                <span key={badge} className="border border-navy text-navy text-[10px] font-semibold tracking-[0.2em] uppercase px-3 py-1.5">
+                  {badge}
+                </span>
+              ))}
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {tiers.map((tier) => (
@@ -706,6 +715,14 @@ export default function WebServicesPage() {
             ))}
           </div>
 
+          {/* Price callout */}
+          <div className="bg-navy/5 border border-navy/20 px-6 py-5 mb-6 text-center">
+            <p className="text-sm text-gray-900 font-semibold leading-relaxed">
+              The closest competitor charges <span className="text-navy font-bold">$150-$450/mo for a website alone</span>, no CRM, no integrations, no pipeline.
+              Our all-in Platform tier is <span className="text-navy font-bold">$99/mo</span> and includes everything.
+            </p>
+          </div>
+
           {/* Feature comparison table */}
           <div className="border border-gray-200 overflow-x-auto">
             <div className="min-w-[480px]">
@@ -796,7 +813,7 @@ export default function WebServicesPage() {
             href="#contact"
             className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-10 py-3.5 transition-all duration-300 hover:scale-105"
           >
-            Get in Touch
+            Book a Free Strategy Call
           </a>
         </div>
       </div>
