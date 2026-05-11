@@ -142,6 +142,11 @@ const addons = [
     price: "+$149 per round",
     body: "Need more back-and-forth on the design? Add revision rounds at any time during or after the build.",
   },
+  {
+    title: "AI Phone Receptionist",
+    price: "+$249/mo",
+    body: "An AI agent answers every call 24/7, books appointments directly to your calendar, and logs every caller as a lead in your CRM. You stop missing calls while you are on a job. Setup takes under 10 minutes.",
+  },
 ];
 
 const comparisons = [
@@ -158,6 +163,7 @@ const comparisons = [
   { label: "Accessibility", us: "WCAG 2.1 AA compliant", them: "Rarely tested" },
   { label: "Structured data", us: "Full JSON-LD suite", them: "Basic or none" },
   { label: "Data isolation", us: "Your own database", them: "Shared hosting" },
+  { label: "AI phone receptionist", us: "Available add-on", them: "Not offered" },
 ];
 
 const vsOptions = [

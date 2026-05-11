@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Receptionist — Client Fulfillment Runbook</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: #fff;
+      padding: 40px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .doc-header {
+      border-bottom: 3px solid #000080;
+      padding-bottom: 20px;
+      margin-bottom: 32px;
+    }
+    .doc-header .label {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 6px;
+    }
+    .doc-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #000080;
+      letter-spacing: -0.5px;
+    }
+    .doc-header .subtitle {
+      font-size: 13px;
+      color: #444;
+      margin-top: 6px;
+    }
+    .doc-header .meta {
+      display: flex;
+      gap: 24px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .doc-header .meta span {
+      font-size: 11px;
+      color: #555;
+      background: #f4f4f4;
+      border: 1px solid #e0e0e0;
+      padding: 3px 10px;
+      border-radius: 2px;
+    }
+    .doc-header .meta span strong { color: #000080; }
+
+    /* ── Section titles ── */
+    h2 {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #000080;
+      margin-top: 36px;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    h3 {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #333;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+
+    /* ── Phase blocks ── */
+    .phase {
+      border-left: 3px solid #000080;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      background: #fafafa;
+      page-break-inside: avoid;
+    }
+    .phase-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .phase-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: #000080;
+      line-height: 1;
+      min-width: 28px;
+    }
+    .phase-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+    .phase-time {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #888;
+      margin-left: auto;
+    }
+
+    /* ── Checklist ── */
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 12.5px;
+      color: #222;
+    }
+    .checklist li .box {
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid #666;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .checklist li .note {
+      font-size: 11px;
+      color: #666;
+      font-style: italic;
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* ── Info boxes ── */
+    .info-box {
+      border: 1px solid #c8d8f0;
+      background: #f0f5ff;
+      padding: 12px 16px;
+      margin: 14px 0;
+      font-size: 12px;
+      color: #1a3a6e;
+    }
+    .info-box strong { color: #000080; }
+
+    .warn-box {
+      border: 1px solid #f0c060;
+      background: #fffbee;
+      padding: 12px 16px;
+      margin: 14px 0;
+      font-size: 12px;
+      color: #6b4c00;
+    }
+    .warn-box strong { color: #8a5c00; }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 12px;
+    }
+    th {
+      background: #000080;
+      color: #fff;
+      text-align: left;
+      padding: 7px 12px;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 7px 12px;
+      border-bottom: 1px solid #e8e8e8;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #f8f8f8; }
+    td code {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 11px;
+      background: #eee;
+      padding: 1px 5px;
+      border-radius: 2px;
+    }
+
+    /* ── Script blocks ── */
+    .script {
+      background: #1a1a2e;
+      color: #e0e8ff;
+      padding: 14px 18px;
+      margin: 12px 0;
+      font-size: 12px;
+      line-height: 1.7;
+      border-left: 3px solid #000080;
+    }
+    .script .label {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #6688cc;
+      margin-bottom: 8px;
+    }
+
+    /* ── Two column ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 14px 0;
+    }
+    .col-block {
+      border: 1px solid #e0e0e0;
+      padding: 12px 14px;
+    }
+    .col-block h4 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #000080;
+      margin-bottom: 8px;
+    }
+    .col-block ul {
+      padding-left: 14px;
+      font-size: 12px;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* ── Print ── */
+    @media print {
+      body { padding: 20px; font-size: 12px; }
+      .phase { page-break-inside: avoid; }
+      h2 { page-break-after: avoid; }
+      @page { margin: 1.2cm 1.5cm; size: letter; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="doc-header">
+    <div class="label">NorthWake Marine — Internal Operations</div>
+    <h1>AI Receptionist — Client Fulfillment Runbook</h1>
+    <div class="subtitle">Step-by-step process from first inquiry to live AI agent for a paying client.</div>
+    <div class="meta">
+      <span><strong>Price:</strong> +$249/mo recurring</span>
+      <span><strong>Setup time:</strong> 3-5 hours total</span>
+      <span><strong>Go-live target:</strong> Same day or next day</span>
+      <span><strong>Dependencies:</strong> Existing CRM + Google Calendar</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <h2>What You Are Setting Up</h2>
+
+  <p style="margin-bottom:10px; font-size:13px; color:#333;">
+    A Vapi.ai voice agent connected to the client's forwarded phone number. When someone calls,
+    the AI answers in under 2 seconds, handles FAQs, books appointments to the client's Google Calendar,
+    and logs every caller as a lead in their CRM automatically. You are the builder and operator.
+    The client just forwards their number and logs into the CRM they already have.
+  </p>
+
+  <div class="two-col">
+    <div class="col-block">
+      <h4>What you need from the client</h4>
+      <ul>
+        <li>Business name and phone number to forward</li>
+        <li>Services list with pricing (or ranges)</li>
+        <li>Hours of operation</li>
+        <li>Booking link or calendar access (already set up for CRM clients)</li>
+        <li>Any FAQs they get asked constantly</li>
+        <li>Preferred AI voice tone (professional, friendly, etc.)</li>
+      </ul>
+    </div>
+    <div class="col-block">
+      <h4>What you will set up</h4>
+      <ul>
+        <li>Vapi.ai account and assistant configuration</li>
+        <li>Phone number via Twilio (~$1/mo)</li>
+        <li>System prompt generated from client info</li>
+        <li>Google Calendar booking action in Vapi</li>
+        <li>Webhook to client's Supabase leads table</li>
+        <li>End-to-end call test before go-live</li>
+      </ul>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Account/Service</th><th>Where to sign up</th><th>Approx. cost</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Vapi.ai</td><td>vapi.ai</td><td>$0.05-0.10/min usage</td><td>One account, one assistant per client</td></tr>
+      <tr><td>Twilio</td><td>twilio.com</td><td>$1/mo + $0.0085/min</td><td>Provides the phone number that gets forwarded to</td></tr>
+      <tr><td>Supabase</td><td>Already set up per client</td><td>$0</td><td>Webhook logs to existing leads table</td></tr>
+      <tr><td>Google Calendar</td><td>Already set up per client</td><td>$0</td><td>Vapi has native GCal booking action</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn-box">
+    <strong>Before you start:</strong> Do not create Vapi or Twilio accounts until the client has paid their first month. Collect the $249 first. These accounts cost nothing until a call is made, but there is no reason to set up infrastructure speculatively.
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <h2>Phase 1: Qualification and Intake</h2>
+  <p style="margin-bottom:12px; font-size:12px; color:#555;">When an inquiry comes in asking about the AI Receptionist add-on, do this before any technical work.</p>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">1</div>
+      <div class="phase-title">Qualify the inquiry on a quick call (15 min)</div>
+      <div class="phase-time">15 min</div>
+    </div>
+    <ul class="checklist">
+      <li><div class="box"></div><span>Confirm they are an existing web client or want to bundle with a site tier</span></li>
+      <li><div class="box"></div><span>Ask: how many inbound calls do you miss per week?
+        <span class="note">If the answer is zero, the value prop is weak. This is for businesses who are on the job and genuinely miss calls.</span>
+      </span></li>
+      <li><div class="box"></div><span>Ask: do you use Google Calendar for scheduling?
+        <span class="note">If no, ask what they use. Vapi can also send a booking link via SMS instead of direct calendar booking.</span>
+      </span></li>
+      <li><div class="box"></div><span>Confirm they understand this is an AI, not a human. Some clients have concerns.
+        <span class="note">Framing: "It answers like a knowledgeable assistant who knows your full service menu and your schedule. Most callers don't notice."</span>
+      </span></li>
+      <li><div class="box"></div><span>Confirm pricing: $249/mo recurring, billed same day as their other services</span></li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">2</div>
+      <div class="phase-title">Collect intake information (async — send a short form or email)</div>
+      <div class="phase-time">Client fills out</div>
+    </div>
+    <ul class="checklist">
+      <li><div class="box"></div><span>Business name and primary phone number (the one customers call)</span></li>
+      <li><div class="box"></div><span>Full services list with prices or price ranges</span></li>
+      <li><div class="box"></div><span>Hours: days open, hours open, holiday policy</span></li>
+      <li><div class="box"></div><span>Top 5 questions callers ask most often, with the correct answers</span></li>
+      <li><div class="box"></div><span>What should happen if the AI cannot answer something?
+        <span class="note">Options: "Tell caller you will call back within X hours" or "Transfer to your cell number"</span>
+      </span></li>
+      <li><div class="box"></div><span>Voice preference: professional and formal, or friendly and casual?</span></li>
+      <li><div class="box"></div><span>Preferred agent name (default: "Hi, thanks for calling [Business Name]" — no fake name needed)</span></li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">3</div>
+      <div class="phase-title">Collect first payment before building</div>
+      <div class="phase-time">Before any setup</div>
+    </div>
+    <ul class="checklist">
+      <li><div class="box"></div><span>Send QuickBooks invoice for first month ($249)</span></li>
+      <li><div class="box"></div><span>Add to their recurring invoice going forward</span></li>
+      <li><div class="box"></div><span>Do not begin Phase 2 until payment clears</span></li>
+    </ul>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <h2>Phase 2: Infrastructure Setup</h2>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">4</div>
+      <div class="phase-title">Create Vapi.ai assistant</div>
+      <div class="phase-time">45-60 min</div>
+    </div>
+
+    <div class="info-box">
+      <strong>One Vapi account, multiple assistants.</strong> You manage one Vapi account for all clients. Each client gets their own assistant configuration. Usage is billed to your Vapi account and rolled into the $249 charge.
+    </div>
+
+    <ul class="checklist">
+      <li><div class="box"></div><span>Log into vapi.ai, create a new Assistant</span></li>
+      <li><div class="box"></div><span>Set the model to GPT-4o or Claude (either works; GPT-4o has lower latency for voice)</span></li>
+      <li><div class="box"></div><span>Choose a voice — Vapi has 50+ options. Pick one that matches the tone the client requested.</span></li>
+      <li><div class="box"></div><span>Write the system prompt (see template below)</span></li>
+      <li><div class="box"></div><span>Set max call duration (recommend 8 minutes — prevents runaway calls)</span></li>
+      <li><div class="box"></div><span>Enable call transcription (Deepgram, included in Vapi)</span></li>
+    </ul>
+
+    <div class="script">
+      <div class="label">System Prompt Template — fill in [BRACKETS]</div>
+      You are the AI phone receptionist for [BUSINESS NAME], a [INDUSTRY TYPE] service business in [CITY, STATE].
+
+Your job is to answer calls professionally, answer questions about services and pricing, and book appointments.
+
+BUSINESS HOURS: [DAYS AND HOURS]
+
+SERVICES AND PRICING:
+[LIST EACH SERVICE AND PRICE/RANGE]
+
+FREQUENTLY ASKED QUESTIONS:
+[LIST EACH Q AND A]
+
+BOOKING:
+When a caller wants to schedule, ask for their name, phone number, and preferred date and time. Then use the calendar tool to check availability and confirm the booking. If no slots are available, offer the next available time.
+
+WHEN YOU CANNOT ANSWER:
+If you do not know the answer to something, say: "That is a great question. Let me have [OWNER NAME] follow up with you directly. Can I get your name and the best number to reach you?" Then log the callback request.
+
+TONE: [PROFESSIONAL AND DIRECT / FRIENDLY AND CONVERSATIONAL — pick one]
+
+Do not mention that you are an AI unless directly asked. If asked, confirm honestly that you are an AI assistant.
+Do not make up pricing. If uncertain, give the range and say the owner will confirm on the job.
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">5</div>
+      <div class="phase-title">Provision a phone number via Twilio</div>
+      <div class="phase-time">15 min</div>
+    </div>
+    <ul class="checklist">
+      <li><div class="box"></div><span>Log into Twilio, buy a local number in the client's area code (~$1/mo)
+        <span class="note">Match the area code to the client's city. Callers are more likely to answer callbacks from a local number.</span>
+      </span></li>
+      <li><div class="box"></div><span>In Vapi, go to Phone Numbers and connect the Twilio number to the assistant you just created</span></li>
+      <li><div class="box"></div><span>Note the Twilio number — this is what the client will forward their calls to</span></li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">6</div>
+      <div class="phase-title">Connect Google Calendar booking action</div>
+      <div class="phase-time">30 min</div>
+    </div>
+    <ul class="checklist">
+      <li><div class="box"></div><span>In Vapi, add a Tool of type "Function" named <code>checkAvailability</code>
+        <span class="note">This calls the client's Google Calendar API to check free/busy for a given date range. Use the existing service account credentials already set up for their CRM.</span>
+      </span></li>
+      <li><div class="box"></div><span>Add a second Tool named <code>bookAppointment</code> that creates a Calendar event with caller name, phone, and service type</span></li>
+      <li><div class="box"></div><span>Test both tools in the Vapi dashboard before connecting the phone number</span></li>
+      <li><div class="box"></div><span>Verify booked events appear in the client's calendar with correct details</span></li>
+    </ul>
+
+    <div class="info-box">
+      <strong>Shortcut:</strong> If calendar setup is delayed, configure the agent to collect the caller's name, number, and requested time, then log it as a lead and send the client a text summary. This is a working MVP while calendar integration is finalized.
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">7</div>
+      <div class="phase-title">Set up lead logging webhook to Supabase</div>
+      <div class="phase-time">30 min</div>
+    </div>
+    <ul class="checklist">
+      <li><div class="box"></div><span>In Vapi, go to Webhooks and add an end-of-call webhook pointing to:
+        <span class="note"><code>https://[client-domain]/api/vapi-webhook</code> — you will create this route</span>
+      </span></li>
+      <li><div class="box"></div><span>Create <code>src/app/api/vapi-webhook/route.ts</code> in the client's Next.js project</span></li>
+      <li><div class="box"></div><span>On POST, parse the Vapi payload: caller number, transcript summary, caller name (if collected), and booking status</span></li>
+      <li><div class="box"></div><span>Insert a row into the <code>leads</code> table:
+        <span class="note">Fields: <code>name</code> (caller name or "Unknown Caller"), <code>phone</code> (caller number), <code>service</code> (mentioned service from transcript), <code>message</code> (transcript summary), <code>source: "ai_receptionist"</code></span>
+      </span></li>
+      <li><div class="box"></div><span>Trigger the existing lead notification email (same function already used by quote forms)</span></li>
+      <li><div class="box"></div><span>Verify a test call appears in <code>/pro/leads</code> with source tag "AI Call"</span></li>
+    </ul>
+
+    <div class="info-box">
+      <strong>Zero schema changes needed.</strong> The existing <code>leads</code> table already has all the fields required. The <code>source</code> field distinguishes AI calls from web form submissions in the CRM leads view.
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <h2>Phase 3: Testing and Go-Live</h2>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">8</div>
+      <div class="phase-title">Full end-to-end test before client touches anything</div>
+      <div class="phase-time">30 min</div>
+    </div>
+    <ul class="checklist">
+      <li><div class="box"></div><span>Call the Twilio number from your own cell. Agent should answer within 2 seconds.</span></li>
+      <li><div class="box"></div><span>Ask about a service and its price. Verify the answer is accurate.</span></li>
+      <li><div class="box"></div><span>Ask to book an appointment. Verify it lands on the calendar correctly.</span></li>
+      <li><div class="box"></div><span>Ask a question not in the system prompt. Verify it handles gracefully (offers callback, does not make up an answer).</span></li>
+      <li><div class="box"></div><span>Check <code>/pro/leads</code> — the test call should appear with source "AI Call" and a transcript summary.</span></li>
+      <li><div class="box"></div><span>Check that the lead notification email fired correctly.</span></li>
+      <li><div class="box"></div><span>Call from a different number and verify caller ID is captured in the lead.</span></li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">9</div>
+      <div class="phase-title">Client walkthrough and call forwarding setup</div>
+      <div class="phase-time">20-30 min screen share</div>
+    </div>
+    <ul class="checklist">
+      <li><div class="box"></div><span>Show the client a test call in the CRM lead inbox so they see exactly what they will receive</span></li>
+      <li><div class="box"></div><span>Walk them through how to set up conditional call forwarding on their carrier:
+        <span class="note">Most carriers: dial *61* + [Twilio number] + # to forward unanswered calls after 15-20 seconds. Instructions vary by carrier — look up AT&amp;T / Verizon / T-Mobile specific codes.</span>
+      </span></li>
+      <li><div class="box"></div><span>Option 2: Full forward — all calls go to AI first, AI transfers to client's cell if the caller asks to speak to a person (Vapi supports call transfer natively)</span></li>
+      <li><div class="box"></div><span>Have the client make a live test call themselves while you watch the CRM</span></li>
+      <li><div class="box"></div><span>Record a short Loom walkthrough of the CRM leads view for their reference</span></li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-num">10</div>
+      <div class="phase-title">Document and hand off</div>
+      <div class="phase-time">15 min</div>
+    </div>
+    <ul class="checklist">
+      <li><div class="box"></div><span>Send client a one-page summary: Twilio number, what the agent is trained on, how to read leads in the CRM</span></li>
+      <li><div class="box"></div><span>Add client to your internal tracker: Vapi assistant ID, Twilio number, monthly cost, go-live date</span></li>
+      <li><div class="box"></div><span>Set a 7-day check-in reminder to review call transcripts and tune the system prompt if needed</span></li>
+      <li><div class="box"></div><span>Set a 30-day reminder to review usage costs and confirm billing is correct</span></li>
+    </ul>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <h2>Phase 4: Ongoing Maintenance</h2>
+
+  <table>
+    <thead>
+      <tr><th>Cadence</th><th>Task</th><th>How long</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Week 1</td><td>Review call transcripts, tune system prompt for any missed or wrong answers</td><td>30 min</td></tr>
+      <tr><td>Monthly</td><td>Check Vapi usage costs vs. $249 charge — flag if usage is approaching $200/mo</td><td>5 min</td></tr>
+      <tr><td>When services change</td><td>Client emails you updated pricing or new service — update system prompt same day</td><td>10 min</td></tr>
+      <tr><td>When hours change</td><td>Update system prompt hours (holidays, seasonal changes)</td><td>5 min</td></tr>
+      <tr><td>Quarterly</td><td>Review top missed questions from transcripts and add them to the FAQ in the prompt</td><td>20 min</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn-box">
+    <strong>Usage cost ceiling:</strong> If a client's call volume is very high (100+ calls/day), usage costs could approach or exceed the $249 charge. At that point, raise their rate to $349-399/mo or add a per-minute overage charge above a baseline. Build this into the agreement upfront for high-volume businesses.
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <h2>Quick Reference</h2>
+
+  <div class="two-col">
+    <div class="col-block">
+      <h4>Your cost per client (estimate)</h4>
+      <ul>
+        <li>Twilio number: ~$1/mo</li>
+        <li>Vapi usage (avg business): ~$30-80/mo</li>
+        <li>Your time (ongoing): ~1 hr/mo</li>
+        <li><strong>Net margin per client: ~$170-220/mo</strong></li>
+      </ul>
+    </div>
+    <div class="col-block">
+      <h4>Pricing escalation triggers</h4>
+      <ul>
+        <li>Usage &gt; $150/mo: raise to $349/mo</li>
+        <li>Usage &gt; $200/mo: raise to $399/mo or add overage</li>
+        <li>Custom voice cloning request: +$50/mo</li>
+        <li>Call transfer to human: included, no upcharge</li>
+      </ul>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Forwarding type</th><th>How it works</th><th>Best for</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Conditional forward</td><td>Rings client first, AI picks up if no answer after 15-20 sec</td><td>Clients who want to answer calls themselves when available</td></tr>
+      <tr><td>Full forward</td><td>All calls go directly to AI, AI can transfer to client on request</td><td>Clients who are always on the job and never available to answer</td></tr>
+      <tr><td>After-hours only</td><td>Forward active only outside business hours via carrier schedule</td><td>Clients with staff during the day but want coverage evenings/weekends</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 40px; padding-top: 16px; border-top: 1px solid #e0e0e0; font-size: 11px; color: #888; display: flex; justify-content: space-between;">
+    <span>NorthWake Marine LLC — Internal Operations Document</span>
+    <span>AI Receptionist Runbook v1.0</span>
+  </div>
+
+</body>
+</html>
