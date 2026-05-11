@@ -234,7 +234,7 @@ export const clientConfig: ClientConfig = {
       description:
         "Short-form detailing videos, product demos, and quick tips for keeping your vessel looking its best between professional services.",
       cta: "Follow on TikTok",
-      accent: "#ffffff",
+      accent: "#010101",
     },
     {
       id: "facebook",
