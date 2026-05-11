@@ -144,7 +144,7 @@ const addons = [
 ];
 
 const comparisons = [
-  { label: "Setup fee", us: "Honest flat rate", them: "$3,000-$5,000+" },
+  { label: "Setup fee", us: "$499-$1,499", them: "$3,000-$5,000+" },
   { label: "Monthly", us: "$49-$149", them: "$150-$400 (site only)" },
   { label: "CRM included", us: "Yes, full pipeline", them: "No" },
   { label: "Calendar sync", us: "Two-way, real time", them: "No" },
