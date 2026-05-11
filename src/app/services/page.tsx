@@ -77,32 +77,32 @@ export default function ServicesPage() {
       <Header />
       <ScrollDepthTracker />
 
-      <main>
+      <main className="bg-white">
         {/* ── Hero ── */}
         <section
           aria-labelledby="services-hero-heading"
-          className="hero-grid relative pt-32 pb-8 px-6 text-center overflow-hidden"
+          className="hero-grid relative pt-32 pb-8 px-6 text-center overflow-hidden bg-white"
         >
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 70% 50% at 50% 30%, rgba(0,0,128,0.22) 0%, transparent 70%)",
+                "radial-gradient(ellipse 70% 50% at 50% 30%, rgba(0,0,128,0.06) 0%, transparent 70%)",
             }}
           />
           <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center gap-6">
-            <p className="text-steel text-[10px] tracking-[0.4em] uppercase">
+            <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">
               {city}, {state} &nbsp;·&nbsp; Professional Services
             </p>
             <h1
               id="services-hero-heading"
-              className="chrome-text text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight"
+              className="text-gray-900 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight"
             >
               Every Service.<br />
-              <span className="text-wake">One Uncompromising Standard.</span>
+              <span className="chrome-text-dark">One Uncompromising Standard.</span>
             </h1>
-            <p className="text-steel-light text-base max-w-2xl leading-relaxed">
+            <p className="text-gray-600 text-base max-w-2xl leading-relaxed">
               From single-day jobs to full-service management,
               every {companyName} service is delivered by certified professionals using
               professional-grade products, with photo documentation on every job.
@@ -112,7 +112,7 @@ export default function ServicesPage() {
           <div
             aria-hidden="true"
             className="pointer-events-none absolute bottom-0 inset-x-0 h-24"
-            style={{ background: "linear-gradient(to bottom, transparent, #000000)" }}
+            style={{ background: "linear-gradient(to bottom, transparent, #ffffff)" }}
           />
         </section>
 
@@ -141,13 +141,13 @@ export default function ServicesPage() {
                         {svc.icon}
                       </span>
                       {svc.badge && (
-                        <span className="badge-chrome text-[9px] font-bold tracking-[0.2em] uppercase px-2.5 py-1">
+                        <span className="badge-chrome text-xs font-bold tracking-[0.2em] uppercase px-2.5 py-1">
                           <span className="badge-chrome-text">{svc.badge}</span>
                         </span>
                       )}
                     </div>
                     <div>
-                      <p className="text-steel text-[9px] tracking-[0.35em] uppercase mb-1.5">
+                      <p className="text-steel text-xs tracking-[0.35em] uppercase mb-1.5">
                         {svc.tier}
                       </p>
                       <h3 className="text-wake text-xl font-bold tracking-tight leading-tight">
@@ -158,7 +158,7 @@ export default function ServicesPage() {
                     <Link
                       href={`/contact?service=${encodeURIComponent(svc.title)}`}
                       aria-label={`Request service: ${svc.title}`}
-                      className="chrome-btn self-start text-[10px] font-bold tracking-[0.25em] uppercase px-5 py-2.5 transition-all duration-300 hover:scale-105 mt-auto"
+                      className="chrome-btn self-start text-xs font-bold tracking-[0.25em] uppercase px-5 py-2.5 transition-all duration-300 hover:scale-105 mt-auto"
                     >
                       Request Service
                     </Link>
@@ -168,7 +168,7 @@ export default function ServicesPage() {
                   <div className="flex flex-col gap-6 p-8 md:p-10 bg-obsidian group-hover:bg-[#040408] transition-colors duration-300">
                     <p className="text-steel-light text-sm leading-relaxed">{svc.description}</p>
                     <div>
-                      <p className="text-steel text-[9px] tracking-[0.3em] uppercase mb-4">
+                      <p className="text-steel text-xs tracking-[0.3em] uppercase mb-4">
                         What&apos;s Included
                       </p>
                       <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2.5 list-none">
@@ -191,18 +191,18 @@ export default function ServicesPage() {
         <section
           id="service-areas"
           aria-labelledby="service-areas-heading"
-          className="border-t border-steel-dark bg-obsidian px-6 py-14"
+          className="border-t border-gray-200 bg-gray-50 px-6 py-14"
         >
           <div className="max-w-7xl mx-auto flex flex-col gap-10">
             <header className="flex flex-col gap-1">
-              <p className="text-steel text-[9px] tracking-[0.4em] uppercase">Coverage</p>
+              <p className="text-steel text-xs tracking-[0.4em] uppercase">Coverage</p>
               <h2
                 id="service-areas-heading"
-                className="text-wake text-lg font-bold tracking-tight"
+                className="text-gray-900 text-lg font-bold tracking-tight"
               >
                 Marinas &amp; Waterways We Serve
               </h2>
-              <p className="text-steel text-xs max-w-xl leading-relaxed">
+              <p className="text-gray-600 text-xs max-w-xl leading-relaxed">
                 NorthWake Marine provides mobile marine services throughout the greater Jacksonville
                 area, from Amelia Island and Fernandina Beach to St. Augustine, Palm Coast, and
                 every marina and waterway in between.
@@ -213,7 +213,7 @@ export default function ServicesPage() {
 
               {/* Marinas & Facilities */}
               <div>
-                <p className="text-steel text-[9px] tracking-[0.3em] uppercase mb-4 border-b border-steel-dark pb-2">
+                <p className="text-gray-400 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
                   Marinas &amp; Facilities
                 </p>
                 <ul className="columns-2 gap-x-6 list-none space-y-1.5">
@@ -272,7 +272,7 @@ export default function ServicesPage() {
                     "Green Cove Springs Municipal Marina",
                     "Tiger Point Marina",
                   ].map((name) => (
-                    <li key={name} className="text-steel text-[11px] leading-snug break-inside-avoid">
+                    <li key={name} className="text-gray-600 text-xs leading-snug break-inside-avoid">
                       {name}
                     </li>
                   ))}
@@ -281,7 +281,7 @@ export default function ServicesPage() {
 
               {/* Waterways & Inlets */}
               <div>
-                <p className="text-steel text-[9px] tracking-[0.3em] uppercase mb-4 border-b border-steel-dark pb-2">
+                <p className="text-gray-400 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
                   Waterways &amp; Inlets
                 </p>
                 <ul className="columns-2 gap-x-6 list-none space-y-1.5">
@@ -317,7 +317,7 @@ export default function ServicesPage() {
                     "Racine Point",
                     "Bayard Point",
                   ].map((name) => (
-                    <li key={name} className="text-steel text-[11px] leading-snug break-inside-avoid">
+                    <li key={name} className="text-gray-600 text-xs leading-snug break-inside-avoid">
                       {name}
                     </li>
                   ))}
@@ -326,7 +326,7 @@ export default function ServicesPage() {
 
               {/* Communities */}
               <div>
-                <p className="text-steel text-[9px] tracking-[0.3em] uppercase mb-4 border-b border-steel-dark pb-2">
+                <p className="text-gray-400 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
                   Communities &amp; Neighborhoods
                 </p>
                 <ul className="columns-2 gap-x-6 list-none space-y-1.5">
@@ -354,7 +354,7 @@ export default function ServicesPage() {
                     "Fernandina Beach",
                     "Palm Coast",
                   ].map((name) => (
-                    <li key={name} className="text-steel text-[11px] leading-snug break-inside-avoid">
+                    <li key={name} className="text-gray-600 text-xs leading-snug break-inside-avoid">
                       {name}
                     </li>
                   ))}

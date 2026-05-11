@@ -82,13 +82,13 @@ export default function QuoteForm({
   }
 
   const fieldClass =
-    "bg-transparent border border-steel-dark text-wake placeholder-steel-light/50 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full peer [&:user-invalid]:border-red-500";
+    "bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400/70 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full peer [&:user-invalid]:border-red-500";
   const selectClass =
-    "bg-obsidian border border-steel-dark text-wake text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full peer [&:user-invalid]:border-red-500";
+    "bg-white border border-gray-300 text-gray-900 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full peer [&:user-invalid]:border-red-500";
   const fieldErr =
-    "hidden peer-[&:user-invalid]:block text-red-400 text-[9px] tracking-wide mt-0.5";
+    "hidden peer-[&:user-invalid]:block text-red-600 text-xs tracking-wide mt-0.5";
   const labelClass =
-    "text-steel-light text-[10px] tracking-[0.3em] uppercase font-medium";
+    "text-gray-500 text-xs tracking-[0.3em] uppercase font-medium";
 
   if (state.error) trackFormError(formId, state.error);
 
@@ -106,16 +106,16 @@ export default function QuoteForm({
     trackFormSuccess(formId);
     return (
       <div className="w-full flex flex-col items-center justify-center gap-5 py-12 text-center">
-        <span aria-hidden="true" className="chrome-text text-4xl">◈</span>
-        <h3 className="text-wake text-xl font-bold tracking-tight">
+        <span aria-hidden="true" className="chrome-text-dark text-4xl">◈</span>
+        <h3 className="text-gray-900 text-xl font-bold tracking-tight">
           Request Received
         </h3>
-        <p className="text-steel-light text-sm leading-relaxed max-w-sm">
+        <p className="text-gray-600 text-sm leading-relaxed max-w-sm">
           Thank you. A member of our team will review your request and be in touch shortly.
         </p>
-        <p className="text-steel text-xs tracking-wide">
+        <p className="text-gray-500 text-xs tracking-wide">
           Questions? Call us at{" "}
-          <a href={`tel:${clientConfig.phoneE164}`} className="text-link hover:text-wake transition-colors">
+          <a href={`tel:${clientConfig.phoneE164}`} className="text-navy hover:text-navy-dark transition-colors">
             {clientConfig.phone}
           </a>
         </p>
@@ -136,8 +136,8 @@ export default function QuoteForm({
       <input type="hidden" name="source" value="contact" />
 
       {state.error && (
-        <div role="alert" className="border border-red-900/60 bg-red-950/20 px-3.5 py-2.5">
-          <p className="text-red-400 text-[10px] tracking-wide">{state.error}</p>
+        <div role="alert" className="border border-red-300 bg-red-50 px-3.5 py-2.5">
+          <p className="text-red-600 text-xs tracking-wide">{state.error}</p>
         </div>
       )}
 
@@ -221,9 +221,9 @@ export default function QuoteForm({
             defaultValue=""
             className={selectClass}
           >
-            <option value="" disabled className="text-steel">Select vessel type…</option>
+            <option value="" disabled className="text-gray-400">Select vessel type…</option>
             {vesselTypes.map((v) => (
-              <option key={v} value={v} className="bg-obsidian text-wake">{v}</option>
+              <option key={v} value={v} className="bg-white text-gray-900">{v}</option>
             ))}
           </select>
           <span className={fieldErr}>Please select a vessel type.</span>
@@ -239,9 +239,9 @@ export default function QuoteForm({
             defaultValue={preselectedService ?? ""}
             className={selectClass}
           >
-            <option value="" disabled className="text-steel">Select a service…</option>
+            <option value="" disabled className="text-gray-400">Select a service…</option>
             {serviceOptions.map((s) => (
-              <option key={s} value={s} className="bg-obsidian text-wake">{s}</option>
+              <option key={s} value={s} className="bg-white text-gray-900">{s}</option>
             ))}
           </select>
           <span className={fieldErr}>Please select a service.</span>
@@ -260,9 +260,9 @@ export default function QuoteForm({
             defaultValue=""
             className={selectClass}
           >
-            <option value="" className="text-steel">Prefer not to say</option>
+            <option value="" className="text-gray-400">Prefer not to say</option>
             {referralSources.map((r) => (
-              <option key={r} value={r} className="bg-obsidian text-wake">{r}</option>
+              <option key={r} value={r} className="bg-white text-gray-900">{r}</option>
             ))}
           </select>
         </div>
@@ -278,7 +278,7 @@ export default function QuoteForm({
           name="message"
           rows={4}
           placeholder="Vessel condition, preferred service dates, specific concerns, or anything else we should know…"
-          className="bg-transparent border border-steel-dark text-wake placeholder-steel-light/50 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 resize-none w-full"
+          className="bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400/70 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 resize-none w-full"
         />
       </div>
 
@@ -288,11 +288,11 @@ export default function QuoteForm({
           type="checkbox"
           name="terms"
           required
-          className="mt-0.5 w-3 h-3 border border-steel-dark bg-transparent accent-navy shrink-0 cursor-pointer"
+          className="mt-0.5 w-3 h-3 border border-gray-300 bg-gray-50 accent-navy shrink-0 cursor-pointer"
         />
-        <span className="text-steel-light text-[10px] leading-relaxed">
+        <span className="text-gray-500 text-xs leading-relaxed">
           I agree to the{" "}
-          <Link href="/terms" target="_blank" className="text-link hover:text-wake transition-colors underline underline-offset-2">
+          <Link href="/terms" target="_blank" className="text-navy hover:text-navy-dark transition-colors underline underline-offset-2">
             terms &amp; conditions
           </Link>
           . By providing my phone number I agree to receive communications from {clientConfig.companyName}.
@@ -301,7 +301,7 @@ export default function QuoteForm({
 
       <SubmitButton />
 
-      <p className="text-steel text-[10px] text-center tracking-wide leading-relaxed">
+      <p className="text-gray-400 text-xs text-center tracking-wide leading-relaxed">
         No obligation. No spam.
       </p>
     </form>

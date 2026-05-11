@@ -69,6 +69,7 @@ export type ClientConfig = {
   // ── Brand assets (paths relative to /public) ──────────────────────────────
   logoWhiteSvg: string;
   logoFullWhitePng: string;
+  logoFullBlackSvg: string;
   ogImagePath: string;
   faviconPath: string;
 
@@ -160,6 +161,7 @@ export const clientConfig: ClientConfig = {
 
   logoWhiteSvg: "/brand/nwmlogowhite.svg",
   logoFullWhitePng: "/brand/nwmlogofullwhite.png",
+  logoFullBlackSvg: "/brand/nwmlogofullblack.svg",
   ogImagePath: "/og-image.png",
   faviconPath: "/favicon.png",
 

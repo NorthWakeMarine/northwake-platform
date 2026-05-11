@@ -39,33 +39,33 @@ export default async function AboutPage() {
       <Header />
       <ScrollDepthTracker />
 
-      <main>
+      <main className="bg-white">
         {/* ── Hero ── */}
         <section
           aria-labelledby="about-hero-heading"
-          className="hero-grid relative pt-32 pb-20 px-6 overflow-hidden"
+          className="hero-grid relative pt-32 pb-20 px-6 overflow-hidden bg-white"
         >
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 70% 50% at 30% 40%, rgba(0,0,128,0.2) 0%, transparent 70%)",
+                "radial-gradient(ellipse 70% 50% at 30% 40%, rgba(0,0,128,0.06) 0%, transparent 70%)",
             }}
           />
           <div className="relative z-10 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
             <div className="flex flex-col gap-7">
-              <p className="text-steel text-[10px] tracking-[0.4em] uppercase">
+              <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">
                 Est. 2025 &nbsp;·&nbsp; Jacksonville, FL
               </p>
               <h1
                 id="about-hero-heading"
-                className="text-wake text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight"
+                className="text-gray-900 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight"
               >
                 Built on the<br />
-                <span className="chrome-text">St. Johns River.</span>
+                <span className="chrome-text-dark">St. Johns River.</span>
               </h1>
-              <p className="text-steel-light text-base leading-relaxed max-w-lg">
+              <p className="text-gray-600 text-base leading-relaxed max-w-lg">
                 {aboutHeroIntro}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mt-2">
@@ -77,7 +77,7 @@ export default async function AboutPage() {
                 </Link>
                 <Link
                   href="/services"
-                  className="border border-steel text-steel-light text-xs font-semibold tracking-[0.3em] uppercase px-9 py-4 hover:border-wake hover:text-wake transition-colors duration-300 text-center"
+                  className="border border-gray-300 text-gray-600 text-xs font-semibold tracking-[0.3em] uppercase px-9 py-4 hover:border-navy hover:text-navy transition-colors duration-300 text-center"
                 >
                   Our Services
                 </Link>
@@ -85,26 +85,26 @@ export default async function AboutPage() {
             </div>
 
             {/* Team cards */}
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-steel-dark list-none">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gray-200 list-none">
               {team.map((member) => (
                 <li
                   key={member.name}
-                  className="group bg-obsidian p-7 flex flex-col gap-4 hover:bg-navy-dark transition-colors duration-300"
+                  className="group bg-white p-7 flex flex-col gap-4 hover:bg-gray-50 transition-colors duration-300"
                 >
                   <div
                     aria-hidden="true"
-                    className="w-14 h-14 border border-steel-dark flex items-center justify-center shrink-0"
-                    style={{ background: "linear-gradient(135deg, #000040 0%, #1a1aaa 100%)" }}
+                    className="w-14 h-14 border border-gray-200 flex items-center justify-center shrink-0"
+                    style={{ background: "linear-gradient(135deg, #e8eaf0 0%, #c8ccdc 100%)" }}
                   >
-                    <span className="chrome-text text-xl font-bold">{member.initial}</span>
+                    <span className="chrome-text-dark text-xl font-bold">{member.initial}</span>
                   </div>
                   <div>
-                    <h3 className="text-wake text-sm font-bold">{member.name}</h3>
-                    <p className="text-steel text-[9px] tracking-[0.25em] uppercase mt-0.5">
+                    <h3 className="text-gray-900 text-sm font-bold">{member.name}</h3>
+                    <p className="text-gray-400 text-xs tracking-[0.25em] uppercase mt-0.5">
                       {member.role}
                     </p>
                   </div>
-                  <p className="text-steel text-xs leading-relaxed">{member.bio}</p>
+                  <p className="text-gray-600 text-xs leading-relaxed">{member.bio}</p>
                 </li>
               ))}
             </ul>
@@ -112,51 +112,50 @@ export default async function AboutPage() {
           <div
             aria-hidden="true"
             className="pointer-events-none absolute bottom-0 inset-x-0 h-24"
-            style={{ background: "linear-gradient(to bottom, transparent, #000000)" }}
+            style={{ background: "linear-gradient(to bottom, transparent, #f9fafb)" }}
           />
         </section>
 
         {/* ── Why NorthWake Marine ── */}
         <section
           aria-labelledby="standard-heading"
-          className="py-16 px-6"
-          style={{ background: "linear-gradient(180deg, #000000 0%, #000018 60%, #000000 100%)" }}
+          className="py-16 px-6 bg-gray-50"
         >
           <div className="max-w-7xl mx-auto flex flex-col gap-20">
 
             {/* Headline + intro */}
             <div className="flex flex-col md:flex-row gap-16 items-start">
               <div className="flex flex-col gap-5 md:w-1/2 md:sticky md:top-28">
-                <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Why {clientConfig.companyName}</p>
+                <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">Why {clientConfig.companyName}</p>
                 <h2
                   id="standard-heading"
-                  className="text-wake text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight"
+                  className="text-gray-900 text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight"
                 >
                   Jacksonville&apos;s Waters Demand<br />
-                  <span className="chrome-text">A Different Standard</span>
+                  <span className="chrome-text-dark">A Different Standard</span>
                 </h2>
                 <Link
                   href="/contact"
-                  className="self-start chrome-btn text-[10px] font-bold tracking-[0.3em] uppercase px-9 py-4 transition-all duration-300 hover:scale-105 mt-2"
+                  className="self-start chrome-btn text-xs font-bold tracking-[0.3em] uppercase px-9 py-4 transition-all duration-300 hover:scale-105 mt-2"
                 >
                   Get a Free Quote
                 </Link>
               </div>
               <div className="flex flex-col gap-5 md:w-1/2">
-                <p className="text-steel-light text-sm leading-relaxed">
+                <p className="text-gray-600 text-sm leading-relaxed">
                   The St. Johns River and Northeast Florida&apos;s coastal waters are beautiful, and unforgiving. Salt air, UV intensity, and year-round use accelerate wear that undermines even well-maintained vessels faster than most markets in the country.
                 </p>
-                <p className="text-steel-light text-sm leading-relaxed">
+                <p className="text-gray-600 text-sm leading-relaxed">
                   Jacksonville&apos;s mild winters mean most boats stay in the water twelve months a year. From the St. Johns to the Intracoastal and offshore Atlantic, the conditions demand a level of care that most services simply aren&apos;t built to deliver.
                 </p>
-                <p className="text-steel-light text-sm leading-relaxed">
+                <p className="text-gray-600 text-sm leading-relaxed">
                   The NorthWake Standard is not a checklist. It&apos;s a commitment every member of our team carries onto every vessel, that every detail, visible and invisible, meets the level our clients expect and their investments deserve. Not a detailing shop that occasionally does ceramic. A dedicated, certified marine services company where the standard is never negotiated.
                 </p>
               </div>
             </div>
 
             {/* Values grid */}
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-steel-dark list-none">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-200 list-none">
               {[
                 {
                   icon: "◈",
@@ -191,12 +190,12 @@ export default async function AboutPage() {
               ].map((item) => (
                 <li
                   key={item.title}
-                  className="group bg-obsidian p-8 flex flex-col gap-4 hover:bg-navy-dark transition-colors duration-300"
+                  className="group bg-white p-8 flex flex-col gap-4 hover:bg-gray-50 transition-colors duration-300"
                 >
-                  <span aria-hidden="true" className="chrome-text text-2xl leading-none">{item.icon}</span>
+                  <span aria-hidden="true" className="chrome-text-dark text-2xl leading-none">{item.icon}</span>
                   <div>
-                    <h3 className="text-wake text-sm font-bold mb-2 leading-snug">{item.title}</h3>
-                    <p className="text-steel text-xs leading-relaxed">{item.body}</p>
+                    <h3 className="text-gray-900 text-sm font-bold mb-2 leading-snug">{item.title}</h3>
+                    <p className="text-gray-600 text-xs leading-relaxed">{item.body}</p>
                   </div>
                 </li>
               ))}

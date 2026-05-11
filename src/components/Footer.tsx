@@ -17,78 +17,29 @@ export default function Footer() {
   return (
     <footer className="border-t border-steel-dark bg-obsidian" role="contentinfo">
 
-      {/* ── Get a Quote band ── */}
-      <section
-        aria-labelledby="footer-cta-heading"
-        className="border-b border-steel-dark"
-        style={{
-          background: "linear-gradient(135deg, #000040 0%, #000080 50%, #000040 100%)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex flex-col gap-3 text-center md:text-left">
-            <p className="text-steel-light text-[10px] tracking-[0.4em] uppercase">
-              Free Estimate · No Obligation
-            </p>
-            <h2
-              id="footer-cta-heading"
-              className="text-wake text-2xl sm:text-3xl font-bold tracking-tight"
-            >
-              Ready to Elevate Your Vessel?
-            </h2>
-            <p className="text-steel-light text-sm max-w-md leading-relaxed">
-              Tell us about your boat and we&apos;ll put together a detailed,
-              no-obligation quote.
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 shrink-0">
-            <Link
-              href="/contact"
-              onClick={() => trackCtaClick("Get a Free Quote", "footer_cta_band")}
-              className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase px-9 py-4 transition-all duration-300 hover:scale-105 text-center"
-            >
-              Get a Free Quote
-            </Link>
-            <a
-              href={`tel:${clientConfig.phoneE164}`}
-              onClick={() => trackPhoneClick("footer_cta_band")}
-              className="border border-steel text-steel-light text-xs font-semibold tracking-[0.3em] uppercase px-9 py-4 hover:border-wake hover:text-wake transition-colors duration-300 text-center"
-            >
-              Call {clientConfig.phone}
-            </a>
-          </div>
-        </div>
-      </section>
+      {/* ── Single compact footer row ── */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-6 flex flex-wrap items-center gap-x-10 gap-y-4 justify-between">
 
-      {/* ── Main footer grid ── */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8 flex flex-col sm:flex-row gap-8 sm:gap-0 sm:justify-between">
-        {/* Brand */}
-        <div className="flex flex-col gap-4 sm:w-56">
-          <Link href="/" className="w-fit">
-            <Image
-              src={clientConfig.logoWhiteSvg}
-              alt={clientConfig.companyName}
-              width={160}
-              height={48}
-              className="h-12 w-auto"
-            />
-          </Link>
-          <p className="text-steel text-xs leading-relaxed max-w-xs">
-            Yacht management, expert detailing, ceramic coating, and full vessel
-            services on the St. Johns River. {clientConfig.city}&apos;s premier marine company.
-          </p>
-        </div>
+        {/* Logo */}
+        <Link href="/" aria-label={`${clientConfig.companyName}, home`} className="shrink-0">
+          <Image
+            src={clientConfig.logoWhiteSvg}
+            alt={clientConfig.companyName}
+            width={36}
+            height={36}
+            className="h-9 w-auto"
+          />
+        </Link>
 
-        {/* Navigation */}
-        <nav aria-label="Footer site navigation" className="flex flex-col items-center">
-          <p className="text-steel text-[9px] tracking-[0.35em] uppercase mb-5">Navigation</p>
-          <ul className="flex flex-row flex-wrap gap-x-6 gap-y-2 list-none justify-center">
+        {/* Nav */}
+        <nav aria-label="Footer site navigation">
+          <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 list-none">
             {navLinks.map(({ label, href }) => (
               <li key={href}>
                 <Link
                   href={href}
                   onClick={() => trackNavClick(label, href, "footer")}
-                  className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
+                  className="text-steel text-xs hover:text-wake transition-colors duration-200"
                 >
                   {label}
                 </Link>
@@ -97,43 +48,54 @@ export default function Footer() {
           </ul>
         </nav>
 
-        {/* Contact */}
-        <address className="flex flex-col gap-3 not-italic sm:w-48">
-          <p className="text-steel text-[9px] tracking-[0.35em] uppercase mb-2">Contact</p>
+        {/* Contact inline */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <a
             href={`tel:${clientConfig.phoneE164}`}
             onClick={() => trackPhoneClick("footer")}
-            className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
+            className="text-steel text-xs hover:text-wake transition-colors duration-200"
           >
             {clientConfig.phone}
           </a>
           <a
             href={`mailto:${clientConfig.email}`}
             onClick={() => trackEmailClick("footer")}
-            className="text-steel-light text-xs hover:text-wake transition-colors duration-200"
+            className="text-steel text-xs hover:text-wake transition-colors duration-200"
           >
             {clientConfig.email}
           </a>
-          <p className="text-steel text-xs">{clientConfig.city}, {clientConfig.state}</p>
-        </address>
+        </div>
+
+        {/* Get a Quote CTA */}
+        <Link
+          href="/contact"
+          onClick={() => trackCtaClick("Get a Quote", "footer")}
+          className="chrome-btn font-bold text-xs tracking-[0.25em] uppercase px-6 py-2.5 transition-all duration-300 hover:scale-105 shrink-0"
+        >
+          Get a Quote
+        </Link>
+
       </div>
 
       {/* ── Bottom bar ── */}
-      <div className="border-t border-steel-dark px-6 sm:pr-48 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-steel tracking-wide max-w-7xl mx-auto w-full">
-        <p>© {new Date().getFullYear()} {clientConfig.companyName}. All rights reserved.</p>
+      <div className="border-t border-steel-dark px-6 lg:px-10 py-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 max-w-7xl mx-auto w-full">
+        <p className="text-steel text-[10px] tracking-wide">
+          © {new Date().getFullYear()} {clientConfig.companyName}. All rights reserved.
+        </p>
         <div className="flex items-center gap-4">
           <Link href="/terms" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-[9px]">Terms</Link>
           <Link href="/privacy-policy" className="text-steel hover:text-wake transition-colors duration-200 tracking-[0.15em] uppercase text-[9px]">Privacy</Link>
+          <Link
+            href="/pro"
+            className="flex items-center gap-1.5 border border-steel-dark px-3 py-1 text-steel hover:border-navy hover:text-wake transition-colors duration-300 tracking-[0.2em] uppercase text-[9px]"
+          >
+            <span aria-hidden="true" className="text-navy text-[7px]">◈</span>
+            {clientConfig.proPortalName}
+          </Link>
         </div>
-        <Link
-          href="/pro"
-          className="flex items-center gap-2 border border-steel-dark px-4 py-1.5 text-steel hover:border-navy hover:text-wake transition-colors duration-300 tracking-[0.2em] uppercase text-[9px]"
-        >
-          <span aria-hidden="true" className="text-navy text-[7px]">◈</span>
-          {clientConfig.proPortalName}
-        </Link>
-        <p>{clientConfig.footerTagline}</p>
+        <p className="text-steel text-[10px] tracking-wide hidden sm:block">{clientConfig.footerTagline}</p>
       </div>
+
     </footer>
   );
 }

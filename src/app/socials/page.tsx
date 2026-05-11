@@ -50,29 +50,29 @@ export default function SocialsPage() {
     <>
       <Header />
 
-      <main>
+      <main className="bg-white">
         {/* ── Hero ── */}
         <section
           aria-labelledby="socials-heading"
-          className="hero-grid relative pt-32 pb-6 px-6 overflow-hidden text-center"
+          className="hero-grid relative pt-32 pb-6 px-6 overflow-hidden text-center bg-white"
         >
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 70% 50% at 50% 30%, rgba(0,0,128,0.20) 0%, transparent 70%)",
+                "radial-gradient(ellipse 70% 50% at 50% 30%, rgba(0,0,128,0.06) 0%, transparent 70%)",
             }}
           />
           <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center gap-5">
-            <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Stay Connected</p>
+            <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">Stay Connected</p>
             <h1
               id="socials-heading"
-              className="chrome-text text-4xl sm:text-5xl font-bold tracking-tight leading-tight"
+              className="chrome-text-dark text-4xl sm:text-5xl font-bold tracking-tight leading-tight"
             >
               Follow {clientConfig.companyName}
             </h1>
-            <p className="text-steel-light text-sm leading-relaxed max-w-xl">
+            <p className="text-gray-600 text-sm leading-relaxed max-w-xl">
               Follow us for transformations, tips, and behind-the-scenes content from {clientConfig.companyName}.
             </p>
             <hr className="accent-rule w-40" />
@@ -80,13 +80,13 @@ export default function SocialsPage() {
           <div
             aria-hidden="true"
             className="pointer-events-none absolute bottom-0 inset-x-0 h-20"
-            style={{ background: "linear-gradient(to bottom, transparent, #000000)" }}
+            style={{ background: "linear-gradient(to bottom, transparent, #f9fafb)" }}
           />
         </section>
 
         {/* ── Social cards ── */}
-        <section aria-label="Social media links" className="py-16 px-6">
-          <div className="max-w-4xl mx-auto flex flex-col gap-px bg-steel-dark">
+        <section aria-label="Social media links" className="py-16 px-6 bg-gray-50">
+          <div className="max-w-4xl mx-auto flex flex-col gap-px bg-gray-200">
             {clientConfig.socials.map((s) => (
               <a
                 key={s.id}
@@ -94,11 +94,11 @@ export default function SocialsPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${s.cta}, opens in a new tab`}
-                className="group bg-obsidian hover:bg-navy-dark transition-colors duration-300 flex flex-col sm:flex-row items-start sm:items-center gap-6 p-8"
+                className="group bg-white hover:bg-gray-50 transition-colors duration-300 flex flex-col sm:flex-row items-start sm:items-center gap-6 p-8"
               >
                 {/* Icon */}
                 <div
-                  className="shrink-0 w-14 h-14 flex items-center justify-center border border-steel-dark group-hover:border-steel transition-colors duration-300"
+                  className="shrink-0 w-14 h-14 flex items-center justify-center border border-gray-200 group-hover:border-gray-300 transition-colors duration-300"
                   style={{ color: s.accent }}
                 >
                   {socialIcons[s.id] ?? (
@@ -109,16 +109,16 @@ export default function SocialsPage() {
                 {/* Info */}
                 <div className="flex flex-col gap-1.5 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                    <span className="text-wake text-base font-bold tracking-tight">{s.platform}</span>
-                    <span className="text-steel text-xs tracking-wide">{s.handle}</span>
+                    <span className="text-gray-900 text-base font-bold tracking-tight">{s.platform}</span>
+                    <span className="text-gray-400 text-xs tracking-wide">{s.handle}</span>
                   </div>
-                  <p className="text-steel text-xs leading-relaxed max-w-lg">
+                  <p className="text-gray-600 text-xs leading-relaxed max-w-lg">
                     {s.description}
                   </p>
                 </div>
 
                 {/* CTA arrow */}
-                <div className="shrink-0 flex items-center gap-2 text-steel group-hover:text-wake transition-colors duration-300 text-xs tracking-[0.2em] uppercase font-semibold">
+                <div className="shrink-0 flex items-center gap-2 text-gray-400 group-hover:text-navy transition-colors duration-300 text-xs tracking-[0.2em] uppercase font-semibold">
                   <span className="hidden sm:inline">{s.cta}</span>
                   <svg
                     aria-hidden="true"

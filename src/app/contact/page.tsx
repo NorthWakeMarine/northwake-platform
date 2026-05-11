@@ -100,11 +100,11 @@ export default function ContactPage() {
       <Header />
       <ScrollDepthTracker />
 
-      <main>
+      <main className="bg-white">
         {/* ── Main contact layout ── */}
         <section
           aria-labelledby="contact-form-heading"
-          className="pt-32 pb-16 px-6"
+          className="pt-32 pb-16 px-6 bg-white"
         >
           <h1 className="sr-only">Contact {clientConfig.companyName}, Get a Free Quote in {clientConfig.city}, {clientConfig.state}</h1>
           <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.6fr] gap-16 items-start">
@@ -112,30 +112,30 @@ export default function ContactPage() {
             {/* Left column, contact info + map */}
             <div className="flex flex-col gap-8 lg:sticky lg:top-28">
               {/* Contact cards */}
-              <div className="flex flex-col gap-px bg-steel-dark">
+              <div className="flex flex-col gap-px bg-gray-200">
                 {contactInfo.map((item) => (
                   <address
                     key={item.label}
-                    className="not-italic bg-obsidian p-6 flex gap-5 items-start hover:bg-navy-dark transition-colors duration-300"
+                    className="not-italic bg-white p-6 flex gap-5 items-start hover:bg-gray-50 transition-colors duration-300"
                   >
-                    <span aria-hidden="true" className="chrome-text text-xl leading-none mt-0.5 shrink-0">
+                    <span aria-hidden="true" className="chrome-text-dark text-xl leading-none mt-0.5 shrink-0">
                       {item.icon}
                     </span>
                     <div>
-                      <p className="text-steel text-[9px] tracking-[0.35em] uppercase mb-1">
+                      <p className="text-gray-400 text-xs tracking-[0.35em] uppercase mb-1">
                         {item.label}
                       </p>
                       {item.href ? (
                         <a
                           href={item.href}
-                          className="text-wake text-sm font-semibold hover:text-steel-light transition-colors duration-200"
+                          className="text-gray-900 text-sm font-semibold hover:text-navy transition-colors duration-200"
                         >
                           {item.value}
                         </a>
                       ) : (
-                        <p className="text-wake text-sm font-semibold">{item.value}</p>
+                        <p className="text-gray-900 text-sm font-semibold">{item.value}</p>
                       )}
-                      {item.sub && <p className="text-steel text-xs mt-0.5">{item.sub}</p>}
+                      {item.sub && <p className="text-gray-500 text-xs mt-0.5">{item.sub}</p>}
                     </div>
                   </address>
                 ))}
@@ -149,21 +149,21 @@ export default function ContactPage() {
               <header className="flex flex-col gap-3">
                 <h2
                   id="contact-form-heading"
-                  className="text-wake text-2xl sm:text-3xl font-bold tracking-tight"
+                  className="text-gray-900 text-2xl sm:text-3xl font-bold tracking-tight"
                 >
-                  Request a <span className="chrome-text">Free Quote</span>
+                  Request a <span className="chrome-text-dark">Free Quote</span>
                 </h2>
-                <p className="text-steel text-sm leading-relaxed max-w-lg">
+                <p className="text-gray-600 text-sm leading-relaxed max-w-lg">
                   Tell us about your vessel and what you&apos;re looking for. The more detail you
                   provide, the more accurate and useful your estimate will be.
                 </p>
-                <p className="text-steel text-xs tracking-wide mt-1">
+                <p className="text-gray-500 text-xs tracking-wide mt-1">
                   Most quotes returned same day. No obligation, no pressure.
                 </p>
                 <hr className="accent-rule w-32" />
               </header>
 
-              <div className="border border-steel-dark p-6 sm:p-10">
+              <div className="border border-gray-200 p-6 sm:p-10">
                 <QuoteForm
                   formId="contact-quote-form"
                   showReferral={true}
@@ -177,21 +177,21 @@ export default function ContactPage() {
         {/* ── FAQ ── */}
         <section
           aria-labelledby="faq-heading"
-          className="py-24 px-6 border-t border-steel-dark"
+          className="py-24 px-6 border-t border-gray-200 bg-gray-50"
         >
           <div className="max-w-3xl mx-auto flex flex-col gap-10">
             <header className="flex flex-col items-center text-center gap-4">
-              <p className="text-steel text-[10px] tracking-[0.4em] uppercase">Common Questions</p>
+              <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">Common Questions</p>
               <h2
                 id="faq-heading"
-                className="text-wake text-3xl font-bold tracking-tight"
+                className="text-gray-900 text-3xl font-bold tracking-tight"
               >
                 Before You Reach Out
               </h2>
               <hr className="accent-rule w-32" />
             </header>
 
-            <dl className="flex flex-col gap-px bg-steel-dark">
+            <dl className="flex flex-col gap-px bg-gray-200">
               {[
                 {
                   q: "How quickly can you schedule a service?",
@@ -214,9 +214,9 @@ export default function ContactPage() {
                   a: "We never lock you into a contract. Plans are billed on a recurring basis with a rate and schedule agreed upon upfront. Adjustments are handled with direct communication.",
                 },
               ].map(({ q, a }) => (
-                <div key={q} className="bg-obsidian p-7 hover:bg-[#040408] transition-colors duration-200">
-                  <dt className="text-wake text-sm font-semibold mb-2.5">{q}</dt>
-                  <dd className="text-steel text-xs leading-relaxed">{a}</dd>
+                <div key={q} className="bg-white p-7 hover:bg-gray-50 transition-colors duration-200">
+                  <dt className="text-gray-900 text-sm font-semibold mb-2.5">{q}</dt>
+                  <dd className="text-gray-600 text-xs leading-relaxed">{a}</dd>
                 </div>
               ))}
             </dl>

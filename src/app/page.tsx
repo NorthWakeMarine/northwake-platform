@@ -72,7 +72,7 @@ export default async function Home() {
       <ScrollDepthTracker />
 
       {/* ─── MAIN ────────────────────────────────────────────────── */}
-      <main>
+      <main className="bg-white">
 
         {/* ── HERO: logo + tagline left · quote form right ── */}
         <section
@@ -96,7 +96,7 @@ export default async function Home() {
             {/* ── Left: logo + tagline ── */}
             <div className="flex flex-col gap-4 order-1 text-center items-center">
               <Image
-                src={clientConfig.logoFullWhitePng}
+                src={clientConfig.logoFullBlackSvg}
                 alt={`${clientConfig.companyName}, ${clientConfig.seoDescription}`}
                 width={260}
                 height={70}
@@ -112,7 +112,7 @@ export default async function Home() {
                     {heroSubheadline}
                   </span>
                 </h1>
-                <p className="text-gray-400 text-[10px] tracking-[0.45em] uppercase">
+                <p className="text-gray-400 text-xs tracking-[0.45em] uppercase">
                   {clientConfig.city}, {clientConfig.state} &nbsp;·&nbsp; Est. {clientConfig.foundedYear}
                 </p>
                 <p className="sr-only">
@@ -146,7 +146,7 @@ export default async function Home() {
             <div className="order-2 chrome-stage-light bg-white/95 backdrop-blur-md p-5 sm:p-7 shadow-sm">
               <div className="flex flex-col gap-0.5 mb-4">
                 <h2 className="text-gray-900 text-xl font-bold tracking-tight">{clientConfig.ctaText}</h2>
-                <p className="text-gray-500 text-[11px] tracking-wide">{clientConfig.ctaSubtext}</p>
+                <p className="text-gray-500 text-xs tracking-wide">{clientConfig.ctaSubtext}</p>
               </div>
               <HeroQuoteForm />
             </div>
@@ -168,7 +168,7 @@ export default async function Home() {
             {clientConfig.trustBadges.map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-2">
                 <span aria-hidden="true" className="chrome-text-dark text-sm">{icon}</span>
-                <span className="text-gray-700 text-[10px] tracking-[0.2em] uppercase font-semibold">{text}</span>
+                <span className="text-gray-700 text-xs tracking-[0.2em] uppercase font-semibold">{text}</span>
               </div>
             ))}
           </div>
@@ -178,7 +178,7 @@ export default async function Home() {
         <section id="services" aria-labelledby="services-heading" className="pt-10 pb-14 px-6 bg-white">
           <div className="max-w-7xl mx-auto">
             <header className="flex flex-col items-center text-center gap-2 mb-8">
-              <p className="text-gray-400 text-[10px] tracking-[0.4em] uppercase">What We Do</p>
+              <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">What We Do</p>
               <h2
                 id="services-heading"
                 className="text-gray-900 text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight"
@@ -205,7 +205,7 @@ export default async function Home() {
                     {svc.icon}
                   </span>
                   <div>
-                    <p className="text-gray-400 text-[9px] tracking-[0.35em] uppercase mb-0.5">
+                    <p className="text-gray-400 text-xs tracking-[0.35em] uppercase mb-0.5">
                       {svc.tagline}
                     </p>
                     <h3 className="text-gray-900 text-base font-bold tracking-tight">{svc.title}</h3>
@@ -213,7 +213,7 @@ export default async function Home() {
                   <p className="text-gray-600 text-xs leading-relaxed">{svc.description}</p>
                   <ul className="flex flex-col gap-1 mt-auto list-none">
                     {svc.includes.slice(0, 3).map((d) => (
-                      <li key={d} className="flex items-start gap-2 text-gray-500 text-[11px]">
+                      <li key={d} className="flex items-start gap-2 text-gray-500 text-xs">
                         <span aria-hidden="true" className="text-navy mt-0.5">▸</span>
                         {d}
                       </li>
@@ -229,7 +229,7 @@ export default async function Home() {
         <section aria-labelledby="testimonials-heading" className="py-16 px-6 bg-gray-50">
           <div className="max-w-7xl mx-auto">
             <header className="flex flex-col items-center text-center gap-2 mb-10">
-              <p className="text-gray-400 text-[10px] tracking-[0.4em] uppercase">Client Feedback</p>
+              <p className="text-gray-400 text-xs tracking-[0.4em] uppercase">Client Feedback</p>
               <h2 id="testimonials-heading" className="text-gray-900 text-2xl sm:text-3xl font-bold tracking-tight">
                 What Vessel Owners Are <span className="chrome-text-dark">Saying</span>
               </h2>
@@ -244,7 +244,7 @@ export default async function Home() {
         </section>
 
         {/* ── FEATURED WORK CAROUSEL (bottom showcase) ── */}
-        <section aria-labelledby="showcase-heading" className="pt-20 pb-0">
+        <section aria-labelledby="showcase-heading" className="pt-20 pb-0 bg-white">
           <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-8 flex items-end justify-between gap-4">
             <div className="flex flex-col gap-2">
               <h2
