@@ -99,6 +99,62 @@ export async function submitLead(
   return { success: true };
 }
 
+// ─── Web Services Inquiry ─────────────────────────────────────────────────────
+
+const webServicesSchema = z.object({
+  name:            z.string().min(1, "Please enter your name."),
+  company:         z.string().min(1, "Please enter your business name."),
+  email:           z.string().email("Please enter a valid email address."),
+  phone:           z.string().optional(),
+  industry:        z.string().min(1, "Please select your industry."),
+  tier:            z.string().min(1, "Please select a tier."),
+  current_website: z.string().optional(),
+  message:         z.string().optional(),
+});
+
+export type WebServicesFormState = { success: boolean; error?: string };
+
+export async function submitWebServicesInquiry(
+  _prev: WebServicesFormState,
+  formData: FormData
+): Promise<WebServicesFormState> {
+  const raw = Object.fromEntries(formData);
+  const parsed = webServicesSchema.safeParse(raw);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+
+  const d = parsed.data;
+  const notes = [
+    d.company && `Company: ${d.company}`,
+    d.current_website && `Current site: ${d.current_website}`,
+    d.message && d.message,
+  ].filter(Boolean).join("\n");
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("leads").insert({
+    name:            d.name,
+    email:           d.email,
+    phone:           normalizePhone(d.phone),
+    vessel_type:     d.industry,
+    service:         d.tier,
+    source:          "web_services",
+    message:         notes || null,
+    referral_source: null,
+  });
+
+  if (error) return { success: false, error: error.message };
+
+  sendLeadNotification({
+    name:       d.name,
+    email:      d.email,
+    phone:      d.phone ?? null,
+    service:    d.tier,
+    vesselType: d.industry,
+    message:    notes || null,
+  }).catch((err) => console.error("Web services inquiry email error:", err));
+
+  return { success: true };
+}
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export type LoginState = { error?: string };

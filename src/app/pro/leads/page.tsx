@@ -25,7 +25,8 @@ const sourceConfig: Record<string, { label: string; cls: string }> = {
   api:        { label: "API",          cls: "bg-slate-100 text-slate-500 border border-slate-200" },
   dialpad:    { label: "Dialpad",      cls: "bg-purple-50 text-purple-600 border border-purple-200" },
   google_ads: { label: "Google Ads",   cls: "bg-green-50 text-green-600 border border-green-200" },
-  manual:     { label: "Manual",       cls: "bg-amber-50 text-amber-600 border border-amber-200" },
+  manual:      { label: "Manual",       cls: "bg-amber-50 text-amber-600 border border-amber-200" },
+  web_services: { label: "Web Client",  cls: "bg-violet-50 text-violet-600 border border-violet-200" },
 };
 
 function fmt(iso: string) {
