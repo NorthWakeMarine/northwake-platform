@@ -21,13 +21,13 @@ const features = [
   },
   {
     icon: "⬡",
-    title: "Two-Way Google Calendar Sync",
-    body: "Appointments booked through your site sync to Google Calendar in real time. Moves and cancellations made in Calendar reflect back in the CRM automatically.",
+    title: "Calendar Sync",
+    body: "Appointments booked through your site sync to your calendar in real time. Moves and cancellations reflect back in the CRM automatically. Supports Google Calendar, Outlook, and more.",
   },
   {
     icon: "⬡",
-    title: "QuickBooks Integration",
-    body: "New leads become QuickBooks customers automatically. Draft invoices created from the CRM push directly to your QuickBooks account with one click.",
+    title: "Accounting and Invoicing Integration",
+    body: "New leads become customers in your accounting software automatically. Draft invoices push directly from the CRM with one click. Supports QuickBooks, Zoho Books, and others.",
   },
   {
     icon: "⬡",
@@ -46,8 +46,8 @@ const features = [
   },
   {
     icon: "⬡",
-    title: "Google Ads Conversion Tracking",
-    body: "Conversion events fire precisely on form submission, not on page load. Your ad spend data is clean, your ROAS reporting is accurate.",
+    title: "Ads Conversion Tracking",
+    body: "Conversion events fire precisely on form submission, not on page load. Your ad spend data is clean and your ROAS reporting is accurate. Supports Google Ads, Meta, and more.",
   },
   {
     icon: "⬡",
