@@ -35,5 +35,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.6,
     },
+    ...clientConfig.locations.map((loc) => ({
+      url: `${BASE}/locations/${loc.slug}`,
+      lastModified: new Date("2025-05-01"),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
   ];
 }

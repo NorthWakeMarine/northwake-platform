@@ -44,6 +44,14 @@ export type TrustBadge = {
   text: string;
 };
 
+export type LocationEntry = {
+  name: string;
+  slug: string;
+  description: string;
+  nearbyMarinas: string[];
+  waterways: string[];
+};
+
 export type ClientConfig = {
   // ── Identity ──────────────────────────────────────────────────────────────
   companyName: string;
@@ -123,6 +131,9 @@ export type ClientConfig = {
 
   // ── Legal ─────────────────────────────────────────────────────────────────
   privacyEffectiveDate: string;
+
+  // ── Location pages (drives /locations/[slug] dynamic pages) ──────────────
+  locations: LocationEntry[];
 
   // ── Integrations (toggle per client) ──────────────────────────────────────
   integrations: {
@@ -660,6 +671,163 @@ export const clientConfig: ClientConfig = {
   waiverTitle: "NORTHWAKE MARINE - LIABILITY WAIVER",
 
   privacyEffectiveDate: "April 27, 2025",
+
+  locations: [
+    {
+      name: "Jacksonville",
+      slug: "jacksonville",
+      description: "From the St. Johns River to the Intracoastal, Jacksonville is one of Florida's most active boating cities. NorthWake Marine provides mobile marine services throughout Jacksonville, reaching every marina, dry stack, and private dock in the region.",
+      nearbyMarinas: ["Port 32 Jax", "The Florida Yacht Club", "Ortega Yacht Club", "The Rudder Club", "Rod-N-Gun Club", "Harbortown Marina", "Arlington Marina", "Berkman Plaza Marina", "Yacht Harbor Marina", "River City Marina", "Venetian Marina", "Cedar River Marina", "Light House Marina", "Cats Paw Marina", "Seafarers Marina", "Bill Dye Marina", "Jacksonville Shipyard", "Lamb's Yacht Center", "Huckins Yacht Corporation"],
+      waterways: ["St. Johns River", "Ortega River", "Trout River", "Ribault River", "Cedar River"],
+    },
+    {
+      name: "Mandarin",
+      slug: "mandarin",
+      description: "Mandarin sits along the southern St. Johns River corridor and is home to some of the most active recreational boating communities in Jacksonville. NorthWake Marine serves Mandarin boat owners at the dock, at the marina, or wherever your vessel is kept.",
+      nearbyMarinas: ["Mandarin Holiday Marina", "Julington Creek Marina", "Julington Creek Pier 3"],
+      waterways: ["St. Johns River", "Julington Creek", "Goodby's Creek"],
+    },
+    {
+      name: "Ortega",
+      slug: "ortega",
+      description: "The Ortega River neighborhood is Jacksonville's premier waterfront community, home to some of the finest vessels on the St. Johns. NorthWake Marine is the local choice for Ortega boat owners who demand professional-grade care without leaving their dock.",
+      nearbyMarinas: ["Ortega Yacht Club", "Marina at Ortega Landing", "Winward at Ortega River Marina", "The Florida Yacht Club"],
+      waterways: ["Ortega River", "St. Johns River"],
+    },
+    {
+      name: "Avondale",
+      slug: "avondale",
+      description: "Avondale and Riverside sit along the St. Johns River with easy access to Jacksonville's premier yacht clubs and marinas. NorthWake Marine serves Avondale boat owners with mobile detailing, maintenance, and vessel management.",
+      nearbyMarinas: ["The Florida Yacht Club", "Ortega Yacht Club", "The Rudder Club"],
+      waterways: ["St. Johns River", "Ortega River"],
+    },
+    {
+      name: "San Marco",
+      slug: "san-marco",
+      description: "San Marco sits directly on the St. Johns River and is one of Jacksonville's most established riverfront communities. NorthWake Marine provides full marine services to San Marco boat owners at their home dock or at nearby facilities.",
+      nearbyMarinas: ["Berkman Plaza Marina", "Yacht Harbor Marina", "River City Marina"],
+      waterways: ["St. Johns River", "Pottsburg Creek"],
+    },
+    {
+      name: "Southside",
+      slug: "southside",
+      description: "Jacksonville's Southside is home to several premier marina facilities and a large population of serious boat owners. NorthWake Marine serves the Southside waterfront community with mobile services that come to your vessel.",
+      nearbyMarinas: ["Marina San Pablo", "Mariners Pointe", "Queens Harbour Yacht and Country Club"],
+      waterways: ["Intracoastal Waterway", "Pablo Creek", "Mill Cove"],
+    },
+    {
+      name: "Fort Caroline",
+      slug: "fort-caroline",
+      description: "Fort Caroline sits along the northern St. Johns River with access to some of Jacksonville's most scenic boating waters. NorthWake Marine serves Fort Caroline boat owners with professional mobile marine services.",
+      nearbyMarinas: ["Arlington Marina", "River City Marina"],
+      waterways: ["St. Johns River", "Sisters Creek", "Fort George Island"],
+    },
+    {
+      name: "Palm Valley",
+      slug: "palm-valley",
+      description: "Palm Valley is a peaceful waterfront community between Jacksonville and Ponte Vedra with direct access to the Intracoastal Waterway. NorthWake Marine provides mobile marine services throughout Palm Valley and the surrounding area.",
+      nearbyMarinas: ["Palm Cove Marina", "Marsh Landing Marina"],
+      waterways: ["Intracoastal Waterway", "Pablo Creek"],
+    },
+    {
+      name: "Fruit Cove",
+      slug: "fruit-cove",
+      description: "Fruit Cove sits at the confluence of Julington Creek and the St. Johns River, one of Jacksonville's most active recreational boating areas. NorthWake Marine serves Fruit Cove and the surrounding St. Johns County waterfront.",
+      nearbyMarinas: ["Julington Creek Marina", "Julington Creek Pier 3", "Doctors Lake Marina"],
+      waterways: ["St. Johns River", "Julington Creek", "Durbin Creek"],
+    },
+    {
+      name: "Jacksonville Beach",
+      slug: "jacksonville-beach",
+      description: "Jacksonville Beach sits on the Atlantic coast with direct access to the Intracoastal Waterway and the open ocean. NorthWake Marine serves Jacksonville Beach boat owners at the marina, at the launch, or at their home dock.",
+      nearbyMarinas: ["Beaches Marina Vilano", "Winward at Beach Marine"],
+      waterways: ["Intracoastal Waterway", "Nassau Sound", "Mayport Jetties"],
+    },
+    {
+      name: "Atlantic Beach",
+      slug: "atlantic-beach",
+      description: "Atlantic Beach is one of Jacksonville's most active coastal communities, with quick access to the inlet, the ICW, and offshore waters. NorthWake Marine provides mobile marine services to Atlantic Beach boat owners.",
+      nearbyMarinas: ["Beaches Marina Vilano", "Winward at Beach Marine"],
+      waterways: ["Intracoastal Waterway", "Sisters Creek", "Mayport Jetties"],
+    },
+    {
+      name: "Neptune Beach",
+      slug: "neptune-beach",
+      description: "Neptune Beach sits between Atlantic Beach and Jacksonville Beach on Florida's First Coast, with easy access to the Intracoastal and the Atlantic. NorthWake Marine serves Neptune Beach boat owners with professional mobile marine services.",
+      nearbyMarinas: ["Beaches Marina Vilano", "Winward at Beach Marine"],
+      waterways: ["Intracoastal Waterway", "Pablo Creek"],
+    },
+    {
+      name: "Ponte Vedra",
+      slug: "ponte-vedra",
+      description: "Ponte Vedra is one of Northeast Florida's most affluent waterfront communities, with private docks and marina access along the Intracoastal Waterway. NorthWake Marine is the preferred marine service provider for Ponte Vedra boat owners.",
+      nearbyMarinas: ["Marsh Landing Marina", "Hidden Harbor Marina", "Palm Cove Marina"],
+      waterways: ["Intracoastal Waterway", "Pablo Creek", "Guana River"],
+    },
+    {
+      name: "Mayport",
+      slug: "mayport",
+      description: "Mayport sits at the mouth of the St. Johns River where it meets the Atlantic Ocean, making it one of the most strategically located communities for serious boaters in Northeast Florida. NorthWake Marine serves Mayport and the surrounding inlet community.",
+      nearbyMarinas: ["Beaches Marina Vilano", "Seafarers Marina"],
+      waterways: ["St. Johns River", "Nassau Sound", "Mayport Jetties", "Fort George Island"],
+    },
+    {
+      name: "Orange Park",
+      slug: "orange-park",
+      description: "Orange Park sits along the western bank of the St. Johns River in Clay County, with access to some of the best freshwater and transition boating in the region. NorthWake Marine serves Orange Park boat owners throughout the Clay County waterfront.",
+      nearbyMarinas: ["Doctors Lake Marina", "Black Creek Marina"],
+      waterways: ["St. Johns River", "Doctors Lake", "Black Creek"],
+    },
+    {
+      name: "Green Cove Springs",
+      slug: "green-cove-springs",
+      description: "Green Cove Springs is a historic river city along the St. Johns with a dedicated boating community and one of the region's most active municipal marinas. NorthWake Marine serves Green Cove Springs boat owners with mobile marine services.",
+      nearbyMarinas: ["Green Cove Springs Municipal Marina", "Tiger Point Marina"],
+      waterways: ["St. Johns River", "Black Creek", "Bayard Point"],
+    },
+    {
+      name: "St. Augustine",
+      slug: "st-augustine",
+      description: "St. Augustine is one of Florida's most active cruising and liveaboard destinations, with world-class marina facilities and direct access to the Intracoastal Waterway and the Atlantic. NorthWake Marine serves St. Augustine boat owners throughout the historic waterfront.",
+      nearbyMarinas: ["Camachee Cove", "San Sebastian Marina", "The Conch House Marina", "St. Augustine Municipal Marina", "St. Augustine Marine Center", "Oasis Boatyard", "Fish Island Marina", "Rivers Edge Marina", "Beaches Marina Vilano", "Villages of Vilano Marina"],
+      waterways: ["Intracoastal Waterway", "Matanzas River", "San Sebastian River", "Tolomato River"],
+    },
+    {
+      name: "Amelia Island",
+      slug: "amelia-island",
+      description: "Amelia Island is one of Florida's most sought-after boating destinations, with deep-water access, pristine anchorages, and a vibrant waterfront community. NorthWake Marine serves Amelia Island boat owners with premium mobile marine services.",
+      nearbyMarinas: ["Amelia Island Yacht Basin", "The Bight Marina", "Fernandina Beach Marina"],
+      waterways: ["Amelia River", "Nassau Sound", "Nassau River", "Lofton Creek", "Egans Creek"],
+    },
+    {
+      name: "Fernandina Beach",
+      slug: "fernandina-beach",
+      description: "Fernandina Beach is the historic port city on Amelia Island's northern shore, with deep-water docks and easy access to the Atlantic. NorthWake Marine serves Fernandina Beach boat owners at the marina or at their private dock.",
+      nearbyMarinas: ["Fernandina Beach Marina", "Amelia Island Yacht Basin", "The Bight Marina"],
+      waterways: ["Amelia River", "Nassau Sound", "Lofton Creek"],
+    },
+    {
+      name: "Palm Coast",
+      slug: "palm-coast",
+      description: "Palm Coast sits on Florida's Flagler County coastline with Intracoastal access and a growing boating community. NorthWake Marine extends mobile marine services south to Palm Coast and the surrounding Flagler County waterfront.",
+      nearbyMarinas: ["Palm Coast Marina", "Hammock Dunes Club"],
+      waterways: ["Intracoastal Waterway", "Matanzas River"],
+    },
+    {
+      name: "St. Johns",
+      slug: "st-johns",
+      description: "St. Johns County's residential communities along the river and creek systems offer some of Northeast Florida's most scenic private boating. NorthWake Marine serves St. Johns County boat owners throughout the waterfront corridor.",
+      nearbyMarinas: ["Julington Creek Marina", "Julington Creek Pier 3", "Palm Cove Marina"],
+      waterways: ["St. Johns River", "Julington Creek", "Durbin Creek", "Governors Creek"],
+    },
+    {
+      name: "Ponte Vedra Beach",
+      slug: "ponte-vedra-beach",
+      description: "Ponte Vedra Beach is one of Northeast Florida's most desirable coastal communities, with private Intracoastal access and a discerning boating clientele. NorthWake Marine provides concierge-level marine services to Ponte Vedra Beach boat owners.",
+      nearbyMarinas: ["Marsh Landing Marina", "Hidden Harbor Marina"],
+      waterways: ["Intracoastal Waterway", "Guana River", "Pablo Creek"],
+    },
+  ],
 
   integrations: {
     googleAnalytics: true,
