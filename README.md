@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NorthWake Platform
 
-## Getting Started
+A full-stack business engine for premium marine (and adaptable service) businesses. Includes a public landing site, lead capture forms, and a Pro CRM portal — all configurable via a single `client.ts` file.
 
-First, run the development server:
+## Stack
+- **Framework:** Next.js 15 App Router
+- **Styling:** Tailwind CSS v4
+- **Database:** Supabase (Postgres + Storage)
+- **Hosting:** Vercel (auto-deploy from main branch)
+
+## Spinning up a new client
+
+1. Duplicate `src/config/client.ts` and fill in the company values.
+2. Replace logo assets in `public/brand/` (white SVG, full black PNG).
+3. Add a hero/carousel image to `public/images/` for local dev fallback.
+4. Set Vercel env vars (see below).
+5. Push to main — Vercel auto-deploys.
+
+## Local dev
 
 ```bash
+cp .env.example .env.local   # fill Supabase values from Supabase dashboard > Settings > API Keys > Legacy
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+If you hit webpack chunk errors: `rm -rf .next && npm run dev`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Do NOT run `vercel --prod` manually — GitHub integration handles production deploys.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Env vars (Vercel)
 
-## Learn More
+| Var | Required | Notes |
+|---|---|---|
+| NEXT_PUBLIC_SUPABASE_URL | Yes | |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | Yes | |
+| SUPABASE_SECRET_KEY | Yes | Service role key |
+| NEXT_PUBLIC_SITE_URL | Yes | e.g. https://www.northwakemarine.com |
+| GOOGLE_SERVICE_ACCOUNT_EMAIL | Calendar | |
+| GOOGLE_PRIVATE_KEY | Calendar | |
+| GOOGLE_CALENDAR_ID | Calendar | primary |
+| GOOGLE_CALENDAR_SUBJECT | Calendar | admin email |
+| GOOGLE_WEBHOOK_TOKEN | Calendar | random secret |
+| QB_CLIENT_ID | QuickBooks | |
+| QB_CLIENT_SECRET | QuickBooks | |
+| QB_REDIRECT_URI | QuickBooks | /api/auth/quickbooks/callback |
+| QB_WEBHOOK_VERIFIER_TOKEN | QuickBooks | |
+| DIALPAD_API_KEY | Dialpad | |
+| GOOGLE_ADS_WEBHOOK_KEY | Google Ads | |
+| INGEST_API_KEY | Integrity check cron | |
+| CRON_SECRET | Cron routes | |
+| NEXT_PUBLIC_GA_MEASUREMENT_ID | Analytics | Add to activate GA4 |
+| NEXT_PUBLIC_GOOGLE_PLACES_API_KEY | Reviews | Add to activate Google Reviews carousel |
+| GMAIL_USER | Email alerts | Add to activate form submission emails |
+| GMAIL_APP_PASSWORD | Email alerts | |
 
-To learn more about Next.js, take a look at the following resources:
+## UI design system
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+All public landing pages follow WCAG 2.1 AA standards. Key rules:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Light mode** on all public pages (white/gray-50 bg, dark text). Header + footer stay dark.
+- **Minimum text:** body `text-sm text-gray-700`, labels `text-xs text-gray-500` — never `text-gray-400` on white (fails contrast).
+- **Form borders:** `border-gray-500` minimum on all form fields (inputs, selects, textareas, checkboxes).
+- **Ghost buttons:** `border-gray-500` minimum on white backgrounds.
+- **Heading hierarchy:** h1 -> h2 -> h3, never skip levels, use `sr-only` headings to bridge gaps.
+- **Textures:** dot grid via `hero-grid` class on light sections; inline white dot gradient on dark sections.
 
-## Deploy on Vercel
+CSS utility classes live in `src/app/globals.css`: `chrome-text`, `chrome-text-dark`, `chrome-btn`, `chrome-stage`, `chrome-stage-light`, `badge-chrome`, `hero-grid`, `accent-rule`, `accent-rule-dark`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Release notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The Pro portal release notes page (`/pro/release-notes`) reads `CHANGELOG.md` at render time. Update `CHANGELOG.md` and push to update the dashboard — no code changes needed.

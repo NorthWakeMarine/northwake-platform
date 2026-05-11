@@ -2,6 +2,23 @@
 
 ## May 2026
 
+### May 11 | Light mode UI, WCAG AA audit, Featured Work redesign | Site,UX
+Complete visual overhaul of all public landing pages from dark mode to light mode, followed by a full WCAG 2.1 AA accessibility audit and Featured Work section redesign.
+
+**Light mode conversion:** All public pages (Home, About, Services, Contact, Socials) now use white/gray-50 backgrounds with dark text. Header and footer remain dark (bg-obsidian). Featured Work showcase stays black. Chrome/metallic effects carried over using a new `chrome-text-dark` CSS class (dark pewter gradient) for use on light backgrounds.
+
+**Typography and legibility:** Body copy bumped from text-xs to text-sm (14px) and darkened to text-gray-700 across all pages. Form labels bumped to text-xs font-medium text-gray-700. All sub-12px text eliminated. Header and footer button text bumped to text-xs minimum.
+
+**WCAG 2.1 AA audit:** Eyebrow labels bumped from text-gray-400 (2.5:1, fails) to text-gray-500 (4.6:1, passes) across all pages. Form field borders bumped from border-gray-300 (1.3:1) to border-gray-500 (4.6:1) on all inputs, selects, textareas, and checkboxes. Ghost button borders bumped to border-gray-500. Chrome-btn given a 1px #686a6c border for visibility on white. Both quote forms include a "Fields marked * are required." legend (1.4.1). About page heading hierarchy fixed with sr-only h2 bridging h1 to h3 team cards (1.3.1).
+
+**Texture:** Hero crossing-line grid replaced with a navy dot pattern (class hero-grid). New accent-rule-dark CSS class added for chrome gradient dividers on dark backgrounds.
+
+**Footer:** Compacted from tall multi-row layout into a single slim horizontal row: logo, nav links, phone and email, Get a Quote CTA. Bottom bar has copyright, Terms, Privacy, and NorthWake Pro links.
+
+**Service areas:** Added "Marinas and Waterways We Serve" section to the Services page with three columns: approximately 50 marinas, 30 waterways, and 22 communities across the Jacksonville area for local SEO crawl value.
+
+**Featured Work banner:** Compacted (pt-20 to pt-5), chrome-stage border removed from carousel in showcase mode (hero mode only now), white dot texture and chrome accent rule added to the black section.
+
 ### May 9 | Remove floating quote button | Site
 The floating "Get a Free Quote" button was removed from all public pages. The site has enough quote entry points (hero form, footer CTA band, contact page) that the persistent button was redundant and covered footer content on scroll.
 
