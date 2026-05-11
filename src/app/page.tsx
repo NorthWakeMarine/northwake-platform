@@ -248,7 +248,7 @@ export default async function Home() {
           aria-labelledby="showcase-heading"
           className="pt-5 pb-0 bg-black"
           style={{
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px)",
             backgroundSize: "22px 22px",
           }}
         >
@@ -260,7 +260,7 @@ export default async function Home() {
           <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-4 flex items-center justify-between gap-4">
             <h2
               id="showcase-heading"
-              className="text-white text-lg font-bold tracking-tight"
+              className="text-white text-2xl sm:text-3xl font-bold tracking-tight"
             >
               Featured <span className="chrome-text">Work</span>
             </h2>

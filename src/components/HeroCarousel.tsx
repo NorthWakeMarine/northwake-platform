@@ -81,10 +81,10 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
           else if (e.key === "ArrowRight") { e.preventDefault(); scrollNext(); }
         }}
       >
-        {/* Chrome border wrapper */}
-        <div className={`chrome-stage relative w-full overflow-hidden ${
+        {/* Chrome border wrapper — only applied in hero mode */}
+        <div className={`relative w-full overflow-hidden ${
           showHeroOverlay
-            ? "h-[60vh] sm:h-[70vh] lg:h-[88vh]"
+            ? "chrome-stage h-[60vh] sm:h-[70vh] lg:h-[88vh]"
             : "h-[52vh] sm:h-[60vh] lg:h-[72vh]"
         }`}>
 
