@@ -311,7 +311,7 @@ export default function WebServicesPage() {
             {[
               {
                 industry: "Marine",
-                icon: "⚓",
+                icon: "◈",
                 examples: "Detailing, maintenance, storage, bottom paint, canvas, upholstery repair",
                 insight: "Boat owners search by marina, by lake, by waterway. We build location pages that rank at every slip in your territory.",
               },
