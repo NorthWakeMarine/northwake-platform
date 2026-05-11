@@ -109,8 +109,25 @@ export default function ContactPage() {
           <h1 className="sr-only">Contact {clientConfig.companyName}, Get a Free Quote in {clientConfig.city}, {clientConfig.state}</h1>
           <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.6fr] gap-16 items-start">
 
-            {/* Left column, contact info + map */}
+            {/* Left column, heading + contact info */}
             <div className="flex flex-col gap-8 lg:sticky lg:top-28">
+              <header className="flex flex-col gap-3">
+                <h2
+                  id="contact-form-heading"
+                  className="text-gray-900 text-2xl sm:text-3xl font-bold tracking-tight"
+                >
+                  Request a <span className="chrome-text-dark">Free Quote</span>
+                </h2>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Tell us about your vessel and what you&apos;re looking for. The more detail you
+                  provide, the more accurate and useful your estimate will be.
+                </p>
+                <p className="text-gray-500 text-xs tracking-wide mt-1">
+                  Most quotes returned same day. No obligation, no pressure.
+                </p>
+                <hr className="accent-rule w-32" />
+              </header>
+
               {/* Contact cards */}
               <div className="flex flex-col gap-px bg-gray-200">
                 {contactInfo.map((item) => (
@@ -140,36 +157,14 @@ export default function ContactPage() {
                   </address>
                 ))}
               </div>
-
-
             </div>
 
-            {/* Right column, form */}
-            <div className="flex flex-col gap-8">
-              <header className="flex flex-col gap-3">
-                <h2
-                  id="contact-form-heading"
-                  className="text-gray-900 text-2xl sm:text-3xl font-bold tracking-tight"
-                >
-                  Request a <span className="chrome-text-dark">Free Quote</span>
-                </h2>
-                <p className="text-gray-600 text-sm leading-relaxed max-w-lg">
-                  Tell us about your vessel and what you&apos;re looking for. The more detail you
-                  provide, the more accurate and useful your estimate will be.
-                </p>
-                <p className="text-gray-500 text-xs tracking-wide mt-1">
-                  Most quotes returned same day. No obligation, no pressure.
-                </p>
-                <hr className="accent-rule w-32" />
-              </header>
-
-              <div className="border border-gray-200 p-6 sm:p-10">
-                <QuoteForm
-                  formId="contact-quote-form"
-                  showReferral={true}
-                />
-              </div>
-
+            {/* Right column, form only */}
+            <div className="border border-gray-200 p-6 sm:p-10">
+              <QuoteForm
+                formId="contact-quote-form"
+                showReferral={true}
+              />
             </div>
           </div>
         </section>
