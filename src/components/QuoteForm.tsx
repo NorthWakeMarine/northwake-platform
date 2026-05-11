@@ -56,7 +56,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-4 transition-all duration-300 hover:scale-[1.02] active:scale-95 mt-2 w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+      className="chrome-btn font-bold text-xs tracking-[0.3em] uppercase py-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-95 mt-1 w-full disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
     >
       {pending && <Spinner />}
       {pending ? "Submitting…" : "Get My Free Quote →"}
@@ -82,9 +82,9 @@ export default function QuoteForm({
   }
 
   const fieldClass =
-    "bg-gray-50 border border-gray-500 text-gray-900 placeholder-gray-400/70 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 w-full peer [&:user-invalid]:border-red-500";
+    "bg-gray-50 border border-gray-500 text-gray-900 placeholder-gray-400/70 text-sm px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 w-full peer [&:user-invalid]:border-red-500";
   const selectClass =
-    "bg-white border border-gray-500 text-gray-900 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full peer [&:user-invalid]:border-red-500";
+    "bg-white border border-gray-500 text-gray-900 text-sm px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 appearance-none cursor-pointer w-full peer [&:user-invalid]:border-red-500";
   const fieldErr =
     "hidden peer-[&:user-invalid]:block text-red-600 text-xs tracking-wide mt-0.5";
   const labelClass =
@@ -130,7 +130,7 @@ export default function QuoteForm({
       onSubmit={handleSubmit}
       onFocus={handleFirstInteraction}
       aria-label="Quote request form"
-      className="w-full flex flex-col gap-5 relative"
+      className="w-full flex flex-col gap-3 relative"
     >
       <FormOverlay />
       <input type="hidden" name="source" value="contact" />
@@ -145,8 +145,8 @@ export default function QuoteForm({
       )}
 
       {/* Row: Name + Email */}
-      <div className="grid sm:grid-cols-2 gap-5">
-        <div className="flex flex-col gap-2">
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-name`} className={labelClass}>
             Full Name <span aria-hidden="true" className="text-navy">*</span>
           </label>
@@ -161,7 +161,7 @@ export default function QuoteForm({
           />
           <span className={fieldErr}>Please enter your full name.</span>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-email`} className={labelClass}>
             Email Address <span aria-hidden="true" className="text-navy">*</span>
           </label>
@@ -179,8 +179,8 @@ export default function QuoteForm({
       </div>
 
       {/* Row: Phone + Vessel Length */}
-      <div className="grid sm:grid-cols-2 gap-5">
-        <div className="flex flex-col gap-2">
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-phone`} className={labelClass}>
             Phone Number <span aria-hidden="true" className="text-navy">*</span>
           </label>
@@ -195,7 +195,7 @@ export default function QuoteForm({
           />
           <span className={fieldErr}>Please enter your phone number.</span>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-vessel-length`} className={labelClass}>
             Vessel Length (ft) <span aria-hidden="true" className="text-navy">*</span>
           </label>
@@ -212,8 +212,8 @@ export default function QuoteForm({
       </div>
 
       {/* Row: Vessel Type + Service */}
-      <div className="grid sm:grid-cols-2 gap-5">
-        <div className="flex flex-col gap-2">
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-vessel`} className={labelClass}>
             Vessel Type <span aria-hidden="true" className="text-navy">*</span>
           </label>
@@ -231,7 +231,7 @@ export default function QuoteForm({
           </select>
           <span className={fieldErr}>Please select a vessel type.</span>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-service`} className={labelClass}>
             Service Needed <span aria-hidden="true" className="text-navy">*</span>
           </label>
@@ -253,7 +253,7 @@ export default function QuoteForm({
 
       {/* Referral source */}
       {showReferral && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-referral`} className={labelClass}>
             How Did You Hear About Us?
           </label>
@@ -272,16 +272,16 @@ export default function QuoteForm({
       )}
 
       {/* Message */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         <label htmlFor={`${formId}-message`} className={labelClass}>
           Additional Details
         </label>
         <textarea
           id={`${formId}-message`}
           name="message"
-          rows={4}
+          rows={3}
           placeholder="Vessel condition, preferred service dates, specific concerns, or anything else we should know…"
-          className="bg-gray-50 border border-gray-500 text-gray-900 placeholder-gray-400/70 text-sm px-4 py-3 focus:outline-none focus:border-navy transition-colors duration-200 resize-none w-full"
+          className="bg-gray-50 border border-gray-500 text-gray-900 placeholder-gray-400/70 text-sm px-3 py-2 focus:outline-none focus:border-navy transition-colors duration-200 resize-none w-full"
         />
       </div>
 

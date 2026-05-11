@@ -160,7 +160,7 @@ export default function ContactPage() {
             </div>
 
             {/* Right column, form only */}
-            <div className="border border-gray-200 p-6 sm:p-10">
+            <div className="border border-gray-200 p-5 sm:p-7">
               <QuoteForm
                 formId="contact-quote-form"
                 showReferral={true}
