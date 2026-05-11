@@ -244,16 +244,26 @@ export default async function Home() {
         </section>
 
         {/* ── FEATURED WORK CAROUSEL (bottom showcase) ── */}
-        <section aria-labelledby="showcase-heading" className="pt-20 pb-0 bg-black">
-          <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-8 flex items-end justify-between gap-4">
-            <div className="flex flex-col gap-2">
-              <h2
-                id="showcase-heading"
-                className="text-white text-2xl sm:text-3xl font-bold tracking-tight"
-              >
-                Featured <span className="chrome-text">Work</span>
-              </h2>
-            </div>
+        <section
+          aria-labelledby="showcase-heading"
+          className="pt-5 pb-0 bg-black"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
+        >
+          {/* Thin chrome accent rule at top */}
+          <div
+            aria-hidden="true"
+            className="accent-rule-dark mb-4"
+          />
+          <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-4 flex items-center justify-between gap-4">
+            <h2
+              id="showcase-heading"
+              className="text-white text-lg font-bold tracking-tight"
+            >
+              Featured <span className="chrome-text">Work</span>
+            </h2>
             <Link
               href="/services"
               className="text-steel text-xs tracking-[0.25em] uppercase hover:text-white transition-colors duration-200 shrink-0"

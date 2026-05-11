@@ -128,6 +128,13 @@ body {
   background: linear-gradient(90deg, transparent, #000080, #a0a2a4, transparent);
 }
 
+/* Chrome accent rule for dark backgrounds */
+.accent-rule-dark {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #4a4c4e 15%, #a0a3a6 40%, #d8dadc 50%, #a0a3a6 60%, #4a4c4e 85%, transparent);
+}
+
 /* Chrome stage — carousel border with gradient chrome effect */
 .chrome-stage {
   position: relative;
