@@ -59,8 +59,8 @@ const features = [
 const tiers = [
   {
     name: "Launch",
-    price: "$997",
-    monthly: "$97/mo",
+    price: "$499",
+    monthly: "$49/mo",
     tagline: "A high-performance landing site that generates leads and ranks.",
     badge: null,
     includes: [
@@ -79,8 +79,8 @@ const tiers = [
   },
   {
     name: "Platform",
-    price: "$2,500",
-    monthly: "$297/mo",
+    price: "$999",
+    monthly: "$49/mo",
     tagline: "Everything in Launch, plus a full CRM and the integrations that run your business.",
     badge: "Most Popular",
     includes: [
@@ -99,8 +99,8 @@ const tiers = [
   },
   {
     name: "Command",
-    price: "$4,200",
-    monthly: "$497/mo",
+    price: "$1,499",
+    monthly: "$99/mo",
     tagline: "The complete platform, with call logging, paid ads, and AI-optimized SEO.",
     badge: null,
     includes: [

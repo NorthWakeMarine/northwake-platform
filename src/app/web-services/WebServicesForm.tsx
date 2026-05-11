@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { submitWebServicesInquiry, type WebServicesFormState } from "@/app/actions";
 
 const industries = ["Marine", "Automotive", "Aviation", "Other"];
-const tiers = ["Launch — $997 setup / $97/mo", "Platform — $2,500 setup / $297/mo", "Command — $4,200 setup / $497/mo", "Not sure yet, just exploring"];
+const tiers = ["Launch — $499 setup / $49/mo", "Platform — $999 setup / $49/mo", "Command — $1,499 setup / $99/mo", "Not sure yet, just exploring"];
 
 export default function WebServicesForm() {
   const [state, formAction, isPending] = useActionState<WebServicesFormState, FormData>(
