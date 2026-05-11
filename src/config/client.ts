@@ -161,7 +161,7 @@ export const clientConfig: ClientConfig = {
 
   logoWhiteSvg: "/brand/nwmlogowhite.svg",
   logoFullWhitePng: "/brand/nwmlogofullwhite.png",
-  logoFullBlackSvg: "/brand/nwmlogofullblack.svg",
+  logoFullBlackSvg: "/brand/BlackLogoName(Alpha).png",
   ogImagePath: "/og-image.png",
   faviconPath: "/favicon.png",
 
