@@ -66,10 +66,11 @@ export async function getOrCreateContactFolder(
   const p     = parents();
   const name  = `${contactName} - Documents`;
 
+  const parentClause = p ? ` and '${p[0]}' in parents` : "";
   const existing = await drive.files.list({
     supportsAllDrives: true,
     includeItemsFromAllDrives: true,
-    q: `name = '${name.replace(/'/g, "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    q: `name = '${name.replace(/'/g, "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false${parentClause}`,
     fields: "files(id, webViewLink)",
     pageSize: 1,
   });
