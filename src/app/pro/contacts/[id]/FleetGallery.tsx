@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, startTransition, useTransition } from "react";
 import {
-  addAsset, updateAssetNotes, type AssetState,
+  addAsset, updateAssetNotes, updateAsset, type AssetState,
   addVesselService, markServiced, deleteVesselService, type VesselServiceState,
   createQuickBooksInvoiceDraft, deleteAsset,
 } from "@/app/actions";
@@ -377,11 +377,13 @@ function AssetModal({ asset, contactId, services, onClose }: {
   asset: Asset; contactId: string; services: VesselService[]; onClose: () => void;
 }) {
   const [notesState, notesAction, isSaving] = useActionState<AssetState, FormData>(updateAssetNotes, {});
+  const [editState, editAction, isEditing] = useActionState<AssetState, FormData>(updateAsset, {});
   const [invoicePending, startInvoiceTransition] = useTransition();
   const [invoiceResult, setInvoiceResult] = useState<{ invoiceUrl?: string; docNumber?: string; error?: string } | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showEdit, setShowEdit] = useState(false);
   const cfg = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
   const displayName = asset.name || asset.make_model || `${cfg.label} Asset`;
 
@@ -411,22 +413,65 @@ function AssetModal({ asset, contactId, services, onClose }: {
         </div>
 
         <div className="p-6 flex flex-col gap-5">
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
-            {[
-              { label: "Type",         value: cfg.label },
-              { label: "Color",        value: asset.color },
-              { label: "Length",       value: asset.length_ft ? `${asset.length_ft} ft` : null },
-              { label: "Registration", value: asset.registration },
-              { label: "Location",     value: asset.location },
-            ]
-              .filter((f) => f.value)
-              .map(({ label, value }) => (
-                <div key={label} className="flex flex-col gap-0.5">
-                  <dt className="text-[10px] tracking-widest uppercase font-medium text-slate-400">{label}</dt>
-                  <dd className="text-slate-700">{value}</dd>
+          {/* Details / Edit toggle */}
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Details</p>
+            <button type="button" onClick={() => setShowEdit((v) => !v)}
+              className="text-[10px] tracking-widest uppercase text-[#000080] hover:text-[#0000a0] font-semibold transition-colors">
+              {showEdit ? "Cancel" : "Edit"}
+            </button>
+          </div>
+
+          {showEdit ? (
+            <form action={editAction} className="flex flex-col gap-3">
+              <input type="hidden" name="asset_id"   value={asset.id} />
+              <input type="hidden" name="contact_id" value={contactId} />
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: "Name / Nickname", name: "name",         defaultValue: asset.name },
+                  { label: "Make / Model",    name: "make_model",   defaultValue: asset.make_model },
+                  { label: "Year",            name: "year",         defaultValue: asset.year?.toString() },
+                  { label: "Color",           name: "color",        defaultValue: asset.color },
+                  { label: "Length (ft)",     name: "length_ft",    defaultValue: asset.length_ft },
+                  { label: "Registration",    name: "registration", defaultValue: asset.registration },
+                ].map(({ label, name, defaultValue }) => (
+                  <div key={name} className="flex flex-col gap-1">
+                    <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">{label}</label>
+                    <input type="text" name={name} defaultValue={defaultValue ?? ""}
+                      className="border border-slate-200 rounded-sm px-3 py-2 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:border-slate-400" />
+                  </div>
+                ))}
+                <div className="col-span-2 flex flex-col gap-1">
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Storage Location</label>
+                  <input type="text" name="location" defaultValue={asset.location ?? ""}
+                    className="border border-slate-200 rounded-sm px-3 py-2 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:border-slate-400" />
                 </div>
-              ))}
-          </dl>
+              </div>
+              {editState.error   && <p className="text-red-500 text-[11px]">{editState.error}</p>}
+              {editState.success && <p className="text-emerald-600 text-[11px]">Saved.</p>}
+              <button type="submit" disabled={isEditing}
+                className="self-start bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm font-semibold disabled:opacity-50 transition-colors">
+                {isEditing ? "Saving..." : "Save Changes"}
+              </button>
+            </form>
+          ) : (
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
+              {[
+                { label: "Type",         value: cfg.label },
+                { label: "Color",        value: asset.color },
+                { label: "Length",       value: asset.length_ft ? `${asset.length_ft} ft` : null },
+                { label: "Registration", value: asset.registration },
+                { label: "Location",     value: asset.location },
+              ]
+                .filter((f) => f.value)
+                .map(({ label, value }) => (
+                  <div key={label} className="flex flex-col gap-0.5">
+                    <dt className="text-[10px] tracking-widest uppercase font-medium text-slate-400">{label}</dt>
+                    <dd className="text-slate-700">{value}</dd>
+                  </div>
+                ))}
+            </dl>
+          )}
 
           <ServiceScheduleSection asset={asset} contactId={contactId} services={services} />
 

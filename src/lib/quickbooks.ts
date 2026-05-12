@@ -247,6 +247,8 @@ export type QbCustomer = {
     PostalCode?: string;
   };
   Active: boolean;
+  Notes?: string;
+  SyncToken?: string;
 };
 
 export async function listQbCustomers(): Promise<QbCustomer[]> {
@@ -255,5 +257,47 @@ export async function listQbCustomers(): Promise<QbCustomer[]> {
     "/query?query=SELECT%20*%20FROM%20Customer%20WHERE%20Active%20%3D%20true%20MAXRESULTS%20500"
   );
   return data.QueryResponse.Customer ?? [];
+}
+
+export async function getQbCustomer(qbCustomerId: string): Promise<QbCustomer> {
+  type Resp = { Customer: QbCustomer };
+  const data = await qbRequest<Resp>(`/customer/${qbCustomerId}`);
+  return data.Customer;
+}
+
+// ── Notes-based vessel sync ───────────────────────────────────────────────────
+
+const VESSELS_PREFIX = "Vessels:";
+
+export type NoteVessel = { year: number | null; makeModel: string | null; lengthFt: string | null };
+
+export function parseVesselsFromNotes(notes: string | null): NoteVessel[] {
+  if (!notes) return [];
+  const line = notes.split("\n").find((l) => l.startsWith(VESSELS_PREFIX));
+  if (!line) return [];
+  return line.slice(VESSELS_PREFIX.length).trim().split(" | ").filter(Boolean).map((v) => {
+    const parts = v.split(" - ");
+    const yearStr = parts[0]?.trim() ?? "";
+    const makeModel = parts[1]?.trim() || null;
+    const lengthFt = parts[2]?.trim() || null;
+    const year = parseInt(yearStr, 10);
+    return { year: !isNaN(year) && year > 1900 ? year : null, makeModel, lengthFt };
+  });
+}
+
+export function buildNotesWithVessels(existingNotes: string | null, vessels: NoteVessel[]): string {
+  const otherLines = (existingNotes ?? "").split("\n").filter((l) => !l.startsWith(VESSELS_PREFIX)).join("\n").trim();
+  if (vessels.length === 0) return otherLines;
+  const vesselLine = VESSELS_PREFIX + " " + vessels
+    .map((v) => `${v.year ?? ""} - ${v.makeModel ?? ""} - ${v.lengthFt ?? ""}`)
+    .join(" | ");
+  return otherLines ? `${vesselLine}\n${otherLines}` : vesselLine;
+}
+
+export async function updateQbCustomerNotes(qbCustomerId: string, syncToken: string, notes: string): Promise<void> {
+  await qbRequest("/customer", {
+    method: "POST",
+    body: JSON.stringify({ Id: qbCustomerId, SyncToken: syncToken, sparse: true, Notes: notes }),
+  });
 }
 

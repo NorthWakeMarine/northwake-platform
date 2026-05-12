@@ -774,6 +774,29 @@ export async function updateAssetNotes(
   return { success: true };
 }
 
+export async function updateAsset(
+  _prev: AssetState,
+  formData: FormData
+): Promise<AssetState> {
+  const asset_id   = formData.get("asset_id")   as string;
+  const contact_id = formData.get("contact_id") as string;
+  if (!asset_id) return { error: "Missing asset ID." };
+
+  const supabase = await svc();
+  const { error } = await supabase.from("vessels").update({
+    name:       (formData.get("name")       as string)?.trim() || null,
+    make_model: (formData.get("make_model") as string)?.trim() || null,
+    year:       parseInt(formData.get("year") as string, 10) || null,
+    color:      (formData.get("color")      as string)?.trim() || null,
+    length_ft:  (formData.get("length_ft")  as string)?.trim() || null,
+    registration: (formData.get("registration") as string)?.trim() || null,
+    location:   (formData.get("location")   as string)?.trim() || null,
+  }).eq("id", asset_id);
+  if (error) return { error: error.message };
+  if (contact_id) revalidatePath(`/pro/contacts/${contact_id}`);
+  return { success: true };
+}
+
 export async function deleteAsset(assetId: string, contactId: string): Promise<{ error?: string }> {
   const supabase = await svc();
   await supabase.from("vessel_services").delete().eq("vessel_id", assetId);
@@ -1435,7 +1458,48 @@ export async function pushCrmToQuickBooks(): Promise<{ upserted: number; error?:
   }
 }
 
-// ─── Contact Type ─────────────────────────────────────────────────────────────
+export async function syncVesselsToQbNotes(): Promise<{ synced: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { getQbTokens, getQbCustomer, buildNotesWithVessels, updateQbCustomerNotes } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { synced: 0, error: "QuickBooks not connected." };
+
+    const { data: contacts } = await supabase
+      .from("contacts")
+      .select("id, qb_customer_id")
+      .not("qb_customer_id", "is", null);
+
+    let synced = 0;
+    for (const c of contacts ?? []) {
+      try {
+        const { data: vessels } = await supabase
+          .from("vessels")
+          .select("year, make_model, length_ft")
+          .eq("owner_id", c.id)
+          .order("created_at", { ascending: true });
+
+        const noteVessels = (vessels ?? []).map((v) => ({
+          year: v.year as number | null,
+          makeModel: v.make_model as string | null,
+          lengthFt: v.length_ft as string | null,
+        }));
+
+        const customer = await getQbCustomer(c.qb_customer_id!);
+        const newNotes = buildNotesWithVessels(customer.Notes ?? null, noteVessels);
+
+        if (newNotes !== (customer.Notes ?? "")) {
+          await updateQbCustomerNotes(c.qb_customer_id!, customer.SyncToken!, newNotes);
+          synced++;
+        }
+      } catch { /* skip if individual customer fetch fails */ }
+    }
+
+    return { synced };
+  } catch (err) {
+    return { synced: 0, error: err instanceof Error ? err.message : "QB notes sync failed." };
+  }
+}
 
 // ─── Manual Call Log ──────────────────────────────────────────────────────────
 
@@ -1650,7 +1714,7 @@ export async function importQbCustomers(): Promise<{
   const supabase = await svc();
 
   try {
-    const { listQbCustomers, getQbTokens } = await import("@/lib/quickbooks");
+    const { listQbCustomers, getQbTokens, parseVesselsFromNotes } = await import("@/lib/quickbooks");
     const tokens = await getQbTokens();
     if (!tokens) return { linked: 0, alreadyLinked: 0, unmatched: [], mismatches: [], error: "QuickBooks not connected." };
 
@@ -1709,6 +1773,25 @@ export async function importQbCustomers(): Promise<{
         } else {
           await supabase.from("contacts").update(updatePayload).eq("id", match.id);
           linked++;
+        }
+
+        // Sync vessels from QB Notes → CRM
+        const noteVessels = parseVesselsFromNotes(qbC.Notes ?? null);
+        if (noteVessels.length > 0) {
+          const { data: existing } = await supabase
+            .from("vessels")
+            .select("make_model, year")
+            .eq("owner_id", match.id);
+          const existingKeys = new Set((existing ?? []).map((v) => `${v.year}|${v.make_model?.toLowerCase()}`));
+          for (const nv of noteVessels) {
+            const key = `${nv.year}|${nv.makeModel?.toLowerCase()}`;
+            if (!existingKeys.has(key)) {
+              await supabase.from("vessels").insert({
+                owner_id: match.id, asset_type: "vessel",
+                year: nv.year, make_model: nv.makeModel, length_ft: nv.lengthFt,
+              });
+            }
+          }
         }
       } else {
         unmatched.push({

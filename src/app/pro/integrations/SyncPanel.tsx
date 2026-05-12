@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, pushCrmToDialpad, pushCrmToQuickBooks, updateContactFields, promoteDialpadLocalToCompany, importQbInvoices } from "@/app/actions";
+import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, pushCrmToDialpad, pushCrmToQuickBooks, syncVesselsToQbNotes, updateContactFields, promoteDialpadLocalToCompany, importQbInvoices } from "@/app/actions";
 import type { FieldMismatch, DpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
@@ -15,6 +15,7 @@ type SyncResult = {
   qbInvoices?: { imported: number; skipped: number; error?: string };
 
   qbPush?: { upserted: number; error?: string };
+  qbNotes?: { synced: number; error?: string };
 };
 
 export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnected: boolean; dialpadConnected: boolean }) {
@@ -27,10 +28,11 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
 
   function handleSyncAll() {
     startTransition(async () => {
-      const [qb, qbInvoices, qbPush, dialpad, dpPush, integrity] = await Promise.all([
+      const [qb, qbInvoices, qbPush, qbNotes, dialpad, dpPush, integrity] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
         qbConnected ? importQbInvoices() : Promise.resolve(undefined),
         qbConnected ? pushCrmToQuickBooks() : Promise.resolve(undefined),
+        qbConnected ? syncVesselsToQbNotes() : Promise.resolve(undefined),
         dialpadConnected ? importDialpadContacts() : Promise.resolve(undefined),
         dialpadConnected ? pushCrmToDialpad() : Promise.resolve(undefined),
         runIntegrityCheck(),
@@ -39,6 +41,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
         qb: qb ?? undefined,
         qbInvoices: qbInvoices ?? undefined,
         qbPush: qbPush ?? undefined,
+        qbNotes: qbNotes ?? undefined,
         dialpad: dialpad ?? undefined,
         dpPush: dpPush ?? undefined,
         integrity,
@@ -367,6 +370,21 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span className="text-slate-700 text-xs">{result.qbPush.upserted} customers confirmed in QuickBooks</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* QB vessel notes sync results */}
+          {result.qbNotes && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">QB Vessel Notes</p>
+              {result.qbNotes.error ? (
+                <p className="text-red-500 text-xs">{result.qbNotes.error}</p>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-slate-700 text-xs">{result.qbNotes.synced} QB customer notes updated with vessel data</span>
                 </div>
               )}
             </div>
