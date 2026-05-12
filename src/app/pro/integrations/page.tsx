@@ -49,7 +49,7 @@ async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: st
 
   return {
     qb: { connected: !!qbRow, realmId: qbRow?.realm_id ?? null },
-    dialpad: { connected: !!dpRow, oauthConnected: !!dpRow },
+    dialpad: { connected: !!dpRow || !!process.env.DIALPAD_API_KEY, oauthConnected: !!dpRow },
   };
 }
 
