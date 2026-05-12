@@ -1960,6 +1960,28 @@ export async function syncDialpadContacts(): Promise<{ synced: number; mismatche
   }
 }
 
+export async function registerDialpadWebhook(): Promise<{ ok: boolean; id?: string; existing?: boolean; error?: string }> {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!siteUrl) return { ok: false, error: "NEXT_PUBLIC_SITE_URL not set." };
+
+  const hookUrl = `${siteUrl}/api/webhooks/dialpad`;
+  const secret = process.env.DIALPAD_WEBHOOK_SECRET ?? "";
+
+  try {
+    const { listDialpadSubscriptions, registerDialpadEventSubscription } = await import("@/lib/dialpad");
+
+    const existing = await listDialpadSubscriptions();
+    const alreadyRegistered = existing.items?.find((s) => s.hook_url === hookUrl);
+    if (alreadyRegistered) return { ok: true, id: alreadyRegistered.id, existing: true };
+
+    const result = await registerDialpadEventSubscription(hookUrl, secret);
+    if (result.error) return { ok: false, error: result.error };
+    return { ok: true, id: result.id };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Unknown error." };
+  }
+}
+
 export async function pushCrmToDialpad(): Promise<{ updated: number; created: number; error?: string }> {
   const supabase = await svc();
   try {

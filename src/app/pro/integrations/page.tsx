@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
-import CalendarRegisterButton from "./IntegrationsClient";
+import CalendarRegisterButton, { DialpadWebhookButton } from "./IntegrationsClient";
 import SyncPanel from "./SyncPanel";
 
 export const dynamic = "force-dynamic";
@@ -216,23 +216,16 @@ export default async function IntegrationsPage({
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 text-amber-600 text-xs font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                    API key only (contacts sync limited)
+                    API key connected
                   </div>
-                  <p className="text-slate-400 text-[10px] leading-relaxed">
-                    Connect via OAuth to sync personal contacts from your userline.
-                  </p>
+                  <DialpadWebhookButton />
                   {dialpadOAuthAvailable && (
                     <a
                       href="/api/auth/dialpad"
-                      className="w-full bg-[#000080] text-white text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-semibold hover:bg-blue-900 transition-colors text-center"
+                      className="w-full border border-slate-300 text-slate-500 text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-medium hover:border-slate-400 transition-colors text-center"
                     >
-                      Connect via OAuth
+                      Upgrade to OAuth
                     </a>
-                  )}
-                  {!dialpadOAuthAvailable && (
-                    <p className="text-slate-400 text-[10px] leading-relaxed">
-                      Add DIALPAD_CLIENT_ID and DIALPAD_CLIENT_SECRET to Vercel to enable OAuth.
-                    </p>
                   )}
                 </div>
               ) : (

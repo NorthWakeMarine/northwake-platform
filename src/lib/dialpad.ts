@@ -161,6 +161,33 @@ export async function isDialpadConnected(): Promise<boolean> {
   return !!tokens;
 }
 
+export async function registerDialpadEventSubscription(hookUrl: string, secret: string): Promise<{ id?: string; error?: string }> {
+  try {
+    const result = await dpRequest<{ id?: string }>("/subscriptions", {
+      method: "POST",
+      body: JSON.stringify({
+        enabled: true,
+        hook_url: hookUrl,
+        secret,
+        call_states: ["hangup", "voicemail"],
+        sms: true,
+      }),
+    });
+    return { id: result.id };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Registration failed." };
+  }
+}
+
+export async function listDialpadSubscriptions(): Promise<{ items?: { id: string; hook_url: string; enabled: boolean }[]; error?: string }> {
+  try {
+    const result = await dpRequest<{ items?: { id: string; hook_url: string; enabled: boolean }[] }>("/subscriptions");
+    return result;
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to list subscriptions." };
+  }
+}
+
 export type DialpadCall = {
   id: string;
   date_started: number; // epoch ms
