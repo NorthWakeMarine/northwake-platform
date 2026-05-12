@@ -48,39 +48,27 @@ export default function ReviewsCarousel({
   const items = reviews.length > 0 ? reviews : STATIC_REVIEWS;
   const isGoogle = reviews.length > 0;
 
-  // Build pages of 3
-  const pages: GoogleReview[][] = [];
-  for (let i = 0; i < items.length; i += 3) {
-    pages.push(items.slice(i, i + 3));
-  }
-
-  const [page, setPage] = useState(0);
+  const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    if (paused || pages.length <= 1) return;
-    const t = setInterval(() => setPage((p) => (p + 1) % pages.length), 6000);
+    if (paused || items.length <= 1) return;
+    const t = setInterval(() => setCurrent((c) => (c + 1) % items.length), 6000);
     return () => clearInterval(t);
-  }, [paused, pages.length]);
+  }, [paused, items.length]);
 
   useEffect(() => () => clearTimeout(resumeTimer.current), []);
 
-  function handlePageClick(i: number) {
-    setPage(i);
+  function goTo(i: number) {
+    setCurrent(i);
     setPaused(true);
     clearTimeout(resumeTimer.current);
     resumeTimer.current = setTimeout(() => setPaused(false), 8000);
   }
 
-  const currentPage = pages[page] ?? [];
-
   return (
-    <div
-      className="flex flex-col items-center gap-6"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <div className="flex flex-col items-center gap-6 w-full">
       {isGoogle && rating && count && (
         <div className="flex items-center gap-3">
           <StarRating rating={Math.round(rating)} />
@@ -89,8 +77,12 @@ export default function ReviewsCarousel({
         </div>
       )}
 
-      <div className={`grid grid-cols-1 gap-px bg-steel-dark w-full ${currentPage.length >= 3 ? "md:grid-cols-3" : currentPage.length === 2 ? "md:grid-cols-2" : ""}`}>
-        {currentPage.map((review, i) => (
+      {/* Desktop: all cards in a single row */}
+      <div
+        className="hidden md:grid gap-px bg-steel-dark w-full"
+        style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
+      >
+        {items.map((review, i) => (
           <div key={i} className="bg-obsidian p-6 flex flex-col gap-4">
             {isGoogle && <StarRating rating={review.rating} />}
             <p className="text-steel-light text-xs leading-relaxed italic">&ldquo;{review.text}&rdquo;</p>
@@ -102,16 +94,40 @@ export default function ReviewsCarousel({
         ))}
       </div>
 
-      {pages.length > 1 && (
-        <div className="flex items-center gap-2" role="tablist" aria-label="Review pages">
-          {pages.map((_, i) => (
+      {/* Mobile: one at a time */}
+      <div
+        className="md:hidden w-full overflow-hidden"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
+        <div
+          className="flex transition-transform duration-300 ease-in-out"
+          style={{ transform: `translateX(-${current * 100}%)` }}
+        >
+          {items.map((review, i) => (
+            <div key={i} className="min-w-full bg-obsidian p-6 flex flex-col gap-4">
+              {isGoogle && <StarRating rating={review.rating} />}
+              <p className="text-steel-light text-xs leading-relaxed italic">&ldquo;{review.text}&rdquo;</p>
+              <div className="mt-auto flex flex-col gap-0.5">
+                <span className="text-wake text-xs font-bold tracking-wide">{review.author}</span>
+                <span className="text-steel text-[10px] tracking-[0.2em] uppercase">{review.relativeTime}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Dots: mobile only */}
+      {items.length > 1 && (
+        <div className="md:hidden flex items-center gap-2" role="tablist" aria-label="Reviews">
+          {items.map((_, i) => (
             <button
               key={i}
               role="tab"
-              aria-selected={i === page}
-              onClick={() => handlePageClick(i)}
-              className={`rounded-full transition-all duration-200 ${i === page ? "w-4 h-1.5 bg-navy" : "w-1.5 h-1.5 bg-steel/40 hover:bg-steel"}`}
-              aria-label={`Page ${i + 1}`}
+              aria-selected={i === current}
+              onClick={() => goTo(i)}
+              className={`rounded-full transition-all duration-200 ${i === current ? "w-4 h-1.5 bg-navy" : "w-1.5 h-1.5 bg-steel/40 hover:bg-steel"}`}
+              aria-label={`Review ${i + 1}`}
             />
           ))}
         </div>
