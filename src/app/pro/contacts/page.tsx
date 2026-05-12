@@ -89,8 +89,8 @@ export default async function ContactsPage({
   const { q, type, sort, dir } = (await searchParams) ?? {};
   const term = q?.trim() ?? "";
   const typeFilter = type?.trim() ?? "";
-  const sortField = SORTABLE_COLS[Object.keys(SORTABLE_COLS).find((k) => SORTABLE_COLS[k] === (sort ?? "")) ?? ""] ? (sort ?? "created_at") : "created_at";
-  const sortDir = dir === "asc" ? "asc" : "desc";
+  const sortField = SORTABLE_COLS[Object.keys(SORTABLE_COLS).find((k) => SORTABLE_COLS[k] === (sort ?? "")) ?? ""] ? (sort ?? "name") : "name";
+  const sortDir = dir === "asc" ? "asc" : (sort ? "desc" : "asc");
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
