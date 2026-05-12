@@ -126,12 +126,30 @@ export async function findOrCreateQbCustomer(contact: {
   if (contact.phone) body.PrimaryPhone = { FreeFormNumber: contact.phone };
 
   type CustomerResponse = { Customer: { Id: string } };
-  const data = await qbRequest<CustomerResponse>("/customer", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
 
-  const qbId = data.Customer.Id;
+  let qbId: string;
+  try {
+    const data = await qbRequest<CustomerResponse>("/customer", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    qbId = data.Customer.Id;
+  } catch (err) {
+    // QB error 6240 = duplicate DisplayName; find and link the existing customer
+    if (err instanceof Error && err.message.includes("6240")) {
+      const escapedName = displayName.replace(/'/g, "\\'");
+      type QueryResp = { QueryResponse: { Customer?: { Id: string }[] } };
+      const found = await qbRequest<QueryResp>(
+        `/query?query=${encodeURIComponent(`SELECT Id FROM Customer WHERE DisplayName = '${escapedName}' MAXRESULTS 1`)}`
+      );
+      const match = found.QueryResponse.Customer?.[0];
+      if (!match) throw new Error(`QB duplicate name but could not find existing customer: ${displayName}`);
+      qbId = match.Id;
+    } else {
+      throw err;
+    }
+  }
+
   await supabase.from("contacts").update({ qb_customer_id: qbId }).eq("id", contact.id);
   return qbId;
 }
