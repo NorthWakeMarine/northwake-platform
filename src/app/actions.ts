@@ -1808,15 +1808,19 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
 
     if (!contacts?.length) return { imported: 0, skipped: 0 };
 
-    // Deduplicate by qb_txn_id across all QB transaction event types
+    // Deduplicate by qb_txn_id (new format) or qb_invoice_id (legacy format)
     const { data: existing } = await supabase
       .from("timeline_events")
       .select("metadata")
       .in("event_type", ["invoice", "payment", "sales_receipt", "credit_memo"]);
 
-    const importedIds = new Set(
-      (existing ?? []).map((e) => (e.metadata as { qb_txn_id?: string })?.qb_txn_id).filter(Boolean)
-    );
+    const importedIds = new Set<string>();
+    for (const e of existing ?? []) {
+      const meta = e.metadata as { qb_txn_id?: string; qb_invoice_id?: string };
+      if (meta?.qb_txn_id) importedIds.add(meta.qb_txn_id);
+      // Normalize legacy invoice IDs so we don't reimport them under the new key
+      if (meta?.qb_invoice_id) importedIds.add(`Invoice:${meta.qb_invoice_id}`);
+    }
 
     const typeLabels: Record<string, string> = {
       Invoice:     "Invoice",
@@ -1848,7 +1852,7 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
           contact_id: contact.id,
           event_type: eventTypes[txn.txnType] ?? "invoice",
           title: `${label}${docPart} — $${Math.abs(txn.totalAmt).toFixed(2)}${txn.status ? ` (${txn.status})` : ""}`,
-          body: txn.memo ?? "",
+          body: txn.body ?? "",
           metadata: {
             qb_txn_id: `${txn.txnType}:${txn.id}`,
             txn_type: txn.txnType,
