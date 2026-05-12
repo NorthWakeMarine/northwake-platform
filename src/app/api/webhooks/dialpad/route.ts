@@ -45,7 +45,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const eventType = event.event as string;
+  // Native subscription format uses `state` (hangup/voicemail) and `from_number` for SMS.
+  // OAuth webhook format uses `event` (call.completed/call.missed/sms.inbound).
+  // Normalize to a single event type string.
+  const state = event.state as string | undefined;
+  const rawEvent = event.event as string | undefined;
+
+  let eventType: string;
+  if (rawEvent) {
+    eventType = rawEvent;
+  } else if (state === "hangup") {
+    eventType = "call.completed";
+  } else if (state === "voicemail") {
+    eventType = "call.voicemail";
+  } else if (event.from_number && !state) {
+    eventType = "sms.inbound";
+  } else {
+    return NextResponse.json({ ok: true });
+  }
 
   if (eventType === "call.missed" || eventType === "call.voicemail") {
     await handleMissedCall(event);
@@ -71,7 +88,7 @@ async function findContactByPhone(supabase: AnySupabase, phone: string) {
 
 async function handleMissedCall(event: Record<string, unknown>) {
   const supabase = svc();
-  const callerPhone = event.caller_number as string | undefined;
+  const callerPhone = (event.caller_number ?? event.external_number) as string | undefined;
   if (!callerPhone) return;
 
   const normalized = normalizePhone(callerPhone);
