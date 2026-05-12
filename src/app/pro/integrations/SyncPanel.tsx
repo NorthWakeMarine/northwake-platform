@@ -25,12 +25,13 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
 
   function handleSyncAll() {
     startTransition(async () => {
-      const [qb, dialpad, integrity] = await Promise.all([
+      const [qb, qbInvoices, dialpad, integrity] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
+        qbConnected ? importQbInvoices() : Promise.resolve(undefined),
         dialpadConnected ? importDialpadContacts() : Promise.resolve(undefined),
         runIntegrityCheck(),
       ]);
-      setResult({ qb: qb ?? undefined, dialpad: dialpad ?? undefined, integrity });
+      setResult({ qb: qb ?? undefined, qbInvoices: qbInvoices ?? undefined, dialpad: dialpad ?? undefined, integrity });
     });
   }
 
@@ -86,13 +87,6 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
     });
   }
 
-  function handleImportInvoices() {
-    startTransition(async () => {
-      const qbInvoices = await importQbInvoices();
-      setResult((prev) => ({ ...prev, qbInvoices }));
-    });
-  }
-
   function handlePromoteLocalToCompany() {
     startTransition(async () => {
       const dpPromote = await promoteDialpadLocalToCompany();
@@ -112,15 +106,6 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {qbConnected && (
-            <button
-              onClick={handleImportInvoices}
-              disabled={isPending}
-              className="border border-slate-200 text-slate-600 hover:border-slate-300 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
-            >
-              {isPending ? "Importing..." : "Import Invoices"}
-            </button>
-          )}
           {dialpadConnected && (
             <>
               <button
