@@ -43,6 +43,7 @@ export async function createAssetFolder(
   const p     = parents();
 
   const res = await drive.files.create({
+    supportsAllDrives: true,
     requestBody: {
       name:     `${contactName} - ${assetName}`,
       mimeType: "application/vnd.google-apps.folder",
@@ -65,8 +66,9 @@ export async function getOrCreateContactFolder(
   const p     = parents();
   const name  = `${contactName} - Documents`;
 
-  // Check if it already exists under the parent
   const existing = await drive.files.list({
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
     q: `name = '${name.replace(/'/g, "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
     fields: "files(id, webViewLink)",
     pageSize: 1,
@@ -78,6 +80,7 @@ export async function getOrCreateContactFolder(
   }
 
   const res = await drive.files.create({
+    supportsAllDrives: true,
     requestBody: {
       name,
       mimeType: "application/vnd.google-apps.folder",
@@ -105,6 +108,8 @@ export async function listFolderFiles(folderId: string): Promise<DriveFile[]> {
   const drive = google.drive({ version: "v3", auth });
 
   const res = await drive.files.list({
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
     q:      `'${folderId}' in parents and trashed = false`,
     fields: "files(id, name, mimeType, webViewLink, createdTime, size)",
     orderBy: "createdTime desc",
@@ -132,6 +137,7 @@ export async function uploadFileToFolder(
   const drive = google.drive({ version: "v3", auth });
 
   const res = await drive.files.create({
+    supportsAllDrives: true,
     requestBody: { name: fileName, parents: [folderId] },
     media: { mimeType, body: Readable.from(buffer) },
     fields: "id, webViewLink, name",
