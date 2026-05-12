@@ -2,6 +2,23 @@
 
 ## May 2026
 
+### May 12 | CRM contacts overhaul, bidirectional QB/Dialpad sync, asset editing | CRM,Integrations
+Contacts list, fleet management, and sync pipeline all significantly improved.
+
+**Contacts list:** Vessel and Length columns replaced with a single Asset column showing the first vessel on file (year, make/model, length). Info Incomplete badge now flags missing phone, email, or address. New No Fleet badge for contacts with no vessels. Status badges now check all four conditions: waiver, info, fleet, completeness.
+
+**Asset management:** Asset cards now have an Edit button that opens an inline form for all core fields (name, make/model, year, color, length, registration, location). Delete Asset added to the asset modal with a confirm step that also removes associated service records.
+
+**QB Notes vessel sync:** Vessel data now syncs bidirectionally through the QuickBooks customer Notes field using the format "Vessels: Year - Make/Model - Length | ...". CRM to QB: writes the Vessels line on Sync All and daily cron, preserving any other notes below it. QB to CRM: parses the Vessels line on QB customer import and creates any missing fleet records.
+
+**Dialpad caller ID:** Dialpad contacts now use first name (full contact name) and last name (compact first vessel, e.g. "2021 Pursuit DC266") so the Dialpad mobile app shows vessel info on incoming calls.
+
+**Outward sync:** Sync All now runs in both directions. CRM to QB (ensures all customers exist) and CRM to Dialpad (pushes name and vessel) run alongside existing inbound imports. Both are also wired into the daily 8am cron.
+
+**Dialpad matching fix:** Contacts with old combined-name format in Dialpad (e.g. "Jim Schmid 2023 Astondoa") now match to the CRM contact "Jim Schmid" via prefix matching instead of appearing as unmatched.
+
+**Dead code cleanup:** Removed 584 lines of non-functional code: QB vessel custom field sync (QB Online API limitation), scheduleFromInvoice placeholder, detectServiceConflicts placeholder, updateContactType (unused), all debug API routes, and unused helper functions in quickbooks.ts, dialpad.ts, and google-calendar.ts.
+
 ### May 12 | Web services page polish, AI receptionist add-on, mobile UI cleanup | Site,WebServices
 Continued improvements to the /web-services sales page and added an AI Receptionist as a new listed add-on service.
 
