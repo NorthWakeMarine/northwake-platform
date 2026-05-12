@@ -745,6 +745,11 @@ export async function addAsset(
     // Drive folder creation is best-effort; don't fail the asset save
   }
 
+  // Sync vessel back to QB custom fields (best-effort)
+  try {
+    await syncContactVesselsToQb(contact_id);
+  } catch { /* QB sync is best-effort */ }
+
   revalidatePath(`/pro/contacts/${contact_id}`);
   return { success: true };
 }
@@ -1866,6 +1871,145 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
     return { imported, skipped };
   } catch (err) {
     return { imported: 0, skipped: 0, error: err instanceof Error ? err.message : "Import failed." };
+  }
+}
+
+// ── QB Vessel Sync: QB → CRM ──────────────────────────────────────────────────
+
+export async function syncQbVesselsToContacts(): Promise<{ synced: number; created: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { getQbCustomerFull, extractQbVesselFields, getQbTokens } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { synced: 0, created: 0, error: "QuickBooks not connected." };
+
+    const { data: contacts } = await supabase
+      .from("contacts")
+      .select("id, qb_customer_id")
+      .not("qb_customer_id", "is", null);
+
+    if (!contacts?.length) return { synced: 0, created: 0 };
+
+    let synced = 0;
+    let created = 0;
+
+    for (const contact of contacts) {
+      try {
+        const customer = await getQbCustomerFull(contact.qb_customer_id!);
+        const qbVessels = extractQbVesselFields(customer);
+        if (!qbVessels.length) continue;
+
+        const { data: existing } = await supabase
+          .from("vessels")
+          .select("id, qb_slot, year, make_model, length_ft")
+          .eq("owner_id", contact.id);
+
+        const bySlot = new Map((existing ?? []).filter((v) => v.qb_slot).map((v) => [v.qb_slot, v]));
+
+        for (const qbV of qbVessels) {
+          const vessel = bySlot.get(qbV.slot);
+          if (vessel) {
+            // Update only fields that are missing in CRM but present in QB
+            const patch: Record<string, unknown> = {};
+            if (!vessel.year      && qbV.year)      patch.year       = qbV.year;
+            if (!vessel.make_model && qbV.makeModel) patch.make_model = qbV.makeModel;
+            if (!vessel.length_ft  && qbV.lengthFt)  patch.length_ft  = qbV.lengthFt;
+            if (Object.keys(patch).length) {
+              await supabase.from("vessels").update(patch).eq("id", vessel.id);
+              synced++;
+            }
+          } else {
+            // Create new vessel from QB data
+            await supabase.from("vessels").insert({
+              owner_id:   contact.id,
+              asset_type: "vessel",
+              qb_slot:    qbV.slot,
+              year:       qbV.year,
+              make_model: qbV.makeModel,
+              length_ft:  qbV.lengthFt,
+            });
+            created++;
+          }
+        }
+      } catch { /* skip contacts where QB fetch fails */ }
+    }
+
+    revalidatePath("/pro/contacts");
+    return { synced, created };
+  } catch (err) {
+    return { synced: 0, created: 0, error: err instanceof Error ? err.message : "Vessel sync failed." };
+  }
+}
+
+// ── QB Vessel Sync: CRM → QB ──────────────────────────────────────────────────
+
+export async function syncContactVesselsToQb(contactId: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { getQbCustomerFull, extractQbVesselFields, updateQbCustomerVesselFields, formatVesselField, getQbTokens } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { ok: false, error: "QuickBooks not connected." };
+
+    const { data: contact } = await supabase
+      .from("contacts")
+      .select("qb_customer_id")
+      .eq("id", contactId)
+      .single();
+
+    if (!contact?.qb_customer_id) return { ok: false, error: "Contact not linked to QuickBooks." };
+
+    const { data: vessels } = await supabase
+      .from("vessels")
+      .select("id, qb_slot, year, make_model, length_ft")
+      .eq("owner_id", contactId)
+      .order("qb_slot", { ascending: true, nullsFirst: false });
+
+    if (!vessels?.length) return { ok: true };
+
+    const customer = await getQbCustomerFull(contact.qb_customer_id);
+    const qbVessels = extractQbVesselFields(customer);
+
+    // Build a full picture of QB custom field slots (1-5) including their definitionIds
+    const allSlots = new Map<number, { definitionId: string; value: string }>();
+    for (const cf of customer.CustomField ?? []) {
+      const match = cf.Name?.match(/^\((\d+)\)/);
+      if (match) {
+        allSlots.set(parseInt(match[1], 10), { definitionId: cf.DefinitionId, value: cf.StringValue ?? "" });
+      }
+    }
+
+    const usedSlots = new Set(qbVessels.map((v) => v.slot));
+    const updates: { definitionId: string; value: string }[] = [];
+
+    for (const vessel of vessels) {
+      const formatted = formatVesselField(vessel.year, vessel.make_model, vessel.length_ft);
+
+      let targetSlot = vessel.qb_slot as number | null;
+
+      if (!targetSlot) {
+        // Find next free slot (1-5)
+        for (let s = 1; s <= 5; s++) {
+          if (!usedSlots.has(s)) { targetSlot = s; usedSlots.add(s); break; }
+        }
+        if (!targetSlot) continue; // all 5 slots full
+
+        // Persist the assigned slot back to CRM
+        await supabase.from("vessels").update({ qb_slot: targetSlot }).eq("id", vessel.id);
+      }
+
+      const slotData = allSlots.get(targetSlot);
+      if (!slotData) continue; // QB doesn't have this custom field defined
+
+      updates.push({ definitionId: slotData.definitionId, value: formatted });
+    }
+
+    if (updates.length) {
+      await updateQbCustomerVesselFields(contact.qb_customer_id, customer.SyncToken, updates);
+    }
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "QB vessel sync failed." };
   }
 }
 
