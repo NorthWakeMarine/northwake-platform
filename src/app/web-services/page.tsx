@@ -63,7 +63,7 @@ const tiers = [
   {
     name: "Launch",
     price: "$499",
-    monthly: "$49/mo — hosting, unlimited edits, support",
+    monthly: "$49/mo",
     tagline: "A high-performance landing site that generates leads and ranks on Google.",
     badge: null,
     includes: [
@@ -83,7 +83,7 @@ const tiers = [
   {
     name: "Platform",
     price: "$999",
-    monthly: "$99/mo — hosting, unlimited edits, support",
+    monthly: "$99/mo",
     tagline: "Everything in Launch, plus a full CRM and the integrations that run your business.",
     badge: "Most Popular",
     includes: [
@@ -103,7 +103,7 @@ const tiers = [
   {
     name: "Command",
     price: "$1,499",
-    monthly: "$149/mo — hosting, unlimited edits, priority support",
+    monthly: "$149/mo",
     tagline: "The complete platform, with call logging, AI-optimized SEO, and location pages.",
     badge: null,
     includes: [
@@ -262,10 +262,10 @@ export default function WebServicesPage() {
           >
             <span aria-hidden="true">←</span> Back to NorthWake Marine
           </Link>
-          <p className="text-xs tracking-[0.4em] uppercase text-steel-light">
+          <p className="text-xs tracking-[0.15em] sm:tracking-[0.4em] uppercase text-steel-light">
             Marine &nbsp;·&nbsp; Automotive &nbsp;·&nbsp; Aviation
           </p>
-          <h1 id="hero-heading" className="chrome-text text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-none">
+          <h1 id="hero-heading" className="chrome-text text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
             Like our website?<br />
             <span className="text-wake">We built it. We can build yours.</span>
           </h1>
@@ -307,7 +307,7 @@ export default function WebServicesPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Who we build for</p>
-            <h2 id="for-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Built for your industry</h2>
+            <h2 id="for-heading" className="chrome-text-dark text-3xl sm:text-4xl font-bold tracking-tight">Built for your industry</h2>
             <p className="text-gray-600 text-sm mt-3 max-w-xl mx-auto leading-relaxed">
               Generic website builders know nothing about how your clients find you, how your jobs are booked,
               or what makes a service business grow. We do.
@@ -352,7 +352,7 @@ export default function WebServicesPage() {
         <div className="max-w-4xl mx-auto">
           <div className="mb-10">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">The real problem</p>
-            <h2 id="problem-heading" className="chrome-text-dark text-4xl font-bold tracking-tight max-w-2xl">
+            <h2 id="problem-heading" className="chrome-text-dark text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight max-w-2xl">
               Your next client is searching right now. Are they finding you or your competitor?
             </h2>
           </div>
@@ -520,7 +520,7 @@ export default function WebServicesPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Integrations</p>
-            <h2 id="integrations-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Your website connects to your whole business</h2>
+            <h2 id="integrations-heading" className="chrome-text-dark text-3xl sm:text-4xl font-bold tracking-tight">Your website connects to your whole business</h2>
             <p className="text-gray-600 text-sm mt-3 max-w-2xl mx-auto leading-relaxed">
               A website that does not talk to your other tools creates work. Every integration we build
               eliminates a manual step you are doing right now.
@@ -564,7 +564,7 @@ export default function WebServicesPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Everything included</p>
-            <h2 id="features-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">
+            <h2 id="features-heading" className="chrome-text-dark text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
               The details that separate a real platform from a brochure
             </h2>
           </div>
@@ -583,7 +583,7 @@ export default function WebServicesPage() {
       {/* ── Mid CTA 3 ────────────────────────────────────────────────────────── */}
       <div className="bg-obsidian py-10 px-6 border-t border-steel-dark">
         <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-          <p className="chrome-text text-lg font-bold tracking-tight text-center sm:text-left whitespace-nowrap">
+          <p className="chrome-text text-base sm:text-lg font-bold tracking-tight text-center sm:text-left">
             Not sure which tier fits your business?
           </p>
           <a
@@ -600,7 +600,7 @@ export default function WebServicesPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Pricing</p>
-            <h2 id="pricing-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Three tiers. No surprises.</h2>
+            <h2 id="pricing-heading" className="chrome-text-dark text-3xl sm:text-4xl font-bold tracking-tight">Three tiers. No surprises.</h2>
             <p className="text-gray-600 text-sm mt-3 max-w-xl mx-auto">
               Setup fee covers build and launch. Monthly covers hosting, unlimited edits, support, and updates.
             </p>
@@ -616,7 +616,7 @@ export default function WebServicesPage() {
             {tiers.map((tier) => (
               <div
                 key={tier.name}
-                className={`flex flex-col border p-8 relative ${
+                className={`flex flex-col border p-6 sm:p-8 relative ${
                   tier.highlight
                     ? "border-navy bg-obsidian text-white shadow-lg shadow-navy/20"
                     : "border-gray-200 bg-white"
@@ -637,7 +637,10 @@ export default function WebServicesPage() {
                     </span>
                     <span className={`text-sm pb-1 ${tier.highlight ? "text-steel-light" : "text-gray-500"}`}>setup</span>
                   </div>
-                  <p className={`text-sm font-medium ${tier.highlight ? "text-wake" : "text-navy"}`}>{tier.monthly}</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className={`text-sm font-medium ${tier.highlight ? "text-wake" : "text-navy"}`}>{tier.monthly}</p>
+                    <span className={`text-xs ${tier.highlight ? "text-steel" : "text-gray-400"}`}>hosting + unlimited edits</span>
+                  </div>
                   <p className={`text-sm mt-3 leading-relaxed ${tier.highlight ? "text-steel-light" : "text-gray-600"}`}>
                     {tier.tagline}
                   </p>
@@ -671,7 +674,7 @@ export default function WebServicesPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Add-ons</p>
-            <h2 id="addons-heading" className="chrome-text-dark text-3xl font-bold tracking-tight">Available on any tier</h2>
+            <h2 id="addons-heading" className="chrome-text-dark text-2xl sm:text-3xl font-bold tracking-tight">Available on any tier</h2>
             <p className="text-gray-600 text-sm mt-2 max-w-lg mx-auto">
               One-time additions you can bolt onto any tier at any time, during the build or after launch.
             </p>
@@ -697,7 +700,7 @@ export default function WebServicesPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Why not the alternatives</p>
-            <h2 id="vs-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">
+            <h2 id="vs-heading" className="chrome-text-dark text-3xl sm:text-4xl font-bold tracking-tight">
               We have looked at what else is out there
             </h2>
             <p className="text-gray-600 text-sm mt-3 max-w-xl mx-auto leading-relaxed">
@@ -757,7 +760,7 @@ export default function WebServicesPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs tracking-[0.4em] uppercase text-steel mb-3">The process</p>
-            <h2 id="process-heading" className="chrome-text text-4xl font-bold tracking-tight">From inquiry to live in three steps</h2>
+            <h2 id="process-heading" className="chrome-text text-3xl sm:text-4xl font-bold tracking-tight">From inquiry to live in three steps</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -792,7 +795,7 @@ export default function WebServicesPage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Common questions</p>
-            <h2 id="faq-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Answered honestly</h2>
+            <h2 id="faq-heading" className="chrome-text-dark text-3xl sm:text-4xl font-bold tracking-tight">Answered honestly</h2>
           </div>
           <div className="flex flex-col divide-y divide-gray-100">
             {faqs.map((faq) => (
@@ -829,7 +832,7 @@ export default function WebServicesPage() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <p className="text-xs tracking-[0.4em] uppercase text-gray-500 mb-3">Get started</p>
-            <h2 id="contact-heading" className="chrome-text-dark text-4xl font-bold tracking-tight">Let us build yours</h2>
+            <h2 id="contact-heading" className="chrome-text-dark text-3xl sm:text-4xl font-bold tracking-tight">Let us build yours</h2>
             <p className="text-gray-600 text-sm mt-3 leading-relaxed">
               Tell us about your business and the tier you are interested in.
               We will follow up within one business day with next steps.
