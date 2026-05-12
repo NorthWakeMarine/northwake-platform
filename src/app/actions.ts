@@ -1489,6 +1489,30 @@ export async function syncContactToQuickBooks(
   }
 }
 
+export async function pushCrmToQuickBooks(): Promise<{ upserted: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { findOrCreateQbCustomer, getQbTokens } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { upserted: 0, error: "QuickBooks not connected." };
+
+    const { data: contacts } = await supabase
+      .from("contacts")
+      .select("id, name, email, phone")
+      .eq("contact_type", "customer")
+      .not("name", "is", null);
+
+    let upserted = 0;
+    for (const c of contacts ?? []) {
+      await findOrCreateQbCustomer({ id: c.id, name: c.name, email: c.email, phone: c.phone });
+      upserted++;
+    }
+    return { upserted };
+  } catch (err) {
+    return { upserted: 0, error: err instanceof Error ? err.message : "QB push failed." };
+  }
+}
+
 // ─── Contact Type ─────────────────────────────────────────────────────────────
 
 export async function updateContactType(
@@ -2246,12 +2270,29 @@ export async function pushCrmToDialpad(): Promise<{ updated: number; created: nu
       .eq("contact_type", "customer")
       .not("name", "is", null);
 
+    const contactIds = (contacts ?? []).map((c) => c.id);
+    const vesselMap = new Map<string, string>();
+    if (contactIds.length > 0) {
+      const { data: vessels } = await supabase
+        .from("vessels")
+        .select("owner_id, year, make_model")
+        .in("owner_id", contactIds)
+        .order("created_at", { ascending: true });
+      for (const v of vessels ?? []) {
+        if (!vesselMap.has(v.owner_id)) {
+          const parts = [v.year, v.make_model].filter(Boolean).join(" ");
+          if (parts) vesselMap.set(v.owner_id, parts);
+        }
+      }
+    }
+
     let updated = 0;
     let created = 0;
 
     for (const c of contacts ?? []) {
       const payload = {
-        display_name: c.name ?? "",
+        first_name: c.name ?? "",
+        last_name: vesselMap.get(c.id) ?? "",
         ...(c.email ? { emails: [c.email] } : {}),
         ...(c.phone ? { phone_numbers: [c.phone] } : {}),
       };
@@ -2310,7 +2351,7 @@ export async function promoteDialpadLocalToCompany(): Promise<{
       }
 
       const newId = await createDialpadContact({
-        display_name: c.display_name,
+        first_name: c.display_name,
         ...(emails.length ? { emails } : {}),
         ...(phones.length ? { phone_numbers: phones } : {}),
       });

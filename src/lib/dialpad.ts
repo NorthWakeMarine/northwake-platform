@@ -137,7 +137,7 @@ export async function listDialpadContacts(maxTotal = 500): Promise<DialpadContac
 
 export async function updateDialpadContact(
   dpId: string,
-  data: { display_name?: string; emails?: string[]; phone_numbers?: string[] }
+  data: { first_name?: string; last_name?: string; emails?: string[]; phone_numbers?: string[] }
 ): Promise<void> {
   await dpRequest(`/contacts/${dpId}`, {
     method: "PATCH",
@@ -146,7 +146,7 @@ export async function updateDialpadContact(
 }
 
 export async function createDialpadContact(
-  data: { display_name: string; emails?: string[]; phone_numbers?: string[] }
+  data: { first_name: string; last_name?: string; emails?: string[]; phone_numbers?: string[] }
 ): Promise<string | null> {
   type Resp = { id: string };
   const res = await dpRequest<Resp>("/contacts", {
