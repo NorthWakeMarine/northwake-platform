@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import { Readable } from "stream";
 
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
@@ -127,7 +128,6 @@ export async function uploadFileToFolder(
   mimeType: string,
   buffer: Buffer
 ): Promise<{ id: string; url: string; name: string }> {
-  const { Readable } = await import("stream");
   const auth  = getAuth();
   const drive = google.drive({ version: "v3", auth });
 
