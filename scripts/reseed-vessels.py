@@ -4,7 +4,7 @@ Wipe all vessel records, re-seed from Customers.xls, then sync QB Notes.
 Run from repo root: python3 scripts/reseed-vessels.py
 """
 
-import json, re, sys, time
+import json, time
 import urllib.request, urllib.parse
 import xlrd
 
@@ -150,12 +150,7 @@ def main():
     print(f"  {len(contacts)} contacts loaded")
 
     print("\nDeleting all existing vessel records...")
-    sb_delete("vessels", {"asset_type": "eq.vessel"})
-    # Also delete any vessels without asset_type set
-    try:
-        sb_delete("vessels", {"id": "neq.00000000-0000-0000-0000-000000000000"})
-    except Exception:
-        pass
+    sb_delete("vessels", {"id": "neq.00000000-0000-0000-0000-000000000000"})
     print("  Done.")
 
     print("\nInserting vessels from XLS...")
