@@ -2135,10 +2135,19 @@ export async function importDialpadContacts(): Promise<{
       const dpPhone = dp.phone_numbers?.[0] ? normalizePhone(dp.phone_numbers[0]) : null;
       const dpName = dp.display_name?.toLowerCase().trim() ?? "";
 
+      // Exact match first, then prefix match for old "Name Vessel" combined format
+      const prefixMatch = dpName
+        ? contacts.find((c) => {
+            const n = c.name?.toLowerCase().trim() ?? "";
+            return n.length > 3 && dpName.startsWith(n + " ");
+          })
+        : undefined;
+
       const match =
         (dpEmail ? emailMap.get(dpEmail) : undefined) ??
         (dpPhone ? phoneMap.get(dpPhone) : undefined) ??
-        (dpName ? nameMap.get(dpName) : undefined);
+        (dpName ? nameMap.get(dpName) : undefined) ??
+        prefixMatch;
 
       if (match) {
         if (match.dialpad_contact_id === dp.id) {
