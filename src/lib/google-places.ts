@@ -35,6 +35,7 @@ export async function getGoogleReviews(): Promise<{ reviews: GoogleReview[]; rat
     const params = new URLSearchParams({
       place_id: placeId,
       fields: "reviews,rating,user_ratings_total",
+      reviews_sort: "newest",
       key: apiKey,
     });
     const res = await fetch(`${MAPS_BASE}/details/json?${params}`, {
@@ -59,7 +60,7 @@ export async function getGoogleReviews(): Promise<{ reviews: GoogleReview[]; rat
     if (!result) return { reviews: [], rating: null, count: null };
 
     const reviews: GoogleReview[] = (result.reviews ?? [])
-      .filter((r) => r.text && (r.rating ?? 0) >= 4)
+      .filter((r) => r.text)
       .map((r) => ({
         author: r.author_name ?? "Verified Customer",
         rating: r.rating ?? 5,
