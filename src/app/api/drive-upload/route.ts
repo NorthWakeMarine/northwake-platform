@@ -36,16 +36,27 @@ export async function POST(req: NextRequest) {
   // Create folder if it doesn't exist yet
   let folderId = contact.drive_folder_id as string | null;
   if (!folderId) {
-    const folder = await getOrCreateContactFolder(contact.name ?? "Unknown Contact");
-    folderId = folder.id;
-    await supabase
-      .from("contacts")
-      .update({ drive_folder_id: folder.id, drive_folder_url: folder.url })
-      .eq("id", contactId);
+    try {
+      const folder = await getOrCreateContactFolder(contact.name ?? "Unknown Contact");
+      folderId = folder.id;
+      await supabase
+        .from("contacts")
+        .update({ drive_folder_id: folder.id, drive_folder_url: folder.url })
+        .eq("id", contactId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create Drive folder.";
+      console.error("[drive-upload] folder creation:", err);
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const uploaded = await uploadFileToFolder(folderId, file.name, file.type || "application/octet-stream", buffer);
-
-  return NextResponse.json({ ok: true, file: uploaded });
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const uploaded = await uploadFileToFolder(folderId, file.name, file.type || "application/octet-stream", buffer);
+    return NextResponse.json({ ok: true, file: uploaded });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Drive upload failed.";
+    console.error("[drive-upload]", err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
