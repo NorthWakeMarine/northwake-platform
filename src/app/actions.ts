@@ -1780,11 +1780,18 @@ export async function importQbCustomers(): Promise<{
         if (noteVessels.length > 0) {
           const { data: existing } = await supabase
             .from("vessels")
-            .select("make_model, year")
+            .select("make_model, year, length_ft, name")
             .eq("owner_id", match.id);
-          const existingKeys = new Set((existing ?? []).map((v) => `${v.year}|${v.make_model?.toLowerCase()}`));
+          const existingKeys = new Set(
+            (existing ?? []).flatMap((v) => {
+              const byMakeModel = `${v.year ?? ""}|${v.make_model?.toLowerCase() ?? ""}`;
+              const byName      = `name|${v.name?.toLowerCase() ?? ""}`;
+              const byLength    = `len|${v.length_ft?.toLowerCase() ?? ""}|${v.make_model?.toLowerCase() ?? ""}`;
+              return [byMakeModel, byName, byLength];
+            })
+          );
           for (const nv of noteVessels) {
-            const key = `${nv.year}|${nv.makeModel?.toLowerCase()}`;
+            const key = `${nv.year ?? ""}|${nv.makeModel?.toLowerCase() ?? ""}`;
             if (!existingKeys.has(key)) {
               await supabase.from("vessels").insert({
                 owner_id: match.id, asset_type: "vessel",
