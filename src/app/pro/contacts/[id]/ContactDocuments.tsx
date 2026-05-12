@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import type { DriveFile } from "@/lib/google-drive";
-import { updateContactFields } from "@/app/actions";
 
 type WaiverEvent = {
   id: string;
@@ -43,8 +42,6 @@ export default function ContactDocuments({
 }) {
   const [files, setFiles] = useState<DriveFile[]>(initialFiles);
   const [uploading, setUploading] = useState(false);
-  const [markWaiver, setMarkWaiver] = useState(false);
-  const [waiverMarked, setWaiverMarked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -71,10 +68,7 @@ export default function ContactDocuments({
         size:        String(file.size),
       };
       setFiles((prev) => [uploaded, ...prev]);
-      if (markWaiver) {
-        await updateContactFields(contactId, { waiver_signed: true });
-        setWaiverMarked(true);
-      }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -91,18 +85,6 @@ export default function ContactDocuments({
           <p className="text-slate-400 text-[11px] mt-0.5">Waivers, COIs, and other files</p>
         </div>
         <div className="flex items-center gap-3">
-          {waiverMarked && (
-            <span className="text-emerald-600 text-[10px] tracking-widest uppercase font-semibold">Waiver Marked Signed</span>
-          )}
-          <label className="flex items-center gap-1.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={markWaiver}
-              onChange={(e) => setMarkWaiver(e.target.checked)}
-              className="w-3 h-3 accent-[#000080]"
-            />
-            <span className="text-slate-500 text-[10px] tracking-widest uppercase font-medium">Mark waiver signed</span>
-          </label>
           {folderUrl && (
             <a
               href={folderUrl}
