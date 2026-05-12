@@ -30,12 +30,37 @@ export const metadata: Metadata = {
 
 const { team } = clientConfig;
 
+const aboutJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "@id": `${clientConfig.siteUrl}/about#page`,
+  name: `About ${clientConfig.companyName}`,
+  description: `Learn about ${clientConfig.companyName}'s story, team, and commitment to delivering the highest level of marine care in ${clientConfig.city}, ${clientConfig.state}.`,
+  url: `${clientConfig.siteUrl}/about`,
+  mainEntity: { "@id": `${clientConfig.siteUrl}/#business` },
+  mentions: team.map((member) => ({
+    "@type": "Person",
+    name: member.name,
+    jobTitle: member.role,
+    description: member.bio,
+    worksFor: {
+      "@type": "LocalBusiness",
+      name: clientConfig.companyName,
+      "@id": `${clientConfig.siteUrl}/#business`,
+    },
+  })),
+};
+
 export default async function AboutPage() {
   const cms = await getCMS();
   const aboutHeroIntro = cms.about_hero_intro ??
     `${clientConfig.companyName} was founded in ${clientConfig.city} with a single conviction: clients in ${clientConfig.state} deserve the same level of care that world-class service companies deliver, without the world-class distance or wait list.`;
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }}
+      />
       <Header />
       <ScrollDepthTracker />
 

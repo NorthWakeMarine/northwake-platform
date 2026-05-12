@@ -117,6 +117,7 @@ const jsonLd = {
     opens: h.opens,
     closes: h.closes,
   })),
+  hasMap: "https://maps.google.com/?cid=ChIJdWH561O15YgRITMc_ya5v2g",
   sameAs,
 };
 

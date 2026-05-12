@@ -9,7 +9,7 @@ const { services, companyName, siteUrl, city, state, seoKeywords } = clientConfi
 
 export const metadata: Metadata = {
   title: `${companyName} Services`,
-  description: `${companyName}'s full service menu in ${city}, ${state}.`,
+  description: `${companyName} offers expert marine detailing, ceramic coating, monthly maintenance washes, teak restoration, and full-service vessel management in ${city}, ${state}. Browse the full service catalog and request a free quote.`,
   keywords: seoKeywords,
   openGraph: {
     title: `Services | ${companyName}, ${city}, ${state}`,
