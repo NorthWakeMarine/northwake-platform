@@ -13,9 +13,15 @@ type Contact = {
   name: string | null;
   email: string | null;
   phone: string | null;
-  vessel_type: string | null;
-  vessel_length: string | null;
+  address: string | null;
   waiver_signed: boolean | null;
+};
+
+type FirstVessel = {
+  owner_id: string;
+  year: number | null;
+  make_model: string | null;
+  length_ft: string | null;
 };
 
 function fmt(iso: string) {
@@ -24,13 +30,16 @@ function fmt(iso: string) {
   });
 }
 
-function StatusBadges({ contact }: { contact: Contact }) {
+function StatusBadges({ contact, hasVessel }: { contact: Contact; hasVessel: boolean }) {
   const badges: { label: string; cls: string }[] = [];
   if (!contact.waiver_signed) {
     badges.push({ label: "Waiver Missing", cls: "bg-red-50 text-red-600 border border-red-200" });
   }
-  if (!contact.phone) {
+  if (!contact.phone || !contact.email || !contact.address) {
     badges.push({ label: "Info Incomplete", cls: "bg-amber-50 text-amber-600 border border-amber-200" });
+  }
+  if (!hasVessel) {
+    badges.push({ label: "No Fleet", cls: "bg-slate-50 text-slate-500 border border-slate-200" });
   }
   if (badges.length === 0) {
     badges.push({ label: "Complete", cls: "bg-emerald-50 text-emerald-600 border border-emerald-200" });
@@ -51,7 +60,6 @@ const SORTABLE_COLS: Record<string, string> = {
   Name: "name",
   Email: "email",
   Phone: "phone",
-  Length: "vessel_length",
 };
 
 function SortableHeader({ label, field, currentSort, currentDir, baseParams }: {
@@ -97,7 +105,7 @@ export default async function ContactsPage({
     process.env.SUPABASE_SECRET_KEY!
   );
 
-  const COLS = "id, created_at, name, email, phone, vessel_type, vessel_length, waiver_signed";
+  const COLS = "id, created_at, name, email, phone, address, waiver_signed";
 
   let contacts: Contact[] = [];
   let error: string | null = null;
@@ -181,6 +189,19 @@ export default async function ContactsPage({
     if (err) error = err.message;
   }
 
+  // Fetch first vessel per contact
+  const contactIds = contacts.map((c) => c.id);
+  const vesselMap = new Map<string, FirstVessel>();
+  if (contactIds.length > 0) {
+    const { data: vessels } = await supabase
+      .from("vessels")
+      .select("owner_id, year, make_model, length_ft")
+      .in("owner_id", contactIds)
+      .order("created_at", { ascending: true });
+    for (const v of vessels ?? []) {
+      if (!vesselMap.has(v.owner_id)) vesselMap.set(v.owner_id, v as FirstVessel);
+    }
+  }
 
   return (
     <ProShell>
@@ -234,6 +255,7 @@ export default async function ContactsPage({
             {[
               { label: "Waiver Missing", cls: "bg-red-50 text-red-600 border border-red-200" },
               { label: "Info Incomplete", cls: "bg-amber-50 text-amber-600 border border-amber-200" },
+              { label: "No Fleet",        cls: "bg-slate-50 text-slate-500 border border-slate-200" },
               { label: "Complete",        cls: "bg-emerald-50 text-emerald-600 border border-emerald-200" },
             ].map((b) => (
               <span key={b.label} className={`text-[9px] tracking-widest uppercase px-2.5 py-1 rounded-sm font-medium ${b.cls}`}>
@@ -270,7 +292,7 @@ export default async function ContactsPage({
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      {(["Date", "Name", "Email", "Phone", "Vessel", "Length", "Status"] as const).map((h) => (
+                      {(["Date", "Name", "Email", "Phone", "Asset", "Status"] as const).map((h) => (
                         <SortableHeader
                           key={h}
                           label={h}
@@ -297,9 +319,15 @@ export default async function ContactsPage({
                             ? <a href={`tel:${c.phone}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
                             : <span className="text-slate-300">—</span>}
                         </td>
-                        <td className="py-3 px-4 text-slate-500">{c.vessel_type || <span className="text-slate-300">—</span>}</td>
-                        <td className="py-3 px-4 text-slate-500">{c.vessel_length ? `${c.vessel_length} ft` : <span className="text-slate-300">—</span>}</td>
-                        <td className="py-3 px-4 last:pr-6"><StatusBadges contact={c} /></td>
+                        <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                          {(() => {
+                            const v = vesselMap.get(c.id);
+                            if (!v) return <span className="text-slate-300">—</span>;
+                            const parts = [v.year, v.make_model, v.length_ft ? `${v.length_ft} ft` : null].filter(Boolean);
+                            return parts.length ? parts.join(" · ") : <span className="text-slate-300">—</span>;
+                          })()}
+                        </td>
+                        <td className="py-3 px-4 last:pr-6"><StatusBadges contact={c} hasVessel={vesselMap.has(c.id)} /></td>
                       </ClickableRow>
                     ))}
                   </tbody>

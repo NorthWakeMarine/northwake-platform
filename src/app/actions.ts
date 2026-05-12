@@ -779,6 +779,15 @@ export async function updateAssetNotes(
   return { success: true };
 }
 
+export async function deleteAsset(assetId: string, contactId: string): Promise<{ error?: string }> {
+  const supabase = await svc();
+  await supabase.from("vessel_services").delete().eq("vessel_id", assetId);
+  const { error } = await supabase.from("vessels").delete().eq("id", assetId);
+  if (error) return { error: error.message };
+  revalidatePath(`/pro/contacts/${contactId}`);
+  return {};
+}
+
 // ─── Update Contact Field ─────────────────────────────────────────────────────
 
 export type ContactFieldState = { error?: string; success?: boolean };

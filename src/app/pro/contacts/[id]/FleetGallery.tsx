@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState, startTransition, useTransi
 import {
   addAsset, updateAssetNotes, type AssetState,
   addVesselService, markServiced, deleteVesselService, type VesselServiceState,
-  createQuickBooksInvoiceDraft,
+  createQuickBooksInvoiceDraft, deleteAsset,
 } from "@/app/actions";
 
 export type VesselService = {
@@ -379,6 +379,9 @@ function AssetModal({ asset, contactId, services, onClose }: {
   const [notesState, notesAction, isSaving] = useActionState<AssetState, FormData>(updateAssetNotes, {});
   const [invoicePending, startInvoiceTransition] = useTransition();
   const [invoiceResult, setInvoiceResult] = useState<{ invoiceUrl?: string; docNumber?: string; error?: string } | null>(null);
+  const [deletePending, startDeleteTransition] = useTransition();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const cfg = typeConfig[asset.asset_type ?? "vessel"] ?? typeConfig.other;
   const displayName = asset.name || asset.make_model || `${cfg.label} Asset`;
 
@@ -485,6 +488,47 @@ function AssetModal({ asset, contactId, services, onClose }: {
                   {invoicePending ? "Creating..." : "Generate Draft Invoice"}
                 </button>
               </>
+            )}
+          </div>
+
+          {/* Delete asset */}
+          <div className="pt-2 border-t border-slate-100">
+            {!confirmDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="text-[10px] tracking-widest uppercase text-red-400 hover:text-red-600 font-medium transition-colors"
+              >
+                Delete Asset
+              </button>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-slate-600">Remove <span className="font-semibold">{displayName}</span> and all its service records? This cannot be undone.</p>
+                {deleteError && <p className="text-red-500 text-[11px]">{deleteError}</p>}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={deletePending}
+                    onClick={() => {
+                      startDeleteTransition(async () => {
+                        const res = await deleteAsset(asset.id, contactId);
+                        if (res.error) { setDeleteError(res.error); }
+                        else { onClose(); }
+                      });
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white text-[10px] tracking-widest uppercase px-4 py-2 rounded-sm font-semibold disabled:opacity-50 transition-colors"
+                  >
+                    {deletePending ? "Deleting..." : "Confirm Delete"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="text-slate-400 hover:text-slate-600 text-xs transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
