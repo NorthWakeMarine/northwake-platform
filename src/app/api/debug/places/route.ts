@@ -9,15 +9,13 @@ export async function GET() {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "GOOGLE_PLACES_API_KEY not set" });
 
-  // Step 1: nearby search at known coordinates
-  const nearbyParams = new URLSearchParams({
-    location: "28.566997,-81.683107",
-    radius: "200",
-    keyword: "NorthWake Marine",
+  // Step 1: text search by business name
+  const searchParams = new URLSearchParams({
+    query: "NorthWake Marine",
     key: apiKey,
   });
   const searchRes = await fetch(
-    `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${nearbyParams}`
+    `https://maps.googleapis.com/maps/api/place/textsearch/json?${searchParams}`
   );
   const searchData = await searchRes.json() as Record<string, unknown>;
   const firstResult = (searchData.results as Array<{place_id: string; name: string}>)?.[0];

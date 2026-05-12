@@ -10,14 +10,11 @@ import { clientConfig } from "@/config/client";
 const MAPS_BASE = "https://maps.googleapis.com/maps/api/place";
 
 async function findPlaceId(apiKey: string): Promise<string | null> {
-  const { latitude, longitude } = clientConfig.geo;
   const params = new URLSearchParams({
-    location: `${latitude},${longitude}`,
-    radius: "200",
-    keyword: clientConfig.companyName,
+    query: clientConfig.companyName,
     key: apiKey,
   });
-  const res = await fetch(`${MAPS_BASE}/nearbysearch/json?${params}`, {
+  const res = await fetch(`${MAPS_BASE}/textsearch/json?${params}`, {
     next: { revalidate: 86400 },
   });
   if (!res.ok) return null;

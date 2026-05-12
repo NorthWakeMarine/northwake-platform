@@ -198,8 +198,8 @@ export const clientConfig: ClientConfig = {
   localBusinessType: "LocalBusiness",
 
   geo: {
-    latitude: 30.3322,
-    longitude: -81.6557,
+    latitude: 30.2600364,
+    longitude: -81.5202535,
     radiusMeters: 80000,
   },
 
