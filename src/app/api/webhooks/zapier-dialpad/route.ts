@@ -103,7 +103,9 @@ export async function POST(req: NextRequest) {
     : rawState?.includes("miss") ? "missed"
     : "completed";
   const direction = (body.direction as string | undefined) ?? "inbound";
-  const duration = body.duration as number | undefined;
+  const rawDuration = body.duration as number | undefined;
+  // Zapier sends duration in milliseconds; convert to seconds
+  const duration = rawDuration != null ? Math.round(rawDuration / 1000) : undefined;
   const callerName = (body.contact_name as string | undefined) ?? undefined;
   const transcript = (body.voicemail_transcript as string | undefined) ?? null;
 
