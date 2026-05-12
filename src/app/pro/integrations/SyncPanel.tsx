@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, pushCrmToDialpad, updateContactFields, promoteDialpadLocalToCompany } from "@/app/actions";
+import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, pushCrmToDialpad, updateContactFields, promoteDialpadLocalToCompany, importQbInvoices } from "@/app/actions";
 import type { FieldMismatch, DpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
@@ -12,6 +12,7 @@ type SyncResult = {
   integrity?: { checked: number; flagged: number; error?: string };
   dpPush?: { updated: number; created: number; error?: string };
   dpPromote?: { promoted: number; alreadyShared: number; error?: string };
+  qbInvoices?: { imported: number; skipped: number; error?: string };
 };
 
 export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnected: boolean; dialpadConnected: boolean }) {
@@ -85,6 +86,13 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
     });
   }
 
+  function handleImportInvoices() {
+    startTransition(async () => {
+      const qbInvoices = await importQbInvoices();
+      setResult((prev) => ({ ...prev, qbInvoices }));
+    });
+  }
+
   function handlePromoteLocalToCompany() {
     startTransition(async () => {
       const dpPromote = await promoteDialpadLocalToCompany();
@@ -104,6 +112,15 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {qbConnected && (
+            <button
+              onClick={handleImportInvoices}
+              disabled={isPending}
+              className="border border-slate-200 text-slate-600 hover:border-slate-300 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
+            >
+              {isPending ? "Importing..." : "Import Invoices"}
+            </button>
+          )}
           {dialpadConnected && (
             <>
               <button
@@ -298,6 +315,27 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
                   isPending={isPending}
                   sourceLabel="Dialpad"
                 />
+              )}
+            </div>
+          )}
+
+          {/* Import Invoices results */}
+          {result.qbInvoices && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">QB Invoice Import</p>
+              {result.qbInvoices.error ? (
+                <p className="text-red-500 text-xs">{result.qbInvoices.error}</p>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-700 text-xs">{result.qbInvoices.imported} invoices added to timelines</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-300" />
+                    <span className="text-slate-500 text-xs">{result.qbInvoices.skipped} already imported</span>
+                  </div>
+                </div>
               )}
             </div>
           )}

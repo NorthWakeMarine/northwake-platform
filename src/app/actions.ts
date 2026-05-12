@@ -1786,6 +1786,80 @@ export async function importQbCustomers(): Promise<{
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
 
+export async function importQbInvoices(): Promise<{ imported: number; skipped: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { listQbInvoicesForCustomer, getQbTokens, getQbInvoiceUrl } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { imported: 0, skipped: 0, error: "QuickBooks not connected." };
+
+    const realmId = (tokens as { realmId?: string }).realmId ?? "";
+
+    const { data: contacts } = await supabase
+      .from("contacts")
+      .select("id, name, qb_customer_id")
+      .not("qb_customer_id", "is", null);
+
+    if (!contacts?.length) return { imported: 0, skipped: 0 };
+
+    // Fetch all existing QB invoice IDs in timeline to avoid duplicates
+    const { data: existing } = await supabase
+      .from("timeline_events")
+      .select("metadata")
+      .eq("event_type", "invoice");
+
+    const importedIds = new Set(
+      (existing ?? []).map((e) => (e.metadata as { qb_invoice_id?: string })?.qb_invoice_id).filter(Boolean)
+    );
+
+    let imported = 0;
+    let skipped = 0;
+
+    for (const contact of contacts) {
+      const invoices = await listQbInvoicesForCustomer(contact.qb_customer_id!);
+
+      for (const inv of invoices) {
+        if (importedIds.has(inv.Id)) { skipped++; continue; }
+
+        const lineDescriptions = inv.Line
+          .filter((l) => l.Description)
+          .map((l) => `${l.Description}${l.Amount != null ? ` — $${l.Amount.toFixed(2)}` : ""}`)
+          .join("\n");
+
+        const status = inv.Balance === 0 ? "Paid" : inv.Balance < inv.TotalAmt ? "Partial" : "Unpaid";
+        const invoiceUrl = realmId ? getQbInvoiceUrl(realmId, inv.Id) : null;
+
+        await supabase.from("timeline_events").insert({
+          contact_id: contact.id,
+          event_type: "invoice",
+          title: `Invoice #${inv.DocNumber} — $${inv.TotalAmt.toFixed(2)} (${status})`,
+          body: lineDescriptions || "No line item details.",
+          metadata: {
+            qb_invoice_id: inv.Id,
+            doc_number: inv.DocNumber,
+            total: inv.TotalAmt,
+            balance: inv.Balance,
+            status,
+            txn_date: inv.TxnDate,
+            due_date: inv.DueDate ?? null,
+            invoice_url: invoiceUrl,
+          },
+          created_by: "system",
+          created_at: inv.TxnDate,
+        });
+
+        importedIds.add(inv.Id);
+        imported++;
+      }
+    }
+
+    revalidatePath("/pro/contacts");
+    return { imported, skipped };
+  } catch (err) {
+    return { imported: 0, skipped: 0, error: err instanceof Error ? err.message : "Import failed." };
+  }
+}
+
 function parseVesselsFromCompanyName(companyName: string): { name: string; asset_type: string; length_ft: number | null }[] {
   return companyName
     .split(",")

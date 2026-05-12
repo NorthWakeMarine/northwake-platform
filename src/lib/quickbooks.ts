@@ -171,6 +171,28 @@ export function getQbInvoiceUrl(realmId: string, invoiceId: string): string {
   return `https://app.qbo.intuit.com/app/invoice?txnId=${invoiceId}&companyId=${realmId}`;
 }
 
+export type QbInvoice = {
+  Id: string;
+  DocNumber: string;
+  TxnDate: string;
+  DueDate?: string;
+  TotalAmt: number;
+  Balance: number;
+  CustomerRef: { value: string; name?: string };
+  Line: { Description?: string; Amount?: number }[];
+  EmailStatus?: string;
+  PrintStatus?: string;
+};
+
+export async function listQbInvoicesForCustomer(qbCustomerId: string): Promise<QbInvoice[]> {
+  type Resp = { QueryResponse: { Invoice?: QbInvoice[] } };
+  const query = encodeURIComponent(
+    `SELECT * FROM Invoice WHERE CustomerRef = '${qbCustomerId}' ORDERBY TxnDate DESC MAXRESULTS 100`
+  );
+  const data = await qbRequest<Resp>(`/query?query=${query}`);
+  return data.QueryResponse.Invoice ?? [];
+}
+
 export async function isQbConnected(): Promise<boolean> {
   const tokens = await getQbTokens();
   return !!tokens;
