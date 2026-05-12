@@ -182,6 +182,13 @@ export type QbCustomer = {
   CompanyName?: string;
   PrimaryEmailAddr?: { Address: string };
   PrimaryPhone?: { FreeFormNumber: string };
+  BillAddr?: {
+    Line1?: string;
+    Line2?: string;
+    City?: string;
+    CountrySubDivisionCode?: string;
+    PostalCode?: string;
+  };
   Active: boolean;
 };
 

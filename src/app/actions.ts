@@ -1713,7 +1713,7 @@ export async function importQbCustomers(): Promise<{
 
     const { data: crmContacts } = await supabase
       .from("contacts")
-      .select("id, name, email, phone, qb_customer_id");
+      .select("id, name, email, phone, address, qb_customer_id");
 
     const contacts = crmContacts ?? [];
     const emailMap = new Map(contacts.filter(c => c.email).map(c => [c.email!.toLowerCase(), c]));
@@ -1746,10 +1746,23 @@ export async function importQbCustomers(): Promise<{
           }
         }
 
-        if (match.qb_customer_id === qbC.Id) {
+        const billAddr = qbC.BillAddr;
+        const addressParts = [
+          billAddr?.Line1,
+          billAddr?.Line2,
+          billAddr?.City && billAddr?.CountrySubDivisionCode
+            ? `${billAddr.City}, ${billAddr.CountrySubDivisionCode}${billAddr.PostalCode ? " " + billAddr.PostalCode : ""}`
+            : billAddr?.City,
+        ].filter(Boolean);
+        const formattedAddress = addressParts.length ? addressParts.join(", ") : null;
+
+        const updatePayload: Record<string, unknown> = { qb_customer_id: qbC.Id };
+        if (formattedAddress && !match.address) updatePayload.address = formattedAddress;
+
+        if (match.qb_customer_id === qbC.Id && !updatePayload.address) {
           alreadyLinked++;
         } else {
-          await supabase.from("contacts").update({ qb_customer_id: qbC.Id }).eq("id", match.id);
+          await supabase.from("contacts").update(updatePayload).eq("id", match.id);
           linked++;
         }
       } else {
