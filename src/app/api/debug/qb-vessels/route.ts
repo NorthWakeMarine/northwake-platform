@@ -30,6 +30,9 @@ export async function GET() {
         qbId: c.qb_customer_id,
         rawCustomFields: customer.CustomField ?? [],
         parsedVessels: parsed,
+        // Show all top-level keys so we can find where QB put the custom fields
+        allKeys: Object.keys(customer),
+        fullRaw: customer,
       });
     } catch (e) {
       results.push({ name: c.name, qbId: c.qb_customer_id, error: String(e) });
