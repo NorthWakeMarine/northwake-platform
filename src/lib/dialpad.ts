@@ -161,30 +161,56 @@ export async function isDialpadConnected(): Promise<boolean> {
   return !!tokens;
 }
 
-export async function registerDialpadEventSubscription(hookUrl: string, secret: string): Promise<{ id?: string; error?: string }> {
+// Step 1: create a webhook endpoint, returns its numeric ID
+async function createDialpadWebhookEndpoint(hookUrl: string, secret: string): Promise<number> {
+  const result = await dpRequest<{ id: number }>("/webhooks", {
+    method: "POST",
+    body: JSON.stringify({ hook_url: hookUrl, secret: secret || undefined }),
+  });
+  return result.id;
+}
+
+// Step 2a: subscribe to call events using the webhook endpoint ID
+async function createDialpadCallSubscription(endpointId: number): Promise<void> {
+  await dpRequest("/subscriptions/call", {
+    method: "POST",
+    body: JSON.stringify({
+      endpoint_id: endpointId,
+      enabled: true,
+      call_states: ["hangup", "voicemail"],
+    }),
+  });
+}
+
+// Step 2b: subscribe to inbound SMS events using the webhook endpoint ID
+async function createDialpadSmsSubscription(endpointId: number): Promise<void> {
+  await dpRequest("/subscriptions/sms", {
+    method: "POST",
+    body: JSON.stringify({
+      webhook_id: endpointId,
+      enabled: true,
+      direction: "inbound",
+    }),
+  });
+}
+
+export async function registerDialpadEventSubscription(hookUrl: string, secret: string): Promise<{ webhookId?: number; error?: string }> {
   try {
-    const result = await dpRequest<{ id?: string }>("/subscriptions", {
-      method: "POST",
-      body: JSON.stringify({
-        enabled: true,
-        hook_url: hookUrl,
-        secret,
-        call_states: ["hangup", "voicemail"],
-        sms: true,
-      }),
-    });
-    return { id: result.id };
+    const webhookId = await createDialpadWebhookEndpoint(hookUrl, secret);
+    await createDialpadCallSubscription(webhookId);
+    await createDialpadSmsSubscription(webhookId);
+    return { webhookId };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Registration failed." };
   }
 }
 
-export async function listDialpadSubscriptions(): Promise<{ items?: { id: string; hook_url: string; enabled: boolean }[]; error?: string }> {
+export async function listDialpadWebhooks(): Promise<{ items?: { id: number; hook_url: string }[]; error?: string }> {
   try {
-    const result = await dpRequest<{ items?: { id: string; hook_url: string; enabled: boolean }[] }>("/subscriptions");
+    const result = await dpRequest<{ items?: { id: number; hook_url: string }[] }>("/webhooks");
     return result;
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Failed to list subscriptions." };
+    return { error: err instanceof Error ? err.message : "Failed to list webhooks." };
   }
 }
 

@@ -1968,15 +1968,15 @@ export async function registerDialpadWebhook(): Promise<{ ok: boolean; id?: stri
   const secret = process.env.DIALPAD_WEBHOOK_SECRET ?? "";
 
   try {
-    const { listDialpadSubscriptions, registerDialpadEventSubscription } = await import("@/lib/dialpad");
+    const { listDialpadWebhooks, registerDialpadEventSubscription } = await import("@/lib/dialpad");
 
-    const existing = await listDialpadSubscriptions();
+    const existing = await listDialpadWebhooks();
     const alreadyRegistered = existing.items?.find((s) => s.hook_url === hookUrl);
-    if (alreadyRegistered) return { ok: true, id: alreadyRegistered.id, existing: true };
+    if (alreadyRegistered) return { ok: true, id: String(alreadyRegistered.id), existing: true };
 
     const result = await registerDialpadEventSubscription(hookUrl, secret);
     if (result.error) return { ok: false, error: result.error };
-    return { ok: true, id: result.id };
+    return { ok: true, id: String(result.webhookId) };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Unknown error." };
   }
