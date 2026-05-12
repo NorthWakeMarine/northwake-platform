@@ -2,6 +2,17 @@
 
 ## May 2026
 
+### May 12 | Web services page polish, AI receptionist add-on, mobile UI cleanup | Site,WebServices
+Continued improvements to the /web-services sales page and added an AI Receptionist as a new listed add-on service.
+
+**Mobile UI cleanup:** All section h2 headings stepped down to text-3xl sm:text-4xl (long headings use text-2xl sm:text-3xl md:text-4xl). Hero eyebrow letter-spacing reduced on mobile (tracking-[0.15em] sm:tracking-[0.4em]). Hero h1 changed from leading-none to leading-tight. Pricing cards use p-6 sm:p-8. Monthly price text shortened to just the price; "hosting + unlimited edits" shown as a small inline subtext. Mid-CTA whitespace-nowrap removed and font stepped down for small screens.
+
+**Conversion improvements (from Detailing Web competitor analysis):** "Get in Touch" CTAs replaced with "Book a Free Strategy Call" on hero and mid-page banners. Three badge pills added above pricing cards: No contracts, Cancel any time, One client per market. Pricing subheadline updated to mention unlimited edits. VS comparison table gained a navy callout box making the $150-$450/mo competitor price explicit. Two new comparison rows added: monthly site-only pricing and one-client-per-market exclusivity.
+
+**AI Receptionist add-on:** Added to the add-ons section at +$249/mo with revenue recovery pitch. Added AI phone receptionist row to the VS comparison table. Added option to the inquiry form tier dropdown. Created docs/ai-receptionist-runbook.html covering the full fulfillment process from qualification through go-live, including Vapi setup, Twilio provisioning, Google Calendar booking actions, Supabase webhook lead logging, and ongoing maintenance cadence. Runbook also added to platform-template/docs/.
+
+**Minor:** Marine industry card icon changed from anchor to diamond to match Automotive and Aviation cards.
+
 ### May 12 | Dialpad native webhooks, QB invoice import, contact detail improvements | CRM,Integrations
 Native Dialpad event subscriptions replace Zapier for call and SMS logging. QB invoice history now imports to contact timelines. Contact detail edit mode now includes waiver checkbox.
 
