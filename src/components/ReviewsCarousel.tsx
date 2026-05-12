@@ -89,7 +89,7 @@ export default function ReviewsCarousel({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-steel-dark w-full">
+      <div className={`grid grid-cols-1 gap-px bg-steel-dark w-full ${currentPage.length >= 3 ? "md:grid-cols-3" : currentPage.length === 2 ? "md:grid-cols-2" : ""}`}>
         {currentPage.map((review, i) => (
           <div key={i} className="bg-obsidian p-6 flex flex-col gap-4">
             {isGoogle && <StarRating rating={review.rating} />}
