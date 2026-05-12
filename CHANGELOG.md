@@ -2,6 +2,15 @@
 
 ## May 2026
 
+### May 12 | Dialpad native webhooks, QB invoice import, contact detail improvements | CRM,Integrations
+Native Dialpad event subscriptions replace Zapier for call and SMS logging. QB invoice history now imports to contact timelines. Contact detail edit mode now includes waiver checkbox.
+
+**Dialpad native webhooks:** Replaced Zapier adapter with a two-step native registration: POST /webhooks to create an endpoint, then POST /subscriptions/call (hangup + voicemail states) and POST /subscriptions/sms (inbound). Register Webhook button added to /pro/integrations under the Dialpad card. Webhook handler updated to normalize both native format (state/external_number) and OAuth format (event/caller_number) so both paths work without code changes.
+
+**QuickBooks invoice import:** New Import Invoices button in the Data Sync panel fetches all invoices per linked QB customer and writes them to contact timelines as invoice events with paid/partial/unpaid status, line item detail, and a direct link back to the QB invoice. Deduped by QB invoice ID so safe to re-run. BillAddr also now pulled and written to contact address field on QB customer import.
+
+**Contact detail improvements:** Waiver signed checkbox added to the Contact Details edit section, saving alongside name/email/phone/address in one Save action. Standalone Mark Waiver Signed checkbox removed from the Documents card.
+
 ### May 11 | Light mode UI, WCAG AA audit, Featured Work redesign | Site,UX
 Complete visual overhaul of all public landing pages from dark mode to light mode, followed by a full WCAG 2.1 AA accessibility audit and Featured Work section redesign.
 
