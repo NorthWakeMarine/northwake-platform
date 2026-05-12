@@ -25,10 +25,11 @@ export default function ContactDetailsCard(props: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const [draft, setDraft] = useState({
-    name:    props.name    ?? "",
-    email:   props.email   ?? "",
-    phone:   props.phone   ?? "",
-    address: props.address ?? "",
+    name:          props.name         ?? "",
+    email:         props.email        ?? "",
+    phone:         props.phone        ?? "",
+    address:       props.address      ?? "",
+    waiver_signed: props.waiverSigned ?? false,
   });
 
   function handleSave() {
@@ -42,10 +43,11 @@ export default function ContactDetailsCard(props: Props) {
 
   function handleCancel() {
     setDraft({
-      name:    props.name    ?? "",
-      email:   props.email   ?? "",
-      phone:   props.phone   ?? "",
-      address: props.address ?? "",
+      name:          props.name         ?? "",
+      email:         props.email        ?? "",
+      phone:         props.phone        ?? "",
+      address:       props.address      ?? "",
+      waiver_signed: props.waiverSigned ?? false,
     });
     setEditing(false);
     setError(null);
@@ -162,7 +164,17 @@ export default function ContactDetailsCard(props: Props) {
         <div>
           <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Waiver</dt>
           <dd>
-            {props.waiverSigned ? (
+            {editing ? (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={draft.waiver_signed}
+                  onChange={(e) => setDraft((d) => ({ ...d, waiver_signed: e.target.checked }))}
+                  className="w-3.5 h-3.5 accent-[#000080]"
+                />
+                <span className="text-slate-700 text-xs">Waiver signed</span>
+              </label>
+            ) : props.waiverSigned ? (
               <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">Signed</span>
             ) : (
               <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-red-50 text-red-600 border border-red-200">Pending</span>
