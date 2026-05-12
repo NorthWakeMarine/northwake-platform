@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  console.log("[dialpad-webhook] payload:", JSON.stringify(event));
+
   // Native subscription format uses `state` (hangup/voicemail) and `from_number` for SMS.
   // OAuth webhook format uses `event` (call.completed/call.missed/sms.inbound).
   // Normalize to a single event type string.
