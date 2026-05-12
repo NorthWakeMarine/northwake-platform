@@ -798,14 +798,15 @@ export async function updateContactField(
 
 export async function updateContactFields(
   contactId: string,
-  fields: { name?: string | null; email?: string | null; phone?: string | null; address?: string | null }
+  fields: { name?: string | null; email?: string | null; phone?: string | null; address?: string | null; waiver_signed?: boolean }
 ): Promise<{ ok: boolean; error?: string }> {
   const supabase = await svc();
-  const patch: Record<string, string | null> = {};
-  if ("name"    in fields) patch.name    = fields.name?.trim()    || null;
-  if ("email"   in fields) patch.email   = fields.email?.trim()   || null;
-  if ("phone"   in fields) patch.phone   = fields.phone?.trim()   || null;
-  if ("address" in fields) patch.address = fields.address?.trim() || null;
+  const patch: Record<string, string | boolean | null> = {};
+  if ("name"          in fields) patch.name          = fields.name?.trim()    || null;
+  if ("email"         in fields) patch.email         = fields.email?.trim()   || null;
+  if ("phone"         in fields) patch.phone         = fields.phone?.trim()   || null;
+  if ("address"       in fields) patch.address       = fields.address?.trim() || null;
+  if ("waiver_signed" in fields) patch.waiver_signed = fields.waiver_signed ?? false;
   const { error } = await supabase.from("contacts").update(patch).eq("id", contactId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/pro/contacts/${contactId}`);
@@ -1789,7 +1790,7 @@ type QbUnmatched = { qbId: string; name: string; email: string | null; phone: st
 export async function importQbInvoices(): Promise<{ imported: number; skipped: number; error?: string }> {
   const supabase = await svc();
   try {
-    const { listQbInvoicesForCustomer, getQbTokens, getQbInvoiceUrl } = await import("@/lib/quickbooks");
+    const { listQbTransactionsForCustomer, getQbTokens, getQbInvoiceUrl } = await import("@/lib/quickbooks");
     const tokens = await getQbTokens();
     if (!tokens) return { imported: 0, skipped: 0, error: "QuickBooks not connected." };
 
@@ -1802,53 +1803,61 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
 
     if (!contacts?.length) return { imported: 0, skipped: 0 };
 
-    // Fetch all existing QB invoice IDs in timeline to avoid duplicates
+    // Deduplicate by qb_txn_id across all QB transaction event types
     const { data: existing } = await supabase
       .from("timeline_events")
       .select("metadata")
-      .eq("event_type", "invoice");
+      .in("event_type", ["invoice", "payment", "sales_receipt", "credit_memo"]);
 
     const importedIds = new Set(
-      (existing ?? []).map((e) => (e.metadata as { qb_invoice_id?: string })?.qb_invoice_id).filter(Boolean)
+      (existing ?? []).map((e) => (e.metadata as { qb_txn_id?: string })?.qb_txn_id).filter(Boolean)
     );
+
+    const typeLabels: Record<string, string> = {
+      Invoice:     "Invoice",
+      Payment:     "Payment",
+      SalesReceipt: "Sales Receipt",
+      CreditMemo:  "Credit Memo",
+    };
+    const eventTypes: Record<string, string> = {
+      Invoice:      "invoice",
+      Payment:      "payment",
+      SalesReceipt: "sales_receipt",
+      CreditMemo:   "credit_memo",
+    };
 
     let imported = 0;
     let skipped = 0;
 
     for (const contact of contacts) {
-      const invoices = await listQbInvoicesForCustomer(contact.qb_customer_id!);
+      const txns = await listQbTransactionsForCustomer(contact.qb_customer_id!);
 
-      for (const inv of invoices) {
-        if (importedIds.has(inv.Id)) { skipped++; continue; }
+      for (const txn of txns) {
+        if (importedIds.has(`${txn.txnType}:${txn.id}`)) { skipped++; continue; }
 
-        const lineDescriptions = inv.Line
-          .filter((l) => l.Description)
-          .map((l) => `${l.Description}${l.Amount != null ? ` — $${l.Amount.toFixed(2)}` : ""}`)
-          .join("\n");
-
-        const status = inv.Balance === 0 ? "Paid" : inv.Balance < inv.TotalAmt ? "Partial" : "Unpaid";
-        const invoiceUrl = realmId ? getQbInvoiceUrl(realmId, inv.Id) : null;
+        const label = typeLabels[txn.txnType] ?? txn.txnType;
+        const docPart = txn.docNumber ? ` #${txn.docNumber}` : "";
+        const invoiceUrl = txn.txnType === "Invoice" && realmId ? getQbInvoiceUrl(realmId, txn.id) : null;
 
         await supabase.from("timeline_events").insert({
           contact_id: contact.id,
-          event_type: "invoice",
-          title: `Invoice #${inv.DocNumber} — $${inv.TotalAmt.toFixed(2)} (${status})`,
-          body: lineDescriptions || "No line item details.",
+          event_type: eventTypes[txn.txnType] ?? "invoice",
+          title: `${label}${docPart} — $${Math.abs(txn.totalAmt).toFixed(2)}${txn.status ? ` (${txn.status})` : ""}`,
+          body: txn.memo ?? "",
           metadata: {
-            qb_invoice_id: inv.Id,
-            doc_number: inv.DocNumber,
-            total: inv.TotalAmt,
-            balance: inv.Balance,
-            status,
-            txn_date: inv.TxnDate,
-            due_date: inv.DueDate ?? null,
+            qb_txn_id: `${txn.txnType}:${txn.id}`,
+            txn_type: txn.txnType,
+            doc_number: txn.docNumber,
+            total: txn.totalAmt,
+            status: txn.status,
+            txn_date: txn.txnDate,
             invoice_url: invoiceUrl,
           },
           created_by: "system",
-          created_at: inv.TxnDate,
+          created_at: txn.txnDate,
         });
 
-        importedIds.add(inv.Id);
+        importedIds.add(`${txn.txnType}:${txn.id}`);
         imported++;
       }
     }

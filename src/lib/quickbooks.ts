@@ -193,6 +193,59 @@ export async function listQbInvoicesForCustomer(qbCustomerId: string): Promise<Q
   return data.QueryResponse.Invoice ?? [];
 }
 
+export type QbTransaction = {
+  id: string;
+  txnType: "Invoice" | "Payment" | "SalesReceipt" | "CreditMemo";
+  docNumber: string | null;
+  txnDate: string;
+  totalAmt: number;
+  memo: string | null;
+  status: string | null;
+};
+
+export async function listQbTransactionsForCustomer(qbCustomerId: string): Promise<QbTransaction[]> {
+  const q = (entity: string) =>
+    encodeURIComponent(`SELECT * FROM ${entity} WHERE CustomerRef = '${qbCustomerId}' ORDERBY TxnDate DESC MAXRESULTS 100`);
+
+  type InvoiceResp     = { QueryResponse: { Invoice?:     { Id: string; DocNumber?: string; TxnDate: string; TotalAmt: number; Balance: number; PrivateNote?: string }[] } };
+  type PaymentResp     = { QueryResponse: { Payment?:     { Id: string; TxnDate: string; TotalAmt: number; PrivateNote?: string }[] } };
+  type ReceiptResp     = { QueryResponse: { SalesReceipt?: { Id: string; DocNumber?: string; TxnDate: string; TotalAmt: number; PrivateNote?: string }[] } };
+  type CreditMemoResp  = { QueryResponse: { CreditMemo?:  { Id: string; DocNumber?: string; TxnDate: string; TotalAmt: number; RemainingCredit?: number; PrivateNote?: string }[] } };
+
+  const [inv, pay, rec, crd] = await Promise.allSettled([
+    qbRequest<InvoiceResp>(`/query?query=${q("Invoice")}`),
+    qbRequest<PaymentResp>(`/query?query=${q("Payment")}`),
+    qbRequest<ReceiptResp>(`/query?query=${q("SalesReceipt")}`),
+    qbRequest<CreditMemoResp>(`/query?query=${q("CreditMemo")}`),
+  ]);
+
+  const results: QbTransaction[] = [];
+
+  if (inv.status === "fulfilled") {
+    for (const r of inv.value.QueryResponse.Invoice ?? []) {
+      const status = r.Balance === 0 ? "Paid" : r.Balance < r.TotalAmt ? "Partial" : "Unpaid";
+      results.push({ id: r.Id, txnType: "Invoice", docNumber: r.DocNumber ?? null, txnDate: r.TxnDate, totalAmt: r.TotalAmt, memo: r.PrivateNote ?? null, status });
+    }
+  }
+  if (pay.status === "fulfilled") {
+    for (const r of pay.value.QueryResponse.Payment ?? []) {
+      results.push({ id: r.Id, txnType: "Payment", docNumber: null, txnDate: r.TxnDate, totalAmt: r.TotalAmt, memo: r.PrivateNote ?? null, status: "Received" });
+    }
+  }
+  if (rec.status === "fulfilled") {
+    for (const r of rec.value.QueryResponse.SalesReceipt ?? []) {
+      results.push({ id: r.Id, txnType: "SalesReceipt", docNumber: r.DocNumber ?? null, txnDate: r.TxnDate, totalAmt: r.TotalAmt, memo: r.PrivateNote ?? null, status: "Paid" });
+    }
+  }
+  if (crd.status === "fulfilled") {
+    for (const r of crd.value.QueryResponse.CreditMemo ?? []) {
+      results.push({ id: r.Id, txnType: "CreditMemo", docNumber: r.DocNumber ?? null, txnDate: r.TxnDate, totalAmt: r.TotalAmt, memo: r.PrivateNote ?? null, status: "Credit" });
+    }
+  }
+
+  return results.sort((a, b) => b.txnDate.localeCompare(a.txnDate));
+}
+
 export async function isQbConnected(): Promise<boolean> {
   const tokens = await getQbTokens();
   return !!tokens;
