@@ -459,7 +459,7 @@ function AssetModal({ asset, contactId, services, onClose }: {
               {[
                 { label: "Type",         value: cfg.label },
                 { label: "Color",        value: asset.color },
-                { label: "Length",       value: asset.length_ft ? `${asset.length_ft} ft` : null },
+                { label: "Length",       value: asset.length_ft ? `${asset.length_ft.replace(/ft$/i, "").trim()} ft` : null },
                 { label: "Registration", value: asset.registration },
                 { label: "Location",     value: asset.location },
               ]

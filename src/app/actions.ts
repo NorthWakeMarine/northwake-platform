@@ -1374,7 +1374,7 @@ export async function createQuickBooksInvoiceDraft(
     });
 
     const assetDesc = vessel
-      ? [vessel.name, vessel.make_model, vessel.length_ft ? `${vessel.length_ft}ft` : null].filter(Boolean).join(" ")
+      ? [vessel.name, vessel.make_model, vessel.length_ft ? `${vessel.length_ft.replace(/ft$/i, "").trim()}ft` : null].filter(Boolean).join(" ")
       : "Marine Services";
 
     const { invoiceId, docNumber } = await createQbInvoiceDraft({

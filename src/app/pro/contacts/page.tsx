@@ -323,7 +323,7 @@ export default async function ContactsPage({
                           {(() => {
                             const v = vesselMap.get(c.id);
                             if (!v) return <span className="text-slate-300">—</span>;
-                            const parts = [v.year, v.make_model, v.length_ft ? `${v.length_ft} ft` : null].filter(Boolean);
+                            const parts = [v.year, v.make_model, v.length_ft ? `${v.length_ft.replace(/ft$/i, "").trim()} ft` : null].filter(Boolean);
                             return parts.length ? parts.join(" · ") : <span className="text-slate-300">—</span>;
                           })()}
                         </td>
