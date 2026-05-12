@@ -103,29 +103,6 @@ export async function deleteCalendarEvent(googleEventId: string): Promise<void> 
   await calendar.events.delete({ calendarId: CALENDAR_ID, eventId: googleEventId });
 }
 
-export type BusySlot = { start: string; end: string };
-
-export async function getBusySlots(
-  from: Date,
-  to: Date
-): Promise<BusySlot[]> {
-  const auth     = getAuth();
-  const calendar = google.calendar({ version: "v3", auth });
-
-  const res = await calendar.freebusy.query({
-    requestBody: {
-      timeMin: from.toISOString(),
-      timeMax: to.toISOString(),
-      items: [{ id: CALENDAR_ID }],
-    },
-  });
-
-  const busy = res.data.calendars?.[CALENDAR_ID]?.busy ?? [];
-  return busy
-    .filter((b) => b.start && b.end)
-    .map((b) => ({ start: b.start!, end: b.end! }));
-}
-
 export type CalendarEvent = {
   id: string;
   title: string;

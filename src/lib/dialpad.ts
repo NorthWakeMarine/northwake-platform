@@ -156,11 +156,6 @@ export async function createDialpadContact(
   return res.id ?? null;
 }
 
-export async function isDialpadConnected(): Promise<boolean> {
-  const tokens = await getDialpadTokens();
-  return !!tokens;
-}
-
 // Step 1: create a webhook endpoint, returns its numeric ID
 async function createDialpadWebhookEndpoint(hookUrl: string, secret: string): Promise<number> {
   const result = await dpRequest<{ id: number }>("/webhooks", {

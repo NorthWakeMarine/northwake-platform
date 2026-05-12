@@ -745,11 +745,6 @@ export async function addAsset(
     // Drive folder creation is best-effort; don't fail the asset save
   }
 
-  // Sync vessel back to QB custom fields (best-effort)
-  try {
-    await syncContactVesselsToQb(contact_id);
-  } catch { /* QB sync is best-effort */ }
-
   revalidatePath(`/pro/contacts/${contact_id}`);
   return { success: true };
 }
@@ -1217,38 +1212,6 @@ export async function deleteLead(leadId: string): Promise<{ error?: string }> {
 // ─── QuickBooks Invoice Auto-Schedule (hook stub) ─────────────────────────────
 // Call this from the QB webhook handler once QBO_CLIENT_ID, QBO_CLIENT_SECRET,
 // QBO_REALM_ID, and QBO_REFRESH_TOKEN are configured in Vercel env vars.
-export async function scheduleFromInvoice({
-  contactId, contactName, service, startTime, endTime, location,
-}: {
-  contactId: string; contactName: string; service: string;
-  startTime: string; endTime: string; location?: string;
-}): Promise<{ eventId?: string; error?: string }> {
-  try {
-    const { createCalendarEvent } = await import("@/lib/google-calendar");
-    const eventId = await createCalendarEvent({
-      title:       `${service} — ${contactName}`,
-      description: `Auto-scheduled from QuickBooks invoice.\n\nContact Dossier: ${process.env.NEXT_PUBLIC_SITE_URL}/pro/contacts/${contactId}`,
-      location,
-      startTime,
-      endTime,
-    });
-    const supabase = await createServerSupabase();
-    await supabase.from("timeline_events").insert({
-      contact_id:  contactId,
-      event_type:  "appointment_scheduled",
-      title:       "Job scheduled from QuickBooks invoice",
-      body:        `${service} on ${new Date(startTime).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`,
-      metadata:    { google_event_id: eventId, source: "quickbooks" },
-      created_by:  "system",
-    });
-    revalidatePath("/pro/dashboard");
-    revalidatePath("/pro/calendar");
-    return { eventId };
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : "Failed to schedule from invoice." };
-  }
-}
-
 // ─── Pipeline Board ──────────────────────────────────────────────────────────
 
 import type { PipelineStage } from "@/types/pipeline";
@@ -1416,47 +1379,6 @@ export async function createQuickBooksInvoiceDraft(
 
 // ─── Conflict Detection ───────────────────────────────────────────────────────
 
-export async function detectServiceConflicts(): Promise<{ flagged: number; error?: string }> {
-  // Placeholder invoice date — will be replaced once QuickBooks is connected
-  const PLACEHOLDER_LAST_INVOICE = "2025-01-01";
-
-  const supabase = await createServerSupabase();
-
-  const { data: leads, error } = await supabase
-    .from("leads")
-    .select("id, name, last_service_date")
-    .not("last_service_date", "is", null);
-
-  if (error) return { flagged: 0, error: error.message };
-  if (!leads?.length) return { flagged: 0 };
-
-  let flagged = 0;
-
-  for (const lead of leads) {
-    if (lead.last_service_date !== PLACEHOLDER_LAST_INVOICE) {
-      const { data: existing } = await supabase
-        .from("system_flags")
-        .select("id")
-        .eq("reference_id", lead.id)
-        .eq("flag_type", "service_invoice_mismatch")
-        .eq("resolved", false)
-        .maybeSingle();
-
-      if (!existing) {
-        await supabase.from("system_flags").insert({
-          flag_type:      "service_invoice_mismatch",
-          reference_id:   lead.id,
-          reference_type: "lead",
-          message: `Service date ${lead.last_service_date} does not match last invoice date ${PLACEHOLDER_LAST_INVOICE}`,
-        });
-        flagged++;
-      }
-    }
-  }
-
-  return { flagged };
-}
-
 // ─── QuickBooks Contact Sync ──────────────────────────────────────────────────
 
 export async function syncContactToQuickBooks(
@@ -1514,22 +1436,6 @@ export async function pushCrmToQuickBooks(): Promise<{ upserted: number; error?:
 }
 
 // ─── Contact Type ─────────────────────────────────────────────────────────────
-
-export async function updateContactType(
-  contactId: string,
-  type: "customer" | "vendor"
-): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await svc();
-  const { error } = await supabase
-    .from("contacts")
-    .update({ contact_type: type })
-    .eq("id", contactId);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath(`/pro/contacts/${contactId}`);
-  revalidatePath("/pro/contacts");
-  revalidatePath("/pro/dashboard");
-  return { ok: true };
-}
 
 // ─── Manual Call Log ──────────────────────────────────────────────────────────
 
@@ -1913,142 +1819,6 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
 
 // ── QB Vessel Sync: QB → CRM ──────────────────────────────────────────────────
 
-export async function syncQbVesselsToContacts(): Promise<{ synced: number; created: number; error?: string }> {
-  const supabase = await svc();
-  try {
-    const { getQbCustomerFull, extractQbVesselFields, getQbTokens } = await import("@/lib/quickbooks");
-    const tokens = await getQbTokens();
-    if (!tokens) return { synced: 0, created: 0, error: "QuickBooks not connected." };
-
-    const { data: contacts } = await supabase
-      .from("contacts")
-      .select("id, qb_customer_id")
-      .not("qb_customer_id", "is", null);
-
-    if (!contacts?.length) return { synced: 0, created: 0 };
-
-    let synced = 0;
-    let created = 0;
-
-    for (const contact of contacts) {
-      try {
-        const customer = await getQbCustomerFull(contact.qb_customer_id!);
-        const qbVessels = extractQbVesselFields(customer);
-        if (!qbVessels.length) continue;
-
-        const { data: existing } = await supabase
-          .from("vessels")
-          .select("id, qb_slot, year, make_model, length_ft")
-          .eq("owner_id", contact.id);
-
-        const bySlot = new Map((existing ?? []).filter((v) => v.qb_slot).map((v) => [v.qb_slot, v]));
-
-        for (const qbV of qbVessels) {
-          const vessel = bySlot.get(qbV.slot);
-          if (vessel) {
-            // Update only fields that are missing in CRM but present in QB
-            const patch: Record<string, unknown> = {};
-            if (!vessel.year      && qbV.year)      patch.year       = qbV.year;
-            if (!vessel.make_model && qbV.makeModel) patch.make_model = qbV.makeModel;
-            if (!vessel.length_ft  && qbV.lengthFt)  patch.length_ft  = qbV.lengthFt;
-            if (Object.keys(patch).length) {
-              await supabase.from("vessels").update(patch).eq("id", vessel.id);
-              synced++;
-            }
-          } else {
-            // Create new vessel from QB data
-            await supabase.from("vessels").insert({
-              owner_id:   contact.id,
-              asset_type: "vessel",
-              qb_slot:    qbV.slot,
-              year:       qbV.year,
-              make_model: qbV.makeModel,
-              length_ft:  qbV.lengthFt,
-            });
-            created++;
-          }
-        }
-      } catch { /* skip contacts where QB fetch fails */ }
-    }
-
-    revalidatePath("/pro/contacts");
-    return { synced, created };
-  } catch (err) {
-    return { synced: 0, created: 0, error: err instanceof Error ? err.message : "Vessel sync failed." };
-  }
-}
-
-// ── QB Vessel Sync: CRM → QB ──────────────────────────────────────────────────
-
-export async function syncContactVesselsToQb(contactId: string): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await svc();
-  try {
-    const { getQbCustomerFull, extractQbVesselFields, updateQbCustomerVesselFields, formatVesselField, getQbTokens } = await import("@/lib/quickbooks");
-    const tokens = await getQbTokens();
-    if (!tokens) return { ok: false, error: "QuickBooks not connected." };
-
-    const { data: contact } = await supabase
-      .from("contacts")
-      .select("qb_customer_id")
-      .eq("id", contactId)
-      .single();
-
-    if (!contact?.qb_customer_id) return { ok: false, error: "Contact not linked to QuickBooks." };
-
-    const { data: vessels } = await supabase
-      .from("vessels")
-      .select("id, qb_slot, year, make_model, length_ft")
-      .eq("owner_id", contactId)
-      .order("qb_slot", { ascending: true, nullsFirst: false });
-
-    if (!vessels?.length) return { ok: true };
-
-    const customer = await getQbCustomerFull(contact.qb_customer_id);
-    const qbVessels = extractQbVesselFields(customer);
-
-    // Build a full picture of QB custom field slots (1-5) including their definitionIds
-    const allSlots = new Map<number, { definitionId: string; value: string }>();
-    for (const cf of customer.CustomField ?? []) {
-      const match = cf.Name?.match(/^\((\d+)\)/);
-      if (match) {
-        allSlots.set(parseInt(match[1], 10), { definitionId: cf.DefinitionId, value: cf.StringValue ?? "" });
-      }
-    }
-
-    const usedSlots = new Set(qbVessels.map((v) => v.slot));
-    const updates: { definitionId: string; value: string }[] = [];
-
-    for (const vessel of vessels) {
-      const formatted = formatVesselField(vessel.year, vessel.make_model, vessel.length_ft);
-
-      let targetSlot = vessel.qb_slot as number | null;
-
-      if (!targetSlot) {
-        // Find next free slot (1-5)
-        for (let s = 1; s <= 5; s++) {
-          if (!usedSlots.has(s)) { targetSlot = s; usedSlots.add(s); break; }
-        }
-        if (!targetSlot) continue; // all 5 slots full
-
-        // Persist the assigned slot back to CRM
-        await supabase.from("vessels").update({ qb_slot: targetSlot }).eq("id", vessel.id);
-      }
-
-      const slotData = allSlots.get(targetSlot);
-      if (!slotData) continue; // QB doesn't have this custom field defined
-
-      updates.push({ definitionId: slotData.definitionId, value: formatted });
-    }
-
-    if (updates.length) {
-      await updateQbCustomerVesselFields(contact.qb_customer_id, customer.SyncToken, updates);
-    }
-
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "QB vessel sync failed." };
-  }
-}
 
 function parseVesselsFromCompanyName(companyName: string): { name: string; asset_type: string; length_ft: number | null }[] {
   return companyName

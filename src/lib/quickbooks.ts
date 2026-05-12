@@ -171,28 +171,6 @@ export function getQbInvoiceUrl(realmId: string, invoiceId: string): string {
   return `https://app.qbo.intuit.com/app/invoice?txnId=${invoiceId}&companyId=${realmId}`;
 }
 
-export type QbInvoice = {
-  Id: string;
-  DocNumber: string;
-  TxnDate: string;
-  DueDate?: string;
-  TotalAmt: number;
-  Balance: number;
-  CustomerRef: { value: string; name?: string };
-  Line: { Description?: string; Amount?: number }[];
-  EmailStatus?: string;
-  PrintStatus?: string;
-};
-
-export async function listQbInvoicesForCustomer(qbCustomerId: string): Promise<QbInvoice[]> {
-  type Resp = { QueryResponse: { Invoice?: QbInvoice[] } };
-  const query = encodeURIComponent(
-    `SELECT * FROM Invoice WHERE CustomerRef = '${qbCustomerId}' ORDERBY TxnDate DESC MAXRESULTS 100`
-  );
-  const data = await qbRequest<Resp>(`/query?query=${query}`);
-  return data.QueryResponse.Invoice ?? [];
-}
-
 export type QbTransaction = {
   id: string;
   txnType: "Invoice" | "Payment" | "SalesReceipt" | "CreditMemo";
@@ -255,11 +233,6 @@ export async function listQbTransactionsForCustomer(qbCustomerId: string): Promi
   return results.sort((a, b) => b.txnDate.localeCompare(a.txnDate));
 }
 
-export async function isQbConnected(): Promise<boolean> {
-  const tokens = await getQbTokens();
-  return !!tokens;
-}
-
 export type QbCustomer = {
   Id: string;
   DisplayName: string;
@@ -284,65 +257,3 @@ export async function listQbCustomers(): Promise<QbCustomer[]> {
   return data.QueryResponse.Customer ?? [];
 }
 
-// ── Vessel custom field helpers ───────────────────────────────────────────────
-
-export type QbVesselField = { slot: number; definitionId: string; year: number | null; makeModel: string | null; lengthFt: string | null };
-
-type QbCustomerFull = QbCustomer & {
-  SyncToken: string;
-  CustomField?: { DefinitionId: string; Name: string; Type: string; StringValue?: string }[];
-};
-
-export async function getQbCustomerFull(qbCustomerId: string): Promise<QbCustomerFull> {
-  type Resp = { Customer: QbCustomerFull };
-  const data = await qbRequest<Resp>(`/customer/${qbCustomerId}`);
-  return data.Customer;
-}
-
-function parseVesselField(value: string): { year: number | null; makeModel: string | null; lengthFt: string | null } {
-  if (!value?.trim()) return { year: null, makeModel: null, lengthFt: null };
-  const parts = value.split(" - ");
-  const yearStr  = parts[0]?.trim() ?? "";
-  const makeModel = parts[1]?.trim() || null;
-  const lengthFt  = parts[2]?.trim() || null;
-  const year = yearStr ? parseInt(yearStr, 10) : NaN;
-  return { year: !isNaN(year) && year > 1900 ? year : null, makeModel, lengthFt };
-}
-
-export function formatVesselField(year: number | null, makeModel: string | null, lengthFt: string | null): string {
-  return `${year ?? ""} - ${makeModel ?? ""} - ${lengthFt ?? ""}`;
-}
-
-export function extractQbVesselFields(customer: QbCustomerFull): QbVesselField[] {
-  const results: QbVesselField[] = [];
-  for (const cf of customer.CustomField ?? []) {
-    const match = cf.Name?.match(/^\((\d+)\)/);
-    if (!match) continue;
-    const slot = parseInt(match[1], 10);
-    const parsed = parseVesselField(cf.StringValue ?? "");
-    if (parsed.makeModel || parsed.year || parsed.lengthFt) {
-      results.push({ slot, definitionId: cf.DefinitionId, ...parsed });
-    }
-  }
-  return results.sort((a, b) => a.slot - b.slot);
-}
-
-export async function updateQbCustomerVesselFields(
-  qbCustomerId: string,
-  syncToken: string,
-  updates: { definitionId: string; value: string }[]
-): Promise<void> {
-  await qbRequest("/customer", {
-    method: "POST",
-    body: JSON.stringify({
-      Id: qbCustomerId,
-      SyncToken: syncToken,
-      sparse: true,
-      CustomField: updates.map((u) => ({
-        DefinitionId: u.definitionId,
-        Type: "StringType",
-        StringValue: u.value,
-      })),
-    }),
-  });
-}

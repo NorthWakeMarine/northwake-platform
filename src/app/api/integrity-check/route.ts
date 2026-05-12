@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runIntegrityCheck, importQbCustomers, importQbInvoices, syncQbVesselsToContacts, syncDialpadContacts, promoteDialpadLocalToCompany, pushCrmToDialpad, pushCrmToQuickBooks } from "@/app/actions";
+import { runIntegrityCheck, importQbCustomers, importQbInvoices, syncDialpadContacts, promoteDialpadLocalToCompany, pushCrmToDialpad, pushCrmToQuickBooks } from "@/app/actions";
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -8,10 +8,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [qb, invoices, vessels, promote, dialpad, pushDialpad, pushQb, integrity] = await Promise.allSettled([
+  const [qb, invoices, promote, dialpad, pushDialpad, pushQb, integrity] = await Promise.allSettled([
     importQbCustomers(),
     importQbInvoices(),
-    syncQbVesselsToContacts(),
     promoteDialpadLocalToCompany(),
     syncDialpadContacts(),
     pushCrmToDialpad(),
@@ -22,7 +21,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     qb:          qb.status          === "fulfilled" ? qb.value          : { error: (qb.reason as Error)?.message },
     invoices:    invoices.status    === "fulfilled" ? invoices.value    : { error: (invoices.reason as Error)?.message },
-    vessels:     vessels.status     === "fulfilled" ? vessels.value     : { error: (vessels.reason as Error)?.message },
     promote:     promote.status     === "fulfilled" ? promote.value     : { error: (promote.reason as Error)?.message },
     dialpad:     dialpad.status     === "fulfilled" ? dialpad.value     : { error: (dialpad.reason as Error)?.message },
     pushDialpad: pushDialpad.status === "fulfilled" ? pushDialpad.value : { error: (pushDialpad.reason as Error)?.message },
