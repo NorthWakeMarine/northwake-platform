@@ -52,20 +52,20 @@ export async function GET() {
     (c) => (c.phone_numbers?.length ?? 0) === 0 && !c.primary_phone?.trim()
   );
 
+  // Fetch full detail for Aaron Govil to see if phone appears on individual endpoint
+  const sampleId = contacts.find((c) => c.display_name?.includes("Aaron Govil"))?.id ?? contacts[0]?.id;
+  let sampleDetail: unknown = null;
+  if (sampleId) {
+    const res = await fetch(`${DP_BASE}/contacts/${sampleId}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    sampleDetail = await res.json();
+  }
+
   return NextResponse.json({
     total: contacts.length,
     with_phone: withPhone.length,
     without_phone: withoutPhone.length,
-    contacts_with_phone: withPhone.map((c) => ({
-      id: c.id,
-      name: c.display_name,
-      phones: c.phone_numbers ?? [c.primary_phone],
-      emails: c.emails ?? [],
-    })),
-    contacts_without_phone: withoutPhone.map((c) => ({
-      id: c.id,
-      name: c.display_name,
-      emails: c.emails ?? [],
-    })),
+    sample_contact_detail: sampleDetail,
   }, { status: 200 });
 }
