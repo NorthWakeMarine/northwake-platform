@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
-import { getDialpadTokens } from "@/lib/dialpad";
 
 const DP_BASE = "https://dialpad.com/api/v2";
+
+async function getToken(): Promise<string> {
+  const { getDialpadTokens } = await import("@/lib/dialpad");
+  const tokens = await getDialpadTokens();
+  if (tokens) return tokens.access_token;
+  const apiKey = process.env.DIALPAD_API_KEY;
+  if (apiKey) return apiKey;
+  throw new Error("Dialpad not connected");
+}
 
 async function dp(path: string, token: string) {
   const res = await fetch(`${DP_BASE}${path}`, {
@@ -14,10 +22,10 @@ async function dp(path: string, token: string) {
 }
 
 export async function GET() {
-  const tokens = await getDialpadTokens();
-  if (!tokens) return NextResponse.json({ error: "Dialpad not connected" }, { status: 401 });
-
-  const token = tokens.access_token;
+  let token: string;
+  try { token = await getToken(); } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 401 });
+  }
 
   const results = await Promise.allSettled([
     dp("/contacts?type=company&limit=5", token),
