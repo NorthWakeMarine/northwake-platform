@@ -2242,3 +2242,166 @@ export async function promoteDialpadLocalToCompany(): Promise<{
     return { promoted: 0, alreadyShared: 0, error: err instanceof Error ? err.message : "Promotion failed." };
   }
 }
+
+// ─── OpenPhone Sync ──────────────────────────────────────────────────────────
+
+export type OpUnmatched = { opId: string; name: string; phone: string | null; email: string | null };
+
+export async function importOpenPhoneContacts(): Promise<{
+  fetched: number;
+  linked: number;
+  alreadyLinked: number;
+  unmatched: OpUnmatched[];
+  error?: string;
+}> {
+  const supabase = await svc();
+  try {
+    const { listOpenPhoneContacts } = await import("@/lib/openphone");
+    const opContacts = await listOpenPhoneContacts();
+
+    const { data: crmContacts } = await supabase
+      .from("contacts")
+      .select("id, name, email, phone, openphone_contact_id");
+
+    const contacts = crmContacts ?? [];
+    const phoneMap = new Map(contacts.filter(c => c.phone).map(c => [normalizePhone(c.phone!) ?? c.phone!, c]));
+    const emailMap = new Map(contacts.filter(c => c.email).map(c => [c.email!.toLowerCase(), c]));
+    const nameMap  = new Map(contacts.filter(c => c.name).map(c => [c.name!.toLowerCase().trim(), c]));
+
+    let linked = 0;
+    let alreadyLinked = 0;
+    const unmatched: OpUnmatched[] = [];
+
+    for (const op of opContacts) {
+      const opPhone = op.phoneNumbers?.[0]?.number ? normalizePhone(op.phoneNumbers[0].number) : null;
+      const opEmail = op.emails?.[0]?.address?.toLowerCase() ?? null;
+      const opName  = [op.firstName, op.lastName].filter(Boolean).join(" ").toLowerCase().trim();
+
+      const match =
+        (opPhone ? phoneMap.get(opPhone) : undefined) ??
+        (opEmail ? emailMap.get(opEmail) : undefined) ??
+        (opName  ? nameMap.get(opName)   : undefined);
+
+      if (match) {
+        if (match.openphone_contact_id === op.id) {
+          alreadyLinked++;
+        } else {
+          await supabase.from("contacts").update({ openphone_contact_id: op.id }).eq("id", match.id);
+          linked++;
+        }
+      } else {
+        unmatched.push({
+          opId:  op.id,
+          name:  [op.firstName, op.lastName].filter(Boolean).join(" ") || "Unknown",
+          phone: opPhone,
+          email: op.emails?.[0]?.address ?? null,
+        });
+      }
+    }
+
+    return { fetched: opContacts.length, linked, alreadyLinked, unmatched };
+  } catch (err) {
+    return { fetched: 0, linked: 0, alreadyLinked: 0, unmatched: [], error: err instanceof Error ? err.message : "OpenPhone import failed." };
+  }
+}
+
+export async function createContactFromOpenPhone(opId: string, name: string, phone: string | null, email: string | null): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await svc();
+  try {
+    const normalized = normalizePhone(phone ?? "") ?? phone ?? null;
+    const { data, error } = await supabase.from("contacts").insert({
+      name,
+      phone: normalized,
+      email: email ?? null,
+      source: "openphone",
+      contact_type: "customer",
+      status: "lead",
+      openphone_contact_id: opId,
+    }).select("id").single();
+    if (error) return { ok: false, error: error.message };
+    await supabase.from("timeline_events").insert({
+      contact_id: data.id,
+      event_type: "lead_created",
+      title: "Lead created from OpenPhone contact import",
+      body: null,
+      created_by: "system",
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed." };
+  }
+}
+
+export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { listOpenPhoneContacts, createOpenPhoneContact, updateOpenPhoneContact, splitName } = await import("@/lib/openphone");
+
+    const { data: contacts } = await supabase
+      .from("contacts")
+      .select("id, name, company_name, email, phone, openphone_contact_id")
+      .eq("contact_type", "customer")
+      .not("name", "is", null);
+
+    const contactIds = (contacts ?? []).map((c) => c.id);
+    const vesselMap = new Map<string, string>();
+    if (contactIds.length > 0) {
+      const { data: vessels } = await supabase
+        .from("vessels")
+        .select("owner_id, year, make_model")
+        .in("owner_id", contactIds)
+        .order("created_at", { ascending: true });
+      for (const v of vessels ?? []) {
+        if (!vesselMap.has(v.owner_id)) {
+          const parts = [v.year, v.make_model].filter(Boolean).join(" ");
+          if (parts) vesselMap.set(v.owner_id, parts);
+        }
+      }
+    }
+
+    // Build a phone index of existing OpenPhone contacts to avoid duplicates on create
+    const existing = await listOpenPhoneContacts();
+    const existingByPhone = new Map(
+      existing.flatMap((c) => (c.phoneNumbers ?? []).map((p) => [normalizePhone(p.number) ?? p.number, c.id]))
+    );
+
+    let updated = 0;
+    let created = 0;
+
+    for (const c of contacts ?? []) {
+      const { firstName, lastName } = splitName(c.name ?? c.company_name ?? "");
+      const vessel = vesselMap.get(c.id) ?? null;
+
+      const payload = {
+        firstName,
+        lastName,
+        ...(vessel ? { role: vessel } : {}),
+        ...(c.email ? { emails: [{ address: c.email }] } : {}),
+        ...(c.phone ? { phoneNumbers: [{ number: c.phone }] } : {}),
+      };
+
+      if (c.openphone_contact_id) {
+        await updateOpenPhoneContact(c.openphone_contact_id, payload);
+        updated++;
+      } else {
+        // Check if a contact with this phone already exists in OpenPhone
+        const existingId = c.phone ? existingByPhone.get(normalizePhone(c.phone) ?? c.phone) : undefined;
+        if (existingId) {
+          await updateOpenPhoneContact(existingId, payload);
+          await supabase.from("contacts").update({ openphone_contact_id: existingId }).eq("id", c.id);
+          updated++;
+        } else {
+          const newId = await createOpenPhoneContact(payload);
+          if (newId) {
+            await supabase.from("contacts").update({ openphone_contact_id: newId }).eq("id", c.id);
+            created++;
+          }
+        }
+      }
+    }
+
+    return { updated, created };
+  } catch (err) {
+    return { updated: 0, created: 0, error: err instanceof Error ? err.message : "OpenPhone push failed." };
+  }
+}

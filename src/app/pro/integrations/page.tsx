@@ -115,7 +115,7 @@ export default async function IntegrationsPage({
         )}
 
         <div className="px-8 py-6 flex flex-col gap-5">
-          <SyncPanel qbConnected={qb.connected} dialpadConnected={dialpad.connected} />
+          <SyncPanel qbConnected={qb.connected} dialpadConnected={dialpad.connected} openphoneConnected={openphone.connected} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
             {/* Google Calendar */}

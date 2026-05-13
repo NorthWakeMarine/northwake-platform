@@ -1,40 +1,44 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, pushCrmToDialpad, pushCrmToQuickBooks, syncVesselsToQbNotes, updateContactFields, promoteDialpadLocalToCompany, importQbInvoices } from "@/app/actions";
-import type { FieldMismatch, DpUnmatched } from "@/app/actions";
+import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, createContactFromOpenPhone, pushCrmToDialpad, pushCrmToQuickBooks, pushCrmToOpenPhone, importOpenPhoneContacts, syncVesselsToQbNotes, updateContactFields, promoteDialpadLocalToCompany, importQbInvoices } from "@/app/actions";
+import type { FieldMismatch, DpUnmatched, OpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
 
 type SyncResult = {
   qb?: { linked: number; alreadyLinked: number; unmatched: QbUnmatched[]; mismatches: FieldMismatch[]; error?: string };
   dialpad?: { fetched: number; linked: number; alreadyLinked: number; unmatched: DpUnmatched[]; mismatches: FieldMismatch[]; error?: string };
+  openphone?: { fetched: number; linked: number; alreadyLinked: number; unmatched: OpUnmatched[]; error?: string };
+  opPush?: { updated: number; created: number; error?: string };
   integrity?: { checked: number; flagged: number; error?: string };
   dpPush?: { updated: number; created: number; error?: string };
   dpPromote?: { promoted: number; alreadyShared: number; error?: string };
   qbInvoices?: { imported: number; skipped: number; error?: string };
-
   qbPush?: { upserted: number; skipped: string[]; error?: string };
   qbNotes?: { synced: number; error?: string };
 };
 
-export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnected: boolean; dialpadConnected: boolean }) {
+export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConnected }: { qbConnected: boolean; dialpadConnected: boolean; openphoneConnected: boolean }) {
   const [result, setResult] = useState<SyncResult | null>(null);
   const [isPending, startTransition] = useTransition();
   const [importingQbId, setImportingQbId] = useState<string | null>(null);
   const [importingDpId, setImportingDpId] = useState<string | null>(null);
+  const [importingOpId, setImportingOpId] = useState<string | null>(null);
   const [imported, setImported] = useState<Set<string>>(new Set());
   const [resolvedMismatches, setResolvedMismatches] = useState<Set<string>>(new Set());
 
   function handleSyncAll() {
     startTransition(async () => {
-      const [qb, qbInvoices, qbPush, qbNotes, dialpad, dpPush, integrity] = await Promise.all([
+      const [qb, qbInvoices, qbPush, qbNotes, dialpad, dpPush, openphone, opPush, integrity] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
         qbConnected ? importQbInvoices() : Promise.resolve(undefined),
         qbConnected ? pushCrmToQuickBooks() : Promise.resolve(undefined),
         qbConnected ? syncVesselsToQbNotes() : Promise.resolve(undefined),
         dialpadConnected ? importDialpadContacts() : Promise.resolve(undefined),
         dialpadConnected ? pushCrmToDialpad() : Promise.resolve(undefined),
+        openphoneConnected ? importOpenPhoneContacts() : Promise.resolve(undefined),
+        openphoneConnected ? pushCrmToOpenPhone() : Promise.resolve(undefined),
         runIntegrityCheck(),
       ]);
       setResult({
@@ -44,6 +48,8 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
         qbNotes: qbNotes ?? undefined,
         dialpad: dialpad ?? undefined,
         dpPush: dpPush ?? undefined,
+        openphone: openphone ?? undefined,
+        opPush: opPush ?? undefined,
         integrity,
       });
     });
@@ -90,6 +96,25 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
         if (imported.has(`dp:${u.dpId}`)) continue;
         const res = await createContactFromDialpad(u.dpId, u.name, u.email, u.phone);
         if (res.ok) setImported((prev) => new Set([...prev, `dp:${u.dpId}`]));
+      }
+    });
+  }
+
+  function handleImportOpenPhoneContact(u: OpUnmatched) {
+    setImportingOpId(u.opId);
+    startTransition(async () => {
+      const res = await createContactFromOpenPhone(u.opId, u.name, u.phone, u.email);
+      if (res.ok) setImported((prev) => new Set([...prev, `op:${u.opId}`]));
+      setImportingOpId(null);
+    });
+  }
+
+  function handleImportAllOpenPhone(unmatched: OpUnmatched[]) {
+    startTransition(async () => {
+      for (const u of unmatched) {
+        if (imported.has(`op:${u.opId}`)) continue;
+        const res = await createContactFromOpenPhone(u.opId, u.name, u.phone, u.email);
+        if (res.ok) setImported((prev) => new Set([...prev, `op:${u.opId}`]));
       }
     });
   }
@@ -423,6 +448,89 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-400" />
                       <span className="text-slate-700 text-xs">{result.dpPush.created} new contacts created in Dialpad</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* OpenPhone import results */}
+          {result.openphone && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">OpenPhone</p>
+              {result.openphone.error ? (
+                <p className="text-red-500 text-xs">{result.openphone.error}</p>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-400" />
+                    <span className="text-slate-400 text-xs">{result.openphone.fetched} fetched from OpenPhone</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-700 text-xs">{result.openphone.linked} newly linked</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-300" />
+                    <span className="text-slate-500 text-xs">{result.openphone.alreadyLinked} already linked</span>
+                  </div>
+                  {result.openphone.unmatched.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      <span className="text-amber-700 text-xs">{result.openphone.unmatched.filter((u) => !imported.has(`op:${u.opId}`)).length} OpenPhone contacts not in CRM</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {result.openphone.unmatched && result.openphone.unmatched.length > 0 && (
+                <div className="flex flex-col gap-1 mt-1">
+                  <p className="text-[10px] tracking-widest uppercase font-semibold text-amber-600">OpenPhone Contacts Missing From CRM</p>
+                  {result.openphone.unmatched.filter((u) => !imported.has(`op:${u.opId}`)).length > 0 && (
+                    <button
+                      onClick={() => handleImportAllOpenPhone(result.openphone!.unmatched)}
+                      disabled={isPending}
+                      className="self-end text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline disabled:opacity-40"
+                    >
+                      {isPending ? "Importing..." : `Import All (${result.openphone.unmatched.filter((u) => !imported.has(`op:${u.opId}`)).length})`}
+                    </button>
+                  )}
+                  {result.openphone.unmatched.map((u) => (
+                    <div key={u.opId} className={`flex items-center justify-between gap-3 py-1.5 border-b border-slate-50 ${imported.has(`op:${u.opId}`) ? "opacity-40" : ""}`}>
+                      <div>
+                        <p className="text-slate-700 text-xs font-medium">{u.name}</p>
+                        <p className="text-slate-400 text-[10px]">{u.phone ?? u.email ?? "No contact info"}</p>
+                      </div>
+                      <button
+                        onClick={() => handleImportOpenPhoneContact(u)}
+                        disabled={importingOpId === u.opId || imported.has(`op:${u.opId}`)}
+                        className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline disabled:opacity-40 shrink-0"
+                      >
+                        {imported.has(`op:${u.opId}`) ? "Imported" : importingOpId === u.opId ? "Importing..." : "Import"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* OpenPhone push results */}
+          {result.opPush && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">Push to OpenPhone</p>
+              {result.opPush.error ? (
+                <p className="text-red-500 text-xs">{result.opPush.error}</p>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-700 text-xs">{result.opPush.updated} contacts updated in OpenPhone</span>
+                  </div>
+                  {result.opPush.created > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span className="text-slate-700 text-xs">{result.opPush.created} new contacts created in OpenPhone</span>
                     </div>
                   )}
                 </div>

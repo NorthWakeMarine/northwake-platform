@@ -27,11 +27,22 @@ export type OpenPhoneContact = {
   id: string;
   firstName?: string;
   lastName?: string;
+  role?: string;
+  company?: string;
   phoneNumbers?: { number: string }[];
   emails?: { address: string }[];
 };
 
-export async function listOpenPhoneContacts(maxTotal = 500): Promise<OpenPhoneContact[]> {
+export type OpenPhoneContactPayload = {
+  firstName: string;
+  lastName?: string;
+  role?: string;
+  company?: string;
+  phoneNumbers?: { number: string }[];
+  emails?: { address: string }[];
+};
+
+export async function listOpenPhoneContacts(maxTotal = 1000): Promise<OpenPhoneContact[]> {
   type Resp = { data: OpenPhoneContact[]; meta?: { nextPageToken?: string } };
   const all: OpenPhoneContact[] = [];
   let pageToken: string | undefined;
@@ -45,12 +56,7 @@ export async function listOpenPhoneContacts(maxTotal = 500): Promise<OpenPhoneCo
   return all;
 }
 
-export async function createOpenPhoneContact(data: {
-  firstName: string;
-  lastName?: string;
-  phoneNumbers?: { number: string }[];
-  emails?: { address: string }[];
-}): Promise<string | null> {
+export async function createOpenPhoneContact(data: OpenPhoneContactPayload): Promise<string | null> {
   type Resp = { data: { id: string } };
   const res = await opRequest<Resp>("/contacts", {
     method: "POST",
@@ -59,14 +65,17 @@ export async function createOpenPhoneContact(data: {
   return res.data?.id ?? null;
 }
 
-export async function updateOpenPhoneContact(id: string, data: {
-  firstName?: string;
-  lastName?: string;
-  phoneNumbers?: { number: string }[];
-  emails?: { address: string }[];
-}): Promise<void> {
+export async function updateOpenPhoneContact(id: string, data: OpenPhoneContactPayload): Promise<void> {
   await opRequest(`/contacts/${id}`, {
     method: "PATCH",
     body: JSON.stringify(data),
   });
+}
+
+export function splitName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/);
+  return {
+    firstName: parts[0] ?? "",
+    lastName: parts.slice(1).join(" "),
+  };
 }
