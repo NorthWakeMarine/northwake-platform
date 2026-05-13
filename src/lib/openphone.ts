@@ -47,14 +47,18 @@ export type OpenPhoneContactPayload = {
 };
 
 export async function listOpenPhoneContacts(maxTotal = 1000): Promise<OpenPhoneContact[]> {
-  type Resp = { data: OpenPhoneContact[]; meta?: { nextPageToken?: string } };
+  type RawContact = { id: string; defaultFields?: OpenPhoneContactFields };
+  type Resp = { data: RawContact[]; meta?: { nextPageToken?: string } };
   const all: OpenPhoneContact[] = [];
   let pageToken: string | undefined;
   do {
     const params = new URLSearchParams({ maxResults: "50" });
     if (pageToken) params.set("pageToken", pageToken);
     const data = await opRequest<Resp>(`/contacts?${params}`);
-    all.push(...(data.data ?? []));
+    for (const raw of data.data ?? []) {
+      const f = raw.defaultFields ?? {};
+      all.push({ id: raw.id, firstName: f.firstName, lastName: f.lastName, role: f.role, company: f.company, phoneNumbers: f.phoneNumbers, emails: f.emails });
+    }
     pageToken = data.meta?.nextPageToken;
   } while (pageToken && all.length < maxTotal);
   return all;
