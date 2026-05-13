@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+function svc() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
+}
 
 const DP_BASE = "https://dialpad.com/api/v2";
 
@@ -52,20 +57,28 @@ export async function GET() {
     (c) => (c.phone_numbers?.length ?? 0) === 0 && !c.primary_phone?.trim()
   );
 
-  // Fetch full detail for Aaron Govil to see if phone appears on individual endpoint
-  const sampleId = contacts.find((c) => c.display_name?.includes("Aaron Govil"))?.id ?? contacts[0]?.id;
-  let sampleDetail: unknown = null;
-  if (sampleId) {
-    const res = await fetch(`${DP_BASE}/contacts/${sampleId}`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    });
-    sampleDetail = await res.json();
-  }
+  // Check CRM contacts for phone coverage
+  const supabase = svc();
+  const { data: crmContacts } = await supabase
+    .from("contacts")
+    .select("id, name, phone, dialpad_contact_id")
+    .eq("contact_type", "customer")
+    .not("name", "is", null);
+
+  const crm = crmContacts ?? [];
+  const crmWithPhone = crm.filter((c) => c.phone);
+  const crmWithDialpad = crm.filter((c) => c.dialpad_contact_id);
+  const crmWithBoth = crm.filter((c) => c.phone && c.dialpad_contact_id);
+  const crmWithDialpadNoPhone = crm.filter((c) => c.dialpad_contact_id && !c.phone);
 
   return NextResponse.json({
-    total: contacts.length,
-    with_phone: withPhone.length,
-    without_phone: withoutPhone.length,
-    sample_contact_detail: sampleDetail,
+    dialpad_contacts: { total: contacts.length, with_phone: withPhone.length, without_phone: withoutPhone.length },
+    crm_contacts: {
+      total: crm.length,
+      with_phone: crmWithPhone.length,
+      with_dialpad_link: crmWithDialpad.length,
+      with_both_phone_and_dialpad: crmWithBoth.length,
+      linked_to_dialpad_but_missing_phone: crmWithDialpadNoPhone.map((c) => ({ id: c.id, name: c.name })),
+    },
   }, { status: 200 });
 }
