@@ -128,25 +128,35 @@ export async function findOrCreateQbCustomer(contact: {
   type CustomerResponse = { Customer: { Id: string } };
 
   let qbId: string;
-  try {
+
+  async function attemptCreate(name: string): Promise<string> {
+    const payload = { ...body, DisplayName: name };
     const data = await qbRequest<CustomerResponse>("/customer", {
       method: "POST",
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     });
-    qbId = data.Customer.Id;
+    return data.Customer.Id;
+  }
+
+  try {
+    qbId = await attemptCreate(displayName);
   } catch (err) {
-    // QB error 6240 = duplicate DisplayName; find and link the existing customer
-    if (err instanceof Error && err.message.includes("6240")) {
-      const escapedName = displayName.replace(/'/g, "\\'");
-      type QueryResp = { QueryResponse: { Customer?: { Id: string }[] } };
-      const found = await qbRequest<QueryResp>(
-        `/query?query=${encodeURIComponent(`SELECT Id FROM Customer WHERE DisplayName = '${escapedName}' MAXRESULTS 1`)}`
-      );
-      const match = found.QueryResponse.Customer?.[0];
-      if (!match) throw new Error(`QB duplicate name but could not find existing customer: ${displayName}`);
-      qbId = match.Id;
+    if (!(err instanceof Error && err.message.includes("6240"))) throw err;
+
+    // Name conflicts with an existing QB entity (customer or vendor).
+    // First check if it's already a customer we can link directly.
+    const escapedName = displayName.replace(/'/g, "\\'");
+    type QueryResp = { QueryResponse: { Customer?: { Id: string }[] } };
+    const found = await qbRequest<QueryResp>(
+      `/query?query=${encodeURIComponent(`SELECT Id FROM Customer WHERE DisplayName = '${escapedName}' MAXRESULTS 1`)}`
+    );
+    const existing = found.QueryResponse.Customer?.[0];
+    if (existing) {
+      qbId = existing.Id;
     } else {
-      throw err;
+      // Conflict is a vendor/employee — create customer with a disambiguated name
+      const suffix = contact.phone ?? contact.email ?? "Customer";
+      qbId = await attemptCreate(`${displayName} (${suffix})`);
     }
   }
 
