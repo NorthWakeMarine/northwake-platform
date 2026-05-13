@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import Link from "next/link";
+import TimeDisplay from "./TimeDisplay";
 
 type CallRow = {
   id: string;
@@ -57,18 +58,10 @@ async function getCalls(): Promise<CallRow[]> {
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const s = Math.floor(seconds % 60);
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
 
 export default async function CallsPage() {
   const calls = await getCalls();
@@ -155,8 +148,7 @@ export default async function CallsPage() {
                       </span>
 
                       <div className="text-right">
-                        <span className="text-slate-500 text-xs">{formatDate(c.created_at)}</span>
-                        <span className="text-slate-400 text-[10px] block">{formatTime(c.created_at)}</span>
+                        <TimeDisplay iso={c.created_at} />
                       </div>
                     </div>
                   );

@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     eventType = "call.completed";
   } else if (state === "voicemail") {
     eventType = "call.voicemail";
-  } else if (event.from_number && !state) {
+  } else if (state === "sms" || (event.from_number && !state)) {
     eventType = "sms.inbound";
   } else {
     return NextResponse.json({ ok: true });
@@ -143,7 +143,7 @@ async function handleCompletedCall(event: Record<string, unknown>) {
     contact_id:  contact.id,
     event_type:  "call",
     title:       `${direction === "outbound" ? "Outbound" : "Inbound"} Call`,
-    body:        duration ? `Duration: ${Math.floor(duration / 60)}m ${duration % 60}s` : "Call completed.",
+    body:        duration ? `Duration: ${Math.floor(duration / 60)}m ${Math.floor(duration % 60)}s` : "Call completed.",
     metadata:    {
       direction,
       duration: duration ?? null,
@@ -156,8 +156,8 @@ async function handleCompletedCall(event: Record<string, unknown>) {
 
 async function handleInboundSms(event: Record<string, unknown>) {
   const supabase = svc();
-  const fromPhone = event.from_number as string | undefined;
-  const messageBody = event.text as string | undefined;
+  const fromPhone = (event.from_number ?? event.from) as string | undefined;
+  const messageBody = (event.text ?? event.body ?? event.message) as string | undefined;
   if (!fromPhone || !messageBody) return;
 
   const normalized = normalizePhone(fromPhone);
