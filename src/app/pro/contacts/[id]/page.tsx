@@ -275,7 +275,7 @@ export default async function ContactProfilePage({
                 <div className="px-6 pt-4 pb-2">
                   <NoteForm contactId={contact.id} />
                 </div>
-                <div className="px-6 pb-4">
+                <div className="px-6 pb-4 max-h-[560px] overflow-y-auto">
                   <NotesList events={(events as TimelineEvent[]) ?? []} />
                 </div>
               </div>

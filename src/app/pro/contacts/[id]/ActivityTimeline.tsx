@@ -298,15 +298,17 @@ export default function ActivityTimeline({ events }: { events: TimelineEvent[] }
           {cleanView ? "Clean View On" : "Clean View"}
         </button>
       </div>
-      {visible.length === 0 ? (
-        <p className="text-slate-400 text-sm px-6 py-8">No activity yet.</p>
-      ) : (
-        <ul className="px-6 py-4 flex flex-col gap-0">
-          {visible.map((ev, i) => (
-            <StaticItem key={ev.id} ev={ev} isLast={i === visible.length - 1} />
-          ))}
-        </ul>
-      )}
+      <div className="max-h-[560px] overflow-y-auto">
+        {visible.length === 0 ? (
+          <p className="text-slate-400 text-sm px-6 py-8">No activity yet.</p>
+        ) : (
+          <ul className="px-6 py-4 flex flex-col gap-0">
+            {visible.map((ev, i) => (
+              <StaticItem key={ev.id} ev={ev} isLast={i === visible.length - 1} />
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
