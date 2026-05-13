@@ -2,6 +2,20 @@
 
 ## May 2026
 
+### May 13 | Vendor/customer separation, contact page layout overhaul, Dialpad phone fix | CRM,Integrations
+
+**Vendor vs. customer separation:** Contacts now have a `contact_type` field (customer, vendor, lead). The contacts list page has a prominent tab toggle: Customers (default), Vendors, All. Vendor tab shows Name, Company, Email, Phone columns. Customer tab shows Name, Email, Phone, Asset, Status. Pipeline buttons, fleet gallery, waiver banner, waiver field, and status field are all hidden for vendor contacts.
+
+**Vendor contact page:** A Vendor Description box at the top lets you write a short summary of what the vendor provides (stored in the contacts.notes field). Health Check box is hidden for vendors. Documents box is in the left column for both vendors and customers.
+
+**Company name field:** A Company field was added to Contact Details (editable inline). Syncs to QuickBooks as CompanyName and to Dialpad as company. Requires running: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS company_name text;` in Supabase SQL editor if not already done.
+
+**QB vendor name collision handling:** If a contact name conflicts with an existing QB vendor or employee (QB error 6240 and no matching customer found), the contact is silently skipped for QB linking and reported as skipped in the Integrations sync panel.
+
+**Contact page layout:** Household (linked contacts) box removed. Documents moved to left column. Notes and Activity Timeline both live in the right column. Notes are now in their own separate card (with the Add Note form at top and a scrollable list of logged notes below), keeping them distinct from calls, invoices, and other activity. Both the Notes list and Activity Timeline cap at 560px and scroll internally.
+
+**Dialpad phone field fix:** Dialpad returns `primary_phone` (string) on contact reads, not `phone_numbers` (array). A `dialpadContactPhones()` helper now normalizes both shapes and is used throughout all sync and import flows, fixing phone matching and dedup.
+
 ### May 12 | CRM contacts overhaul, bidirectional QB/Dialpad sync, asset editing | CRM,Integrations
 Contacts list, fleet management, and sync pipeline all significantly improved.
 

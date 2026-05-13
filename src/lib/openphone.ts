@@ -47,7 +47,7 @@ export async function listOpenPhoneContacts(maxTotal = 1000): Promise<OpenPhoneC
   const all: OpenPhoneContact[] = [];
   let pageToken: string | undefined;
   do {
-    const params = new URLSearchParams({ maxResults: "100" });
+    const params = new URLSearchParams({ maxResults: "50" });
     if (pageToken) params.set("pageToken", pageToken);
     const data = await opRequest<Resp>(`/contacts?${params}`);
     all.push(...(data.data ?? []));
