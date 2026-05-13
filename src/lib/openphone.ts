@@ -33,13 +33,17 @@ export type OpenPhoneContact = {
   emails?: { address: string }[];
 };
 
-export type OpenPhoneContactPayload = {
+export type OpenPhoneContactFields = {
   firstName: string;
   lastName?: string;
   role?: string;
   company?: string;
   phoneNumbers?: { number: string }[];
   emails?: { address: string }[];
+};
+
+export type OpenPhoneContactPayload = {
+  defaultFields: OpenPhoneContactFields;
 };
 
 export async function listOpenPhoneContacts(maxTotal = 1000): Promise<OpenPhoneContact[]> {
@@ -56,19 +60,19 @@ export async function listOpenPhoneContacts(maxTotal = 1000): Promise<OpenPhoneC
   return all;
 }
 
-export async function createOpenPhoneContact(data: OpenPhoneContactPayload): Promise<string | null> {
+export async function createOpenPhoneContact(fields: OpenPhoneContactFields): Promise<string | null> {
   type Resp = { data: { id: string } };
   const res = await opRequest<Resp>("/contacts", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: JSON.stringify({ defaultFields: fields }),
   });
   return res.data?.id ?? null;
 }
 
-export async function updateOpenPhoneContact(id: string, data: OpenPhoneContactPayload): Promise<void> {
+export async function updateOpenPhoneContact(id: string, fields: OpenPhoneContactFields): Promise<void> {
   await opRequest(`/contacts/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(data),
+    body: JSON.stringify({ defaultFields: fields }),
   });
 }
 
