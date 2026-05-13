@@ -1434,12 +1434,12 @@ export async function syncContactToQuickBooks(
   }
 }
 
-export async function pushCrmToQuickBooks(): Promise<{ upserted: number; error?: string }> {
+export async function pushCrmToQuickBooks(): Promise<{ upserted: number; skipped: string[]; error?: string }> {
   const supabase = await svc();
   try {
     const { findOrCreateQbCustomer, getQbTokens } = await import("@/lib/quickbooks");
     const tokens = await getQbTokens();
-    if (!tokens) return { upserted: 0, error: "QuickBooks not connected." };
+    if (!tokens) return { upserted: 0, skipped: [], error: "QuickBooks not connected." };
 
     const { data: contacts } = await supabase
       .from("contacts")
@@ -1448,13 +1448,14 @@ export async function pushCrmToQuickBooks(): Promise<{ upserted: number; error?:
       .not("name", "is", null);
 
     let upserted = 0;
+    const skipped: string[] = [];
     for (const c of contacts ?? []) {
-      await findOrCreateQbCustomer({ id: c.id, name: c.name, email: c.email, phone: c.phone });
-      upserted++;
+      const qbId = await findOrCreateQbCustomer({ id: c.id, name: c.name, email: c.email, phone: c.phone });
+      if (qbId) { upserted++; } else { skipped.push(c.name ?? c.id); }
     }
-    return { upserted };
+    return { upserted, skipped };
   } catch (err) {
-    return { upserted: 0, error: err instanceof Error ? err.message : "QB push failed." };
+    return { upserted: 0, skipped: [], error: err instanceof Error ? err.message : "QB push failed." };
   }
 }
 

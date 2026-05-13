@@ -14,7 +14,7 @@ type SyncResult = {
   dpPromote?: { promoted: number; alreadyShared: number; error?: string };
   qbInvoices?: { imported: number; skipped: number; error?: string };
 
-  qbPush?: { upserted: number; error?: string };
+  qbPush?: { upserted: number; skipped: string[]; error?: string };
   qbNotes?: { synced: number; error?: string };
 };
 
@@ -367,9 +367,19 @@ export default function SyncPanel({ qbConnected, dialpadConnected }: { qbConnect
               {result.qbPush.error ? (
                 <p className="text-red-500 text-xs">{result.qbPush.error}</p>
               ) : (
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-slate-700 text-xs">{result.qbPush.upserted} customers confirmed in QuickBooks</span>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-700 text-xs">{result.qbPush.upserted} customers confirmed in QuickBooks</span>
+                  </div>
+                  {result.qbPush.skipped?.length > 0 && (
+                    <div className="flex items-start gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 mt-1 shrink-0" />
+                      <span className="text-amber-700 text-xs">
+                        {result.qbPush.skipped.length} skipped (name conflicts with a QB vendor or employee): {result.qbPush.skipped.join(", ")}. Rename the vendor in QuickBooks to link.
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
