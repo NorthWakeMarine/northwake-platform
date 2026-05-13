@@ -1492,7 +1492,7 @@ export async function syncVesselsToQbNotes(): Promise<{ synced: number; error?: 
         const customer = await getQbCustomer(c.qb_customer_id!);
         const newNotes = buildNotesWithVessels(customer.Notes ?? null, noteVessels);
 
-        if (newNotes !== (customer.Notes ?? "")) {
+        if (newNotes.trim() !== (customer.Notes ?? "").trim()) {
           await updateQbCustomerNotes(c.qb_customer_id!, customer.SyncToken!, newNotes);
           synced++;
         }
