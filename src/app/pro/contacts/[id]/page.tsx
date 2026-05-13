@@ -7,10 +7,9 @@ import ProShell from "@/components/ProShell";
 import NoteForm from "./NoteForm";
 import CopyWaiverLink from "./CopyWaiverLink";
 import FleetGallery, { type Asset } from "./FleetGallery";
-import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
 import ContactDetailsCard from "./ContactDetailsCard";
 import ContactDocuments from "./ContactDocuments";
-import ActivityTimeline from "./ActivityTimeline";
+import ActivityTimeline, { NotesList } from "./ActivityTimeline";
 import LogCallModal from "./LogCallModal";
 import SyncCallsButton from "./SyncCallsButton";
 import SyncToQbButton from "./SyncToQbButton";
@@ -112,7 +111,6 @@ export default async function ContactProfilePage({
     { data: contact },
     { data: events },
     { data: rawVessels },
-    { data: rawLinked },
   ] = await Promise.all([
     supabase
       .from("contacts")
@@ -129,17 +127,11 @@ export default async function ContactProfilePage({
       .select("id, asset_type, name, make_model, year, color, length_ft, location, registration, notes, last_service_date, vessel_type, service_interval_days")
       .eq("owner_id", id)
       .order("created_at", { ascending: true }),
-    supabase
-      .from("linked_contacts")
-      .select("id, name, phone, email, relationship, authorized_to_approve")
-      .eq("primary_contact_id", id)
-      .order("created_at", { ascending: true }),
   ]);
 
   if (!contact) notFound();
 
   const assets: Asset[] = (rawVessels ?? []) as Asset[];
-  const linkedContacts: LinkedContact[] = (rawLinked ?? []) as LinkedContact[];
 
   // Fetch vessel services for all vessels belonging to this contact
   const vesselIds = assets.map((a) => a.id);
@@ -259,8 +251,10 @@ export default async function ContactProfilePage({
                 createdAt={contact.created_at}
               />
 
-              {/* Household */}
-              <LinkedContacts contactId={contact.id} linkedContacts={linkedContacts} />
+            </div>
+
+            {/* Right column */}
+            <div className="lg:col-span-2 flex flex-col gap-4">
 
               {/* Documents */}
               <ContactDocuments
@@ -270,20 +264,29 @@ export default async function ContactProfilePage({
                 waiverEvents={(events as TimelineEvent[])?.filter(e => e.event_type === "waiver_signed") ?? []}
               />
 
-            </div>
-
-            {/* Right column */}
-            <div className="lg:col-span-2 flex flex-col gap-4">
-
-              <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3">
-                <h3 className="text-slate-800 text-sm font-semibold">Add Note</h3>
-                <NoteForm contactId={contact.id} />
+              {/* Notes */}
+              <div className="bg-white border border-slate-200 rounded-sm flex flex-col">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="text-slate-800 text-sm font-semibold">Notes</h3>
+                  <span className="text-slate-400 text-[11px]">
+                    {(events as TimelineEvent[])?.filter(e => e.event_type === "note").length ?? 0} notes
+                  </span>
+                </div>
+                <div className="px-6 pt-4 pb-2">
+                  <NoteForm contactId={contact.id} />
+                </div>
+                <div className="px-6 pb-4">
+                  <NotesList events={(events as TimelineEvent[]) ?? []} />
+                </div>
               </div>
 
+              {/* Activity Timeline (calls, invoices, etc.) */}
               <div className="bg-white border border-slate-200 rounded-sm flex flex-col">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="text-slate-800 text-sm font-semibold">Activity Timeline</h3>
-                  <span className="text-slate-400 text-[11px]">{(events ?? []).length} events</span>
+                  <span className="text-slate-400 text-[11px]">
+                    {(events as TimelineEvent[])?.filter(e => e.event_type !== "note").length ?? 0} events
+                  </span>
                 </div>
                 <ActivityTimeline events={(events as TimelineEvent[]) ?? []} />
               </div>

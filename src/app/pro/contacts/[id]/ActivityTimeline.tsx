@@ -255,6 +255,20 @@ function StaticItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
   );
 }
 
+export function NotesList({ events }: { events: TimelineEvent[] }) {
+  const notes = events.filter((ev) => ev.event_type === "note");
+  if (notes.length === 0) {
+    return <p className="text-slate-400 text-xs px-1 py-3 italic">No notes yet.</p>;
+  }
+  return (
+    <ul className="flex flex-col gap-0 mt-1">
+      {notes.map((ev, i) => (
+        <NoteItem key={ev.id} ev={ev} isLast={i === notes.length - 1} />
+      ))}
+    </ul>
+  );
+}
+
 export default function ActivityTimeline({ events }: { events: TimelineEvent[] }) {
   const [cleanView, setCleanView] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -267,9 +281,10 @@ export default function ActivityTimeline({ events }: { events: TimelineEvent[] }
     try { localStorage.setItem("nwm_clean_view", next ? "1" : "0"); } catch { /* ignore */ }
   }
 
+  const nonNotes = events.filter((ev) => ev.event_type !== "note");
   const visible = cleanView
-    ? events.filter((ev) => HUMAN_EVENT_TYPES.has(ev.event_type) && ev.created_by !== "system")
-    : events;
+    ? nonNotes.filter((ev) => HUMAN_EVENT_TYPES.has(ev.event_type) && ev.created_by !== "system")
+    : nonNotes;
 
   return (
     <div>
@@ -287,13 +302,9 @@ export default function ActivityTimeline({ events }: { events: TimelineEvent[] }
         <p className="text-slate-400 text-sm px-6 py-8">No activity yet.</p>
       ) : (
         <ul className="px-6 py-4 flex flex-col gap-0">
-          {visible.map((ev, i) =>
-            ev.event_type === "note" ? (
-              <NoteItem key={ev.id} ev={ev} isLast={i === visible.length - 1} />
-            ) : (
-              <StaticItem key={ev.id} ev={ev} isLast={i === visible.length - 1} />
-            )
-          )}
+          {visible.map((ev, i) => (
+            <StaticItem key={ev.id} ev={ev} isLast={i === visible.length - 1} />
+          ))}
         </ul>
       )}
     </div>
