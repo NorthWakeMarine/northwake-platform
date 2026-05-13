@@ -32,6 +32,7 @@ type Contact = {
   status: string | null;
   source: string | null;
   contact_type: string | null;
+  company_name: string | null;
   qb_customer_id: string | null;
   drive_folder_id: string | null;
   drive_folder_url: string | null;
@@ -113,7 +114,7 @@ export default async function ContactProfilePage({
   ] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, created_at, name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source, contact_type, qb_customer_id, drive_folder_id, drive_folder_url, pipeline_stage")
+      .select("id, created_at, name, company_name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source, contact_type, qb_customer_id, drive_folder_id, drive_folder_url, pipeline_stage")
       .eq("id", id)
       .single(),
     supabase
@@ -245,6 +246,7 @@ export default async function ContactProfilePage({
                 status={contact.status}
                 source={contact.source}
                 contactType={contact.contact_type}
+                companyName={contact.company_name}
                 createdAt={contact.created_at}
               />
 

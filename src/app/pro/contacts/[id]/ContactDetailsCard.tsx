@@ -13,6 +13,7 @@ type Props = {
   status: string | null;
   source: string | null;
   contactType: string | null;
+  companyName: string | null;
   createdAt: string;
 };
 
@@ -27,6 +28,7 @@ export default function ContactDetailsCard(props: Props) {
 
   const [draft, setDraft] = useState({
     name:          props.name         ?? "",
+    company_name:  props.companyName  ?? "",
     email:         props.email        ?? "",
     phone:         props.phone        ?? "",
     address:       props.address      ?? "",
@@ -46,6 +48,7 @@ export default function ContactDetailsCard(props: Props) {
   function handleCancel() {
     setDraft({
       name:          props.name         ?? "",
+      company_name:  props.companyName  ?? "",
       email:         props.email        ?? "",
       phone:         props.phone        ?? "",
       address:       props.address      ?? "",
@@ -105,6 +108,22 @@ export default function ContactDetailsCard(props: Props) {
               />
             ) : (
               <span className="text-slate-700">{props.name || <span className="text-slate-300 italic">Not provided</span>}</span>
+            )}
+          </dd>
+        </div>
+
+        <div>
+          <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Company</dt>
+          <dd>
+            {editing ? (
+              <input
+                value={draft.company_name}
+                onChange={(e) => setDraft((d) => ({ ...d, company_name: e.target.value }))}
+                className="w-full border border-slate-200 rounded-sm px-2 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                placeholder="Company name"
+              />
+            ) : (
+              <span className="text-slate-700">{props.companyName || <span className="text-slate-300 italic">Not provided</span>}</span>
             )}
           </dd>
         </div>

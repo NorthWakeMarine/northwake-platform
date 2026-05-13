@@ -108,6 +108,7 @@ export async function findOrCreateQbCustomer(contact: {
   name: string | null;
   email: string | null;
   phone: string | null;
+  company_name?: string | null;
 }): Promise<string> {
   const supabase = svc();
 
@@ -119,9 +120,11 @@ export async function findOrCreateQbCustomer(contact: {
 
   if (existing?.qb_customer_id) return existing.qb_customer_id;
 
-  const displayName = contact.name?.trim() || contact.email || "Unknown";
+  // DisplayName: prefer personal name, fall back to company name, then email
+  const displayName = contact.name?.trim() || contact.company_name?.trim() || contact.email || "Unknown";
 
   const body: Record<string, unknown> = { DisplayName: displayName };
+  if (contact.company_name?.trim()) body.CompanyName = contact.company_name.trim();
   if (contact.email) body.PrimaryEmailAddr = { Address: contact.email };
   if (contact.phone) body.PrimaryPhone = { FreeFormNumber: contact.phone };
 

@@ -830,16 +830,17 @@ export async function updateContactField(
 
 export async function updateContactFields(
   contactId: string,
-  fields: { name?: string | null; email?: string | null; phone?: string | null; address?: string | null; waiver_signed?: boolean; contact_type?: string | null }
+  fields: { name?: string | null; email?: string | null; phone?: string | null; address?: string | null; waiver_signed?: boolean; contact_type?: string | null; company_name?: string | null }
 ): Promise<{ ok: boolean; error?: string }> {
   const supabase = await svc();
   const patch: Record<string, string | boolean | null> = {};
-  if ("name"          in fields) patch.name          = fields.name?.trim()    || null;
-  if ("email"         in fields) patch.email         = fields.email?.trim()   || null;
-  if ("phone"         in fields) patch.phone         = fields.phone?.trim()   || null;
-  if ("address"       in fields) patch.address       = fields.address?.trim() || null;
+  if ("name"          in fields) patch.name          = fields.name?.trim()         || null;
+  if ("company_name"  in fields) patch.company_name  = fields.company_name?.trim() || null;
+  if ("email"         in fields) patch.email         = fields.email?.trim()        || null;
+  if ("phone"         in fields) patch.phone         = fields.phone?.trim()        || null;
+  if ("address"       in fields) patch.address       = fields.address?.trim()      || null;
   if ("waiver_signed" in fields) patch.waiver_signed = fields.waiver_signed ?? false;
-  if ("contact_type"  in fields) patch.contact_type  = fields.contact_type   || null;
+  if ("contact_type"  in fields) patch.contact_type  = fields.contact_type        || null;
   const { error } = await supabase.from("contacts").update(patch).eq("id", contactId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/pro/contacts/${contactId}`);
@@ -1444,14 +1445,14 @@ export async function pushCrmToQuickBooks(): Promise<{ upserted: number; skipped
 
     const { data: contacts } = await supabase
       .from("contacts")
-      .select("id, name, email, phone")
+      .select("id, name, company_name, email, phone")
       .eq("contact_type", "customer")
       .not("name", "is", null);
 
     let upserted = 0;
     const skipped: string[] = [];
     for (const c of contacts ?? []) {
-      const qbId = await findOrCreateQbCustomer({ id: c.id, name: c.name, email: c.email, phone: c.phone });
+      const qbId = await findOrCreateQbCustomer({ id: c.id, name: c.name, company_name: c.company_name, email: c.email, phone: c.phone });
       if (qbId) { upserted++; } else { skipped.push(c.name ?? c.id); }
     }
     return { upserted, skipped };
@@ -1724,7 +1725,7 @@ export async function importQbCustomers(): Promise<{
 
     const { data: crmContacts } = await supabase
       .from("contacts")
-      .select("id, name, email, phone, address, qb_customer_id");
+      .select("id, name, company_name, email, phone, address, qb_customer_id");
 
     const contacts = crmContacts ?? [];
     const emailMap = new Map(contacts.filter(c => c.email).map(c => [c.email!.toLowerCase(), c]));
@@ -1769,6 +1770,7 @@ export async function importQbCustomers(): Promise<{
 
         const updatePayload: Record<string, unknown> = { qb_customer_id: qbC.Id };
         if (formattedAddress && !match.address) updatePayload.address = formattedAddress;
+        if (qbC.CompanyName?.trim() && !(match as Record<string, unknown>).company_name) updatePayload.company_name = qbC.CompanyName.trim();
 
         if (match.qb_customer_id === qbC.Id && !updatePayload.address) {
           alreadyLinked++;
@@ -2137,7 +2139,7 @@ export async function pushCrmToDialpad(): Promise<{ updated: number; created: nu
 
     const { data: contacts } = await supabase
       .from("contacts")
-      .select("id, name, email, phone, dialpad_contact_id")
+      .select("id, name, company_name, email, phone, dialpad_contact_id")
       .eq("contact_type", "customer")
       .not("name", "is", null);
 
@@ -2162,8 +2164,9 @@ export async function pushCrmToDialpad(): Promise<{ updated: number; created: nu
 
     for (const c of contacts ?? []) {
       const payload = {
-        first_name: c.name ?? "",
+        first_name: c.name ?? c.company_name ?? "",
         last_name: vesselMap.get(c.id) ?? "",
+        ...(c.company_name ? { company: c.company_name } : {}),
         ...(c.email ? { emails: [c.email] } : {}),
         ...(c.phone ? { phone_numbers: [c.phone] } : {}),
       };
