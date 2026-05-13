@@ -128,23 +128,17 @@ export async function findOrCreateQbCustomer(contact: {
   type CustomerResponse = { Customer: { Id: string } };
 
   let qbId: string;
-
-  async function attemptCreate(name: string): Promise<string> {
-    const payload = { ...body, DisplayName: name };
+  try {
     const data = await qbRequest<CustomerResponse>("/customer", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
-    return data.Customer.Id;
-  }
-
-  try {
-    qbId = await attemptCreate(displayName);
+    qbId = data.Customer.Id;
   } catch (err) {
     if (!(err instanceof Error && err.message.includes("6240"))) throw err;
 
     // Name conflicts with an existing QB entity (customer or vendor).
-    // First check if it's already a customer we can link directly.
+    // Check active and inactive customers for a direct link.
     const escapedName = displayName.replace(/'/g, "\\'");
     type QueryResp = { QueryResponse: { Customer?: { Id: string }[] } };
     const found = await qbRequest<QueryResp>(
@@ -154,9 +148,9 @@ export async function findOrCreateQbCustomer(contact: {
     if (existing) {
       qbId = existing.Id;
     } else {
-      // Conflict is a vendor/employee — create customer with a disambiguated name
-      const suffix = contact.phone ?? contact.email ?? "Customer";
-      qbId = await attemptCreate(`${displayName} (${suffix})`);
+      // Conflict is a vendor or employee — QB forbids sharing names across entity types.
+      // Skip QB linking for this contact; it can be resolved manually in QuickBooks.
+      return null as unknown as string;
     }
   }
 
