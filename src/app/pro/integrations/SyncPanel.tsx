@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, createContactFromOpenPhone, pushCrmToDialpad, pushCrmToQuickBooks, pushCrmToOpenPhone, importOpenPhoneContacts, syncVesselsToQbNotes, updateContactFields, promoteDialpadLocalToCompany, importQbInvoices } from "@/app/actions";
+import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, createContactFromOpenPhone, pushCrmToDialpad, pushCrmToQuickBooks, pushCrmToOpenPhone, importOpenPhoneContacts, syncVesselsToQbNotes, updateContactFields, importQbInvoices } from "@/app/actions";
 import type { FieldMismatch, DpUnmatched, OpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
@@ -116,20 +116,6 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
         const res = await createContactFromOpenPhone(u.opId, u.name, u.phone, u.email);
         if (res.ok) setImported((prev) => new Set([...prev, `op:${u.opId}`]));
       }
-    });
-  }
-
-  function handlePushToDialpad() {
-    startTransition(async () => {
-      const dpPush = await pushCrmToDialpad();
-      setResult((prev) => ({ ...prev, dpPush }));
-    });
-  }
-
-  function handlePromoteLocalToCompany() {
-    startTransition(async () => {
-      const dpPromote = await promoteDialpadLocalToCompany();
-      setResult((prev) => ({ ...prev, dpPromote }));
     });
   }
 

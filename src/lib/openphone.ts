@@ -56,7 +56,7 @@ export async function listOpenPhoneContacts(maxTotal = 1000): Promise<OpenPhoneC
     if (pageToken) params.set("pageToken", pageToken);
     const data = await opRequest<Resp>(`/contacts?${params}`);
     for (const raw of data.data ?? []) {
-      const f = raw.defaultFields ?? {};
+      const f: OpenPhoneContactFields = raw.defaultFields ?? {} as OpenPhoneContactFields;
       all.push({ id: raw.id, firstName: f.firstName, lastName: f.lastName, role: f.role, company: f.company, phoneNumbers: f.phoneNumbers, emails: f.emails });
     }
     pageToken = data.meta?.nextPageToken;
