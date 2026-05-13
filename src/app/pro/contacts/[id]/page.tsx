@@ -235,7 +235,9 @@ export default async function ContactProfilePage({
             {/* Left column */}
             <div className="flex flex-col gap-4">
 
-              <HealthCheck contact={contact} assetCount={assets.length} />
+              {contact.contact_type !== "vendor" && (
+                <HealthCheck contact={contact} assetCount={assets.length} />
+              )}
 
               <ContactDetailsCard
                 contactId={contact.id}
@@ -251,12 +253,7 @@ export default async function ContactProfilePage({
                 createdAt={contact.created_at}
               />
 
-            </div>
-
-            {/* Right column */}
-            <div className="lg:col-span-2 flex flex-col gap-4">
-
-              {/* Documents */}
+              {/* Documents — left column for all contact types */}
               <ContactDocuments
                 contactId={contact.id}
                 initialFiles={driveFiles}
@@ -264,7 +261,13 @@ export default async function ContactProfilePage({
                 waiverEvents={(events as TimelineEvent[])?.filter(e => e.event_type === "waiver_signed") ?? []}
               />
 
+            </div>
+
+            {/* Right column */}
+            <div className="lg:col-span-2 flex flex-col gap-4">
+
               {/* Notes */}
+
               <div className="bg-white border border-slate-200 rounded-sm flex flex-col">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="text-slate-800 text-sm font-semibold">Notes</h3>
