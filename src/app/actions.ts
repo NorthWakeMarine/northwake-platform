@@ -1976,7 +1976,7 @@ export async function importDialpadContacts(): Promise<{
 }> {
   const supabase = await svc();
   try {
-    const { listDialpadContacts } = await import("@/lib/dialpad");
+    const { listDialpadContacts, dialpadContactPhones } = await import("@/lib/dialpad");
     const dpContacts = await listDialpadContacts();
 
     const { data: crmContacts } = await supabase
@@ -1997,7 +1997,7 @@ export async function importDialpadContacts(): Promise<{
 
     for (const dp of dpContacts) {
       const dpEmail = dp.emails?.[0]?.toLowerCase() ?? null;
-      const dpPhone = dp.phone_numbers?.[0] ? normalizePhone(dp.phone_numbers[0]) : null;
+      const dpPhone = dialpadContactPhones(dp)[0] ? normalizePhone(dialpadContactPhones(dp)[0]) : null;
       const dpName = dp.display_name?.toLowerCase().trim() ?? "";
 
       // Exact match first, then prefix match for old "Name Vessel" combined format
@@ -2070,14 +2070,14 @@ export async function createContactFromDialpad(
 export async function syncDialpadContacts(): Promise<{ synced: number; mismatches: FieldMismatch[]; error?: string }> {
   const supabase = await svc();
   try {
-    const { listDialpadContacts } = await import("@/lib/dialpad");
+    const { listDialpadContacts, dialpadContactPhones } = await import("@/lib/dialpad");
     const dpContacts = await listDialpadContacts();
 
     let synced = 0;
     const mismatches: FieldMismatch[] = [];
 
     for (const dp of dpContacts) {
-      const phones = dp.phone_numbers ?? [];
+      const phones = dialpadContactPhones(dp);
       for (const phone of phones) {
         const normalized = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
         const { data: match } = await supabase
@@ -2196,7 +2196,7 @@ export async function promoteDialpadLocalToCompany(): Promise<{
   error?: string;
 }> {
   try {
-    const { listDialpadContactsByType, createDialpadContact } = await import("@/lib/dialpad");
+    const { listDialpadContactsByType, createDialpadContact, dialpadContactPhones } = await import("@/lib/dialpad");
     const [localContacts, companyContacts] = await Promise.all([
       listDialpadContactsByType("local", 500),
       listDialpadContactsByType("company", 500),
@@ -2204,7 +2204,7 @@ export async function promoteDialpadLocalToCompany(): Promise<{
 
     // Build dedup sets from existing company contacts
     const sharedPhones = new Set(
-      companyContacts.flatMap((c) => (c.phone_numbers ?? []).map((p: string) => normalizePhone(p) ?? p))
+      companyContacts.flatMap((c) => dialpadContactPhones(c).map((p) => normalizePhone(p) ?? p))
     );
     const sharedEmails = new Set(
       companyContacts.flatMap((c) => (c.emails ?? []).map((e: string) => e.toLowerCase()))
@@ -2214,7 +2214,7 @@ export async function promoteDialpadLocalToCompany(): Promise<{
     let alreadyShared = 0;
 
     for (const c of localContacts) {
-      const phones: string[] = c.phone_numbers ?? [];
+      const phones: string[] = dialpadContactPhones(c);
       const emails: string[] = c.emails ?? [];
       const alreadyInCompany =
         phones.some((p: string) => sharedPhones.has(normalizePhone(p) ?? p)) ||

@@ -104,8 +104,15 @@ export type DialpadContact = {
   id: string;
   display_name: string;
   phone_numbers?: string[];
+  primary_phone?: string;
   emails?: string[];
 };
+
+export function dialpadContactPhones(c: DialpadContact): string[] {
+  if (c.phone_numbers?.length) return c.phone_numbers;
+  if (c.primary_phone?.trim()) return [c.primary_phone.trim()];
+  return [];
+}
 
 export async function listDialpadContactsByType(type: "company" | "local", maxTotal: number): Promise<DialpadContact[]> {
   type Resp = { items?: DialpadContact[]; cursor?: string };
