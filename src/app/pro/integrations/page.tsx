@@ -33,7 +33,7 @@ async function getCalendarStatus(): Promise<{ connected: boolean; webhookExpiry:
   return { connected, webhookExpiry };
 }
 
-async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: string | null }; dialpad: { connected: boolean; oauthConnected: boolean } }> {
+async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: string | null }; dialpad: { connected: boolean; oauthConnected: boolean }; openphone: { connected: boolean } }> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!
@@ -50,6 +50,7 @@ async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: st
   return {
     qb: { connected: !!qbRow, realmId: qbRow?.realm_id ?? null },
     dialpad: { connected: !!dpRow || !!process.env.DIALPAD_API_KEY, oauthConnected: !!dpRow },
+    openphone: { connected: !!process.env.OPENPHONE_API_KEY },
   };
 }
 
@@ -74,7 +75,7 @@ export default async function IntegrationsPage({
 }) {
   const params = (await searchParams) ?? {};
   const { connected: calendarConnected, webhookExpiry } = await getCalendarStatus();
-  const { qb, dialpad } = await getOAuthStatus();
+  const { qb, dialpad, openphone } = await getOAuthStatus();
   const dialpadOAuthAvailable = !!(process.env.DIALPAD_CLIENT_ID && process.env.DIALPAD_CLIENT_SECRET);
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? null;
 
@@ -243,6 +244,40 @@ export default async function IntegrationsPage({
                     </p>
                   )}
                 </div>
+              )}
+            </div>
+
+            {/* OpenPhone */}
+            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                    <span className="text-slate-500 text-[10px] font-bold tracking-wider">OP</span>
+                  </div>
+                  <div>
+                    <h2 className="text-slate-800 text-sm font-semibold">OpenPhone</h2>
+                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Call and SMS logging</p>
+                  </div>
+                </div>
+                <StatusBadge connected={openphone.connected} />
+              </div>
+              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+                Log inbound and outbound calls and texts against contact records. Missed calls from unknown numbers auto-create a new lead.
+              </p>
+              {openphone.connected ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    API key connected
+                  </div>
+                  <p className="text-slate-400 text-[10px] leading-relaxed">
+                    Webhook URL: {process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/openphone
+                  </p>
+                </div>
+              ) : (
+                <p className="text-slate-400 text-[10px] leading-relaxed">
+                  Add OPENPHONE_API_KEY to Vercel environment variables to connect.
+                </p>
               )}
             </div>
 
