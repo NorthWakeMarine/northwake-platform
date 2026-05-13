@@ -12,6 +12,7 @@ type Props = {
   waiverSigned: boolean | null;
   status: string | null;
   source: string | null;
+  contactType: string | null;
   createdAt: string;
 };
 
@@ -30,11 +31,12 @@ export default function ContactDetailsCard(props: Props) {
     phone:         props.phone        ?? "",
     address:       props.address      ?? "",
     waiver_signed: props.waiverSigned ?? false,
+    contact_type:  props.contactType  ?? "customer",
   });
 
   function handleSave() {
     startTransition(async () => {
-      const res = await updateContactFields(props.contactId, draft);
+      const res = await updateContactFields(props.contactId, { ...draft });
       if (!res.ok) { setError(res.error ?? "Save failed."); return; }
       setEditing(false);
       setError(null);
@@ -48,6 +50,7 @@ export default function ContactDetailsCard(props: Props) {
       phone:         props.phone        ?? "",
       address:       props.address      ?? "",
       waiver_signed: props.waiverSigned ?? false,
+      contact_type:  props.contactType  ?? "customer",
     });
     setEditing(false);
     setError(null);
@@ -178,6 +181,33 @@ export default function ContactDetailsCard(props: Props) {
               <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">Signed</span>
             ) : (
               <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-red-50 text-red-600 border border-red-200">Pending</span>
+            )}
+          </dd>
+        </div>
+
+        <div>
+          <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Type</dt>
+          <dd>
+            {editing ? (
+              <select
+                value={draft.contact_type}
+                onChange={(e) => setDraft((d) => ({ ...d, contact_type: e.target.value }))}
+                className="w-full border border-slate-200 rounded-sm px-2 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080] bg-white"
+              >
+                <option value="customer">Customer</option>
+                <option value="vendor">Vendor</option>
+                <option value="lead">Lead</option>
+              </select>
+            ) : (
+              <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium border ${
+                props.contactType === "vendor"
+                  ? "bg-slate-50 text-slate-600 border-slate-200"
+                  : props.contactType === "lead"
+                  ? "bg-blue-50 text-blue-600 border-blue-200"
+                  : "bg-emerald-50 text-emerald-600 border-emerald-200"
+              }`}>
+                {props.contactType ?? "customer"}
+              </span>
             )}
           </dd>
         </div>

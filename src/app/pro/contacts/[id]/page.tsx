@@ -244,6 +244,7 @@ export default async function ContactProfilePage({
                 waiverSigned={contact.waiver_signed}
                 status={contact.status}
                 source={contact.source}
+                contactType={contact.contact_type}
                 createdAt={contact.created_at}
               />
 

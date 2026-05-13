@@ -830,7 +830,7 @@ export async function updateContactField(
 
 export async function updateContactFields(
   contactId: string,
-  fields: { name?: string | null; email?: string | null; phone?: string | null; address?: string | null; waiver_signed?: boolean }
+  fields: { name?: string | null; email?: string | null; phone?: string | null; address?: string | null; waiver_signed?: boolean; contact_type?: string | null }
 ): Promise<{ ok: boolean; error?: string }> {
   const supabase = await svc();
   const patch: Record<string, string | boolean | null> = {};
@@ -839,6 +839,7 @@ export async function updateContactFields(
   if ("phone"         in fields) patch.phone         = fields.phone?.trim()   || null;
   if ("address"       in fields) patch.address       = fields.address?.trim() || null;
   if ("waiver_signed" in fields) patch.waiver_signed = fields.waiver_signed ?? false;
+  if ("contact_type"  in fields) patch.contact_type  = fields.contact_type   || null;
   const { error } = await supabase.from("contacts").update(patch).eq("id", contactId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/pro/contacts/${contactId}`);
