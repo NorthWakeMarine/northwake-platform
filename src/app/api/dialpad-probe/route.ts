@@ -11,14 +11,30 @@ async function getToken(): Promise<string> {
   throw new Error("Dialpad not connected");
 }
 
-async function dp(path: string, token: string) {
-  const res = await fetch(`${DP_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-  });
-  const text = await res.text();
-  let body: unknown;
-  try { body = JSON.parse(text); } catch { body = text; }
-  return { status: res.status, path, body };
+type DpContact = {
+  id: string;
+  display_name: string;
+  primary_phone?: string;
+  phone_numbers?: string[];
+  emails?: string[];
+  type?: string;
+};
+
+async function fetchAllContacts(token: string, type: string): Promise<DpContact[]> {
+  const all: DpContact[] = [];
+  let cursor: string | undefined;
+  do {
+    const params = new URLSearchParams({ type, limit: "100" });
+    if (cursor) params.set("cursor", cursor);
+    const res = await fetch(`${DP_BASE}/contacts?${params}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    if (!res.ok) break;
+    const data = await res.json();
+    all.push(...(data.items ?? []));
+    cursor = data.cursor;
+  } while (cursor && all.length < 1000);
+  return all;
 }
 
 export async function GET() {
@@ -27,33 +43,29 @@ export async function GET() {
     return NextResponse.json({ error: (e as Error).message }, { status: 401 });
   }
 
-  const results = await Promise.allSettled([
-    dp("/contacts?type=company&limit=5", token),
-    dp("/contacts?type=local&limit=5", token),
-    dp("/contacts?type=shared&limit=5", token),
-    dp("/offices", token),
-    dp("/company", token),
-  ]);
+  const contacts = await fetchAllContacts(token, "company");
 
-  const output = results.map((r) =>
-    r.status === "fulfilled" ? r.value : { error: r.reason?.message }
+  const withPhone = contacts.filter(
+    (c) => (c.phone_numbers?.length ?? 0) > 0 || (c.primary_phone && c.primary_phone.trim())
   );
-
-  // If we got offices back, probe the first one for contacts
-  const officesResult = output[3] as { status?: number; body?: { items?: { id: string }[] } };
-  const officeItems = officesResult?.body?.items ?? [];
-  const officeProbes = await Promise.allSettled(
-    officeItems.slice(0, 3).map((o: { id: string }) =>
-      dp(`/offices/${o.id}/contacts?limit=5`, token)
-    )
+  const withoutPhone = contacts.filter(
+    (c) => (c.phone_numbers?.length ?? 0) === 0 && !c.primary_phone?.trim()
   );
 
   return NextResponse.json({
-    contacts_company:  output[0],
-    contacts_local:    output[1],
-    contacts_shared:   output[2],
-    offices:           output[3],
-    company:           output[4],
-    office_contacts:   officeProbes.map((r) => r.status === "fulfilled" ? r.value : { error: (r as PromiseRejectedResult).reason?.message }),
+    total: contacts.length,
+    with_phone: withPhone.length,
+    without_phone: withoutPhone.length,
+    contacts_with_phone: withPhone.map((c) => ({
+      id: c.id,
+      name: c.display_name,
+      phones: c.phone_numbers ?? [c.primary_phone],
+      emails: c.emails ?? [],
+    })),
+    contacts_without_phone: withoutPhone.map((c) => ({
+      id: c.id,
+      name: c.display_name,
+      emails: c.emails ?? [],
+    })),
   }, { status: 200 });
 }
