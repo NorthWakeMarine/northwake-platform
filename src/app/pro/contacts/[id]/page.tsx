@@ -51,12 +51,15 @@ type TimelineEvent = {
 type HealthItem = { label: string; ok: boolean };
 
 function HealthCheck({ contact, assetCount }: { contact: Contact; assetCount: number }) {
+  const isVendor = contact.contact_type === "vendor";
   const checks: HealthItem[] = [
     { label: "Email",         ok: !!contact.email },
     { label: "Phone",         ok: !!contact.phone },
     { label: "Address",       ok: !!contact.address },
-    { label: "Fleet on File", ok: assetCount > 0 },
-    { label: "Waiver Signed", ok: !!contact.waiver_signed },
+    ...(isVendor ? [] : [
+      { label: "Fleet on File", ok: assetCount > 0 },
+      { label: "Waiver Signed", ok: !!contact.waiver_signed },
+    ]),
   ];
   const allOk = checks.every((c) => c.ok);
 
@@ -191,7 +194,9 @@ export default async function ContactProfilePage({
                 )}
               </>
             )}
-            <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
+            {contact.contact_type !== "vendor" && (
+              <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
+            )}
             <SyncCallsButton contactId={contact.id} />
             <LogCallModal contactId={contact.id} />
             <DeleteContactButton contactId={contact.id} redirectTo="/pro/contacts" />
@@ -199,7 +204,7 @@ export default async function ContactProfilePage({
         </div>
 
         {/* Waiver missing banner */}
-        {!contact.waiver_signed && (
+        {contact.contact_type !== "vendor" && !contact.waiver_signed && (
           <div className="bg-amber-50 border-b border-amber-200 px-8 py-3 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0">
