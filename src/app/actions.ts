@@ -2273,8 +2273,8 @@ export async function importOpenPhoneContacts(): Promise<{
     const unmatched: OpUnmatched[] = [];
 
     for (const op of opContacts) {
-      const opPhone = op.phoneNumbers?.[0]?.number ? normalizePhone(op.phoneNumbers[0].number) : null;
-      const opEmail = op.emails?.[0]?.address?.toLowerCase() ?? null;
+      const opPhone = op.phoneNumbers?.[0]?.value ? normalizePhone(op.phoneNumbers[0].value) : null;
+      const opEmail = op.emails?.[0]?.value?.toLowerCase() ?? null;
       const opName  = [op.firstName, op.lastName].filter(Boolean).join(" ").toLowerCase().trim();
 
       const match =
@@ -2294,7 +2294,7 @@ export async function importOpenPhoneContacts(): Promise<{
           opId:  op.id,
           name:  [op.firstName, op.lastName].filter(Boolean).join(" ") || "Unknown",
           phone: opPhone,
-          email: op.emails?.[0]?.address ?? null,
+          email: op.emails?.[0]?.value ?? null,
         });
       }
     }
@@ -2362,7 +2362,7 @@ export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: 
     // Build a phone index of existing OpenPhone contacts to avoid duplicates on create
     const existing = await listOpenPhoneContacts();
     const existingByPhone = new Map(
-      existing.flatMap((c) => (c.phoneNumbers ?? []).map((p) => [normalizePhone(p.number) ?? p.number, c.id]))
+      existing.flatMap((c) => (c.phoneNumbers ?? []).filter((p) => p.value).map((p) => [normalizePhone(p.value!) ?? p.value!, c.id]))
     );
 
     let updated = 0;
@@ -2376,8 +2376,8 @@ export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: 
         firstName,
         lastName,
         ...(vessel ? { role: vessel } : {}),
-        ...(c.email ? { emails: [{ address: c.email }] } : {}),
-        ...(c.phone ? { phoneNumbers: [{ number: c.phone }] } : {}),
+        ...(c.email ? { emails: [{ name: "work", value: c.email }] } : {}),
+        ...(c.phone ? { phoneNumbers: [{ name: "work", value: c.phone }] } : {}),
       };
 
       if (c.openphone_contact_id) {

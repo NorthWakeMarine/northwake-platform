@@ -29,8 +29,8 @@ export type OpenPhoneContact = {
   lastName?: string;
   role?: string;
   company?: string;
-  phoneNumbers?: { number: string }[];
-  emails?: { address: string }[];
+  phoneNumbers?: { name: string; value: string | null }[];
+  emails?: { name: string; value: string | null }[];
 };
 
 export type OpenPhoneContactFields = {
@@ -38,8 +38,8 @@ export type OpenPhoneContactFields = {
   lastName?: string;
   role?: string;
   company?: string;
-  phoneNumbers?: { number: string }[];
-  emails?: { address: string }[];
+  phoneNumbers?: { name: string; value: string | null }[];
+  emails?: { name: string; value: string | null }[];
 };
 
 export type OpenPhoneContactPayload = {
