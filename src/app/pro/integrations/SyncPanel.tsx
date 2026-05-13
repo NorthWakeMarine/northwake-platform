@@ -145,31 +145,6 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {dialpadConnected && (
-            <>
-              <a
-                href="/api/dialpad-contacts-csv"
-                download="dialpad-contacts.csv"
-                className="border border-slate-200 text-slate-600 hover:border-slate-300 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold transition-colors"
-              >
-                Export CSV
-              </a>
-              <button
-                onClick={handlePromoteLocalToCompany}
-                disabled={isPending}
-                className="border border-slate-200 text-slate-600 hover:border-slate-300 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
-              >
-                {isPending ? "Promoting..." : "Promote Local → Shared"}
-              </button>
-              <button
-                onClick={handlePushToDialpad}
-                disabled={isPending}
-                className="border border-slate-200 text-slate-600 hover:border-slate-300 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
-              >
-                {isPending ? "Pushing..." : "Push to Dialpad"}
-              </button>
-            </>
-          )}
           <button
             onClick={handleSyncAll}
             disabled={isPending || nothingConnected}
