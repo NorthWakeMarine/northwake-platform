@@ -16,6 +16,7 @@ import SyncCallsButton from "./SyncCallsButton";
 import SyncToQbButton from "./SyncToQbButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteContactButton from "../DeleteContactButton";
+import VendorDescriptor from "./VendorDescriptor";
 import type { PipelineStage } from "@/types/pipeline";
 import type { DriveFile } from "@/lib/google-drive";
 
@@ -33,6 +34,7 @@ type Contact = {
   source: string | null;
   contact_type: string | null;
   company_name: string | null;
+  notes: string | null;
   qb_customer_id: string | null;
   drive_folder_id: string | null;
   drive_folder_url: string | null;
@@ -114,7 +116,7 @@ export default async function ContactProfilePage({
   ] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, created_at, name, company_name, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source, contact_type, qb_customer_id, drive_folder_id, drive_folder_url, pipeline_stage")
+      .select("id, created_at, name, company_name, notes, email, phone, address, vessel_type, vessel_length, waiver_signed, status, source, contact_type, qb_customer_id, drive_folder_id, drive_folder_url, pipeline_stage")
       .eq("id", id)
       .single(),
     supabase
@@ -225,8 +227,15 @@ export default async function ContactProfilePage({
 
         <div className="flex-1 px-8 py-6 flex flex-col gap-5">
 
-          {/* Fleet Gallery — full width */}
-          <FleetGallery contactId={contact.id} assets={assets} vesselServices={vesselServices} />
+          {/* Vendor descriptor */}
+          {contact.contact_type === "vendor" && (
+            <VendorDescriptor contactId={contact.id} initialNotes={contact.notes} />
+          )}
+
+          {/* Fleet Gallery — customers only */}
+          {contact.contact_type !== "vendor" && (
+            <FleetGallery contactId={contact.id} assets={assets} vesselServices={vesselServices} />
+          )}
 
           {/* Main two-column grid */}
           <div className="grid lg:grid-cols-3 gap-5">

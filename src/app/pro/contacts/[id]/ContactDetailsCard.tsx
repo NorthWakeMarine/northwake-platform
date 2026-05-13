@@ -183,26 +183,28 @@ export default function ContactDetailsCard(props: Props) {
           </dd>
         </div>
 
-        <div>
-          <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Waiver</dt>
-          <dd>
-            {editing ? (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={draft.waiver_signed}
-                  onChange={(e) => setDraft((d) => ({ ...d, waiver_signed: e.target.checked }))}
-                  className="w-3.5 h-3.5 accent-[#000080]"
-                />
-                <span className="text-slate-700 text-xs">Waiver signed</span>
-              </label>
-            ) : props.waiverSigned ? (
-              <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">Signed</span>
-            ) : (
-              <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-red-50 text-red-600 border border-red-200">Pending</span>
-            )}
-          </dd>
-        </div>
+        {props.contactType !== "vendor" && (
+          <div>
+            <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Waiver</dt>
+            <dd>
+              {editing ? (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={draft.waiver_signed}
+                    onChange={(e) => setDraft((d) => ({ ...d, waiver_signed: e.target.checked }))}
+                    className="w-3.5 h-3.5 accent-[#000080]"
+                  />
+                  <span className="text-slate-700 text-xs">Waiver signed</span>
+                </label>
+              ) : props.waiverSigned ? (
+                <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">Signed</span>
+              ) : (
+                <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-red-50 text-red-600 border border-red-200">Pending</span>
+              )}
+            </dd>
+          </div>
+        )}
 
         <div>
           <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Type</dt>
@@ -231,10 +233,12 @@ export default function ContactDetailsCard(props: Props) {
           </dd>
         </div>
 
-        <div>
-          <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Status</dt>
-          <dd className="text-slate-700 capitalize">{props.status || "lead"}</dd>
-        </div>
+        {props.contactType !== "vendor" && (
+          <div>
+            <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Status</dt>
+            <dd className="text-slate-700 capitalize">{props.status || "lead"}</dd>
+          </div>
+        )}
 
         <div>
           <dt className="text-slate-400 text-[10px] tracking-widest uppercase font-medium mb-0.5">Source</dt>
