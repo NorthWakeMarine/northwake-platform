@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
   // Normalize to a single event type string.
   const state = event.state as string | undefined;
   const rawEvent = event.event as string | undefined;
+  const rawType = event.type as string | undefined;
 
   let eventType: string;
   if (rawEvent) {
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     eventType = "call.completed";
   } else if (state === "voicemail") {
     eventType = "call.voicemail";
-  } else if (state === "sms" || (event.from_number && !state)) {
+  } else if (state === "sms" || rawType === "sms" || (event.from_number && !state && !rawType)) {
     eventType = "sms.inbound";
   } else {
     return NextResponse.json({ ok: true });
@@ -136,7 +137,9 @@ async function handleCompletedCall(event: Record<string, unknown>) {
   const contact = await findContactByPhone(supabase, callerPhone);
   if (!contact) return;
 
-  const duration = event.duration as number | undefined;
+  const rawDuration = event.duration as number | undefined;
+  // Dialpad sometimes sends duration in ms; normalize to seconds
+  const duration = rawDuration != null && rawDuration > 86400 ? Math.round(rawDuration / 1000) : rawDuration;
   const direction = (event.direction as string | undefined) ?? "inbound";
 
   await supabase.from("timeline_events").insert({
@@ -157,7 +160,7 @@ async function handleCompletedCall(event: Record<string, unknown>) {
 async function handleInboundSms(event: Record<string, unknown>) {
   const supabase = svc();
   const fromPhone = (event.from_number ?? event.from) as string | undefined;
-  const messageBody = (event.text ?? event.body ?? event.message) as string | undefined;
+  const messageBody = (event.text ?? event.content ?? event.body ?? event.message) as string | undefined;
   if (!fromPhone || !messageBody) return;
 
   const normalized = normalizePhone(fromPhone);

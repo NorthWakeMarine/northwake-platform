@@ -56,7 +56,9 @@ async function getCalls(): Promise<CallRow[]> {
   }));
 }
 
-function formatDuration(seconds: number): string {
+function formatDuration(raw: number): string {
+  // Normalize ms to seconds if value exceeds 1 day
+  const seconds = raw > 86400 ? Math.round(raw / 1000) : raw;
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
