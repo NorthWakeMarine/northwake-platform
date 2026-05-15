@@ -4,84 +4,52 @@
 
 ### May 13 | Vendor/customer separation, contact page layout overhaul, Dialpad phone fix | CRM,Integrations
 
-**Vendor vs. customer separation:** Contacts now have a `contact_type` field (customer, vendor, lead). The contacts list page has a prominent tab toggle: Customers (default), Vendors, All. Vendor tab shows Name, Company, Email, Phone columns. Customer tab shows Name, Email, Phone, Asset, Status. Pipeline buttons, fleet gallery, waiver banner, waiver field, and status field are all hidden for vendor contacts.
-
-**Vendor contact page:** A Vendor Description box at the top lets you write a short summary of what the vendor provides (stored in the contacts.notes field). Health Check box is hidden for vendors. Documents box is in the left column for both vendors and customers.
-
-**Company name field:** A Company field was added to Contact Details (editable inline). Syncs to QuickBooks as CompanyName and to Dialpad as company. Requires running: `ALTER TABLE contacts ADD COLUMN IF NOT EXISTS company_name text;` in Supabase SQL editor if not already done.
-
-**QB vendor name collision handling:** If a contact name conflicts with an existing QB vendor or employee (QB error 6240 and no matching customer found), the contact is silently skipped for QB linking and reported as skipped in the Integrations sync panel.
-
-**Contact page layout:** Household (linked contacts) box removed. Documents moved to left column. Notes and Activity Timeline both live in the right column. Notes are now in their own separate card (with the Add Note form at top and a scrollable list of logged notes below), keeping them distinct from calls, invoices, and other activity. Both the Notes list and Activity Timeline cap at 560px and scroll internally.
-
-**Dialpad phone field fix:** Dialpad returns `primary_phone` (string) on contact reads, not `phone_numbers` (array). A `dialpadContactPhones()` helper now normalizes both shapes and is used throughout all sync and import flows, fixing phone matching and dedup.
+- Contacts list now has Customers / Vendors / All tab toggle; vendor contacts hide pipeline, fleet, and waiver UI
+- Vendor contact page shows a Description field; company name field added and syncs to QB and Dialpad
+- QB vendor name collision (error 6240) silently skips and reports in the sync panel
+- Contact page: Notes moved to its own card, Household box removed, Documents to left column
+- Dialpad phone fix: `primary_phone` string and `phone_numbers` array both normalized throughout sync
 
 ### May 12 | CRM contacts overhaul, bidirectional QB/Dialpad sync, asset editing | CRM,Integrations
-Contacts list, fleet management, and sync pipeline all significantly improved.
 
-**Contacts list:** Vessel and Length columns replaced with a single Asset column showing the first vessel on file (year, make/model, length). Info Incomplete badge now flags missing phone, email, or address. New No Fleet badge for contacts with no vessels. Status badges now check all four conditions: waiver, info, fleet, completeness.
-
-**Asset management:** Asset cards now have an Edit button that opens an inline form for all core fields (name, make/model, year, color, length, registration, location). Delete Asset added to the asset modal with a confirm step that also removes associated service records.
-
-**QB Notes vessel sync:** Vessel data now syncs bidirectionally through the QuickBooks customer Notes field using the format "Vessels: Year - Make/Model - Length | ...". CRM to QB: writes the Vessels line on Sync All and daily cron, preserving any other notes below it. QB to CRM: parses the Vessels line on QB customer import and creates any missing fleet records.
-
-**Dialpad caller ID:** Dialpad contacts now use first name (full contact name) and last name (compact first vessel, e.g. "2021 Pursuit DC266") so the Dialpad mobile app shows vessel info on incoming calls.
-
-**Outward sync:** Sync All now runs in both directions. CRM to QB (ensures all customers exist) and CRM to Dialpad (pushes name and vessel) run alongside existing inbound imports. Both are also wired into the daily 8am cron.
-
-**Dialpad matching fix:** Contacts with old combined-name format in Dialpad (e.g. "Jim Schmid 2023 Astondoa") now match to the CRM contact "Jim Schmid" via prefix matching instead of appearing as unmatched.
-
-**Dead code cleanup:** Removed 584 lines of non-functional code: QB vessel custom field sync (QB Online API limitation), scheduleFromInvoice placeholder, detectServiceConflicts placeholder, updateContactType (unused), all debug API routes, and unused helper functions in quickbooks.ts, dialpad.ts, and google-calendar.ts.
+- Contacts list: Vessel/Length columns merged into a single Asset column; No Fleet and Info Incomplete badges added
+- Asset cards now have inline Edit and Delete (with confirm) actions
+- Vessel data syncs bidirectionally via QB customer Notes field; CRM to QB and QB to CRM both update fleet records
+- Dialpad caller ID now shows vessel info as last name for incoming call display on mobile
+- Sync All is now bidirectional: CRM pushes to QB and Dialpad alongside inbound imports; wired into daily cron
+- Dialpad prefix matching fixes contacts with old combined name+vessel format
 
 ### May 12 | Web services page polish, AI receptionist add-on, mobile UI cleanup | Site,WebServices
-Continued improvements to the /web-services sales page and added an AI Receptionist as a new listed add-on service.
 
-**Mobile UI cleanup:** All section h2 headings stepped down to text-3xl sm:text-4xl (long headings use text-2xl sm:text-3xl md:text-4xl). Hero eyebrow letter-spacing reduced on mobile (tracking-[0.15em] sm:tracking-[0.4em]). Hero h1 changed from leading-none to leading-tight. Pricing cards use p-6 sm:p-8. Monthly price text shortened to just the price; "hosting + unlimited edits" shown as a small inline subtext. Mid-CTA whitespace-nowrap removed and font stepped down for small screens.
-
-**Conversion improvements (from Detailing Web competitor analysis):** "Get in Touch" CTAs replaced with "Book a Free Strategy Call" on hero and mid-page banners. Three badge pills added above pricing cards: No contracts, Cancel any time, One client per market. Pricing subheadline updated to mention unlimited edits. VS comparison table gained a navy callout box making the $150-$450/mo competitor price explicit. Two new comparison rows added: monthly site-only pricing and one-client-per-market exclusivity.
-
-**AI Receptionist add-on:** Added to the add-ons section at +$249/mo with revenue recovery pitch. Added AI phone receptionist row to the VS comparison table. Added option to the inquiry form tier dropdown. Created docs/ai-receptionist-runbook.html covering the full fulfillment process from qualification through go-live, including Vapi setup, Twilio provisioning, Google Calendar booking actions, Supabase webhook lead logging, and ongoing maintenance cadence. Runbook also added to platform-template/docs/.
-
-**Minor:** Marine industry card icon changed from anchor to diamond to match Automotive and Aviation cards.
+- Mobile typography and spacing tightened across all sections
+- CTAs updated to "Book a Free Strategy Call"; trust badge pills added above pricing
+- AI Receptionist add-on listed at +$249/mo with fulfillment runbook
+- VS comparison table updated with competitor pricing callout and exclusivity row
 
 ### May 12 | Dialpad native webhooks, QB invoice import, contact detail improvements | CRM,Integrations
-Native Dialpad event subscriptions replace Zapier for call and SMS logging. QB invoice history now imports to contact timelines. Contact detail edit mode now includes waiver checkbox.
 
-**Dialpad native webhooks:** Replaced Zapier adapter with a two-step native registration: POST /webhooks to create an endpoint, then POST /subscriptions/call (hangup + voicemail states) and POST /subscriptions/sms (inbound). Register Webhook button added to /pro/integrations under the Dialpad card. Webhook handler updated to normalize both native format (state/external_number) and OAuth format (event/caller_number) so both paths work without code changes.
-
-**QuickBooks invoice import:** New Import Invoices button in the Data Sync panel fetches all invoices per linked QB customer and writes them to contact timelines as invoice events with paid/partial/unpaid status, line item detail, and a direct link back to the QB invoice. Deduped by QB invoice ID so safe to re-run. BillAddr also now pulled and written to contact address field on QB customer import.
-
-**Contact detail improvements:** Waiver signed checkbox added to the Contact Details edit section, saving alongside name/email/phone/address in one Save action. Standalone Mark Waiver Signed checkbox removed from the Documents card.
+- Native Dialpad event subscriptions replace Zapier; Register Webhook button added to Integrations page
+- QB invoice import pulls full invoice history to contact timelines with paid/partial/unpaid status
+- Waiver checkbox added to Contact Details edit mode; standalone waiver button removed
 
 ### May 11 | Light mode UI, WCAG AA audit, Featured Work redesign | Site,UX
-Complete visual overhaul of all public landing pages from dark mode to light mode, followed by a full WCAG 2.1 AA accessibility audit and Featured Work section redesign.
 
-**Light mode conversion:** All public pages (Home, About, Services, Contact, Socials) now use white/gray-50 backgrounds with dark text. Header and footer remain dark (bg-obsidian). Featured Work showcase stays black. Chrome/metallic effects carried over using a new `chrome-text-dark` CSS class (dark pewter gradient) for use on light backgrounds.
-
-**Typography and legibility:** Body copy bumped from text-xs to text-sm (14px) and darkened to text-gray-700 across all pages. Form labels bumped to text-xs font-medium text-gray-700. All sub-12px text eliminated. Header and footer button text bumped to text-xs minimum.
-
-**WCAG 2.1 AA audit:** Eyebrow labels bumped from text-gray-400 (2.5:1, fails) to text-gray-500 (4.6:1, passes) across all pages. Form field borders bumped from border-gray-300 (1.3:1) to border-gray-500 (4.6:1) on all inputs, selects, textareas, and checkboxes. Ghost button borders bumped to border-gray-500. Chrome-btn given a 1px #686a6c border for visibility on white. Both quote forms include a "Fields marked * are required." legend (1.4.1). About page heading hierarchy fixed with sr-only h2 bridging h1 to h3 team cards (1.3.1).
-
-**Texture:** Hero crossing-line grid replaced with a navy dot pattern (class hero-grid). New accent-rule-dark CSS class added for chrome gradient dividers on dark backgrounds.
-
-**Footer:** Compacted from tall multi-row layout into a single slim horizontal row: logo, nav links, phone and email, Get a Quote CTA. Bottom bar has copyright, Terms, Privacy, and NorthWake Pro links.
-
-**Service areas:** Added "Marinas and Waterways We Serve" section to the Services page with three columns: approximately 50 marinas, 30 waterways, and 22 communities across the Jacksonville area for local SEO crawl value.
-
-**Featured Work banner:** Compacted (pt-20 to pt-5), chrome-stage border removed from carousel in showcase mode (hero mode only now), white dot texture and chrome accent rule added to the black section.
+- All public pages converted from dark to light mode; header, footer, and Featured Work section stay dark
+- Full WCAG 2.1 AA pass: body copy at 14px, text-gray-500 minimums, border-gray-500 on all form fields and ghost buttons
+- Hero texture changed to navy dot grid; footer compacted to a single slim row
+- "Marinas and Waterways We Serve" section added to Services page for local SEO
+- Featured Work section tightened; chrome-stage border removed from carousel in showcase mode
 
 ### May 9 | Remove floating quote button | Site
 The floating "Get a Free Quote" button was removed from all public pages. The site has enough quote entry points (hero form, footer CTA band, contact page) that the persistent button was redundant and covered footer content on scroll.
 
 ### May 9 | Performance, trust bar, and Pro portal KPIs | Site,Pro
-Homepage trust bar now includes a 5-Star Rated Service badge. Carousel images are cached server-side for 1 hour, eliminating a DB query on every page load. Preconnect hints added for the Supabase CDN and Google Fonts to cut connection setup time. Pipeline summary bar expanded with total client count and conversions in the last 30 days alongside the existing 7-day counters. Lead detail pages now have prominent Call and Email action buttons in the top bar.
+5-Star Rated badge added to homepage trust bar. Carousel images cached server-side for 1 hour. Preconnect hints added for Supabase CDN and Google Fonts. Pipeline bar now shows 30-day client and conversion counts. Lead detail pages gained Call and Email action buttons.
 
 ### May 9 | UX and accessibility overhaul | UX,Site,Pro
-Comprehensive UX pass across the public site and Pro portal.
-
-Public site: all interactive elements show a keyboard focus ring, quote forms display per-field inline error messages, placeholder text lightened for readability, submission buttons show a spinner and dim the form during pending state, hero carousel responds to left/right arrow keys when focused. Chrome button shimmer respects prefers-reduced-motion. Hero carousel loading state shows a shimmer skeleton. Reviews carousel resumes auto-advance 8 seconds after a manual interaction.
-
-Pro portal: pipeline card dismiss requires a confirmation step, empty columns show a dashed drop zone prompt, Log Call and Schedule Appointment modals trap focus and close on Escape, the all-day toggle is a proper accessible switch, unsaved inline edits trigger a browser leave-page warning, leads and contacts empty states include descriptive context.
+- Public site: keyboard focus rings, inline form error messages, button loading states, arrow-key carousel nav
+- Pipeline: card dismiss requires confirmation, empty columns show drop zone prompt, modals trap focus
+- Unsaved inline edits trigger a leave-page warning; empty states have descriptive context
 
 ### May 9 | Calls log page | Integrations
 A new Calls page in the sidebar lists all inbound and outbound activity logged from Dialpad: calls, missed calls, voicemails, and SMS. Shows contact name (linked to their dossier), direction, duration, and timestamp. A summary bar at the top shows total call and SMS counts.
@@ -96,13 +64,13 @@ When a visitor submits a quote request form on the public site, an email notific
 Added X (Twitter), LinkedIn, Yelp, MapQuest, and Florida Sunbiz registration to the JSON-LD sameAs array. Added link rel=me tags in the site head for X, LinkedIn, and Instagram. These signals help AI search engines and crawlers identify NorthWake Marine across the web.
 
 ### May 9 | Google Reviews carousel on homepage | Site
-The testimonials section now pulls real reviews from Google Places API and cycles through them automatically every 5 seconds. Pauses on hover. Shows star rating, overall rating score, and review count. Falls back to handwritten testimonials if no reviews are available yet. Includes a link to leave a review on Google. Reviews are cached for 24 hours.
+Testimonials section pulls live reviews from Google Places API, cycles every 5 seconds, and shows star rating and review count. Falls back to handwritten testimonials if none are available. Cached for 24 hours.
 
 ### May 9 | OAuth-only Dialpad, dead code removed | Fix,Integrations
 Removed the DIALPAD_API_KEY fallback from all Dialpad API calls. OAuth is now the only connection path. Deleted the unused ProNav component that was replaced by ProShell.
 
 ### May 7 | Dialpad local-to-shared contact promotion | Integrations,Fix
-Sync All now shows how many contacts were fetched from Dialpad (before matching) so you can tell if the API returned zero vs. matching failed. A new "Promote Local to Shared" button copies personal userline contacts into company-shared contacts in Dialpad so the whole team can see them and the API can sync them. Phone normalization now handles all common formats (parentheses, dashes, 10-digit, 11-digit) using libphonenumber-js.
+Sync All now shows fetched-vs-matched counts. "Promote Local to Shared" button pushes personal userline contacts to company-shared so the whole team and API can see them. Phone normalization updated to handle all common formats.
 
 ### May 7 | Dialpad API pagination fix | Fix,Integrations
 Dialpad's contacts and calls endpoints cap the `limit` parameter at 100. All API calls now page through results in batches of 100 (up to 500 total) instead of sending an oversized limit that caused a 400 error on Sync All.
@@ -111,10 +79,10 @@ Dialpad's contacts and calls endpoints cap the `limit` parameter at 100. All API
 A "Sync images from Supabase Storage" link in the Site Editor scans the carousel bucket and automatically creates DB records for any images uploaded directly to Supabase, without going through the upload zone.
 
 ### May 7 | Carousel image manager | Site
-A new Homepage Carousel section in the Site Editor lets you drag-and-drop or browse to upload photos directly to the site. Images appear instantly. Each photo has Preview, Edit (focal point), Hide/Show, and Delete actions. Drag to reorder. Photos are never zoomed or cropped unless you manually set a focal point.
+Homepage Carousel section in Site Editor: drag-and-drop upload, instant preview, focal point editor, hide/show, delete, and drag-to-reorder.
 
 ### May 7 | GA4 analytics tracking | Site
-Full Google Analytics 4 event tracking was added across the site: nav clicks, CTA clicks, phone and email taps, form start/submit/success/error, carousel navigation, and scroll depth (25/50/75/100%). An Analytics reference page in the pro portal lists every tracked event, page coverage, and recommended GA4 conversion goals. Add NEXT_PUBLIC_GA_MEASUREMENT_ID to Vercel to activate.
+GA4 event tracking added site-wide: nav, CTAs, phone/email taps, form lifecycle, carousel, and scroll depth. Analytics reference page in the pro portal. Activate with NEXT_PUBLIC_GA_MEASUREMENT_ID.
 
 ### May 7 | Dialpad contact import via Sync All | Integrations
 Sync All now surfaces Dialpad contacts that have no matching CRM record, with one-click Import and Import All buttons to bring them into the CRM. Previously Sync All only matched existing contacts by phone; now it can also create new CRM records from Dialpad.
@@ -126,13 +94,13 @@ The CMS Editor was renamed to Site Editor. In collapsed sidebar mode, hovering a
 The user avatar and name at the bottom of the sidebar no longer flash a different user's name when switching pages. Client state is initialized from localStorage before paint using a lazy useState initializer, eliminating the SSR hydration mismatch.
 
 ### May 6 | Mobile pipeline board | Pipeline,Mobile
-The pipeline board now works on phones. A scrollable stage tab bar replaces the kanban columns on small screens, showing one stage at a time. Each card has a chevron button to move it to a different stage and an X to remove or dismiss it, all without drag-and-drop.
+Pipeline works on phones: scrollable stage tab bar shows one column at a time. Cards have chevron buttons to move stages and an X to remove, no drag required.
 
 ### May 6 | Clickable rows in Leads and Contacts lists | CRM
-The VIEW button has been removed from both list pages. Clicking anywhere on a row now navigates to the detail page. Email and phone links still work independently. The DELETE button moved into each detail page's top bar, with a confirm step before deleting.
+VIEW button removed; full row click navigates to the detail page. DELETE moved to the detail page top bar with a confirm step.
 
 ### May 6 | Add to Pipeline button on contacts and leads | Pipeline,CRM
-Every contact dossier now has an Add to Pipeline button in the top bar with a dropdown to pick the starting stage. If the contact is already on the board, their current stage is shown as a badge instead. Unconverted lead detail pages get the same button.
+Contact and lead detail pages have an Add to Pipeline button with stage picker. Already-on-board contacts show their current stage as a badge instead.
 
 ### May 6 | Delete any timeline event | CRM
 Previously only notes could be deleted from the activity timeline. Now every event type (stage changes, calls, invoices, etc.) has a trash icon that appears on hover. A confirm prompt prevents accidental deletions.
@@ -141,25 +109,25 @@ Previously only notes could be deleted from the activity timeline. Now every eve
 The steel gray text colors were too dark against black backgrounds, failing contrast standards. The steel palette was brightened: --color-steel went from #686A6C to #a0a2a4 and --color-steel-light from #8a8c8e to #c2c4c6. All pages update automatically through CSS variables.
 
 ### May 6 | SEO and AI discoverability pass | SEO,Site
-Added FAQPage JSON-LD schema to the contact page, a WebSite schema with dateModified, and a screen-reader-only direct-answer paragraph on the home page to improve extraction by AI search engines. Expanded LocalBusiness sameAs links to include YouTube, TikTok, and Google Reviews. Unblocked AI crawlers (GPTBot, Claude-Web, etc.) in robots.ts.
+FAQPage and WebSite JSON-LD schemas added. sameAs links expanded to YouTube, TikTok, and Google Reviews. AI crawlers unblocked in robots.ts.
 
 ### May 6 | Google Ads leads: cleaned up message field | Integrations,Fix
 The raw Lead ID hex string was being stored in the lead message field. It has been removed. The campaign name and form name are now stored in the Referral Source field instead. Existing leads with the raw data have it stripped at display time automatically.
 
 ### May 6 | X button on lead-type pipeline cards | Pipeline,Fix
-New Lead cards (unconverted leads that appear automatically in the pipeline) were missing the remove button. All pipeline cards now show the X. Clicking it on a lead card deletes the lead entirely; on a contact card it removes them from the board but keeps the contact record.
+Lead cards were missing the remove button. All cards now show X. On lead cards it deletes the lead; on contact cards it removes from the board only.
 
 ### May 4 | Contact details inline editing | CRM
-A pencil icon on every contact dossier opens all fields (name, email, phone, address) for batch editing in place. Changes are saved together on confirm. Email and phone display as clickable mailto and tel links in read mode, with an edit history tracked in metadata.
+Pencil icon opens all contact fields (name, email, phone, address) for inline batch editing. Email and phone render as clickable links in read mode.
 
 ### May 4 | Push CRM data to Dialpad | Integrations
-A Push to Dialpad button on the integrations page syncs all CRM customer records to Dialpad contacts, creating new Dialpad entries for any contacts not yet linked. Field mismatches between CRM and Dialpad (name, email, phone) are surfaced with per-field resolution controls.
+Push to Dialpad button syncs all CRM customers to Dialpad, creating entries for any not yet linked. Field mismatches surfaced with per-field resolution controls.
 
 ### May 4 | Pipeline board UX refinements | Pipeline
 Columns now fill the full page width using flex-1. The Needs Attention column has a red accent. Health flag warning icons show on cards with a tooltip listing the issues. Cards have a remove button that sets pipeline_stage to null while keeping the contact record intact.
 
 ### May 3 | QuickBooks customer import and sync panel | Integrations
-A Sync All panel on the integrations page imports QB customers into the CRM, detects field mismatches, and shows unmatched records for one-click import. Company names in QB are parsed into vessel records (format: year make model length, comma-separated). A View in QB link appears on every linked contact.
+Sync All imports QB customers, detects field mismatches, and surfaces unmatched records for one-click import. QB company names parsed into vessel records. View in QB link on every linked contact.
 
 ### May 3 | Generate invoice draft from fleet asset | Integrations,CRM
 Each asset in a contact's fleet now has a Generate Draft Invoice button. Clicking it creates a draft in QuickBooks, logs the action to the activity timeline, and opens a link to review the draft in QB.
@@ -167,25 +135,25 @@ Each asset in a contact's fleet now has a Generate Draft Invoice button. Clickin
 ## April 2026
 
 ### Apr 30 | Drag-and-drop Kanban pipeline board | Pipeline
-The dashboard was rebuilt as a full Kanban board using @dnd-kit. Six columns: New Leads, Discovery, Needs Attention, Estimate Sent, Work Scheduled, and Done/Invoiced. Cards can be dragged between columns to update the pipeline stage in real time. Lead-type cards auto-convert to contacts on first move.
+Dashboard rebuilt as a 6-column Kanban board (dnd-kit). Cards drag between stages in real time. Lead cards auto-convert to contacts on first move.
 
 ### Apr 30 | NorthWake favicon | Site
 The NorthWake Marine anchor logo is now the browser tab icon and Apple touch icon across the entire site.
 
 ### Apr 27 | Google Calendar integration | Integrations
-A live calendar page shows a week-grid view of all Google Calendar events. Events can be created, edited, and deleted from the pro portal. Webhook auto-renewal runs daily so the live-sync connection stays active. Descriptions render as HTML and support all-day and multi-day date ranges.
+Live week-grid calendar in the pro portal. Events can be created, edited, and deleted. Webhook auto-renewal keeps the sync active.
 
 ### Apr 27 | Google Ads lead webhook | Integrations
 Leads submitted through Google Ads lead form extensions are automatically captured and routed into the CRM. The source is tagged as Google Ads and the campaign name is stored in the referral source field. Custom form questions (vessel type, service, message) map to the correct CRM fields.
 
 ### Apr 27 | Contact Documents panel with Google Drive | CRM,Integrations
-Each contact dossier has a Documents panel that lists files from a linked Google Drive folder. Files can be uploaded directly from the dossier. Liability waivers are auto-saved to Drive on submission and appear in the documents list automatically.
+Documents panel on each contact dossier lists and uploads files from a linked Drive folder. Liability waivers auto-save to Drive on submission.
 
 ### Apr 27 | Per-vessel service schedules | CRM
 Each vessel in the fleet can have a custom service interval (in days). The integrity engine flags vessels as overdue when the interval has passed since last service. Overdue vessels surface on the dashboard and move the contact to Needs Attention.
 
 ### Apr 21 | Full CRM engine launched | CRM
-The pro portal launched with lead tracking, contact dossiers, vessel fleet management, activity timelines, and linked contacts. Phone numbers are normalized on save. Duplicate phone detection surfaces a banner when two contacts share the same number. A health bar on each dossier shows completeness across email, phone, address, fleet, and waiver status.
+Pro portal launched with lead tracking, contact dossiers, vessel fleet, activity timelines, and linked contacts. Duplicate phone detection, phone normalization, and a per-contact health bar.
 
 ### Apr 21 | QuickBooks and Dialpad OAuth flows | Integrations
 OAuth connection routes were built for both QuickBooks Online and Dialpad. QB tokens are stored and auto-refreshed. Invoice creation, customer sync, and payment webhook handling are all wired up and live for QuickBooks.
