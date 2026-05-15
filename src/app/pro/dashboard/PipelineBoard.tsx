@@ -5,7 +5,7 @@ import { createBrowserSupabase } from "@/lib/supabase/client";
 import {
   DndContext,
   DragOverlay,
-  closestCenter,
+  pointerWithin,
   PointerSensor,
   useSensor,
   useSensors,
@@ -156,7 +156,7 @@ export default function PipelineBoard({ initialCards, stats }: { initialCards: P
       <div className="hidden md:flex flex-1 flex-col min-h-0">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={pointerWithin}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
