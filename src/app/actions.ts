@@ -2405,3 +2405,46 @@ export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: 
     return { updated: 0, created: 0, error: err instanceof Error ? err.message : "OpenPhone push failed." };
   }
 }
+
+export async function mergeContacts(keepId: string, dropId: string): Promise<{ error?: string }> {
+  const supabase = await createServerSupabase();
+
+  // Re-point all related rows to the keeper
+  await supabase.from("timeline_events").update({ contact_id: keepId }).eq("contact_id", dropId);
+  await supabase.from("vessels").update({ owner_id: keepId }).eq("owner_id", dropId);
+  await supabase.from("linked_contacts").update({ primary_contact_id: keepId }).eq("primary_contact_id", dropId);
+
+  // Fill in any missing fields on the keeper from the dropped contact
+  const { data: drop } = await supabase
+    .from("contacts")
+    .select("name, email, phone, company_name, vessel_type, vessel_length, source, notes")
+    .eq("id", dropId)
+    .maybeSingle();
+
+  if (drop) {
+    const { data: keep } = await supabase
+      .from("contacts")
+      .select("name, email, phone, company_name, vessel_type, vessel_length")
+      .eq("id", keepId)
+      .maybeSingle();
+
+    const patch: Record<string, unknown> = {};
+    if (!keep?.name && drop.name) patch.name = drop.name;
+    if (!keep?.email && drop.email) patch.email = drop.email;
+    if (!keep?.phone && drop.phone) patch.phone = drop.phone;
+    if (!keep?.company_name && drop.company_name) patch.company_name = drop.company_name;
+    if (!keep?.vessel_type && drop.vessel_type) patch.vessel_type = drop.vessel_type;
+    if (!keep?.vessel_length && drop.vessel_length) patch.vessel_length = drop.vessel_length;
+
+    if (Object.keys(patch).length > 0) {
+      await supabase.from("contacts").update(patch).eq("id", keepId);
+    }
+  }
+
+  const { error } = await supabase.from("contacts").delete().eq("id", dropId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/pro/contacts");
+  revalidatePath(`/pro/contacts/${keepId}`);
+  return {};
+}

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
+import MergeButton from "./MergeButton";
 import SearchBar from "./SearchBar";
 import ClickableRow from "@/components/ClickableRow";
 
@@ -262,13 +263,16 @@ export default async function ContactsPage({
               </p>
               <div className="flex flex-col gap-1">
                 {duplicateGroups.map((group, i) => (
-                  <div key={i} className="flex flex-wrap gap-2 items-center">
-                    <span className="text-amber-600 text-[10px] tracking-widest uppercase font-medium">Group {i + 1}:</span>
-                    {group.map((c) => (
-                      <Link key={c.id} href={`/pro/contacts/${c.id}`} className="text-[10px] tracking-widest uppercase text-amber-700 underline hover:text-amber-900 font-medium">
-                        {c.name || "Unnamed"}
-                      </Link>
-                    ))}
+                  <div key={i} className="flex flex-col gap-1">
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <span className="text-amber-600 text-[10px] tracking-widest uppercase font-medium">Group {i + 1}:</span>
+                      {group.map((c) => (
+                        <Link key={c.id} href={`/pro/contacts/${c.id}`} className="text-[10px] tracking-widest uppercase text-amber-700 underline hover:text-amber-900 font-medium">
+                          {c.name || "Unnamed"}
+                        </Link>
+                      ))}
+                    </div>
+                    <MergeButton group={group} />
                   </div>
                 ))}
               </div>
