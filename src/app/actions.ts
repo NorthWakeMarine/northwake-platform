@@ -16,6 +16,20 @@ function normalizePhone(raw: string | null | undefined): string | null {
   return parsed?.isValid() ? parsed.format("E.164") : raw.trim() || null;
 }
 
+// Run fn on each item with at most `concurrency` in-flight at once
+async function pMap<T, R>(items: T[], fn: (item: T) => Promise<R>, concurrency: number): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let i = 0;
+  async function worker() {
+    while (i < items.length) {
+      const idx = i++;
+      results[idx] = await fn(items[idx]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
 // ─── Lead Submission ──────────────────────────────────────────────────────────
 
 const leadSchema = z.object({
@@ -1474,30 +1488,37 @@ export async function syncVesselsToQbNotes(): Promise<{ synced: number; error?: 
       .select("id, qb_customer_id")
       .not("qb_customer_id", "is", null);
 
-    let synced = 0;
-    for (const c of contacts ?? []) {
-      try {
-        const { data: vessels } = await supabase
-          .from("vessels")
-          .select("year, make_model, length_ft")
-          .eq("owner_id", c.id)
-          .order("created_at", { ascending: true });
+    // Pre-fetch all vessels in one query and group by owner
+    const allContactIds = (contacts ?? []).map((c) => c.id);
+    const { data: allVessels } = allContactIds.length > 0
+      ? await supabase.from("vessels").select("owner_id, year, make_model, length_ft").in("owner_id", allContactIds).order("created_at", { ascending: true })
+      : { data: [] };
+    const vesselsByOwner = new Map<string, typeof allVessels>();
+    for (const v of allVessels ?? []) {
+      const list = vesselsByOwner.get(v.owner_id) ?? [];
+      list.push(v);
+      vesselsByOwner.set(v.owner_id, list);
+    }
 
-        const noteVessels = (vessels ?? []).map((v) => ({
+    let synced = 0;
+    const results = await pMap(contacts ?? [], async (c) => {
+      try {
+        const vessels = vesselsByOwner.get(c.id) ?? [];
+        const noteVessels = vessels.map((v) => ({
           year: v.year as number | null,
           makeModel: v.make_model as string | null,
           lengthFt: v.length_ft as string | null,
         }));
-
         const customer = await getQbCustomer(c.qb_customer_id!);
         const newNotes = buildNotesWithVessels(customer.Notes ?? null, noteVessels);
-
         if (newNotes.trim() !== (customer.Notes ?? "").trim()) {
           await updateQbCustomerNotes(c.qb_customer_id!, customer.SyncToken!, newNotes);
-          synced++;
+          return 1;
         }
-      } catch { /* skip if individual customer fetch fails */ }
-    }
+      } catch { /* skip */ }
+      return 0;
+    }, 5);
+    synced = results.reduce((a: number, b: number) => a + b, 0);
 
     return { synced };
   } catch (err) {
@@ -1869,26 +1890,33 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
       CreditMemo:   "credit_memo",
     };
 
-    let imported = 0;
+    // Fetch transactions for all contacts in parallel (QB: 5 concurrent)
+    const contactTxns = await pMap(contacts, async (contact) => {
+      const txns = await listQbTransactionsForCustomer(contact.qb_customer_id!);
+      return { contact, txns };
+    }, 5);
+
+    // Build inserts for all new transactions
+    const toInsert: object[] = [];
     let skipped = 0;
 
-    for (const contact of contacts) {
-      const txns = await listQbTransactionsForCustomer(contact.qb_customer_id!);
-
+    for (const { contact, txns } of contactTxns) {
       for (const txn of txns) {
-        if (importedIds.has(`${txn.txnType}:${txn.id}`)) { skipped++; continue; }
+        const key = `${txn.txnType}:${txn.id}`;
+        if (importedIds.has(key)) { skipped++; continue; }
+        importedIds.add(key);
 
         const label = typeLabels[txn.txnType] ?? txn.txnType;
         const docPart = txn.docNumber ? ` #${txn.docNumber}` : "";
         const invoiceUrl = txn.txnType === "Invoice" && realmId ? getQbInvoiceUrl(realmId, txn.id) : null;
 
-        await supabase.from("timeline_events").insert({
+        toInsert.push({
           contact_id: contact.id,
           event_type: eventTypes[txn.txnType] ?? "invoice",
           title: `${label}${docPart} — $${Math.abs(txn.totalAmt).toFixed(2)}${txn.status ? ` (${txn.status})` : ""}`,
           body: txn.body ?? "",
           metadata: {
-            qb_txn_id: `${txn.txnType}:${txn.id}`,
+            qb_txn_id: key,
             txn_type: txn.txnType,
             doc_number: txn.docNumber,
             total: txn.totalAmt,
@@ -1899,11 +1927,15 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
           created_by: "system",
           created_at: txn.txnDate,
         });
-
-        importedIds.add(`${txn.txnType}:${txn.id}`);
-        imported++;
       }
     }
+
+    // Bulk insert in batches of 50
+    const BATCH = 50;
+    for (let b = 0; b < toInsert.length; b += BATCH) {
+      await supabase.from("timeline_events").insert(toInsert.slice(b, b + BATCH));
+    }
+    const imported = toInsert.length;
 
     revalidatePath("/pro/contacts");
     return { imported, skipped };
@@ -2160,10 +2192,7 @@ export async function pushCrmToDialpad(): Promise<{ updated: number; created: nu
       }
     }
 
-    let updated = 0;
-    let created = 0;
-
-    for (const c of contacts ?? []) {
+    const counts = await pMap(contacts ?? [], async (c) => {
       const payload = {
         first_name: c.name ?? c.company_name ?? "",
         last_name: vesselMap.get(c.id) ?? "",
@@ -2171,19 +2200,21 @@ export async function pushCrmToDialpad(): Promise<{ updated: number; created: nu
         ...(c.email ? { emails: [c.email] } : {}),
         ...(c.phone ? { phone_numbers: [c.phone] } : {}),
       };
-
       if (c.dialpad_contact_id) {
         await updateDialpadContact(c.dialpad_contact_id, payload);
-        updated++;
+        return { updated: 1, created: 0 };
       } else {
         const newId = await createDialpadContact(payload);
         if (newId) {
           await supabase.from("contacts").update({ dialpad_contact_id: newId }).eq("id", c.id);
-          created++;
+          return { updated: 0, created: 1 };
         }
       }
-    }
+      return { updated: 0, created: 0 };
+    }, 10);
 
+    const updated = counts.reduce((a, b) => a + b.updated, 0);
+    const created = counts.reduce((a, b) => a + b.created, 0);
     return { updated, created };
   } catch (err) {
     return { updated: 0, created: 0, error: err instanceof Error ? err.message : "Push failed." };
@@ -2365,13 +2396,9 @@ export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: 
       existing.flatMap((c) => (c.phoneNumbers ?? []).filter((p) => p.value).map((p) => [normalizePhone(p.value!) ?? p.value!, c.id]))
     );
 
-    let updated = 0;
-    let created = 0;
-
-    for (const c of contacts ?? []) {
+    const counts = await pMap(contacts ?? [], async (c) => {
       const { firstName, lastName } = splitName(c.name ?? c.company_name ?? "");
       const vessel = vesselMap.get(c.id) ?? null;
-
       const payload = {
         firstName,
         lastName,
@@ -2379,30 +2406,48 @@ export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: 
         ...(c.email ? { emails: [{ name: "work", value: c.email }] } : {}),
         ...(c.phone ? { phoneNumbers: [{ name: "work", value: c.phone }] } : {}),
       };
-
       if (c.openphone_contact_id) {
         await updateOpenPhoneContact(c.openphone_contact_id, payload);
-        updated++;
-      } else {
-        // Check if a contact with this phone already exists in OpenPhone
-        const existingId = c.phone ? existingByPhone.get(normalizePhone(c.phone) ?? c.phone) : undefined;
-        if (existingId) {
-          await updateOpenPhoneContact(existingId, payload);
-          await supabase.from("contacts").update({ openphone_contact_id: existingId }).eq("id", c.id);
-          updated++;
-        } else {
-          const newId = await createOpenPhoneContact(payload);
-          if (newId) {
-            await supabase.from("contacts").update({ openphone_contact_id: newId }).eq("id", c.id);
-            created++;
-          }
-        }
+        return { updated: 1, created: 0 };
       }
-    }
+      const existingId = c.phone ? existingByPhone.get(normalizePhone(c.phone) ?? c.phone) : undefined;
+      if (existingId) {
+        await updateOpenPhoneContact(existingId, payload);
+        await supabase.from("contacts").update({ openphone_contact_id: existingId }).eq("id", c.id);
+        return { updated: 1, created: 0 };
+      }
+      const newId = await createOpenPhoneContact(payload);
+      if (newId) {
+        await supabase.from("contacts").update({ openphone_contact_id: newId }).eq("id", c.id);
+        return { updated: 0, created: 1 };
+      }
+      return { updated: 0, created: 0 };
+    }, 10);
 
+    const updated = counts.reduce((a, b) => a + b.updated, 0);
+    const created = counts.reduce((a, b) => a + b.created, 0);
     return { updated, created };
   } catch (err) {
     return { updated: 0, created: 0, error: err instanceof Error ? err.message : "OpenPhone push failed." };
+  }
+}
+
+export async function purgeGhostVessels(): Promise<{ deleted: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    // Ghost vessels: no name, no make_model, no year — only length or entirely blank
+    const { data, error } = await supabase
+      .from("vessels")
+      .delete()
+      .is("name", null)
+      .is("make_model", null)
+      .is("year", null)
+      .select("id");
+    if (error) return { deleted: 0, error: error.message };
+    revalidatePath("/pro/contacts");
+    return { deleted: data?.length ?? 0 };
+  } catch (err) {
+    return { deleted: 0, error: err instanceof Error ? err.message : "Purge failed." };
   }
 }
 

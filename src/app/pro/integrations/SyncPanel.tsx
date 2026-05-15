@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, createContactFromOpenPhone, pushCrmToDialpad, pushCrmToQuickBooks, pushCrmToOpenPhone, importOpenPhoneContacts, syncVesselsToQbNotes, updateContactFields, importQbInvoices } from "@/app/actions";
+import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, createContactFromOpenPhone, pushCrmToDialpad, pushCrmToQuickBooks, pushCrmToOpenPhone, importOpenPhoneContacts, syncVesselsToQbNotes, updateContactFields, importQbInvoices, purgeGhostVessels } from "@/app/actions";
 import type { FieldMismatch, DpUnmatched, OpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
@@ -17,6 +17,7 @@ type SyncResult = {
   qbInvoices?: { imported: number; skipped: number; error?: string };
   qbPush?: { upserted: number; skipped: string[]; error?: string };
   qbNotes?: { synced: number; error?: string };
+  ghostPurge?: { deleted: number; error?: string };
 };
 
 export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConnected }: { qbConnected: boolean; dialpadConnected: boolean; openphoneConnected: boolean }) {
@@ -30,7 +31,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
 
   function handleSyncAll() {
     startTransition(async () => {
-      const [qb, qbInvoices, qbPush, qbNotes, dialpad, dpPush, openphone, opPush, integrity] = await Promise.all([
+      const [qb, qbInvoices, qbPush, qbNotes, dialpad, dpPush, openphone, opPush, integrity, ghostPurge] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
         qbConnected ? importQbInvoices() : Promise.resolve(undefined),
         qbConnected ? pushCrmToQuickBooks() : Promise.resolve(undefined),
@@ -40,6 +41,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
         openphoneConnected ? importOpenPhoneContacts() : Promise.resolve(undefined),
         openphoneConnected ? pushCrmToOpenPhone() : Promise.resolve(undefined),
         runIntegrityCheck(),
+        purgeGhostVessels(),
       ]);
       setResult({
         qb: qb ?? undefined,
@@ -51,6 +53,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
         openphone: openphone ?? undefined,
         opPush: opPush ?? undefined,
         integrity,
+        ghostPurge,
       });
     });
   }

@@ -300,20 +300,25 @@ export function parseVesselsFromNotes(notes: string | null): NoteVessel[] {
   if (!notes) return [];
   const line = notes.split("\n").find((l) => l.startsWith(VESSELS_PREFIX));
   if (!line) return [];
-  return line.slice(VESSELS_PREFIX.length).trim().split(" | ").filter(Boolean).map((v) => {
+  return line.slice(VESSELS_PREFIX.length).trim().split(" | ").filter(Boolean).flatMap((v) => {
     const parts = v.split(" - ");
     const yearStr = parts[0]?.trim() ?? "";
     const makeModel = parts[1]?.trim() || null;
     const lengthFt = parts[2]?.trim() || null;
     const year = parseInt(yearStr, 10);
-    return { year: !isNaN(year) && year > 1900 ? year : null, makeModel, lengthFt };
+    const parsedYear = !isNaN(year) && year > 1900 ? year : null;
+    // Skip entries with no identifying info (just a length or completely blank)
+    if (!parsedYear && !makeModel) return [];
+    return [{ year: parsedYear, makeModel, lengthFt }];
   });
 }
 
 export function buildNotesWithVessels(existingNotes: string | null, vessels: NoteVessel[]): string {
   const otherLines = (existingNotes ?? "").split("\n").filter((l) => !l.startsWith(VESSELS_PREFIX)).join("\n").trim();
-  if (vessels.length === 0) return otherLines;
-  const vesselLine = VESSELS_PREFIX + " " + vessels
+  // Only write vessels that have at least a year or make/model — skip length-only ghost entries
+  const meaningful = vessels.filter((v) => v.year || v.makeModel);
+  if (meaningful.length === 0) return otherLines;
+  const vesselLine = VESSELS_PREFIX + " " + meaningful
     .map((v) => `${v.year ?? ""} - ${v.makeModel ?? ""} - ${v.lengthFt ?? ""}`)
     .join(" | ");
   return otherLines ? `${vesselLine}\n${otherLines}` : vesselLine;
