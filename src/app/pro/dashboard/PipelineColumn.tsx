@@ -46,7 +46,7 @@ export default function PipelineColumn({
           }`}
         >
           {cards.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center">
+            <div className="pt-2">
               <p className="text-slate-300 text-[10px] tracking-widest uppercase text-center leading-relaxed">
                 Drag cards here
               </p>

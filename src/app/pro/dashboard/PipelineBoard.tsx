@@ -104,15 +104,23 @@ export default function PipelineBoard({ initialCards, stats }: { initialCards: P
       const { active, over } = event;
       if (!over) return;
 
-      const targetStage = over.id as PipelineStage;
-      if (!STAGES.includes(targetStage)) return;
-
       const card = active.data.current?.card as PipelineCard;
       if (!card) return;
 
+      // over.id is either a stage ID (dropped on column) or a card ID (dropped on a card)
+      let targetStage = over.id as PipelineStage;
+      if (!STAGES.includes(targetStage)) {
+        // Find which stage owns the card we hovered over
+        const found = STAGES.find((s) =>
+          columns[s].some((c) => c.id === over.id)
+        );
+        if (!found) return;
+        targetStage = found;
+      }
+
       moveCard(card, targetStage);
     },
-    [moveCard]
+    [moveCard, columns]
   );
 
   const handleMoveCard = useCallback(
