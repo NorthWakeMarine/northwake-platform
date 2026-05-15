@@ -28,7 +28,7 @@ export default function PipelineColumn({
   const cardIds = cards.map((c) => c.id);
 
   return (
-    <div className="flex-1 min-w-48 flex flex-col gap-2">
+    <div className="flex-1 min-w-48 flex flex-col gap-2 min-h-0">
       <div className={`flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 ${ACCENT[stage]}`}>
         <span className="text-slate-500 text-[11px] font-semibold tracking-widest uppercase">
           {STAGE_LABELS[stage]}
@@ -41,12 +41,12 @@ export default function PipelineColumn({
       <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
         <div
           ref={setNodeRef}
-          className={`flex flex-col gap-2 min-h-[120px] rounded-xl p-2 transition-colors ${
+          className={`flex flex-col gap-2 flex-1 rounded-xl p-3 transition-colors ${
             isOver ? "bg-slate-100/80 ring-1 ring-slate-300 ring-dashed" : "bg-slate-50/60"
           }`}
         >
           {cards.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center min-h-[80px]">
+            <div className="flex-1 flex items-center justify-center">
               <p className="text-slate-300 text-[10px] tracking-widest uppercase text-center leading-relaxed">
                 Drag cards here
               </p>

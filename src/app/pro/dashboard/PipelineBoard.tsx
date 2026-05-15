@@ -160,8 +160,8 @@ export default function PipelineBoard({ initialCards, stats }: { initialCards: P
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex-1 overflow-x-auto">
-            <div className="flex gap-4 px-6 py-5 items-start">
+          <div className="flex-1 overflow-auto">
+            <div className="flex gap-4 px-6 py-5 min-h-full items-stretch">
               {STAGES.map((stage) => (
                 <PipelineColumn
                   key={stage}
