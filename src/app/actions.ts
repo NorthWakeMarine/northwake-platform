@@ -2435,17 +2435,35 @@ export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: 
 export async function purgeGhostVessels(): Promise<{ deleted: number; error?: string }> {
   const supabase = await svc();
   try {
-    // Ghost vessels: no name, no make_model, no year — only length or entirely blank
-    const { data, error } = await supabase
+    // Pass 1: no name, no make_model, no year (length-only or blank rows)
+    const { data: pass1 } = await supabase
       .from("vessels")
       .delete()
       .is("name", null)
       .is("make_model", null)
       .is("year", null)
       .select("id");
-    if (error) return { deleted: 0, error: error.message };
+
+    // Pass 2: length value ended up in the make_model slot (e.g. "52ft", "22ft")
+    // Fetch candidates and filter in code to avoid regex dependency on DB
+    const { data: candidates } = await supabase
+      .from("vessels")
+      .select("id, make_model")
+      .is("name", null)
+      .is("year", null)
+      .not("make_model", "is", null);
+
+    const lengthPattern = /^\d+(\.\d+)?\s*ft$/i;
+    const ghostIds = (candidates ?? [])
+      .filter((v) => lengthPattern.test(v.make_model ?? ""))
+      .map((v) => v.id);
+
+    if (ghostIds.length > 0) {
+      await supabase.from("vessels").delete().in("id", ghostIds);
+    }
+
     revalidatePath("/pro/contacts");
-    return { deleted: data?.length ?? 0 };
+    return { deleted: (pass1?.length ?? 0) + ghostIds.length };
   } catch (err) {
     return { deleted: 0, error: err instanceof Error ? err.message : "Purge failed." };
   }

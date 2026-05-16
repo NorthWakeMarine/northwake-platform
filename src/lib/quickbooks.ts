@@ -307,8 +307,9 @@ export function parseVesselsFromNotes(notes: string | null): NoteVessel[] {
     const lengthFt = parts[2]?.trim() || null;
     const year = parseInt(yearStr, 10);
     const parsedYear = !isNaN(year) && year > 1900 ? year : null;
-    // Skip entries with no identifying info (just a length or completely blank)
-    if (!parsedYear && !makeModel) return [];
+    // Skip entries with no identifying info — blank or a bare dimension in makeModel slot
+    const lengthOnly = /^\d+(\.\d+)?\s*ft$/i;
+    if (!parsedYear && (!makeModel || lengthOnly.test(makeModel))) return [];
     return [{ year: parsedYear, makeModel, lengthFt }];
   });
 }
