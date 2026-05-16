@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, createContactFromOpenPhone, pushCrmToDialpad, pushCrmToQuickBooks, pushCrmToOpenPhone, importOpenPhoneContacts, syncVesselsToQbNotes, updateContactFields, importQbInvoices, purgeGhostVessels } from "@/app/actions";
+import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, createContactFromOpenPhone, pushCrmToDialpad, pushCrmToQuickBooks, pushCrmToOpenPhone, importOpenPhoneContacts, syncVesselsToQbNotes, updateContactFields, importQbInvoices, purgeGhostVessels, cleanQbGhostNotes } from "@/app/actions";
 import type { FieldMismatch, DpUnmatched, OpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
@@ -23,6 +23,8 @@ type SyncResult = {
 export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConnected }: { qbConnected: boolean; dialpadConnected: boolean; openphoneConnected: boolean }) {
   const [result, setResult] = useState<SyncResult | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [cleanResult, setCleanResult] = useState<{ cleaned: number; errors: string[]; error?: string } | null>(null);
+  const [isCleaning, startCleaning] = useTransition();
   const [importingQbId, setImportingQbId] = useState<string | null>(null);
   const [importingDpId, setImportingDpId] = useState<string | null>(null);
   const [importingOpId, setImportingOpId] = useState<string | null>(null);
@@ -136,6 +138,15 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {qbConnected && (
+            <button
+              onClick={() => startCleaning(async () => setCleanResult(await cleanQbGhostNotes()))}
+              disabled={isCleaning || isPending}
+              className="text-[10px] tracking-widest uppercase px-3 py-2.5 rounded-sm font-semibold border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+            >
+              {isCleaning ? "Cleaning..." : "Clean QB Notes"}
+            </button>
+          )}
           <button
             onClick={handleSyncAll}
             disabled={isPending || nothingConnected}
@@ -148,6 +159,19 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
 
       {nothingConnected && (
         <p className="text-slate-400 text-xs">Connect QuickBooks or Dialpad above to enable sync.</p>
+      )}
+
+      {cleanResult && (
+        <div className="text-xs px-3 py-2 rounded-sm border border-slate-200 bg-slate-50">
+          {cleanResult.error ? (
+            <p className="text-red-500">{cleanResult.error}</p>
+          ) : (
+            <>
+              <p className="text-slate-700">{cleanResult.cleaned} QB customer note{cleanResult.cleaned !== 1 ? "s" : ""} cleaned.</p>
+              {cleanResult.errors.map((e, i) => <p key={i} className="text-red-400 text-[10px] mt-0.5">{e}</p>)}
+            </>
+          )}
+        </div>
       )}
 
       {result && (

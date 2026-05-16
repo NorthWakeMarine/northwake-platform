@@ -1526,6 +1526,47 @@ export async function syncVesselsToQbNotes(): Promise<{ synced: number; error?: 
   }
 }
 
+export async function cleanQbGhostNotes(): Promise<{ cleaned: number; errors: string[]; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { getQbTokens, getQbCustomer, parseVesselsFromNotes, buildNotesWithVessels, updateQbCustomerNotes } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { cleaned: 0, errors: [], error: "QuickBooks not connected." };
+
+    const { data: contacts } = await supabase
+      .from("contacts")
+      .select("id, name, qb_customer_id")
+      .not("qb_customer_id", "is", null);
+
+    if (!contacts?.length) return { cleaned: 0, errors: [] };
+
+    const rowErrors: string[] = [];
+    const results = await pMap(contacts, async (c) => {
+      try {
+        const customer = await getQbCustomer(c.qb_customer_id!);
+        if (!customer.Notes) return 0;
+
+        // Parse + re-serialize: the parser now strips ghost entries
+        const vessels = parseVesselsFromNotes(customer.Notes);
+        const cleaned = buildNotesWithVessels(customer.Notes, vessels);
+
+        if (cleaned.trim() === customer.Notes.trim()) return 0;
+
+        await updateQbCustomerNotes(c.qb_customer_id!, customer.SyncToken!, cleaned);
+        return 1;
+      } catch (err) {
+        rowErrors.push(`${c.name ?? c.qb_customer_id}: ${err instanceof Error ? err.message : String(err)}`);
+        return 0;
+      }
+    }, 5);
+
+    revalidatePath("/pro/contacts");
+    return { cleaned: results.reduce((a: number, b: number) => a + b, 0), errors: rowErrors };
+  } catch (err) {
+    return { cleaned: 0, errors: [], error: err instanceof Error ? err.message : "Failed." };
+  }
+}
+
 // ─── Manual Call Log ──────────────────────────────────────────────────────────
 
 export async function logManualCall(
