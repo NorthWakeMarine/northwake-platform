@@ -31,7 +31,10 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
 
   function handleSyncAll() {
     startTransition(async () => {
-      const [qb, qbInvoices, qbPush, qbNotes, dialpad, dpPush, openphone, opPush, integrity, ghostPurge] = await Promise.all([
+      // Purge ghost vessels first so syncVesselsToQbNotes reads a clean DB
+      const ghostPurge = await purgeGhostVessels();
+
+      const [qb, qbInvoices, qbPush, qbNotes, dialpad, dpPush, openphone, opPush, integrity] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
         qbConnected ? importQbInvoices() : Promise.resolve(undefined),
         qbConnected ? pushCrmToQuickBooks() : Promise.resolve(undefined),
@@ -41,7 +44,6 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
         openphoneConnected ? importOpenPhoneContacts() : Promise.resolve(undefined),
         openphoneConnected ? pushCrmToOpenPhone() : Promise.resolve(undefined),
         runIntegrityCheck(),
-        purgeGhostVessels(),
       ]);
       setResult({
         qb: qb ?? undefined,
