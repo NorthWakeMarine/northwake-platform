@@ -1709,8 +1709,8 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
     eventsByContact.set(ev.contact_id, list);
   }
 
-  // Process all contacts concurrently instead of sequentially
-  const results = await Promise.all(contacts.map(async (contact) => {
+  // Process contacts with bounded concurrency to avoid DB pool exhaustion during Sync All
+  const results = await pMap(contacts, async (contact) => {
     const flags: IntegrityFlag[] = [];
 
     if (!contact.qb_customer_id) {
@@ -1752,7 +1752,7 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
       .eq("id", contact.id);
 
     return hadFlags;
-  }));
+  }, 10);
 
   const flagged = results.filter(Boolean).length;
 
@@ -2183,9 +2183,7 @@ export async function syncDialpadContacts(): Promise<{ synced: number; mismatche
       }
     }
 
-    await Promise.all(
-      updates.map((u) => supabase.from("contacts").update({ dialpad_contact_id: u.dp_id }).eq("id", u.id))
-    );
+    await pMap(updates, async (u) => { await supabase.from("contacts").update({ dialpad_contact_id: u.dp_id }).eq("id", u.id); }, 10);
 
     return { synced: updates.length, mismatches };
   } catch (err) {
