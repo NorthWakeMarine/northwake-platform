@@ -2,6 +2,22 @@
 
 ## May 2026
 
+### May 19 | Real-time QB and OpenPhone webhooks, rate limit fixes, ghost vessel cleanup | CRM,Integrations
+
+- QB webhook now handles Customer.Create/Update (links contact, fills missing fields, syncs vessel notes) and Invoice/SalesReceipt/CreditMemo Create/Update (upserts timeline events, moves pipeline stage)
+- OpenPhone webhook now handles contact.created/contact.updated (fills missing name, phone, email, company on matched CRM contact)
+- Dialpad and OpenPhone push concurrency lowered to 3; both clients retry on rate limit with exponential backoff
+- Dialpad retries on HTTP 400 with rate_limit body (not standard 429); OpenPhone retries on 429
+- Ghost vessel purge runs before each Sync All to prevent stale data entering QB notes sync
+- Removed Clean QB Notes button (ghost bug is fixed; purge handles cleanup automatically)
+
+### May 19 | Swap lead email notifications from Gmail/nodemailer to Resend | CRM,Integrations
+
+- Replaced nodemailer + Gmail app password with Resend SDK for lead notification emails
+- From address updated to crm@northwakemarine.com (verified domain)
+- GMAIL_USER and GMAIL_APP_PASSWORD removed from Vercel; RESEND_API_KEY added
+- Errors now surface as thrown exceptions (caught by fire-and-forget handler in actions.ts) instead of silently dropping
+
 ### May 13 | Vendor/customer separation, contact page layout overhaul, Dialpad phone fix | CRM,Integrations
 
 - Contacts list now has Customers / Vendors / All tab toggle; vendor contacts hide pipeline, fleet, and waiver UI
