@@ -424,7 +424,7 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
 
             <div>
               <h1 className="text-[#1E2938] text-base font-bold tracking-tight">{fmtWeekRange(weekStart)}</h1>
-              <p className="text-[#1E2938]/45 text-[10px] mt-0.5">Calendar</p>
+              <p className="text-[#1E2938]/50 text-sm mt-0.5">Calendar</p>
             </div>
 
             {!isCurrentWeek && (

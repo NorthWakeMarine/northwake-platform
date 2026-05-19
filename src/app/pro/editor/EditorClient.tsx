@@ -73,7 +73,7 @@ export default function EditorPageClient({
 
         <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5">
           <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Site Editor</h1>
-          <p className="text-[#1E2938]/45 text-xs mt-0.5">Edit live content and manage homepage images. Changes publish instantly.</p>
+          <p className="text-[#1E2938]/50 text-sm mt-0.5">Edit live content and manage homepage images. Changes publish instantly.</p>
         </div>
 
         <div className="px-8 py-8 flex flex-col gap-10">

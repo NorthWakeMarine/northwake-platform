@@ -50,7 +50,7 @@ function SortableHeader({ label, field, currentSort, currentDir }: {
 }) {
   if (!field) {
     return (
-      <th className="text-left text-[#1E2938]/50 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
+      <th className="text-left text-[#1E2938]/50 text-[11px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
         {label}
       </th>
     );
@@ -101,7 +101,7 @@ export default async function LeadsPage({
         <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5 flex items-center justify-between">
           <div>
             <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Leads</h1>
-            <p className="text-[#1E2938]/45 text-xs mt-0.5">Every lead received across all sources.</p>
+            <p className="text-[#1E2938]/50 text-sm mt-0.5">Every lead received across all sources.</p>
           </div>
           <div className="flex items-center gap-4 text-xs text-[#1E2938]/50">
             <span><strong className="text-[#1E2938] tabular-nums">{total}</strong> total</span>
@@ -131,7 +131,7 @@ export default async function LeadsPage({
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#dcdee3]">
                       {(["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source"] as const).map((h) => (

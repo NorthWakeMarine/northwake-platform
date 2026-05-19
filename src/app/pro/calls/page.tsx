@@ -78,7 +78,7 @@ export default async function CallsPage() {
 
         <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5">
           <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Calls</h1>
-          <p className="text-[#1E2938]/45 text-xs mt-0.5">Inbound and outbound activity from Dialpad.</p>
+          <p className="text-[#1E2938]/50 text-sm mt-0.5">Inbound and outbound activity from Dialpad.</p>
         </div>
 
         <div className="bg-[#F1F2F5] border-b border-[#dcdee3] px-8 py-2.5 flex items-center gap-5">
@@ -101,7 +101,7 @@ export default async function CallsPage() {
             <p className="text-slate-400 text-sm">No calls logged yet. Connect Dialpad and register the webhook to start capturing activity.</p>
           ) : (
             <div className="bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
-              <div className="grid grid-cols-[auto_1fr_auto_auto_auto] text-[10px] tracking-widest uppercase font-semibold text-[#1E2938]/50 px-4 py-2.5 border-b border-[#dcdee3] gap-4">
+              <div className="grid grid-cols-[auto_1fr_auto_auto_auto] text-[11px] tracking-widest uppercase font-semibold text-[#1E2938]/50 px-4 py-2.5 border-b border-[#dcdee3] gap-4">
                 <span>Type</span>
                 <span>Contact</span>
                 <span>Direction</span>
@@ -130,18 +130,18 @@ export default async function CallsPage() {
 
                       <div className="min-w-0">
                         {c.contact_id ? (
-                          <Link href={`/pro/contacts/${c.contact_id}`} className="text-slate-800 text-xs font-medium hover:text-[#000080] transition-colors truncate block">
+                          <Link href={`/pro/contacts/${c.contact_id}`} className="text-slate-800 text-sm font-medium hover:text-[#000080] transition-colors truncate block">
                             {c.contact_name ?? phone ?? "Unknown"}
                           </Link>
                         ) : (
-                          <span className="text-slate-500 text-xs truncate block">{phone ?? "Unknown number"}</span>
+                          <span className="text-slate-500 text-sm truncate block">{phone ?? "Unknown number"}</span>
                         )}
                         {c.body && c.event_type === "sms" && (
                           <p className="text-slate-400 text-[10px] truncate mt-0.5">{c.body}</p>
                         )}
                       </div>
 
-                      <span className={`text-[10px] tracking-widest uppercase font-medium ${dir === "outbound" ? "text-navy" : "text-slate-500"}`}>
+                      <span className={`text-[11px] tracking-widest uppercase font-medium ${dir === "outbound" ? "text-navy" : "text-slate-500"}`}>
                         {dir}
                       </span>
 

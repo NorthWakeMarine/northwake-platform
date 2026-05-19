@@ -86,7 +86,7 @@ export default async function IntegrationsPage({
 
         <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5">
           <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Integrations</h1>
-          <p className="text-[#1E2938]/45 text-xs mt-0.5">Manage connections to external services.</p>
+          <p className="text-[#1E2938]/50 text-sm mt-0.5">Manage connections to external services.</p>
         </div>
 
         {(params.qb_connected || params.qb_error || params.dp_connected || params.dp_error) && (
@@ -132,7 +132,7 @@ export default async function IntegrationsPage({
                 </div>
                 <StatusBadge connected={calendarConnected} />
               </div>
-              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+              <p className="text-slate-500 text-sm leading-relaxed flex-1">
                 Push booked jobs to Google Calendar in real time. Changes made on your phone sync back to the CRM automatically.
               </p>
               <CalendarRegisterButton expires={webhookExpiry} calendarConnected={calendarConnected} />
@@ -152,7 +152,7 @@ export default async function IntegrationsPage({
                 </div>
                 <StatusBadge connected={qb.connected} />
               </div>
-              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+              <p className="text-slate-500 text-sm leading-relaxed flex-1">
                 Generate invoices in one click from asset cards. When a payment lands in QuickBooks, the contact moves to Done automatically.
               </p>
               {qb.connected ? (
@@ -192,7 +192,7 @@ export default async function IntegrationsPage({
                 </div>
                 <StatusBadge connected={dialpad.connected} />
               </div>
-              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+              <p className="text-slate-500 text-sm leading-relaxed flex-1">
                 Log inbound and outbound calls against contact records. Missed calls from unknown numbers auto-create a new lead with the voicemail transcript.
               </p>
               {dialpad.oauthConnected ? (
@@ -261,7 +261,7 @@ export default async function IntegrationsPage({
                 </div>
                 <StatusBadge connected={openphone.connected} />
               </div>
-              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+              <p className="text-slate-500 text-sm leading-relaxed flex-1">
                 Log inbound and outbound calls and texts against contact records. Missed calls from unknown numbers auto-create a new lead.
               </p>
               {openphone.connected ? (
@@ -295,7 +295,7 @@ export default async function IntegrationsPage({
                 </div>
                 <StatusBadge connected={!!gaId} />
               </div>
-              <p className="text-slate-500 text-xs leading-relaxed flex-1">
+              <p className="text-slate-500 text-sm leading-relaxed flex-1">
                 Tracks page views, CTA clicks, form submissions, scroll depth, and phone/email interactions across the landing site.
               </p>
               {gaId ? (

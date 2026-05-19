@@ -147,8 +147,8 @@ export default function PipelineBoard({ initialCards, stats }: { initialCards: P
           <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">
             {userName ? `Welcome back, ${userName}` : "Welcome back"}
           </h1>
-          <p className="text-[#1E2938]/40 text-xs mt-0.5 hidden md:block">Drag leads through your service workflow.</p>
-          <p className="text-[#1E2938]/40 text-xs mt-0.5 md:hidden">Tap a stage to view and move cards.</p>
+          <p className="text-[#1E2938]/50 text-sm mt-0.5 hidden md:block">Drag leads through your service workflow.</p>
+          <p className="text-[#1E2938]/50 text-sm mt-0.5 md:hidden">Tap a stage to view and move cards.</p>
         </div>
       </div>
 

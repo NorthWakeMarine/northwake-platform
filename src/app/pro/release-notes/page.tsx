@@ -62,7 +62,7 @@ export default function ReleaseNotesPage() {
 
         <header className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5">
           <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Release Notes</h1>
-          <p className="text-[#1E2938]/45 text-xs mt-0.5">Platform updates, features, and fixes in reverse chronological order.</p>
+          <p className="text-[#1E2938]/50 text-sm mt-0.5">Platform updates, features, and fixes in reverse chronological order.</p>
         </header>
 
         <main className="flex-1 overflow-y-auto px-8 py-8">

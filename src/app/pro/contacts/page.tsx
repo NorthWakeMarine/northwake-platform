@@ -73,7 +73,7 @@ function SortableHeader({ label, field, currentSort, currentDir, baseParams }: {
 }) {
   if (!field) {
     return (
-      <th className="text-left text-[#1E2938]/50 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
+      <th className="text-left text-[#1E2938]/50 text-[11px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
         {label}
       </th>
     );
@@ -221,7 +221,7 @@ export default async function ContactsPage({
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Contacts</h1>
-              <p className="text-[#1E2938]/45 text-xs mt-0.5">
+              <p className="text-[#1E2938]/50 text-sm mt-0.5">
                 {term ? `Showing results for "${term}"` : isVendorTab ? "Vendors and service companies." : "Customers with status flags for missing waivers or incomplete info."}
               </p>
             </div>
@@ -316,7 +316,7 @@ export default async function ContactsPage({
             ) : isVendorTab ? (
               /* Vendor table */
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#dcdee3]">
                       {(["Date", "Name", "Company", "Email", "Phone"] as const).map((h) => (
@@ -355,7 +355,7 @@ export default async function ContactsPage({
             ) : (
               /* Customer table */
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#dcdee3]">
                       {(["Date", "Name", "Email", "Phone", "Asset", "Status"] as const).map((h) => (

@@ -126,7 +126,7 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
     >
       <div className="flex items-center gap-2.5">
         <AssetIcon type={card.assetType} />
-        <span className="flex-1 text-[#1E2938] text-xs font-bold tracking-tight leading-snug truncate">
+        <span className="flex-1 text-[#1E2938] text-sm font-semibold leading-snug truncate">
           {card.name}
         </span>
         <HealthWarningIcon flags={card.healthFlags} />

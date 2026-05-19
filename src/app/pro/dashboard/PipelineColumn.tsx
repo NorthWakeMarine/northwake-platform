@@ -30,7 +30,7 @@ export default function PipelineColumn({
   return (
     <div className="flex-1 min-w-48 flex flex-col gap-2 min-h-0">
       <div className={`flex items-center justify-between px-3 py-2 rounded-md bg-[#F1F2F5] neu-col ${ACCENT[stage]}`}>
-        <span className="text-[#1E2938]/60 text-[10px] font-bold tracking-[0.2em] uppercase">
+        <span className="text-[#1E2938]/60 text-[11px] font-semibold tracking-widest uppercase">
           {STAGE_LABELS[stage]}
         </span>
         <span className="bg-white/70 text-[#1E2938] text-[10px] font-bold rounded-sm px-2 py-0.5 min-w-[1.5rem] text-center tabular-nums">
