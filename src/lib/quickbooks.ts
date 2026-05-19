@@ -83,7 +83,7 @@ async function getValidTokens(): Promise<QbTokenData> {
 
 const QB_BASE = "https://quickbooks.api.intuit.com/v3";
 
-async function qbRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function qbRequest<T>(path: string, options: RequestInit = {}, attempt = 0): Promise<T> {
   const tokens = await getValidTokens();
   const sep = path.includes("?") ? "&" : "?";
   const url = `${QB_BASE}/company/${tokens.realm_id}${path}${sep}minorversion=70`;
@@ -96,6 +96,11 @@ async function qbRequest<T>(path: string, options: RequestInit = {}): Promise<T>
       ...(options.headers ?? {}),
     },
   });
+  if (res.status === 429 && attempt < 4) {
+    const delay = (attempt + 1) * 1500;
+    await new Promise((r) => setTimeout(r, delay));
+    return qbRequest<T>(path, options, attempt + 1);
+  }
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`QB API ${res.status}: ${body}`);

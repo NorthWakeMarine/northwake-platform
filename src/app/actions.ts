@@ -1558,7 +1558,7 @@ export async function cleanQbGhostNotes(): Promise<{ cleaned: number; errors: st
         rowErrors.push(`${c.name ?? c.qb_customer_id}: ${err instanceof Error ? err.message : String(err)}`);
         return 0;
       }
-    }, 5);
+    }, 2);
 
     revalidatePath("/pro/contacts");
     return { cleaned: results.reduce((a: number, b: number) => a + b, 0), errors: rowErrors };
