@@ -25,7 +25,7 @@ function mapAssetType(raw: string | null): PipelineCard["assetType"] {
 export async function getPipelineBoard(): Promise<PipelineCard[]> {
   const supabase = svc();
 
-  const [contactsRes, leadsRes, openLeadsRes] = await Promise.all([
+  const [contactsRes, leadsRes] = await Promise.all([
     supabase
       .from("contacts")
       .select("id, name, email, phone, status, pipeline_stage, last_contact_at, created_at, contact_type, health_flags, vessels ( id, name, asset_type, last_service_date, service_interval_days )")
@@ -37,13 +37,9 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
       .select("id, name, email, phone, vessel_type, created_at")
       .or("status.is.null,status.neq.converted")
       .order("created_at", { ascending: false }),
-    supabase
-      .from("leads")
-      .select("email")
-      .or("status.is.null,status.neq.converted"),
   ]);
 
-  const openLeadEmails = new Set((openLeadsRes.data ?? []).map((l: { email: string }) => l.email).filter(Boolean));
+  const openLeadEmails = new Set((leadsRes.data ?? []).map((l: { email: string | null }) => l.email).filter(Boolean));
 
   const now = Date.now();
   const contactCards: PipelineCard[] = (contactsRes.data ?? []).map((c) => {

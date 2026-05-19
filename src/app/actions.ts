@@ -562,25 +562,16 @@ export async function checkDuplicateContact(leadId: string): Promise<DuplicateCh
 
   if (!lead) return { found: false, error: "Lead not found." };
 
-  let contact = null;
+  const [byEmail, byPhone] = await Promise.all([
+    lead.email
+      ? supabase.from("contacts").select("id, name, email, phone").eq("email", lead.email).maybeSingle()
+      : Promise.resolve({ data: null }),
+    lead.phone
+      ? supabase.from("contacts").select("id, name, email, phone").eq("phone", normalizePhone(lead.phone) ?? lead.phone).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  if (lead.email) {
-    const { data } = await supabase
-      .from("contacts")
-      .select("id, name, email, phone")
-      .eq("email", lead.email)
-      .maybeSingle();
-    contact = data;
-  }
-
-  if (!contact && lead.phone) {
-    const { data } = await supabase
-      .from("contacts")
-      .select("id, name, email, phone")
-      .eq("phone", normalizePhone(lead.phone) ?? lead.phone)
-      .maybeSingle();
-    contact = data;
-  }
+  const contact = byEmail.data ?? byPhone.data;
 
   return contact ? { found: true, contact } : { found: false };
 }
@@ -1701,9 +1692,25 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
 
   const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
 
-  let flagged = 0;
+  // Batch-fetch all recent timeline events for all contacts in one query
+  const contactIds = contacts.map((c) => c.id);
+  const { data: allRecentEvents } = await supabase
+    .from("timeline_events")
+    .select("id, contact_id, metadata")
+    .in("contact_id", contactIds)
+    .in("event_type", ["call", "sms"])
+    .gte("created_at", fourHoursAgo)
+    .order("created_at", { ascending: false });
 
-  for (const contact of contacts) {
+  const eventsByContact = new Map<string, { id: string; contact_id: string; metadata: unknown }[]>();
+  for (const ev of allRecentEvents ?? []) {
+    const list = eventsByContact.get(ev.contact_id) ?? [];
+    list.push(ev);
+    eventsByContact.set(ev.contact_id, list);
+  }
+
+  // Process all contacts concurrently instead of sequentially
+  const results = await Promise.all(contacts.map(async (contact) => {
     const flags: IntegrityFlag[] = [];
 
     if (!contact.qb_customer_id) {
@@ -1719,17 +1726,8 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
       flags.push({ type: "incomplete_profile", label: "Vessel Missing" });
     }
 
-    // Check for unreturned inbound communication in the last 4 hours
-    const { data: recentEvents } = await supabase
-      .from("timeline_events")
-      .select("id, metadata")
-      .eq("contact_id", contact.id)
-      .in("event_type", ["call", "sms"])
-      .gte("created_at", fourHoursAgo)
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    if (recentEvents && recentEvents.length > 0) {
+    const recentEvents = eventsByContact.get(contact.id) ?? [];
+    if (recentEvents.length > 0) {
       const hasUnrepliedInbound = recentEvents.some(
         (ev) => (ev.metadata as Record<string, unknown> | null)?.direction === "inbound"
       );
@@ -1753,8 +1751,10 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
       })
       .eq("id", contact.id);
 
-    if (hadFlags) flagged++;
-  }
+    return hadFlags;
+  }));
+
+  const flagged = results.filter(Boolean).length;
 
   revalidatePath("/pro/dashboard");
   return { checked: contacts.length, flagged };
@@ -2146,39 +2146,48 @@ export async function syncDialpadContacts(): Promise<{ synced: number; mismatche
     const { listDialpadContacts, dialpadContactPhones } = await import("@/lib/dialpad");
     const dpContacts = await listDialpadContacts();
 
-    let synced = 0;
     const mismatches: FieldMismatch[] = [];
 
+    // Build phone → dp contact map (first dp contact wins per phone)
+    const phoneMap = new Map<string, (typeof dpContacts)[number]>();
     for (const dp of dpContacts) {
       const phones = dialpadContactPhones(dp);
       for (const phone of phones) {
         const normalized = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
-        const { data: match } = await supabase
-          .from("contacts")
-          .select("id, name, email, phone")
-          .eq("phone", normalized)
-          .maybeSingle();
-        if (match) {
-          await supabase
-            .from("contacts")
-            .update({ dialpad_contact_id: dp.id })
-            .eq("id", match.id);
-          synced++;
-
-          // Compare all fields Dialpad has against CRM
-          const dpEmail = dp.emails?.[0];
-          if (dpEmail && dpEmail.toLowerCase() !== (match.email?.toLowerCase() ?? "")) {
-            mismatches.push({ contactId: match.id, contactName: match.name, field: "email", crmValue: match.email, sourceValue: dpEmail });
-          }
-          const dpName = dp.display_name;
-          if (dpName && dpName.toLowerCase() !== (match.name?.toLowerCase() ?? "")) {
-            mismatches.push({ contactId: match.id, contactName: match.name, field: "name", crmValue: match.name, sourceValue: dpName });
-          }
-          break;
-        }
+        if (!phoneMap.has(normalized)) phoneMap.set(normalized, dp);
       }
     }
-    return { synced, mismatches };
+
+    // Fetch all matching CRM contacts in one query instead of one per phone
+    const phoneList = Array.from(phoneMap.keys());
+    const { data: matches } = phoneList.length > 0
+      ? await supabase.from("contacts").select("id, name, email, phone").in("phone", phoneList)
+      : { data: [] as { id: string; name: string | null; email: string | null; phone: string | null }[] };
+
+    // Deduplicate by CRM contact ID, collect updates and mismatches
+    const processedIds = new Set<string>();
+    const updates: { id: string; dp_id: string }[] = [];
+    for (const match of matches ?? []) {
+      if (processedIds.has(match.id)) continue;
+      processedIds.add(match.id);
+      const dp = phoneMap.get(match.phone ?? "");
+      if (!dp) continue;
+      updates.push({ id: match.id, dp_id: dp.id });
+      const dpEmail = dp.emails?.[0];
+      if (dpEmail && dpEmail.toLowerCase() !== (match.email?.toLowerCase() ?? "")) {
+        mismatches.push({ contactId: match.id, contactName: match.name, field: "email", crmValue: match.email, sourceValue: dpEmail });
+      }
+      const dpName = dp.display_name;
+      if (dpName && dpName.toLowerCase() !== (match.name?.toLowerCase() ?? "")) {
+        mismatches.push({ contactId: match.id, contactName: match.name, field: "name", crmValue: match.name, sourceValue: dpName });
+      }
+    }
+
+    await Promise.all(
+      updates.map((u) => supabase.from("contacts").update({ dialpad_contact_id: u.dp_id }).eq("id", u.id))
+    );
+
+    return { synced: updates.length, mismatches };
   } catch (err) {
     return { synced: 0, mismatches: [], error: err instanceof Error ? err.message : "Dialpad sync failed." };
   }

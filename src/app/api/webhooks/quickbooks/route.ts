@@ -41,23 +41,28 @@ export async function POST(req: NextRequest) {
 
   const notifications = (payload.eventNotifications as { dataChangeEvent?: { entities?: QbEntity[] } }[] | undefined) ?? [];
 
-  for (const notification of notifications) {
-    const changed = notification.dataChangeEvent?.entities ?? [];
-    for (const entity of changed) {
-      if (entity.name === "Payment" && entity.operation === "Create") {
-        await handlePayment(entity.id);
-      } else if (entity.name === "Customer" && (entity.operation === "Create" || entity.operation === "Update")) {
-        await handleCustomer(entity.id);
-      } else if (
-        (entity.name === "Invoice" || entity.name === "SalesReceipt" || entity.name === "CreditMemo") &&
-        (entity.operation === "Create" || entity.operation === "Update")
-      ) {
-        await handleTransaction(entity.name as "Invoice" | "SalesReceipt" | "CreditMemo", entity.id);
-      }
-    }
-  }
+  // Return 200 immediately so QB does not retry on slow processing
+  const response = NextResponse.json({ ok: true });
 
-  return NextResponse.json({ ok: true });
+  Promise.all(
+    notifications.flatMap((notification) =>
+      (notification.dataChangeEvent?.entities ?? []).map((entity) => {
+        if (entity.name === "Payment" && entity.operation === "Create") {
+          return handlePayment(entity.id);
+        } else if (entity.name === "Customer" && (entity.operation === "Create" || entity.operation === "Update")) {
+          return handleCustomer(entity.id);
+        } else if (
+          (entity.name === "Invoice" || entity.name === "SalesReceipt" || entity.name === "CreditMemo") &&
+          (entity.operation === "Create" || entity.operation === "Update")
+        ) {
+          return handleTransaction(entity.name as "Invoice" | "SalesReceipt" | "CreditMemo", entity.id);
+        }
+        return Promise.resolve();
+      })
+    )
+  ).catch((err) => console.error("QB webhook async error:", err));
+
+  return response;
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -159,17 +164,20 @@ async function handleCustomer(qbCustomerId: string) {
       const existingKeys = new Set(
         (existing ?? []).map((v) => `${v.year ?? ""}|${v.make_model?.toLowerCase() ?? ""}`)
       );
-      for (const nv of noteVessels) {
+      const toInsert = noteVessels.filter((nv) => {
         const key = `${nv.year ?? ""}|${nv.makeModel?.toLowerCase() ?? ""}`;
-        if (!existingKeys.has(key)) {
-          await supabase.from("vessels").insert({
+        return !existingKeys.has(key);
+      });
+      if (toInsert.length > 0) {
+        await supabase.from("vessels").insert(
+          toInsert.map((nv) => ({
             owner_id: match.id,
             asset_type: "vessel",
             year: nv.year,
             make_model: nv.makeModel,
             length_ft: nv.lengthFt,
-          });
-        }
+          }))
+        );
       }
     }
   } catch (err) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { PipelineCard, PipelineStage } from "@/types/pipeline";
@@ -15,7 +16,7 @@ const ACCENT: Record<PipelineStage, string> = {
   done_invoiced:   "border-l-2 border-slate-300",
 };
 
-export default function PipelineColumn({
+const PipelineColumn = memo(function PipelineColumn({
   stage,
   cards,
   onRemoveCard,
@@ -60,4 +61,6 @@ export default function PipelineColumn({
       </SortableContext>
     </div>
   );
-}
+});
+
+export default PipelineColumn;
