@@ -75,6 +75,8 @@ export async function POST(req: NextRequest) {
     await handleMissedCall(obj);
   } else if (type === "message.received") {
     await handleInboundSms(obj);
+  } else if (type === "contact.created" || type === "contact.updated") {
+    await handleContactUpsert(obj);
   }
 
   return NextResponse.json({ ok: true });
@@ -144,6 +146,52 @@ async function handleMissedCall(obj: Record<string, unknown>) {
       event_body: voicemail ?? "Missed call from unknown number. No voicemail.",
       metadata: { direction: "inbound", openphone_call_id: obj.id },
     });
+  }
+}
+
+async function handleContactUpsert(obj: Record<string, unknown>) {
+  const supabase = svc();
+  try {
+    // OpenPhone contact fields can be top-level or nested under defaultFields
+    const fields = (obj.defaultFields as Record<string, unknown> | undefined) ?? obj;
+    const firstName = (fields.firstName ?? obj.firstName) as string | undefined;
+    const lastName = (fields.lastName ?? obj.lastName) as string | undefined;
+    const fullName = [firstName, lastName].filter(Boolean).join(" ").trim() || null;
+    const company = (fields.company ?? obj.company) as string | undefined;
+
+    type PhoneEntry = { value?: string | null };
+    const rawPhones = ((fields.phoneNumbers ?? obj.phoneNumbers) as PhoneEntry[] | undefined) ?? [];
+    const phones = rawPhones.map((p) => normalizePhone(p.value ?? null)).filter((p): p is string => !!p);
+
+    type EmailEntry = { value?: string | null };
+    const rawEmails = ((fields.emails ?? obj.emails) as EmailEntry[] | undefined) ?? [];
+    const emails = rawEmails.map((e) => e.value?.toLowerCase() ?? "").filter(Boolean);
+
+    // Try to find existing CRM contact by phone then email
+    let match: { id: string; name: string | null; phone: string | null; email: string | null; company_name: string | null } | null = null;
+
+    for (const phone of phones) {
+      const { data } = await supabase.from("contacts").select("id, name, phone, email, company_name").eq("phone", phone).maybeSingle();
+      if (data) { match = data; break; }
+    }
+    if (!match && emails.length > 0) {
+      const { data } = await supabase.from("contacts").select("id, name, phone, email, company_name").ilike("email", emails[0]).maybeSingle();
+      if (data) match = data;
+    }
+
+    if (!match) return;
+
+    const update: Record<string, unknown> = {};
+    if (fullName && !match.name) update.name = fullName;
+    if (phones[0] && !match.phone) update.phone = phones[0];
+    if (emails[0] && !match.email) update.email = emails[0];
+    if (company && !match.company_name) update.company_name = company;
+
+    if (Object.keys(update).length > 0) {
+      await supabase.from("contacts").update(update).eq("id", match.id);
+    }
+  } catch (err) {
+    console.error("OpenPhone contact webhook error:", err);
   }
 }
 
