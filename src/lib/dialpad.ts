@@ -82,7 +82,7 @@ async function getBearerToken(): Promise<string> {
 
 const DP_BASE = "https://dialpad.com/api/v2";
 
-async function dpRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function dpRequest<T>(path: string, options: RequestInit = {}, attempt = 0): Promise<T> {
   const token = await getBearerToken();
   const res = await fetch(`${DP_BASE}${path}`, {
     ...options,
@@ -93,6 +93,14 @@ async function dpRequest<T>(path: string, options: RequestInit = {}): Promise<T>
       ...(options.headers ?? {}),
     },
   });
+  if ((res.status === 429 || res.status === 400) && attempt < 4) {
+    const body = await res.text();
+    if (body.includes("rate_limit")) {
+      await new Promise((r) => setTimeout(r, (attempt + 1) * 2000));
+      return dpRequest<T>(path, options, attempt + 1);
+    }
+    throw new Error(`Dialpad API ${res.status}: ${body}`);
+  }
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`Dialpad API ${res.status}: ${body}`);

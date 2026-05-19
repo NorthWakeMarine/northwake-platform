@@ -2252,7 +2252,7 @@ export async function pushCrmToDialpad(): Promise<{ updated: number; created: nu
         }
       }
       return { updated: 0, created: 0 };
-    }, 10);
+    }, 3);
 
     const updated = counts.reduce((a, b) => a + b.updated, 0);
     const created = counts.reduce((a, b) => a + b.created, 0);
@@ -2463,7 +2463,7 @@ export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: 
         return { updated: 0, created: 1 };
       }
       return { updated: 0, created: 0 };
-    }, 10);
+    }, 3);
 
     const updated = counts.reduce((a, b) => a + b.updated, 0);
     const created = counts.reduce((a, b) => a + b.created, 0);

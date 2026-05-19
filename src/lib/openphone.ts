@@ -6,7 +6,7 @@ function getApiKey(): string {
   return key;
 }
 
-async function opRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function opRequest<T>(path: string, options: RequestInit = {}, attempt = 0): Promise<T> {
   const res = await fetch(`${OP_BASE}${path}`, {
     ...options,
     headers: {
@@ -16,6 +16,10 @@ async function opRequest<T>(path: string, options: RequestInit = {}): Promise<T>
       ...(options.headers ?? {}),
     },
   });
+  if (res.status === 429 && attempt < 4) {
+    await new Promise((r) => setTimeout(r, (attempt + 1) * 2000));
+    return opRequest<T>(path, options, attempt + 1);
+  }
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`OpenPhone API ${res.status}: ${body}`);
