@@ -1,14 +1,10 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { clientConfig } from "@/config/client";
 
-function getTransport() {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
-  if (!user || !pass) return null;
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: { user, pass },
-  });
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
 }
 
 export async function sendLeadNotification(lead: {
@@ -19,10 +15,9 @@ export async function sendLeadNotification(lead: {
   vesselType: string | null;
   message: string | null;
 }): Promise<void> {
-  const transport = getTransport();
-  if (!transport) return;
+  const resend = getResend();
+  if (!resend) return;
 
-  const to = process.env.GMAIL_USER!;
   const lines = [
     `Name: ${lead.name}`,
     lead.email ? `Email: ${lead.email}` : null,
@@ -30,12 +25,16 @@ export async function sendLeadNotification(lead: {
     lead.service ? `Service: ${lead.service}` : null,
     lead.vesselType ? `Vessel: ${lead.vesselType}` : null,
     lead.message ? `\nMessage:\n${lead.message}` : null,
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
-  await transport.sendMail({
-    from: `"${clientConfig.companyName} CRM" <${to}>`,
-    to,
+  const { error } = await resend.emails.send({
+    from: `${clientConfig.companyName} CRM <crm@northwakemarine.com>`,
+    to: "admin@northwakemarine.com",
     subject: `New Website Lead: ${lead.name}`,
     text: `New lead from the website form.\n\n${lines}\n\nView in CRM: ${clientConfig.crmUrl}/leads`,
   });
+
+  if (error) throw new Error(error.message);
 }

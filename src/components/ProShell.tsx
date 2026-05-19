@@ -130,7 +130,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="pro-shell flex min-h-screen bg-[#F1F2F5]">
 
       {/* ── Sidebar ── */}
       <aside className={`hidden md:flex ${collapsed ? "w-14" : "w-60"} shrink-0 flex-col bg-[#06061a] sticky top-0 h-screen transition-all duration-200 ${collapsed ? "overflow-visible" : "overflow-hidden"}`}>
@@ -149,7 +149,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
             </div>
             {!collapsed && (
               <div className="leading-none">
-                <p className="text-white text-[11px] font-bold tracking-wide">{clientConfig.companyShortName}</p>
+                <p className="text-white text-[11px] font-bold tracking-[0.15em]">{clientConfig.companyShortName}</p>
                 <p className="text-white/35 text-[9px] tracking-[0.3em] uppercase mt-0.5">Marine Pro</p>
               </div>
             )}
@@ -164,12 +164,12 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                className={`group/navitem relative flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-medium transition-colors duration-150 ${
+                className={`group/navitem relative flex items-center gap-3 px-3 py-2 rounded-sm text-xs font-medium transition-colors duration-150 ${
                   collapsed ? "justify-center" : ""
                 } ${
                   active
-                    ? "bg-[#000080] text-white"
-                    : "text-white/45 hover:text-white/80 hover:bg-white/[0.05]"
+                    ? "bg-[#000080]/90 text-white border-l-2 border-white/60 pl-[10px]"
+                    : "text-white/45 hover:text-white/80 hover:bg-white/[0.05] border-l-2 border-transparent pl-[10px]"
                 }`}
               >
                 <span className="shrink-0">{icon}</span>

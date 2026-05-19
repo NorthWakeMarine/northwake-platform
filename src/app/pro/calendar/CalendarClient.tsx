@@ -404,7 +404,7 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
       <div className="flex-1 flex flex-col min-h-0">
 
         {/* Header */}
-        <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             {/* Nav arrows */}
             <div className="flex items-center gap-1">
@@ -423,8 +423,8 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
             </div>
 
             <div>
-              <h1 className="text-slate-900 text-base font-bold tracking-tight">{fmtWeekRange(weekStart)}</h1>
-              <p className="text-slate-400 text-[10px] mt-0.5">Calendar</p>
+              <h1 className="text-[#1E2938] text-base font-bold tracking-tight">{fmtWeekRange(weekStart)}</h1>
+              <p className="text-[#1E2938]/45 text-[10px] mt-0.5">Calendar</p>
             </div>
 
             {!isCurrentWeek && (

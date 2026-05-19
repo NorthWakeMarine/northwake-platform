@@ -18,7 +18,7 @@ export default function VendorDescriptor({ contactId, initialNotes }: { contactI
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-sm px-6 py-4 flex flex-col gap-2">
+    <div className="bg-[#F1F2F5] neu-card rounded-md px-6 py-4 flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Vendor Description</p>
         {!editing ? (

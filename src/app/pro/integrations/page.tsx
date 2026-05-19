@@ -84,9 +84,9 @@ export default async function IntegrationsPage({
     <ProShell>
       <div className="flex-1 flex flex-col">
 
-        <div className="bg-white border-b border-slate-200 px-8 py-5">
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight">Integrations</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Manage connections to external services.</p>
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5">
+          <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Integrations</h1>
+          <p className="text-[#1E2938]/45 text-xs mt-0.5">Manage connections to external services.</p>
         </div>
 
         {(params.qb_connected || params.qb_error || params.dp_connected || params.dp_error) && (
@@ -119,14 +119,14 @@ export default async function IntegrationsPage({
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
             {/* Google Calendar */}
-            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+            <div className="bg-[#F1F2F5] neu-card rounded-md p-6 flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 bg-white/60 rounded-md flex items-center justify-center shrink-0">
                     <span className="text-slate-500 text-[10px] font-bold tracking-wider">GC</span>
                   </div>
                   <div>
-                    <h2 className="text-slate-800 text-sm font-semibold">Google Calendar</h2>
+                    <h2 className="text-[#1E2938] text-sm font-bold">Google Calendar</h2>
                     <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Appointment and scheduling sync</p>
                   </div>
                 </div>
@@ -139,14 +139,14 @@ export default async function IntegrationsPage({
             </div>
 
             {/* QuickBooks */}
-            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+            <div className="bg-[#F1F2F5] neu-card rounded-md p-6 flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 bg-white/60 rounded-md flex items-center justify-center shrink-0">
                     <span className="text-slate-500 text-[10px] font-bold tracking-wider">QB</span>
                   </div>
                   <div>
-                    <h2 className="text-slate-800 text-sm font-semibold">QuickBooks</h2>
+                    <h2 className="text-[#1E2938] text-sm font-bold">QuickBooks</h2>
                     <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Invoice sync and financial mirror</p>
                   </div>
                 </div>
@@ -179,14 +179,14 @@ export default async function IntegrationsPage({
             </div>
 
             {/* Dialpad */}
-            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+            <div className="bg-[#F1F2F5] neu-card rounded-md p-6 flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 bg-white/60 rounded-md flex items-center justify-center shrink-0">
                     <span className="text-slate-500 text-[10px] font-bold tracking-wider">DP</span>
                   </div>
                   <div>
-                    <h2 className="text-slate-800 text-sm font-semibold">Dialpad</h2>
+                    <h2 className="text-[#1E2938] text-sm font-bold">Dialpad</h2>
                     <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Call logging and lead capture</p>
                   </div>
                 </div>
@@ -248,14 +248,14 @@ export default async function IntegrationsPage({
             </div>
 
             {/* OpenPhone */}
-            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+            <div className="bg-[#F1F2F5] neu-card rounded-md p-6 flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 bg-white/60 rounded-md flex items-center justify-center shrink-0">
                     <span className="text-slate-500 text-[10px] font-bold tracking-wider">OP</span>
                   </div>
                   <div>
-                    <h2 className="text-slate-800 text-sm font-semibold">OpenPhone</h2>
+                    <h2 className="text-[#1E2938] text-sm font-bold">OpenPhone</h2>
                     <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Call and SMS logging</p>
                   </div>
                 </div>
@@ -282,14 +282,14 @@ export default async function IntegrationsPage({
             </div>
 
             {/* Google Analytics */}
-            <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+            <div className="bg-[#F1F2F5] neu-card rounded-md p-6 flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-sm flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 bg-white/60 rounded-md flex items-center justify-center shrink-0">
                     <span className="text-slate-500 text-[10px] font-bold tracking-wider">GA</span>
                   </div>
                   <div>
-                    <h2 className="text-slate-800 text-sm font-semibold">Google Analytics</h2>
+                    <h2 className="text-[#1E2938] text-sm font-bold">Google Analytics</h2>
                     <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">GA4 event tracking</p>
                   </div>
                 </div>

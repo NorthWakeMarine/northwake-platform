@@ -156,7 +156,7 @@ export default function LinkedContacts({
   const [showForm, setShowForm] = useState(false);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-4">
+    <div className="bg-[#F1F2F5] neu-card rounded-md p-5 flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h3 className="text-slate-800 text-sm font-semibold">Household</h3>
         {!showForm && (

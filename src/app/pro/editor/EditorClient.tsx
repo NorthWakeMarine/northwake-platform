@@ -19,7 +19,7 @@ function ContentRow({ item }: { item: ContentItem }) {
   );
 
   return (
-    <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3">
+    <div className="bg-[#F1F2F5] neu-card rounded-md p-5 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-slate-800 text-sm font-semibold">{item.description || item.key}</p>
@@ -71,9 +71,9 @@ export default function EditorPageClient({
     <ProShell>
       <div className="flex-1 flex flex-col">
 
-        <div className="bg-white border-b border-slate-200 px-8 py-5">
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight">Site Editor</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Edit live content and manage homepage images. Changes publish instantly.</p>
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5">
+          <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Site Editor</h1>
+          <p className="text-[#1E2938]/45 text-xs mt-0.5">Edit live content and manage homepage images. Changes publish instantly.</p>
         </div>
 
         <div className="px-8 py-8 flex flex-col gap-10">

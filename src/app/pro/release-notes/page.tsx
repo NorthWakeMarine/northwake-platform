@@ -60,9 +60,9 @@ export default function ReleaseNotesPage() {
     <ProShell>
       <div className="flex-1 flex flex-col">
 
-        <header className="bg-white border-b border-slate-200 px-8 py-5">
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight">Release Notes</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Platform updates, features, and fixes in reverse chronological order.</p>
+        <header className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5">
+          <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Release Notes</h1>
+          <p className="text-[#1E2938]/45 text-xs mt-0.5">Platform updates, features, and fixes in reverse chronological order.</p>
         </header>
 
         <main className="flex-1 overflow-y-auto px-8 py-8">
@@ -73,7 +73,7 @@ export default function ReleaseNotesPage() {
 
                 <h2
                   id={`month-${month.label.replace(/\s/g, "-")}`}
-                  className="text-[10px] tracking-[0.35em] uppercase font-semibold text-slate-400 mb-5 pb-2 border-b border-slate-100"
+                  className="text-[10px] tracking-[0.35em] uppercase font-semibold text-[#1E2938]/40 mb-5 pb-2 border-b border-[#dcdee3]"
                 >
                   {month.label}
                 </h2>
@@ -98,7 +98,7 @@ export default function ReleaseNotesPage() {
                         {entries.map((entry, i) => (
                           <article key={i}>
                             <div className="flex items-start gap-3 flex-wrap mb-1.5">
-                              <h3 className="text-slate-800 text-sm font-semibold leading-snug">
+                              <h3 className="text-[#1E2938] text-sm font-bold leading-snug">
                                 {entry.headline}
                               </h3>
                               <div className="flex flex-wrap gap-1.5">

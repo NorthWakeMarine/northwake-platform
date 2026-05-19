@@ -73,7 +73,7 @@ function SortableHeader({ label, field, currentSort, currentDir, baseParams }: {
 }) {
   if (!field) {
     return (
-      <th className="text-left text-slate-400 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
+      <th className="text-left text-[#1E2938]/50 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
         {label}
       </th>
     );
@@ -217,11 +217,11 @@ export default async function ContactsPage({
       <div className="flex-1 flex flex-col">
 
         {/* Header */}
-        <div className="bg-white border-b border-slate-200 px-8 pt-5 flex flex-col gap-4">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 pt-5 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <h1 className="text-slate-900 text-xl font-bold tracking-tight">Contacts</h1>
-              <p className="text-slate-400 text-xs mt-0.5">
+              <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Contacts</h1>
+              <p className="text-[#1E2938]/45 text-xs mt-0.5">
                 {term ? `Showing results for "${term}"` : isVendorTab ? "Vendors and service companies." : "Customers with status flags for missing waivers or incomplete info."}
               </p>
             </div>
@@ -295,12 +295,12 @@ export default async function ContactsPage({
             </div>
           )}
 
-          <div className="bg-white border border-slate-200 rounded-sm">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-slate-800 text-sm font-semibold">
+          <div className="bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#dcdee3] flex items-center justify-between">
+              <h2 className="text-[#1E2938] text-sm font-bold">
                 {term ? "Search Results" : isVendorTab ? "Vendors" : "Customers"}
               </h2>
-              <span className="text-slate-400 text-[11px]">
+              <span className="text-[#1E2938]/45 text-[11px] tabular-nums">
                 {contacts.length} {contacts.length === 1 ? "contact" : "contacts"}
               </span>
             </div>
@@ -318,7 +318,7 @@ export default async function ContactsPage({
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100">
+                    <tr className="border-b border-[#dcdee3]">
                       {(["Date", "Name", "Company", "Email", "Phone"] as const).map((h) => (
                         <SortableHeader
                           key={h}
@@ -333,7 +333,7 @@ export default async function ContactsPage({
                   </thead>
                   <tbody>
                     {contacts.map((c) => (
-                      <ClickableRow key={c.id} href={`/pro/contacts/${c.id}`} className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
+                      <ClickableRow key={c.id} href={`/pro/contacts/${c.id}`} className="border-b border-[#dcdee3]/50 hover:bg-white/60 transition-colors group">
                         <td className="py-3 px-4 first:pl-6 text-slate-400 whitespace-nowrap">{fmt(c.created_at)}</td>
                         <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{c.name || <span className="text-slate-300 italic">—</span>}</td>
                         <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{c.company_name || <span className="text-slate-300">—</span>}</td>
@@ -357,7 +357,7 @@ export default async function ContactsPage({
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100">
+                    <tr className="border-b border-[#dcdee3]">
                       {(["Date", "Name", "Email", "Phone", "Asset", "Status"] as const).map((h) => (
                         <SortableHeader
                           key={h}
@@ -372,7 +372,7 @@ export default async function ContactsPage({
                   </thead>
                   <tbody>
                     {contacts.map((c) => (
-                      <ClickableRow key={c.id} href={`/pro/contacts/${c.id}`} className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
+                      <ClickableRow key={c.id} href={`/pro/contacts/${c.id}`} className="border-b border-[#dcdee3]/50 hover:bg-white/60 transition-colors group">
                         <td className="py-3 px-4 first:pl-6 text-slate-400 whitespace-nowrap">{fmt(c.created_at)}</td>
                         <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{c.name || "—"}</td>
                         <td className="py-3 px-4 text-slate-500">

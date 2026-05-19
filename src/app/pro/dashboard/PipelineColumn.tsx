@@ -29,11 +29,11 @@ export default function PipelineColumn({
 
   return (
     <div className="flex-1 min-w-48 flex flex-col gap-2 min-h-0">
-      <div className={`flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 ${ACCENT[stage]}`}>
-        <span className="text-slate-500 text-[11px] font-semibold tracking-widest uppercase">
+      <div className={`flex items-center justify-between px-3 py-2 rounded-md bg-[#F1F2F5] neu-col ${ACCENT[stage]}`}>
+        <span className="text-[#1E2938]/60 text-[10px] font-bold tracking-[0.2em] uppercase">
           {STAGE_LABELS[stage]}
         </span>
-        <span className="bg-slate-200 text-slate-500 text-xs font-semibold rounded-full px-2 py-0.5 min-w-[1.5rem] text-center">
+        <span className="bg-white/70 text-[#1E2938] text-[10px] font-bold rounded-sm px-2 py-0.5 min-w-[1.5rem] text-center tabular-nums">
           {cards.length}
         </span>
       </div>
@@ -41,8 +41,8 @@ export default function PipelineColumn({
       <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
         <div
           ref={setNodeRef}
-          className={`flex flex-col gap-2 flex-1 rounded-xl p-3 transition-colors ${
-            isOver ? "bg-slate-100/80 ring-1 ring-slate-300 ring-dashed" : "bg-slate-50/60"
+          className={`flex flex-col gap-2 flex-1 rounded-md p-3 transition-all ${
+            isOver ? "bg-[#eceef1] neu-inset" : "bg-[#eceef1]"
           }`}
         >
           {cards.length === 0 ? (

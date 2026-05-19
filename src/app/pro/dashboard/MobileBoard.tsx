@@ -233,7 +233,7 @@ export default function MobileBoard({ columns, onMoveCard, onRemoveCard, classNa
 
   return (
     <div className={className}>
-      <div className="bg-white border-b border-slate-200 overflow-x-auto shrink-0">
+      <div className="bg-[#eceef1] border-b border-[#dcdee3] overflow-x-auto shrink-0">
         <div className="flex min-w-max">
           {STAGES.map((stage) => {
             const isActive = stage === activeStage;

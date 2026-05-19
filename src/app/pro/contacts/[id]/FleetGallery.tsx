@@ -595,7 +595,7 @@ export default function FleetGallery({
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-sm">
+    <div className="bg-[#F1F2F5] neu-card rounded-md">
       <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <div>
           <h3 className="text-slate-800 text-sm font-semibold">Fleet</h3>

@@ -50,7 +50,7 @@ function SortableHeader({ label, field, currentSort, currentDir }: {
 }) {
   if (!field) {
     return (
-      <th className="text-left text-slate-400 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
+      <th className="text-left text-[#1E2938]/50 text-[10px] tracking-widest uppercase font-medium py-3 px-4 first:pl-6 last:pr-6 whitespace-nowrap">
         {label}
       </th>
     );
@@ -98,19 +98,19 @@ export default async function LeadsPage({
     <ProShell>
       <div className="flex-1 flex flex-col">
 
-        <div className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5 flex items-center justify-between">
           <div>
-            <h1 className="text-slate-900 text-xl font-bold tracking-tight">Leads</h1>
-            <p className="text-slate-400 text-xs mt-0.5">Every lead received across all sources.</p>
+            <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Leads</h1>
+            <p className="text-[#1E2938]/45 text-xs mt-0.5">Every lead received across all sources.</p>
           </div>
-          <div className="flex items-center gap-4 text-xs text-slate-500">
-            <span><strong className="text-slate-800">{total}</strong> total</span>
-            <span><strong className="text-slate-800">{thisMonth}</strong> this month</span>
+          <div className="flex items-center gap-4 text-xs text-[#1E2938]/50">
+            <span><strong className="text-[#1E2938] tabular-nums">{total}</strong> total</span>
+            <span><strong className="text-[#1E2938] tabular-nums">{thisMonth}</strong> this month</span>
           </div>
         </div>
 
         <div className="px-8 py-6">
-          <div className="bg-white border border-slate-200 rounded-sm">
+          <div className="bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
 
             {error ? (
               <p className="text-red-500 text-xs px-6 py-6">Failed to load leads: {error.message}</p>
@@ -133,7 +133,7 @@ export default async function LeadsPage({
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100">
+                    <tr className="border-b border-[#dcdee3]">
                       {(["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source"] as const).map((h) => (
                         <SortableHeader
                           key={h}
@@ -149,7 +149,7 @@ export default async function LeadsPage({
                     {(leads as Lead[]).map((lead) => {
                       const src = sourceConfig[lead.source ?? "website"] ?? sourceConfig.website;
                       return (
-                        <ClickableRow key={lead.id} href={`/pro/leads/${lead.id}`} className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
+                        <ClickableRow key={lead.id} href={`/pro/leads/${lead.id}`} className="border-b border-[#dcdee3]/50 hover:bg-white/60 transition-colors group">
                           <td className="py-3 px-4 first:pl-6 text-slate-400 whitespace-nowrap">{fmt(lead.created_at)}</td>
                           <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{lead.name || <span className="text-slate-300">—</span>}</td>
                           <td className="py-3 px-4 text-slate-500">

@@ -127,7 +127,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
   const nothingConnected = !qbConnected && !dialpadConnected;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-sm p-6 flex flex-col gap-4">
+    <div className="bg-[#F1F2F5] neu-card rounded-md p-6 flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-slate-800 text-sm font-semibold">Data Sync</h2>

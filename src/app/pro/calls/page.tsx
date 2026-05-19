@@ -76,23 +76,23 @@ export default async function CallsPage() {
     <ProShell>
       <div className="flex-1 flex flex-col">
 
-        <div className="bg-white border-b border-slate-200 px-8 py-5">
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight">Calls</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Inbound and outbound activity from Dialpad.</p>
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5">
+          <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Calls</h1>
+          <p className="text-[#1E2938]/45 text-xs mt-0.5">Inbound and outbound activity from Dialpad.</p>
         </div>
 
-        <div className="bg-white border-b border-slate-100 px-8 py-3 flex items-center gap-6">
+        <div className="bg-[#F1F2F5] border-b border-[#dcdee3] px-8 py-2.5 flex items-center gap-5">
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-800 text-sm font-bold">{totalCalls}</span>
-            <span className="text-slate-400 text-xs">calls</span>
+            <span className="text-[#1E2938] text-sm font-bold tabular-nums">{totalCalls}</span>
+            <span className="text-[#1E2938]/45 text-xs">calls</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-800 text-sm font-bold">{totalSms}</span>
-            <span className="text-slate-400 text-xs">sms</span>
+            <span className="text-[#1E2938] text-sm font-bold tabular-nums">{totalSms}</span>
+            <span className="text-[#1E2938]/45 text-xs">sms</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-800 text-sm font-bold">{inbound}</span>
-            <span className="text-slate-400 text-xs">inbound</span>
+            <span className="text-[#1E2938] text-sm font-bold tabular-nums">{inbound}</span>
+            <span className="text-[#1E2938]/45 text-xs">inbound</span>
           </div>
         </div>
 
@@ -100,22 +100,22 @@ export default async function CallsPage() {
           {calls.length === 0 ? (
             <p className="text-slate-400 text-sm">No calls logged yet. Connect Dialpad and register the webhook to start capturing activity.</p>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
-              <div className="grid grid-cols-[auto_1fr_auto_auto_auto] text-[10px] tracking-widest uppercase font-semibold text-slate-400 px-4 py-2.5 border-b border-slate-100 gap-4">
+            <div className="bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
+              <div className="grid grid-cols-[auto_1fr_auto_auto_auto] text-[10px] tracking-widest uppercase font-semibold text-[#1E2938]/50 px-4 py-2.5 border-b border-[#dcdee3] gap-4">
                 <span>Type</span>
                 <span>Contact</span>
                 <span>Direction</span>
                 <span>Duration</span>
                 <span>Date</span>
               </div>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-[#dcdee3]/60">
                 {calls.map((c) => {
                   const dir = c.metadata?.direction ?? "inbound";
                   const duration = c.metadata?.duration;
                   const phone = c.metadata?.caller_number ?? c.metadata?.from_number ?? c.contact_phone;
 
                   return (
-                    <div key={c.id} className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-3 gap-4 hover:bg-slate-50 transition-colors">
+                    <div key={c.id} className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-3 gap-4 hover:bg-white/60 transition-colors">
                       <div>
                         {c.event_type === "sms" ? (
                           <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-blue-50 text-blue-600 border border-blue-100">SMS</span>

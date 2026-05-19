@@ -132,7 +132,7 @@ export default async function LeadDetailPage({
       <div className="flex-1 flex flex-col">
 
         {/* Top bar */}
-        <div className="bg-white border-b border-slate-200 px-8 py-5 flex items-center gap-4 flex-wrap">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5 flex items-center gap-4 flex-wrap">
           <Link
             href="/pro/dashboard"
             className="text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs shrink-0"
@@ -143,7 +143,7 @@ export default async function LeadDetailPage({
             Dashboard
           </Link>
           <span className="text-slate-200 text-xs">/</span>
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight flex-1 truncate">
+          <h1 className="text-[#1E2938] text-xl font-bold tracking-tight flex-1 truncate">
             {lead.name || lead.email}
           </h1>
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
@@ -200,7 +200,7 @@ export default async function LeadDetailPage({
             <div className="lg:col-span-2 flex flex-col gap-5">
 
               {/* Contact info */}
-              <div className="bg-white border border-slate-200 rounded-sm p-6">
+              <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
                 <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Contact Information</p>
                 <dl className="grid sm:grid-cols-2 gap-4">
                   <InfoRow label="Full Name"    value={lead.name} />
@@ -211,7 +211,7 @@ export default async function LeadDetailPage({
               </div>
 
               {/* Vessel info */}
-              <div className="bg-white border border-slate-200 rounded-sm p-6">
+              <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
                 <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Vessel Information</p>
                 <dl className="grid sm:grid-cols-2 gap-4">
                   <InfoRow label="Vessel Type"         value={lead.vessel_type} />
@@ -222,7 +222,7 @@ export default async function LeadDetailPage({
               </div>
 
               {/* Service request */}
-              <div className="bg-white border border-slate-200 rounded-sm p-6">
+              <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
                 <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Service Request</p>
                 <dl className="flex flex-col gap-4">
                   <InfoRow label="Service Requested" value={lead.service} />
@@ -249,7 +249,7 @@ export default async function LeadDetailPage({
             <div className="flex flex-col gap-5">
 
               {/* Source details */}
-              <div className="bg-white border border-slate-200 rounded-sm p-5">
+              <div className="bg-[#F1F2F5] neu-card rounded-md p-5">
                 <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-3">Lead Source</p>
                 <span className={`text-[9px] tracking-widest uppercase px-2.5 py-1 rounded-sm font-semibold ${src.cls}`}>
                   {src.label}
@@ -263,12 +263,12 @@ export default async function LeadDetailPage({
 
               {/* Future: Dialpad data */}
               {lead.source === "dialpad" ? (
-                <div className="bg-white border border-slate-200 rounded-sm p-5">
+                <div className="bg-[#F1F2F5] neu-card rounded-md p-5">
                   <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-3">Call Details</p>
                   <p className="text-slate-400 text-xs leading-relaxed">Call data will appear here once Dialpad is connected.</p>
                 </div>
               ) : (
-                <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-2">
+                <div className="bg-[#F1F2F5] neu-card rounded-md p-5 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Call Data</p>
                     <span className="text-[9px] tracking-widest uppercase text-slate-300 border border-slate-200 px-2 py-0.5 rounded-sm">Dialpad</span>
@@ -280,7 +280,7 @@ export default async function LeadDetailPage({
 
               {/* Timeline if contact matched */}
               {contact && (
-                <div className="bg-white border border-slate-200 rounded-sm flex flex-col">
+                <div className="bg-[#F1F2F5] neu-card rounded-md flex flex-col">
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                     <p className="text-slate-800 text-sm font-semibold">Activity</p>
                     <span className="text-slate-400 text-[11px]">{timeline.length} events</span>

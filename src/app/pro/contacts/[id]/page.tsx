@@ -66,7 +66,7 @@ function HealthCheck({ contact, assetCount }: { contact: Contact; assetCount: nu
   const allOk = checks.every((c) => c.ok);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-sm p-5 flex flex-col gap-3">
+    <div className="bg-[#F1F2F5] neu-card rounded-md p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h3 className="text-slate-800 text-sm font-semibold">Health Check</h3>
         {allOk ? (
@@ -158,7 +158,7 @@ export default async function ContactProfilePage({
       <div className="flex-1 flex flex-col">
 
         {/* Top bar */}
-        <div className="bg-white border-b border-slate-200 px-8 py-5 flex items-center gap-4">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5 flex items-center gap-4">
           <Link
             href="/pro/contacts"
             className="text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs shrink-0"
@@ -169,7 +169,7 @@ export default async function ContactProfilePage({
             Contacts
           </Link>
           <span className="text-slate-200 text-xs">/</span>
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight truncate flex-1">
+          <h1 className="text-[#1E2938] text-xl font-bold tracking-tight truncate flex-1">
             {contact.name || contact.email || "Unknown Contact"}
           </h1>
           <div className="flex items-center gap-2 shrink-0">
@@ -268,7 +268,7 @@ export default async function ContactProfilePage({
 
               {/* Notes */}
 
-              <div className="bg-white border border-slate-200 rounded-sm flex flex-col">
+              <div className="bg-[#F1F2F5] neu-card rounded-md flex flex-col">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="text-slate-800 text-sm font-semibold">Notes</h3>
                   <span className="text-slate-400 text-[11px]">
@@ -284,7 +284,7 @@ export default async function ContactProfilePage({
               </div>
 
               {/* Activity Timeline (calls, invoices, etc.) */}
-              <div className="bg-white border border-slate-200 rounded-sm flex flex-col">
+              <div className="bg-[#F1F2F5] neu-card rounded-md flex flex-col">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="text-slate-800 text-sm font-semibold">Activity Timeline</h3>
                   <span className="text-slate-400 text-[11px]">

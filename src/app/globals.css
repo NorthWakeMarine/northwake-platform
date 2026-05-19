@@ -214,3 +214,19 @@ body {
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
+
+/* Pro portal — Space Mono font scope */
+.pro-shell {
+  font-family: var(--font-space-mono), "Courier New", monospace;
+}
+
+/* Neumorphic shadow utilities (surface: #F1F2F5) */
+.neu-card {
+  box-shadow: 4px 4px 10px rgba(174, 174, 192, 0.35), -4px -4px 10px rgba(255, 255, 255, 0.85);
+}
+.neu-col {
+  box-shadow: 2px 2px 6px rgba(174, 174, 192, 0.25), -2px -2px 6px rgba(255, 255, 255, 0.7);
+}
+.neu-inset {
+  box-shadow: inset 3px 3px 7px rgba(174, 174, 192, 0.3), inset -3px -3px 7px rgba(255, 255, 255, 0.8);
+}

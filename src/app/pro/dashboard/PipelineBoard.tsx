@@ -142,13 +142,13 @@ export default function PipelineBoard({ initialCards, stats }: { initialCards: P
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+      <div className="bg-[#eceef1] border-b border-[#dcdee3] px-6 py-4 flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-slate-900 text-xl font-bold tracking-tight">
+          <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">
             {userName ? `Welcome back, ${userName}` : "Welcome back"}
           </h1>
-          <p className="text-slate-400 text-xs mt-0.5 hidden md:block">Drag leads through your service workflow.</p>
-          <p className="text-slate-400 text-xs mt-0.5 md:hidden">Tap a stage to view and move cards.</p>
+          <p className="text-[#1E2938]/40 text-xs mt-0.5 hidden md:block">Drag leads through your service workflow.</p>
+          <p className="text-[#1E2938]/40 text-xs mt-0.5 md:hidden">Tap a stage to view and move cards.</p>
         </div>
       </div>
 
@@ -169,7 +169,7 @@ export default function PipelineBoard({ initialCards, stats }: { initialCards: P
           onDragEnd={handleDragEnd}
         >
           <div className="flex-1 overflow-auto">
-            <div className="flex gap-4 px-6 py-5 min-h-full items-stretch">
+            <div className="flex gap-3 px-6 py-5 min-h-full items-stretch">
               {STAGES.map((stage) => (
                 <PipelineColumn
                   key={stage}
@@ -183,7 +183,7 @@ export default function PipelineBoard({ initialCards, stats }: { initialCards: P
 
           <DragOverlay>
             {activeCard ? (
-              <div className="shadow-xl ring-1 ring-[#000080]/20 rounded-xl rotate-1 opacity-95">
+              <div className="shadow-xl ring-1 ring-[#000080]/20 rounded-md rotate-1 opacity-95">
                 <PipelineCardComponent card={activeCard} />
               </div>
             ) : null}
