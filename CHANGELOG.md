@@ -2,6 +2,14 @@
 
 ## May 2026
 
+### May 20 | Create Contact, hero background, Kanban cleanup | CRM,Landing,Pro
+
+- Added Create Contact button to the contacts page header: opens a modal with Name, Email, Phone, Address, Type (Customer/Vendor), and Waiver fields; Company field only shown for vendors; redirects to new contact detail page on save
+- `createContact` server action added to actions.ts; sets source: "manual", revalidates /pro/contacts
+- Contacts page SearchBar is now full-width on mobile; New Contact button stretches full-width on mobile and the modal is a bottom sheet on small screens
+- Hero background updated: navy dot grid (hero-grid) with radial fade mask + two-layer animated SVG sine wave at the bottom edge scrolling at different speeds
+- Removed "Needs Attention" column from Kanban board; PipelineStage type and STAGE_LABELS entry kept for DB compatibility; health warning triangle on cards is unaffected (flag-driven)
+
 ### May 20 | Dialpad removed, full migration to Quo | CRM,Integrations
 
 - Removed all Dialpad API integration: auth routes, webhook handler, probe endpoint, CSV export, and 7 server actions (syncDialpadCallsForContact, syncDialpadContacts, importDialpadContacts, registerDialpadWebhook, pushCrmToDialpad, promoteDialpadLocalToCompany, createContactFromDialpad)
