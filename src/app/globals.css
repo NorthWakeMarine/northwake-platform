@@ -149,39 +149,39 @@ body {
   will-change: transform;
 }
 .hero-mesh-orb-a {
-  width: 65%;
-  height: 65%;
-  top: -15%;
-  left: -10%;
-  background: radial-gradient(circle, rgba(0, 0, 128, 0.07) 0%, rgba(0, 0, 180, 0.03) 50%, transparent 70%);
-  filter: blur(72px);
+  width: 70%;
+  height: 70%;
+  top: -20%;
+  left: -15%;
+  background: radial-gradient(circle, rgba(0, 0, 128, 0.22) 0%, rgba(0, 0, 180, 0.10) 45%, transparent 70%);
+  filter: blur(80px);
   animation: hero-drift-a 20s ease-in-out infinite;
 }
 .hero-mesh-orb-b {
-  width: 58%;
-  height: 58%;
-  bottom: -10%;
-  right: -8%;
-  background: radial-gradient(circle, rgba(0, 0, 160, 0.06) 0%, rgba(80, 100, 200, 0.03) 55%, transparent 70%);
-  filter: blur(88px);
+  width: 60%;
+  height: 60%;
+  bottom: -12%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(0, 0, 160, 0.18) 0%, rgba(80, 100, 200, 0.09) 50%, transparent 70%);
+  filter: blur(90px);
   animation: hero-drift-b 25s ease-in-out infinite;
 }
 .hero-mesh-orb-c {
-  width: 42%;
-  height: 42%;
-  top: 35%;
-  left: 38%;
-  background: radial-gradient(circle, rgba(60, 80, 200, 0.05) 0%, transparent 70%);
-  filter: blur(60px);
+  width: 45%;
+  height: 45%;
+  top: 30%;
+  left: 35%;
+  background: radial-gradient(circle, rgba(60, 80, 200, 0.14) 0%, transparent 65%);
+  filter: blur(64px);
   animation: hero-drift-c 17s ease-in-out infinite;
 }
 .hero-mesh-orb-d {
-  width: 38%;
-  height: 38%;
-  top: 5%;
-  right: 10%;
-  background: radial-gradient(circle, rgba(0, 0, 100, 0.04) 0%, rgba(100, 120, 210, 0.02) 60%, transparent 70%);
-  filter: blur(52px);
+  width: 40%;
+  height: 40%;
+  top: 0%;
+  right: 8%;
+  background: radial-gradient(circle, rgba(0, 0, 120, 0.13) 0%, rgba(100, 120, 210, 0.06) 55%, transparent 70%);
+  filter: blur(56px);
   animation: hero-drift-d 22s ease-in-out infinite;
 }
 
