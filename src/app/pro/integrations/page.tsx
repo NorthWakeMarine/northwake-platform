@@ -183,19 +183,18 @@ export default async function IntegrationsPage({
               <p className="text-slate-500 text-sm leading-relaxed flex-1">
                 Log inbound and outbound calls and texts against contact records. Missed calls from unknown numbers auto-create a new lead.
               </p>
-              {quo.connected ? (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    API key connected
-                  </div>
-                  <RegisterQuoWebhookButton />
+              {quo.connected && (
+                <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  API key connected
                 </div>
-              ) : (
+              )}
+              {!quo.connected && (
                 <p className="text-slate-400 text-[10px] leading-relaxed">
                   Add QUO_API_KEY to Vercel environment variables to connect.
                 </p>
               )}
+              <RegisterQuoWebhookButton />
             </div>
 
             {/* Google Analytics */}
