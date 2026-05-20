@@ -17,7 +17,7 @@ export default function RegisterQuoWebhookButton() {
   return (
     <button
       onClick={() => setDone(true)}
-      className="w-full bg-[#000080] text-white text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-semibold hover:bg-blue-900 transition-colors"
+      className="w-full border border-slate-200 text-slate-400 text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-medium hover:border-slate-300 hover:text-slate-500 transition-colors"
     >
       Register Webhook
     </button>
