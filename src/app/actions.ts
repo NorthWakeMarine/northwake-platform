@@ -2040,48 +2040,6 @@ export async function importQuoContacts(): Promise<{
   }
 }
 
-export async function registerQuoWebhook(): Promise<{ ok: boolean; webhookId?: string; error?: string }> {
-  const apiKey = process.env.QUO_API_KEY;
-  if (!apiKey) return { ok: false, error: "QUO_API_KEY not set." };
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!siteUrl) return { ok: false, error: "NEXT_PUBLIC_SITE_URL not set." };
-
-  const webhookUrl = `${siteUrl}/api/webhooks/openphone`;
-  const events = ["call.completed", "call.missed", "message.received", "contact.created", "contact.updated"];
-
-  try {
-    // List existing webhooks and remove stale ones pointing at this URL
-    const listRes = await fetch("https://api.openphone.com/v1/webhooks", {
-      headers: { Authorization: apiKey, Accept: "application/json" },
-    });
-    if (listRes.ok) {
-      const { data: existing } = await listRes.json() as { data?: { id: string; url: string }[] };
-      for (const wh of existing ?? []) {
-        if (wh.url === webhookUrl) {
-          await fetch(`https://api.openphone.com/v1/webhooks/${wh.id}`, {
-            method: "DELETE",
-            headers: { Authorization: apiKey },
-          });
-        }
-      }
-    }
-
-    // Register fresh
-    const res = await fetch("https://api.openphone.com/v1/webhooks", {
-      method: "POST",
-      headers: { Authorization: apiKey, "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ url: webhookUrl, events }),
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      return { ok: false, error: `Quo API ${res.status}: ${body}` };
-    }
-    const { data } = await res.json() as { data?: { id: string } };
-    return { ok: true, webhookId: data?.id };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Registration failed." };
-  }
-}
 
 export async function createContactFromQuo(opId: string, name: string, phone: string | null, email: string | null, company?: string | null): Promise<{ ok: boolean; error?: string }> {
   const supabase = await svc();
