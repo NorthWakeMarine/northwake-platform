@@ -30,23 +30,24 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
       // Purge ghost vessels first so syncVesselsToQbNotes reads a clean DB
       const ghostPurge = await purgeGhostVessels();
 
-      const [qb, qbInvoices, qbPush, qbNotes, quo, quoPush, integrity] = await Promise.all([
+      // QB sync + integrity check run in parallel
+      // Quo contact sync removed — handled in real-time by Quo webhooks
+      // Integrity check fires async so it doesn't hold up the response
+      const [qb, qbInvoices, qbPush, qbNotes] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
         qbConnected ? importQbInvoices() : Promise.resolve(undefined),
         qbConnected ? pushCrmToQuickBooks() : Promise.resolve(undefined),
         qbConnected ? syncVesselsToQbNotes() : Promise.resolve(undefined),
-        quoConnected ? importQuoContacts() : Promise.resolve(undefined),
-        quoConnected ? pushCrmToQuo() : Promise.resolve(undefined),
-        runIntegrityCheck(),
       ]);
+
+      // Fire integrity check without awaiting it — runs in background
+      runIntegrityCheck().catch(() => {});
+
       setResult({
         qb: qb ?? undefined,
         qbInvoices: qbInvoices ?? undefined,
         qbPush: qbPush ?? undefined,
         qbNotes: qbNotes ?? undefined,
-        quo: quo ?? undefined,
-        quoPush: quoPush ?? undefined,
-        integrity,
         ghostPurge,
       });
     });

@@ -1478,11 +1478,13 @@ export async function pushCrmToQuickBooks(): Promise<{ upserted: number; skipped
     const tokens = await getQbTokens();
     if (!tokens) return { upserted: 0, skipped: [], error: "QuickBooks not connected." };
 
+    // Only push contacts not yet in QB — linked contacts are kept in sync by QB webhooks
     const { data: contacts } = await supabase
       .from("contacts")
       .select("id, name, company_name, email, phone")
       .eq("contact_type", "customer")
-      .not("name", "is", null);
+      .not("name", "is", null)
+      .is("qb_customer_id", null);
 
     let upserted = 0;
     const skipped: string[] = [];
