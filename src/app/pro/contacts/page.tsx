@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import MergeButton from "./MergeButton";
 import SearchBar from "./SearchBar";
+import CreateContactModal from "./CreateContactModal";
 import ClickableRow from "@/components/ClickableRow";
 
 type Contact = {
@@ -225,7 +226,10 @@ export default async function ContactsPage({
                 {term ? `Showing results for "${term}"` : isVendorTab ? "Vendors and service companies." : "Customers with status flags for missing waivers or incomplete info."}
               </p>
             </div>
-            <SearchBar initialQ={term} />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <SearchBar initialQ={term} />
+              <CreateContactModal defaultType={isVendorTab ? "vendor" : "customer"} />
+            </div>
           </div>
 
           {/* Tab toggle */}

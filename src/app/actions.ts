@@ -833,6 +833,35 @@ export async function updateContactField(
   return { success: true };
 }
 
+export async function createContact(fields: {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  company_name?: string;
+  contact_type?: string;
+  waiver_signed?: boolean;
+}): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const supabase = await svc();
+  const { data, error } = await supabase
+    .from("contacts")
+    .insert({
+      name:          fields.name?.trim()         || null,
+      company_name:  fields.company_name?.trim() || null,
+      email:         fields.email?.trim()        || null,
+      phone:         fields.phone?.trim()        || null,
+      address:       fields.address?.trim()      || null,
+      contact_type:  fields.contact_type         || "customer",
+      waiver_signed: fields.waiver_signed        ?? false,
+      source:        "manual",
+    })
+    .select("id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/pro/contacts");
+  return { ok: true, id: data.id };
+}
+
 export async function updateContactFields(
   contactId: string,
   fields: { name?: string | null; email?: string | null; phone?: string | null; address?: string | null; waiver_signed?: boolean; contact_type?: string | null; company_name?: string | null; notes?: string | null }

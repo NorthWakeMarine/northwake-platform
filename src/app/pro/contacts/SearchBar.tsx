@@ -18,7 +18,7 @@ export default function SearchBar({ initialQ = "" }: { initialQ?: string }) {
   }
 
   return (
-    <div className="relative flex items-center">
+    <div className="relative flex items-center w-full sm:w-auto">
       <svg
         className="absolute left-3 text-slate-300 pointer-events-none"
         width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -31,7 +31,7 @@ export default function SearchBar({ initialQ = "" }: { initialQ?: string }) {
         defaultValue={initialQ}
         onChange={(e) => push(e.target.value)}
         placeholder="Search contacts, vessels, household..."
-        className={`pl-8 pr-8 py-2 text-xs border border-slate-200 rounded-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:border-slate-400 w-72 transition-opacity ${isPending ? "opacity-50" : ""}`}
+        className={`pl-8 pr-8 py-2 text-xs border border-slate-200 rounded-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:border-slate-400 w-full sm:w-72 transition-opacity ${isPending ? "opacity-50" : ""}`}
       />
       {initialQ && (
         <button
