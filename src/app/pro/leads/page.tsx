@@ -99,15 +99,15 @@ export default async function LeadsPage({
     <ProShell>
       <div className="flex-1 flex flex-col">
 
-        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-4 md:px-8 py-5 flex items-center justify-between">
-          <div>
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-4 md:px-8 py-5">
+          <div className="flex items-center justify-between gap-4">
             <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Leads</h1>
-            <p className="text-[#1E2938]/50 text-sm mt-0.5">Every lead received across all sources.</p>
+            <div className="flex items-center gap-4 text-xs text-[#1E2938]/50 shrink-0">
+              <span><strong className="text-[#1E2938] tabular-nums">{total}</strong> total</span>
+              <span><strong className="text-[#1E2938] tabular-nums">{thisMonth}</strong> this month</span>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-xs text-[#1E2938]/50">
-            <span><strong className="text-[#1E2938] tabular-nums">{total}</strong> total</span>
-            <span><strong className="text-[#1E2938] tabular-nums">{thisMonth}</strong> this month</span>
-          </div>
+          <p className="text-[#1E2938]/50 text-sm mt-1">Every lead received across all sources.</p>
         </div>
 
         <div className="px-4 md:px-8 py-6 flex flex-col gap-4">

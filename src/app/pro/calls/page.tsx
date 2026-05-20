@@ -76,12 +76,12 @@ export default async function CallsPage() {
     <ProShell>
       <div className="flex-1 flex flex-col">
 
-        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-4 md:px-8 py-5">
           <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Calls</h1>
           <p className="text-[#1E2938]/50 text-sm mt-0.5">Inbound and outbound activity from Dialpad.</p>
         </div>
 
-        <div className="bg-[#F1F2F5] border-b border-[#dcdee3] px-8 py-2.5 flex items-center gap-5">
+        <div className="bg-[#F1F2F5] border-b border-[#dcdee3] px-4 md:px-8 py-2.5 flex items-center gap-5">
           <div className="flex items-center gap-1.5">
             <span className="text-[#1E2938] text-sm font-bold tabular-nums">{totalCalls}</span>
             <span className="text-[#1E2938]/45 text-xs">calls</span>
@@ -96,67 +96,111 @@ export default async function CallsPage() {
           </div>
         </div>
 
-        <div className="flex-1 px-8 py-6">
+        <div className="flex-1 px-4 md:px-8 py-6 flex flex-col gap-4">
           {calls.length === 0 ? (
             <p className="text-slate-400 text-sm">No calls logged yet. Connect Dialpad and register the webhook to start capturing activity.</p>
           ) : (
-            <div className="bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
-              <div className="grid grid-cols-[auto_1fr_auto_auto_auto] text-[11px] tracking-widest uppercase font-semibold text-[#1E2938]/50 px-4 py-2.5 border-b border-[#dcdee3] gap-4">
-                <span>Type</span>
-                <span>Contact</span>
-                <span>Direction</span>
-                <span>Duration</span>
-                <span>Date</span>
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
+                <div className="grid grid-cols-[auto_1fr_auto_auto_auto] text-[11px] tracking-widest uppercase font-semibold text-[#1E2938]/50 px-4 py-2.5 border-b border-[#dcdee3] gap-4">
+                  <span>Type</span>
+                  <span>Contact</span>
+                  <span>Direction</span>
+                  <span>Duration</span>
+                  <span>Date</span>
+                </div>
+                <div className="divide-y divide-[#dcdee3]/60">
+                  {calls.map((c) => {
+                    const dir = c.metadata?.direction ?? "inbound";
+                    const duration = c.metadata?.duration;
+                    const phone = c.metadata?.caller_number ?? c.metadata?.from_number ?? c.contact_phone;
+
+                    return (
+                      <div key={c.id} className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-3 gap-4 hover:bg-white/60 transition-colors">
+                        <div>
+                          {c.event_type === "sms" ? (
+                            <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-blue-50 text-blue-600 border border-blue-100">SMS</span>
+                          ) : c.title.includes("Missed") ? (
+                            <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-red-50 text-red-600 border border-red-100">Missed</span>
+                          ) : c.title.includes("Voicemail") ? (
+                            <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-amber-50 text-amber-600 border border-amber-100">VM</span>
+                          ) : (
+                            <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-emerald-50 text-emerald-600 border border-emerald-100">Call</span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          {c.contact_id ? (
+                            <Link href={`/pro/contacts/${c.contact_id}`} className="text-slate-800 text-sm font-medium hover:text-[#000080] transition-colors truncate block">
+                              {c.contact_name ?? phone ?? "Unknown"}
+                            </Link>
+                          ) : (
+                            <span className="text-slate-500 text-sm truncate block">{phone ?? "Unknown number"}</span>
+                          )}
+                          {c.body && c.event_type === "sms" && (
+                            <p className="text-slate-400 text-[10px] truncate mt-0.5">{c.body}</p>
+                          )}
+                        </div>
+                        <span className={`text-[11px] tracking-widest uppercase font-medium ${dir === "outbound" ? "text-navy" : "text-slate-500"}`}>
+                          {dir}
+                        </span>
+                        <span className="text-slate-400 text-xs tabular-nums">
+                          {duration != null ? formatDuration(duration) : c.event_type === "call" ? "--" : ""}
+                        </span>
+                        <div className="text-right">
+                          <TimeDisplay iso={c.created_at} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="divide-y divide-[#dcdee3]/60">
+
+              {/* Mobile card list */}
+              <div className="md:hidden flex flex-col gap-2">
                 {calls.map((c) => {
                   const dir = c.metadata?.direction ?? "inbound";
                   const duration = c.metadata?.duration;
                   const phone = c.metadata?.caller_number ?? c.metadata?.from_number ?? c.contact_phone;
+                  const typeBadge = c.event_type === "sms"
+                    ? <span className="text-[9px] tracking-widest uppercase font-semibold px-2 py-0.5 rounded-sm bg-blue-50 text-blue-600 border border-blue-100">SMS</span>
+                    : c.title.includes("Missed")
+                    ? <span className="text-[9px] tracking-widest uppercase font-semibold px-2 py-0.5 rounded-sm bg-red-50 text-red-600 border border-red-100">Missed</span>
+                    : c.title.includes("Voicemail")
+                    ? <span className="text-[9px] tracking-widest uppercase font-semibold px-2 py-0.5 rounded-sm bg-amber-50 text-amber-600 border border-amber-100">Voicemail</span>
+                    : <span className="text-[9px] tracking-widest uppercase font-semibold px-2 py-0.5 rounded-sm bg-emerald-50 text-emerald-600 border border-emerald-100">Call</span>;
 
                   return (
-                    <div key={c.id} className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-3 gap-4 hover:bg-white/60 transition-colors">
-                      <div>
-                        {c.event_type === "sms" ? (
-                          <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-blue-50 text-blue-600 border border-blue-100">SMS</span>
-                        ) : c.title.includes("Missed") ? (
-                          <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-red-50 text-red-600 border border-red-100">Missed</span>
-                        ) : c.title.includes("Voicemail") ? (
-                          <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-amber-50 text-amber-600 border border-amber-100">VM</span>
-                        ) : (
-                          <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-emerald-50 text-emerald-600 border border-emerald-100">Call</span>
-                        )}
+                    <div key={c.id} className="bg-white rounded-xl px-4 py-3.5 shadow-sm flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {typeBadge}
+                          {c.contact_id ? (
+                            <Link href={`/pro/contacts/${c.contact_id}`} className="text-slate-800 text-sm font-semibold truncate hover:text-[#000080] transition-colors">
+                              {c.contact_name ?? phone ?? "Unknown"}
+                            </Link>
+                          ) : (
+                            <span className="text-slate-600 text-sm font-semibold truncate">{phone ?? "Unknown number"}</span>
+                          )}
+                        </div>
+                        <TimeDisplay iso={c.created_at} />
                       </div>
-
-                      <div className="min-w-0">
-                        {c.contact_id ? (
-                          <Link href={`/pro/contacts/${c.contact_id}`} className="text-slate-800 text-sm font-medium hover:text-[#000080] transition-colors truncate block">
-                            {c.contact_name ?? phone ?? "Unknown"}
-                          </Link>
-                        ) : (
-                          <span className="text-slate-500 text-sm truncate block">{phone ?? "Unknown number"}</span>
+                      <div className="flex items-center gap-4">
+                        <span className={`text-xs font-medium uppercase tracking-wider ${dir === "outbound" ? "text-[#000080]" : "text-slate-500"}`}>
+                          {dir}
+                        </span>
+                        {duration != null && (
+                          <span className="text-slate-400 text-xs tabular-nums">{formatDuration(duration)}</span>
                         )}
                         {c.body && c.event_type === "sms" && (
-                          <p className="text-slate-400 text-[10px] truncate mt-0.5">{c.body}</p>
+                          <p className="text-slate-400 text-xs truncate flex-1">{c.body}</p>
                         )}
-                      </div>
-
-                      <span className={`text-[11px] tracking-widest uppercase font-medium ${dir === "outbound" ? "text-navy" : "text-slate-500"}`}>
-                        {dir}
-                      </span>
-
-                      <span className="text-slate-400 text-xs tabular-nums">
-                        {duration != null ? formatDuration(duration) : c.event_type === "call" ? "--" : ""}
-                      </span>
-
-                      <div className="text-right">
-                        <TimeDisplay iso={c.created_at} />
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>

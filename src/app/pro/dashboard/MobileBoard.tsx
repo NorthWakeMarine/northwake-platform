@@ -162,16 +162,16 @@ function MobileCard({
         <HealthWarningIcon flags={card.healthFlags} />
         <HeatDot heat={card.heat} lastContactAt={card.lastContactAt} />
 
-        <div className="relative flex items-center gap-1.5 shrink-0">
+        <div className="relative flex items-center gap-3 shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();
               setMoveOpen((v) => !v);
             }}
-            className="text-slate-300 hover:text-[#000080] transition-colors"
+            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-[#000080]/10 flex items-center justify-center text-slate-400 hover:text-[#000080] transition-colors"
             title="Move to stage"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>
@@ -188,7 +188,7 @@ function MobileCard({
             <button
               onClick={handleRemove}
               disabled={isPending}
-              className="text-slate-300 hover:text-red-400 text-xs leading-none transition-colors"
+              className="w-7 h-7 rounded-full hover:bg-red-50 flex items-center justify-center text-slate-300 hover:text-red-400 text-base leading-none transition-colors"
               title={card.sourceType === "lead" ? "Dismiss lead" : "Remove from pipeline"}
             >
               ×
