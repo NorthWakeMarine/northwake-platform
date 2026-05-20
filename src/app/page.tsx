@@ -79,15 +79,14 @@ export default async function Home() {
           aria-labelledby="hero-heading"
           className="relative min-h-screen flex items-center overflow-hidden pt-[65px]"
         >
-          {/* White base */}
-          <div aria-hidden="true" className="absolute inset-0 bg-white" />
-          {/* Animated gradient mesh */}
-          <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
-            <div className="hero-mesh-orb hero-mesh-orb-a" />
-            <div className="hero-mesh-orb hero-mesh-orb-b" />
-            <div className="hero-mesh-orb hero-mesh-orb-c" />
-            <div className="hero-mesh-orb hero-mesh-orb-d" />
-          </div>
+          {/* Dot grid base */}
+          <div aria-hidden="true" className="absolute inset-0 bg-white hero-grid" />
+          {/* Subtle navy depth glow */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{ background: "radial-gradient(ellipse 80% 60% at 50% 70%, rgba(0,0,128,0.05) 0%, transparent 70%)" }}
+          />
 
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
 
@@ -151,12 +150,16 @@ export default async function Home() {
 
           </div>
 
-          {/* Bottom fade */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 inset-x-0 h-20"
-            style={{ background: "linear-gradient(to bottom, transparent, #ffffff)" }}
-          />
+          {/* Animated wave */}
+          <div aria-hidden="true" className="pointer-events-none absolute bottom-0 inset-x-0 overflow-hidden" style={{ height: "110px" }}>
+            <svg viewBox="0 0 2880 110" preserveAspectRatio="none" className="hero-wave hero-wave-1" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,55 C240,95 480,15 720,55 C960,95 1200,15 1440,55 C1680,95 1920,15 2160,55 C2400,95 2640,15 2880,55 L2880,110 L0,110 Z" fill="rgba(0,0,128,0.06)" />
+            </svg>
+            <svg viewBox="0 0 2880 110" preserveAspectRatio="none" className="hero-wave hero-wave-2" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,75 C360,35 720,85 1080,60 C1440,35 1800,85 2160,60 C2520,35 2880,85 2880,65 L2880,110 L0,110 Z" fill="rgba(0,0,128,0.04)" />
+            </svg>
+            <div className="absolute bottom-0 inset-x-0 h-8 bg-white" />
+          </div>
         </section>
 
 
