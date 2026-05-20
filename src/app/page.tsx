@@ -81,15 +81,13 @@ export default async function Home() {
         >
           {/* White base */}
           <div aria-hidden="true" className="absolute inset-0 bg-white" />
-          {/* Subtle navy depth glow */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 80% 60% at 50% 70%, rgba(0,0,128,0.06) 0%, transparent 70%)",
-            }}
-          />
+          {/* Animated gradient mesh */}
+          <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
+            <div className="hero-mesh-orb hero-mesh-orb-a" />
+            <div className="hero-mesh-orb hero-mesh-orb-b" />
+            <div className="hero-mesh-orb hero-mesh-orb-c" />
+            <div className="hero-mesh-orb hero-mesh-orb-d" />
+          </div>
 
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
 
