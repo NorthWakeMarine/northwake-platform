@@ -13,6 +13,7 @@ const EVENTS = [
 ];
 
 export default function RegisterQuoWebhookButton() {
+  const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   function copyUrl() {
@@ -20,6 +21,17 @@ export default function RegisterQuoWebhookButton() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full bg-[#000080] text-white text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-semibold hover:bg-blue-900 transition-colors"
+      >
+        Register Webhook
+      </button>
+    );
   }
 
   return (
@@ -54,8 +66,15 @@ export default function RegisterQuoWebhookButton() {
       </div>
 
       <p className="text-slate-400 text-[10px] leading-relaxed">
-        Paste the URL above into the Quo dashboard under Settings, then subscribe to all five events listed.
+        Paste the URL into the Quo dashboard under Settings, then subscribe to all five events above.
       </p>
+
+      <button
+        onClick={() => setOpen(false)}
+        className="w-full border border-slate-200 text-slate-400 text-[10px] tracking-widest uppercase py-2 rounded-sm font-medium hover:border-slate-300 transition-colors"
+      >
+        Done
+      </button>
     </div>
   );
 }
