@@ -143,24 +143,33 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
 
 async function handleMissedCall(obj: Record<string, unknown>) {
   const supabase = svc();
-  const from = obj.from as string | undefined;
-  if (!from) return;
+  const direction = (obj.direction as string | undefined) ?? "inbound";
 
-  const normalized = normalizePhone(from);
+  // For inbound missed calls the caller is in `from`; for outbound (voicemail left) it's `to`
+  const contactPhone = direction === "inbound"
+    ? (obj.from as string | undefined)
+    : (obj.to as string | undefined);
+  if (!contactPhone) return;
+
+  const normalized = normalizePhone(contactPhone);
   if (!normalized) return;
 
   const contact = await findContactByPhone(supabase, normalized);
 
+  const title = direction === "outbound" ? "Voicemail Left" : "Missed Call";
+  const body  = direction === "outbound" ? "Outbound call — went to voicemail." : "Missed call. No voicemail.";
+
   await supabase.from("timeline_events").insert({
     contact_id: contact?.id ?? null,
     event_type: "call",
-    title:      "Missed Call",
-    body:       "Missed call. No voicemail.",
-    metadata:   { direction: "inbound", caller_number: normalized, quo_call_id: obj.id },
+    title,
+    body,
+    metadata:   { direction, caller_number: normalized, quo_call_id: obj.id },
     created_by: "system",
   });
 
-  if (!contact) {
+  // Only create a lead for inbound missed calls — outbound means we already know them
+  if (!contact && direction === "inbound") {
     await createQuoLead(supabase, normalized);
   }
 }
