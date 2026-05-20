@@ -1991,7 +1991,7 @@ export async function createContactFromQb(
     qb_customer_id: qbId,
     source: "quickbooks",
     status: "client",
-    contact_type: "customer",
+    contact_type: companyName?.trim() ? "vendor" : "customer",
     pipeline_stage: "new_leads",
     waiver_signed: false,
   }).select("id").single();

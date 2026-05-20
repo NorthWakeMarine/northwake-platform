@@ -17,7 +17,7 @@ type CallRow = {
     recording_url?: string | null;
     caller_number?: string;
     from_number?: string;
-    dialpad_call_id?: string;
+    quo_call_id?: string;
   } | null;
   created_at: string;
   contact_name: string | null;
