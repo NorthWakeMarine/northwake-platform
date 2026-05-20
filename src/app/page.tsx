@@ -79,8 +79,14 @@ export default async function Home() {
           aria-labelledby="hero-heading"
           className="relative min-h-screen flex items-center overflow-hidden pt-[65px]"
         >
-          {/* Dot grid base */}
-          <div aria-hidden="true" className="absolute inset-0 bg-white hero-grid" />
+          {/* White base */}
+          <div aria-hidden="true" className="absolute inset-0 bg-white" />
+          {/* Dot grid fading toward edges */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 hero-grid"
+            style={{ maskImage: "radial-gradient(ellipse 80% 70% at 50% 45%, black 30%, transparent 75%)" }}
+          />
           {/* Subtle navy depth glow */}
           <div
             aria-hidden="true"
