@@ -2,6 +2,18 @@
 
 ## May 2026
 
+### May 20 | Pro dashboard performance audit and optimization | CRM,Pro
+
+- Neumorphism reskin applied to all /pro routes: warm gray surface (#F1F2F5), soft extruded card shadows, compact density, dark sidebar unchanged
+- runIntegrityCheck: replaced N+1 loop with single batch timeline_events fetch and pMap(10) concurrent updates; was 200+ sequential queries for 100 contacts
+- syncDialpadContacts: replaced nested phone-lookup loop with single .in() batch query and pMap(10) concurrent updates; was 1000+ queries for 500 contacts
+- checkDuplicateContact: email and phone lookups now run in parallel with Promise.all
+- getPipelineBoard: removed redundant third leads query; 3 queries reduced to 2
+- QB webhook: returns 200 immediately, processes entities async to prevent QB retries
+- QB customer handler: vessel inserts batched into single call instead of per-vessel loop
+- PipelineColumn wrapped with React.memo to skip re-renders on unchanged columns during drag
+- Added Supabase migration with indexes on contacts(phone, email, qb_customer_id, pipeline_stage, contact_type), timeline_events(contact_id+event_type, created_at), vessels(owner_id), leads(status, email)
+
 ### May 19 | Real-time QB and OpenPhone webhooks, rate limit fixes, ghost vessel cleanup | CRM,Integrations
 
 - QB webhook now handles Customer.Create/Update (links contact, fills missing fields, syncs vessel notes) and Invoice/SalesReceipt/CreditMemo Create/Update (upserts timeline events, moves pipeline stage)
