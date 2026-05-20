@@ -6,10 +6,10 @@ const WEBHOOK_URL = "https://northwakemarine.com/api/webhooks/quo";
 
 const EVENTS = [
   "call.completed",
-  "call.missed",
   "message.received",
-  "contact.created",
+  "message.delivered",
   "contact.updated",
+  "contact.deleted",
 ];
 
 export default function RegisterQuoWebhookButton() {
