@@ -1,8 +1,8 @@
 const OP_BASE = "https://api.openphone.com/v1";
 
 function getApiKey(): string {
-  const key = process.env.OPENPHONE_API_KEY;
-  if (!key) throw new Error("OPENPHONE_API_KEY not set");
+  const key = process.env.QUO_API_KEY;
+  if (!key) throw new Error("QUO_API_KEY not set");
   return key;
 }
 

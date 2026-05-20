@@ -20,7 +20,7 @@ function normalizePhone(raw: string | null | undefined): string | null {
 }
 
 function verifySignature(rawBody: string, header: string): boolean {
-  const secret = process.env.OPENPHONE_WEBHOOK_SECRET;
+  const secret = process.env.QUO_WEBHOOK_SECRET;
   if (!secret) return true;
   try {
     // Format: t=<timestamp>,v1=<digest>

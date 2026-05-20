@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import CalendarRegisterButton from "./IntegrationsClient";
+import RegisterQuoWebhookButton from "./RegisterQuoWebhookButton";
 import SyncPanel from "./SyncPanel";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +49,7 @@ async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: st
 
   return {
     qb: { connected: !!qbRow, realmId: qbRow?.realm_id ?? null },
-    quo: { connected: !!process.env.OPENPHONE_API_KEY },
+    quo: { connected: !!process.env.QUO_API_KEY },
   };
 }
 
@@ -183,18 +184,16 @@ export default async function IntegrationsPage({
                 Log inbound and outbound calls and texts against contact records. Missed calls from unknown numbers auto-create a new lead.
               </p>
               {quo.connected ? (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                     API key connected
                   </div>
-                  <p className="text-slate-400 text-[10px] leading-relaxed">
-                    Webhook URL: {process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/openphone
-                  </p>
+                  <RegisterQuoWebhookButton />
                 </div>
               ) : (
                 <p className="text-slate-400 text-[10px] leading-relaxed">
-                  Add OPENPHONE_API_KEY to Vercel environment variables to connect.
+                  Add QUO_API_KEY to Vercel environment variables to connect.
                 </p>
               )}
             </div>

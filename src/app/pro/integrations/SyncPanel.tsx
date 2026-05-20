@@ -81,7 +81,7 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
   function handleImportQuoContact(u: OpUnmatched) {
     setImportingOpId(u.opId);
     startTransition(async () => {
-      const res = await createContactFromQuo(u.opId, u.name, u.phone, u.email);
+      const res = await createContactFromQuo(u.opId, u.name, u.phone, u.email, u.company);
       if (res.ok) setImported((prev) => new Set([...prev, `op:${u.opId}`]));
       setImportingOpId(null);
     });
@@ -91,7 +91,7 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
     startTransition(async () => {
       for (const u of unmatched) {
         if (imported.has(`op:${u.opId}`)) continue;
-        const res = await createContactFromQuo(u.opId, u.name, u.phone, u.email);
+        const res = await createContactFromQuo(u.opId, u.name, u.phone, u.email, u.company);
         if (res.ok) setImported((prev) => new Set([...prev, `op:${u.opId}`]));
       }
     });
