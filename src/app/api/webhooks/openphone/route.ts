@@ -82,6 +82,23 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
+async function createQuoLead(supabase: AnySupabase, phone: string) {
+  // Deduplicate: don't create a second lead if one already exists for this number
+  const { data: existing } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("phone", phone)
+    .maybeSingle();
+  if (existing) return;
+
+  await supabase.from("leads").insert({
+    phone,
+    source: "quo",
+    name: null,
+    email: null,
+  });
+}
+
 async function handleCompletedCall(obj: Record<string, unknown>) {
   const supabase = svc();
   const from = obj.from as string | undefined;
@@ -92,9 +109,6 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
   const normalized = normalizePhone(callerPhone);
   if (!normalized) return;
 
-  const contact = await findContactByPhone(supabase, normalized);
-  if (!contact) return;
-
   // Duration from answeredAt / completedAt timestamps
   let duration: number | null = null;
   if (obj.answeredAt && obj.completedAt) {
@@ -103,17 +117,25 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
   }
 
   const label = direction === "outbound" ? "Outbound Call" : "Inbound Call";
+  const body = duration != null
+    ? `Duration: ${Math.floor(duration / 60)}m ${Math.floor(duration % 60)}s`
+    : "Call completed.";
+
+  const contact = await findContactByPhone(supabase, normalized);
 
   await supabase.from("timeline_events").insert({
-    contact_id:  contact.id,
+    contact_id:  contact?.id ?? null,
     event_type:  "call",
     title:       label,
-    body:        duration != null
-      ? `Duration: ${Math.floor(duration / 60)}m ${Math.floor(duration % 60)}s`
-      : "Call completed.",
-    metadata:    { direction, duration, recording_url: obj.recordingUrl ?? null, openphone_call_id: obj.id },
+    body,
+    metadata:    { direction, duration, caller_number: normalized, recording_url: obj.recordingUrl ?? null, openphone_call_id: obj.id },
     created_by:  "system",
   });
+
+  // Unknown inbound caller with actual conversation (>5s) becomes a lead
+  if (!contact && direction === "inbound" && (duration ?? 0) > 5) {
+    await createQuoLead(supabase, normalized);
+  }
 }
 
 async function handleMissedCall(obj: Record<string, unknown>) {
@@ -127,25 +149,18 @@ async function handleMissedCall(obj: Record<string, unknown>) {
   const contact = await findContactByPhone(supabase, normalized);
   const voicemail = (obj.voicemail as Record<string, unknown> | undefined)?.transcript as string | undefined;
 
-  if (contact) {
-    await supabase.from("timeline_events").insert({
-      contact_id:  contact.id,
-      event_type:  "call",
-      title:       voicemail ? "Voicemail Received" : "Missed Call",
-      body:        voicemail ?? "Missed call. No voicemail.",
-      metadata:    { direction: "inbound", openphone_call_id: obj.id, caller_number: normalized },
-      created_by:  "system",
-    });
-  } else {
-    const { ingestContact } = await import("@/lib/ingest");
-    await ingestContact({
-      phone: normalized,
-      source: "quo",
-      event_type: "call",
-      event_title: voicemail ? "Voicemail Received" : "Missed Call",
-      event_body: voicemail ?? "Missed call from unknown number. No voicemail.",
-      metadata: { direction: "inbound", openphone_call_id: obj.id },
-    });
+  await supabase.from("timeline_events").insert({
+    contact_id:  contact?.id ?? null,
+    event_type:  "call",
+    title:       voicemail ? "Voicemail Received" : "Missed Call",
+    body:        voicemail ?? "Missed call. No voicemail.",
+    metadata:    { direction: "inbound", openphone_call_id: obj.id, caller_number: normalized },
+    created_by:  "system",
+  });
+
+  // Every missed call from an unknown number is a potential lead
+  if (!contact) {
+    await createQuoLead(supabase, normalized);
   }
 }
 
@@ -206,24 +221,21 @@ async function handleInboundSms(obj: Record<string, unknown>) {
 
   const contact = await findContactByPhone(supabase, normalized);
 
-  if (contact) {
-    await supabase.from("timeline_events").insert({
-      contact_id:  contact.id,
-      event_type:  "sms",
-      title:       "Inbound SMS",
-      body,
-      metadata:    { direction: "inbound", from_number: normalized, openphone_message_id: obj.id },
-      created_by:  "system",
-    });
-  } else {
-    const { ingestContact } = await import("@/lib/ingest");
-    await ingestContact({
-      phone: normalized,
-      source: "quo",
-      event_type: "sms",
-      event_title: "Inbound SMS",
-      event_body: body,
-      metadata: { direction: "inbound", openphone_message_id: obj.id },
-    });
+  await supabase.from("timeline_events").insert({
+    contact_id:  contact?.id ?? null,
+    event_type:  "sms",
+    title:       "Inbound SMS",
+    body,
+    metadata:    { direction: "inbound", from_number: normalized, openphone_message_id: obj.id },
+    created_by:  "system",
+  });
+
+  // Unknown texter becomes a lead — skip obvious opt-out/one-word replies that are likely spam
+  if (!contact) {
+    const trimmed = body.trim();
+    const spamPatterns = /^(stop|unstop|start|cancel|end|quit|unsubscribe|help|yes|no|y|n|ok|okay)$/i;
+    if (trimmed.length > 3 && !spamPatterns.test(trimmed)) {
+      await createQuoLead(supabase, normalized);
+    }
   }
 }
