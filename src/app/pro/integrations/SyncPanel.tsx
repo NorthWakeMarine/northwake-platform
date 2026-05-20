@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, runIntegrityCheck, createContactFromQb, createContactFromQuo, pushCrmToQuickBooks, pushCrmToQuo, importQuoContacts, syncVesselsToQbNotes, updateContactFields, importQbInvoices, purgeGhostVessels } from "@/app/actions";
+import { importQbCustomers, runIntegrityCheck, createContactFromQb, createContactFromQuo, pushCrmToQuickBooks, pushCrmToQuo, importQuoContacts, syncVesselsToQbNotes, updateContactFields, pushCrmFieldToQb, importQbInvoices, purgeGhostVessels } from "@/app/actions";
 import type { FieldMismatch, OpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
@@ -72,9 +72,16 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
     });
   }
 
-  function handleResolveMismatch(m: FieldMismatch) {
+  function handleUseQb(m: FieldMismatch) {
     startTransition(async () => {
       const res = await updateContactFields(m.contactId, { [m.field]: m.sourceValue });
+      if (res.ok) setResolvedMismatches((prev) => new Set([...prev, `${m.contactId}:${m.field}`]));
+    });
+  }
+
+  function handleUseCrm(m: FieldMismatch) {
+    startTransition(async () => {
+      const res = await pushCrmFieldToQb(m.contactId, m.field);
       if (res.ok) setResolvedMismatches((prev) => new Set([...prev, `${m.contactId}:${m.field}`]));
     });
   }
@@ -163,7 +170,8 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
                   title="QB Field Mismatches"
                   mismatches={result.qb.mismatches}
                   resolvedMismatches={resolvedMismatches}
-                  onResolve={handleResolveMismatch}
+                  onUseQb={handleUseQb}
+                  onUseCrm={handleUseCrm}
                   isPending={isPending}
                   sourceLabel="QB"
                 />
@@ -393,14 +401,16 @@ function MismatchList({
   title,
   mismatches,
   resolvedMismatches,
-  onResolve,
+  onUseQb,
+  onUseCrm,
   isPending,
   sourceLabel,
 }: {
   title: string;
   mismatches: FieldMismatch[];
   resolvedMismatches: Set<string>;
-  onResolve: (m: FieldMismatch) => void;
+  onUseQb: (m: FieldMismatch) => void;
+  onUseCrm: (m: FieldMismatch) => void;
   isPending: boolean;
   sourceLabel: string;
 }) {
@@ -421,13 +431,22 @@ function MismatchList({
               {resolved ? (
                 <span className="text-emerald-600 text-[10px] tracking-widest uppercase font-medium shrink-0 mt-0.5">Updated</span>
               ) : (
-                <button
-                  onClick={() => onResolve(m)}
-                  disabled={isPending}
-                  className="text-[10px] tracking-widest uppercase text-[#000080] hover:text-[#0000a0] font-semibold shrink-0 disabled:opacity-50 mt-0.5"
-                >
-                  Use {sourceLabel}
-                </button>
+                <div className="flex items-center gap-3 shrink-0 mt-0.5">
+                  <button
+                    onClick={() => onUseCrm(m)}
+                    disabled={isPending}
+                    className="text-[10px] tracking-widest uppercase text-[#000080] hover:text-[#0000a0] font-semibold disabled:opacity-50"
+                  >
+                    Use CRM
+                  </button>
+                  <button
+                    onClick={() => onUseQb(m)}
+                    disabled={isPending}
+                    className="text-[10px] tracking-widest uppercase text-slate-400 hover:text-slate-600 font-medium disabled:opacity-50"
+                  >
+                    Use {sourceLabel}
+                  </button>
+                </div>
               )}
             </div>
           );

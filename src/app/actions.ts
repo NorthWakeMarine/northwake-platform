@@ -882,6 +882,36 @@ export async function updateContactFields(
   return { ok: true };
 }
 
+export async function pushCrmFieldToQb(
+  contactId: string,
+  field: "name" | "email" | "phone"
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { data: contact } = await supabase
+      .from("contacts")
+      .select("id, name, company_name, email, phone, qb_customer_id")
+      .eq("id", contactId)
+      .single();
+    if (!contact?.qb_customer_id) return { ok: false, error: "Contact not linked to QB." };
+
+    const { getQbTokens, findOrCreateQbCustomer } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { ok: false, error: "QuickBooks not connected." };
+
+    await findOrCreateQbCustomer({
+      id: contact.id,
+      name: contact.name,
+      company_name: contact.company_name,
+      email: contact.email,
+      phone: contact.phone,
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to push to QB." };
+  }
+}
+
 // ─── Vessel Service Schedules ─────────────────────────────────────────────────
 
 export type VesselServiceState = { error?: string; success?: boolean };
