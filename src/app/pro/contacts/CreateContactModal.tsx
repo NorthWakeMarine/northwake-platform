@@ -100,16 +100,18 @@ export default function CreateContactModal({ defaultType = "customer" }: Props) 
                 />
               </div>
 
-              {/* Company */}
-              <div>
-                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1 block">Company</label>
-                <input
-                  value={draft.company_name}
-                  onChange={(e) => setDraft((d) => ({ ...d, company_name: e.target.value }))}
-                  className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
-                  placeholder="Company name"
-                />
-              </div>
+              {/* Company (vendors only) */}
+              {draft.contact_type === "vendor" && (
+                <div>
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1 block">Company</label>
+                  <input
+                    value={draft.company_name}
+                    onChange={(e) => setDraft((d) => ({ ...d, company_name: e.target.value }))}
+                    className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                    placeholder="Company name"
+                  />
+                </div>
+              )}
 
               {/* Email */}
               <div>
