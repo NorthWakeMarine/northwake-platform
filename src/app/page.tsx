@@ -158,7 +158,6 @@ export default async function Home() {
             <svg viewBox="0 0 2880 110" preserveAspectRatio="none" className="hero-wave hero-wave-2" xmlns="http://www.w3.org/2000/svg">
               <path d="M0,75 C360,35 720,85 1080,60 C1440,35 1800,85 2160,60 C2520,35 2880,85 2880,65 L2880,110 L0,110 Z" fill="rgba(0,0,128,0.04)" />
             </svg>
-            <div className="absolute bottom-0 inset-x-0 h-8 bg-white" />
           </div>
         </section>
 
