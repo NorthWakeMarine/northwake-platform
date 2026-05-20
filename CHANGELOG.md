@@ -2,6 +2,23 @@
 
 ## May 2026
 
+### May 20 | Dialpad removed, full migration to Quo | CRM,Integrations
+
+- Removed all Dialpad API integration: auth routes, webhook handler, probe endpoint, CSV export, and 7 server actions (syncDialpadCallsForContact, syncDialpadContacts, importDialpadContacts, registerDialpadWebhook, pushCrmToDialpad, promoteDialpadLocalToCompany, createContactFromDialpad)
+- Renamed OpenPhone to Quo throughout the UI: integrations page, sync panel, calls page subtitle, source badge on leads
+- OpenPhone server actions renamed: importOpenPhoneContacts, createContactFromOpenPhone, pushCrmToOpenPhone now use Quo naming
+- SyncCallsButton removed: calls now arrive automatically via Quo webhook, no manual per-contact sync needed
+- Contact detail mobile action sheet redesigned: Log Call and Pipeline buttons in a spacious 2-button grid; pipeline stage picker is a full slide-up sheet instead of a clipped dropdown; QB and Delete moved to a More sheet
+
+### May 20 | Contact detail mobile action strip redesign | CRM,Mobile
+
+- Replaced horizontal-scroll action strip on contact detail with a proper bottom sheet system
+- Primary bar: Log Call (navy) + Pipeline button in a 2-column grid with 48px tap targets
+- Log Call opens a slide-up sheet with direction toggle and notes field
+- Pipeline opens a full slide-up sheet listing all 6 stages with large tap targets; current stage highlighted
+- More sheet contains View QB / Sync to QB and Delete with confirmation
+- Vendor contacts show Log Call + More only (no pipeline)
+
 ### May 20 | Pro portal mobile overhaul | CRM,Pro,Mobile
 
 - Replaced fixed top nav bar with a native-style bottom tab bar (Dashboard, Leads, Contacts, Calls, More) for one-thumb field navigation

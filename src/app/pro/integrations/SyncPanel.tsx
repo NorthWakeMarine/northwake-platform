@@ -1,30 +1,26 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, importDialpadContacts, runIntegrityCheck, createContactFromQb, createContactFromDialpad, createContactFromOpenPhone, pushCrmToDialpad, pushCrmToQuickBooks, pushCrmToOpenPhone, importOpenPhoneContacts, syncVesselsToQbNotes, updateContactFields, importQbInvoices, purgeGhostVessels } from "@/app/actions";
-import type { FieldMismatch, DpUnmatched, OpUnmatched } from "@/app/actions";
+import { importQbCustomers, runIntegrityCheck, createContactFromQb, createContactFromQuo, pushCrmToQuickBooks, pushCrmToQuo, importQuoContacts, syncVesselsToQbNotes, updateContactFields, importQbInvoices, purgeGhostVessels } from "@/app/actions";
+import type { FieldMismatch, OpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
 
 type SyncResult = {
   qb?: { linked: number; alreadyLinked: number; unmatched: QbUnmatched[]; mismatches: FieldMismatch[]; error?: string };
-  dialpad?: { fetched: number; linked: number; alreadyLinked: number; unmatched: DpUnmatched[]; mismatches: FieldMismatch[]; error?: string };
-  openphone?: { fetched: number; linked: number; alreadyLinked: number; unmatched: OpUnmatched[]; error?: string };
-  opPush?: { updated: number; created: number; error?: string };
+  quo?: { fetched: number; linked: number; alreadyLinked: number; unmatched: OpUnmatched[]; error?: string };
+  quoPush?: { updated: number; created: number; error?: string };
   integrity?: { checked: number; flagged: number; error?: string };
-  dpPush?: { updated: number; created: number; error?: string };
-  dpPromote?: { promoted: number; alreadyShared: number; error?: string };
   qbInvoices?: { imported: number; skipped: number; error?: string };
   qbPush?: { upserted: number; skipped: string[]; error?: string };
   qbNotes?: { synced: number; error?: string };
   ghostPurge?: { deleted: number; error?: string };
 };
 
-export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConnected }: { qbConnected: boolean; dialpadConnected: boolean; openphoneConnected: boolean }) {
+export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: boolean; quoConnected: boolean }) {
   const [result, setResult] = useState<SyncResult | null>(null);
   const [isPending, startTransition] = useTransition();
   const [importingQbId, setImportingQbId] = useState<string | null>(null);
-  const [importingDpId, setImportingDpId] = useState<string | null>(null);
   const [importingOpId, setImportingOpId] = useState<string | null>(null);
   const [imported, setImported] = useState<Set<string>>(new Set());
   const [resolvedMismatches, setResolvedMismatches] = useState<Set<string>>(new Set());
@@ -34,15 +30,13 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
       // Purge ghost vessels first so syncVesselsToQbNotes reads a clean DB
       const ghostPurge = await purgeGhostVessels();
 
-      const [qb, qbInvoices, qbPush, qbNotes, dialpad, dpPush, openphone, opPush, integrity] = await Promise.all([
+      const [qb, qbInvoices, qbPush, qbNotes, quo, quoPush, integrity] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
         qbConnected ? importQbInvoices() : Promise.resolve(undefined),
         qbConnected ? pushCrmToQuickBooks() : Promise.resolve(undefined),
         qbConnected ? syncVesselsToQbNotes() : Promise.resolve(undefined),
-        dialpadConnected ? importDialpadContacts() : Promise.resolve(undefined),
-        dialpadConnected ? pushCrmToDialpad() : Promise.resolve(undefined),
-        openphoneConnected ? importOpenPhoneContacts() : Promise.resolve(undefined),
-        openphoneConnected ? pushCrmToOpenPhone() : Promise.resolve(undefined),
+        quoConnected ? importQuoContacts() : Promise.resolve(undefined),
+        quoConnected ? pushCrmToQuo() : Promise.resolve(undefined),
         runIntegrityCheck(),
       ]);
       setResult({
@@ -50,10 +44,8 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
         qbInvoices: qbInvoices ?? undefined,
         qbPush: qbPush ?? undefined,
         qbNotes: qbNotes ?? undefined,
-        dialpad: dialpad ?? undefined,
-        dpPush: dpPush ?? undefined,
-        openphone: openphone ?? undefined,
-        opPush: opPush ?? undefined,
+        quo: quo ?? undefined,
+        quoPush: quoPush ?? undefined,
         integrity,
         ghostPurge,
       });
@@ -86,45 +78,26 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
     });
   }
 
-  function handleImportDialpadContact(u: DpUnmatched) {
-    setImportingDpId(u.dpId);
-    startTransition(async () => {
-      const res = await createContactFromDialpad(u.dpId, u.name, u.email, u.phone);
-      if (res.ok) setImported((prev) => new Set([...prev, `dp:${u.dpId}`]));
-      setImportingDpId(null);
-    });
-  }
-
-  function handleImportAllDialpad(unmatched: DpUnmatched[]) {
-    startTransition(async () => {
-      for (const u of unmatched) {
-        if (imported.has(`dp:${u.dpId}`)) continue;
-        const res = await createContactFromDialpad(u.dpId, u.name, u.email, u.phone);
-        if (res.ok) setImported((prev) => new Set([...prev, `dp:${u.dpId}`]));
-      }
-    });
-  }
-
-  function handleImportOpenPhoneContact(u: OpUnmatched) {
+  function handleImportQuoContact(u: OpUnmatched) {
     setImportingOpId(u.opId);
     startTransition(async () => {
-      const res = await createContactFromOpenPhone(u.opId, u.name, u.phone, u.email);
+      const res = await createContactFromQuo(u.opId, u.name, u.phone, u.email);
       if (res.ok) setImported((prev) => new Set([...prev, `op:${u.opId}`]));
       setImportingOpId(null);
     });
   }
 
-  function handleImportAllOpenPhone(unmatched: OpUnmatched[]) {
+  function handleImportAllQuo(unmatched: OpUnmatched[]) {
     startTransition(async () => {
       for (const u of unmatched) {
         if (imported.has(`op:${u.opId}`)) continue;
-        const res = await createContactFromOpenPhone(u.opId, u.name, u.phone, u.email);
+        const res = await createContactFromQuo(u.opId, u.name, u.phone, u.email);
         if (res.ok) setImported((prev) => new Set([...prev, `op:${u.opId}`]));
       }
     });
   }
 
-  const nothingConnected = !qbConnected && !dialpadConnected;
+  const nothingConnected = !qbConnected && !quoConnected;
 
   return (
     <div className="bg-[#F1F2F5] neu-card rounded-md p-6 flex flex-col gap-4">
@@ -132,7 +105,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
         <div>
           <h2 className="text-slate-800 text-sm font-semibold">Data Sync</h2>
           <p className="text-slate-400 text-[11px] mt-0.5">
-            Import contacts from QuickBooks, match Dialpad numbers, and run the integrity check.
+            Import contacts from QuickBooks, match Quo contacts, and run the integrity check.
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -147,7 +120,7 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
       </div>
 
       {nothingConnected && (
-        <p className="text-slate-400 text-xs">Connect QuickBooks or Dialpad above to enable sync.</p>
+        <p className="text-slate-400 text-xs">Connect QuickBooks or Quo above to enable sync.</p>
       )}
 
       {result && (
@@ -235,86 +208,6 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
             </div>
           )}
 
-          {/* Dialpad results */}
-          {result.dialpad && (
-            <div className="flex flex-col gap-2">
-              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">Dialpad</p>
-              {result.dialpad.error ? (
-                <p className="text-red-500 text-xs">{result.dialpad.error}</p>
-              ) : (
-                <div className="flex flex-wrap gap-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-slate-400" />
-                    <span className="text-slate-400 text-xs">{result.dialpad.fetched} fetched from Dialpad</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-slate-700 text-xs">{result.dialpad.linked} newly linked</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-slate-300" />
-                    <span className="text-slate-500 text-xs">{result.dialpad.alreadyLinked} already linked</span>
-                  </div>
-                  {result.dialpad.unmatched.length > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-400" />
-                      <span className="text-amber-700 text-xs">{result.dialpad.unmatched.length} Dialpad contacts not in CRM</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {result.dialpad.unmatched && result.dialpad.unmatched.length > 0 && (
-                <div className="flex flex-col gap-1.5 mt-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] tracking-widest uppercase font-medium text-amber-600">Dialpad Contacts Missing from CRM</p>
-                    {result.dialpad.unmatched.filter((u) => !imported.has(`dp:${u.dpId}`)).length > 0 && (
-                      <button
-                        onClick={() => handleImportAllDialpad(result.dialpad!.unmatched)}
-                        disabled={isPending}
-                        className="text-[10px] tracking-widest uppercase text-[#000080] hover:text-[#0000a0] font-semibold disabled:opacity-50"
-                      >
-                        {isPending ? "Importing..." : `Import All (${result.dialpad.unmatched.filter((u) => !imported.has(`dp:${u.dpId}`)).length})`}
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex flex-col divide-y divide-slate-100 border border-slate-100 rounded-sm overflow-hidden">
-                    {result.dialpad.unmatched.map((u) => (
-                      <div key={u.dpId} className="flex items-center justify-between px-3 py-2 gap-3">
-                        <div className="min-w-0">
-                          <p className="text-slate-800 text-xs font-medium truncate">{u.name}</p>
-                          {u.email && <p className="text-slate-400 text-[10px] truncate">{u.email}</p>}
-                          {u.phone && <p className="text-slate-400 text-[10px] truncate">{u.phone}</p>}
-                        </div>
-                        {imported.has(`dp:${u.dpId}`) ? (
-                          <span className="text-emerald-600 text-[10px] tracking-widest uppercase font-medium shrink-0">Imported</span>
-                        ) : (
-                          <button
-                            onClick={() => handleImportDialpadContact(u)}
-                            disabled={importingDpId === u.dpId}
-                            className="text-[10px] tracking-widest uppercase text-[#000080] hover:text-[#0000a0] font-semibold shrink-0 disabled:opacity-50"
-                          >
-                            {importingDpId === u.dpId ? "Importing..." : "Import"}
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {(result.dialpad.mismatches?.length ?? 0) > 0 && (
-                <MismatchList
-                  title="Dialpad Field Mismatches"
-                  mismatches={result.dialpad.mismatches}
-                  resolvedMismatches={resolvedMismatches}
-                  onResolve={handleResolveMismatch}
-                  isPending={isPending}
-                  sourceLabel="Dialpad"
-                />
-              )}
-            </div>
-          )}
 
           {/* Import Invoices results */}
           {result.qbInvoices && (
@@ -337,26 +230,6 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
             </div>
           )}
 
-          {/* Promote Local → Shared results */}
-          {result.dpPromote && (
-            <div className="flex flex-col gap-2">
-              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">Promote Local to Shared</p>
-              {result.dpPromote.error ? (
-                <p className="text-red-500 text-xs">{result.dpPromote.error}</p>
-              ) : (
-                <div className="flex flex-wrap gap-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-slate-700 text-xs">{result.dpPromote.promoted} contacts promoted to shared</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-slate-300" />
-                    <span className="text-slate-500 text-xs">{result.dpPromote.alreadyShared} already in shared</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Push to QB results */}
           {result.qbPush && (
@@ -398,77 +271,55 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
             </div>
           )}
 
-          {/* Push to Dialpad results */}
-          {result.dpPush && (
-            <div className="flex flex-col gap-2">
-              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">Push to Dialpad</p>
-              {result.dpPush.error ? (
-                <p className="text-red-500 text-xs">{result.dpPush.error}</p>
-              ) : (
-                <div className="flex flex-wrap gap-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-slate-700 text-xs">{result.dpPush.updated} contacts updated in Dialpad</span>
-                  </div>
-                  {result.dpPush.created > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-400" />
-                      <span className="text-slate-700 text-xs">{result.dpPush.created} new contacts created in Dialpad</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* OpenPhone import results */}
-          {result.openphone && (
+          {/* Quo import results */}
+          {result.quo && (
             <div className="flex flex-col gap-2">
-              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">OpenPhone</p>
-              {result.openphone.error ? (
-                <p className="text-red-500 text-xs">{result.openphone.error}</p>
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">Quo</p>
+              {result.quo.error ? (
+                <p className="text-red-500 text-xs">{result.quo.error}</p>
               ) : (
                 <div className="flex flex-wrap gap-4">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-blue-400" />
-                    <span className="text-slate-400 text-xs">{result.openphone.fetched} fetched from OpenPhone</span>
+                    <span className="text-slate-400 text-xs">{result.quo.fetched} fetched from Quo</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-slate-700 text-xs">{result.openphone.linked} newly linked</span>
+                    <span className="text-slate-700 text-xs">{result.quo.linked} newly linked</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-slate-300" />
-                    <span className="text-slate-500 text-xs">{result.openphone.alreadyLinked} already linked</span>
+                    <span className="text-slate-500 text-xs">{result.quo.alreadyLinked} already linked</span>
                   </div>
-                  {result.openphone.unmatched.length > 0 && (
+                  {result.quo.unmatched.length > 0 && (
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-400" />
-                      <span className="text-amber-700 text-xs">{result.openphone.unmatched.filter((u) => !imported.has(`op:${u.opId}`)).length} OpenPhone contacts not in CRM</span>
+                      <span className="text-amber-700 text-xs">{result.quo.unmatched.filter((u) => !imported.has(`op:${u.opId}`)).length} Quo contacts not in CRM</span>
                     </div>
                   )}
                 </div>
               )}
-              {result.openphone.unmatched && result.openphone.unmatched.length > 0 && (
+              {result.quo.unmatched && result.quo.unmatched.length > 0 && (
                 <div className="flex flex-col gap-1 mt-1">
-                  <p className="text-[10px] tracking-widest uppercase font-semibold text-amber-600">OpenPhone Contacts Missing From CRM</p>
-                  {result.openphone.unmatched.filter((u) => !imported.has(`op:${u.opId}`)).length > 0 && (
+                  <p className="text-[10px] tracking-widest uppercase font-semibold text-amber-600">Quo Contacts Missing From CRM</p>
+                  {result.quo.unmatched.filter((u) => !imported.has(`op:${u.opId}`)).length > 0 && (
                     <button
-                      onClick={() => handleImportAllOpenPhone(result.openphone!.unmatched)}
+                      onClick={() => handleImportAllQuo(result.quo!.unmatched)}
                       disabled={isPending}
                       className="self-end text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline disabled:opacity-40"
                     >
-                      {isPending ? "Importing..." : `Import All (${result.openphone.unmatched.filter((u) => !imported.has(`op:${u.opId}`)).length})`}
+                      {isPending ? "Importing..." : `Import All (${result.quo.unmatched.filter((u) => !imported.has(`op:${u.opId}`)).length})`}
                     </button>
                   )}
-                  {result.openphone.unmatched.map((u) => (
+                  {result.quo.unmatched.map((u) => (
                     <div key={u.opId} className={`flex items-center justify-between gap-3 py-1.5 border-b border-slate-50 ${imported.has(`op:${u.opId}`) ? "opacity-40" : ""}`}>
                       <div>
                         <p className="text-slate-700 text-xs font-medium">{u.name}</p>
                         <p className="text-slate-400 text-[10px]">{u.phone ?? u.email ?? "No contact info"}</p>
                       </div>
                       <button
-                        onClick={() => handleImportOpenPhoneContact(u)}
+                        onClick={() => handleImportQuoContact(u)}
                         disabled={importingOpId === u.opId || imported.has(`op:${u.opId}`)}
                         className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline disabled:opacity-40 shrink-0"
                       >
@@ -481,22 +332,22 @@ export default function SyncPanel({ qbConnected, dialpadConnected, openphoneConn
             </div>
           )}
 
-          {/* OpenPhone push results */}
-          {result.opPush && (
+          {/* Quo push results */}
+          {result.quoPush && (
             <div className="flex flex-col gap-2">
-              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">Push to OpenPhone</p>
-              {result.opPush.error ? (
-                <p className="text-red-500 text-xs">{result.opPush.error}</p>
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">Push to Quo</p>
+              {result.quoPush.error ? (
+                <p className="text-red-500 text-xs">{result.quoPush.error}</p>
               ) : (
                 <div className="flex flex-wrap gap-4">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-slate-700 text-xs">{result.opPush.updated} contacts updated in OpenPhone</span>
+                    <span className="text-slate-700 text-xs">{result.quoPush.updated} contacts updated in Quo</span>
                   </div>
-                  {result.opPush.created > 0 && (
+                  {result.quoPush.created > 0 && (
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-blue-500" />
-                      <span className="text-slate-700 text-xs">{result.opPush.created} new contacts created in OpenPhone</span>
+                      <span className="text-slate-700 text-xs">{result.quoPush.created} new contacts created in Quo</span>
                     </div>
                   )}
                 </div>

@@ -140,7 +140,7 @@ async function handleMissedCall(obj: Record<string, unknown>) {
     const { ingestContact } = await import("@/lib/ingest");
     await ingestContact({
       phone: normalized,
-      source: "openphone",
+      source: "quo",
       event_type: "call",
       event_title: voicemail ? "Voicemail Received" : "Missed Call",
       event_body: voicemail ?? "Missed call from unknown number. No voicemail.",
@@ -191,7 +191,7 @@ async function handleContactUpsert(obj: Record<string, unknown>) {
       await supabase.from("contacts").update(update).eq("id", match.id);
     }
   } catch (err) {
-    console.error("OpenPhone contact webhook error:", err);
+    console.error("Quo contact webhook error:", err);
   }
 }
 
@@ -219,7 +219,7 @@ async function handleInboundSms(obj: Record<string, unknown>) {
     const { ingestContact } = await import("@/lib/ingest");
     await ingestContact({
       phone: normalized,
-      source: "openphone",
+      source: "quo",
       event_type: "sms",
       event_title: "Inbound SMS",
       event_body: body,

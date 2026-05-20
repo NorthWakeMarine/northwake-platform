@@ -142,7 +142,7 @@ export type ClientConfig = {
     googleAdsConversionId?: string;
     googlePlaces: boolean;
     quickbooks: boolean;
-    dialpad: boolean;
+    quo: boolean;
     googleCalendar: boolean;
     googleDrive: boolean;
   };
@@ -835,7 +835,7 @@ export const clientConfig: ClientConfig = {
     googleAdsConversionId: "AW-17918867353",
     googlePlaces: true,
     quickbooks: true,
-    dialpad: true,
+    quo: true,
     googleCalendar: true,
     googleDrive: true,
   },

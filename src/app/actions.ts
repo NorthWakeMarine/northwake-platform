@@ -1621,88 +1621,6 @@ export async function logManualCall(
   return { ok: true };
 }
 
-export async function syncDialpadCallsForContact(
-  contactId: string
-): Promise<{ ok: boolean; synced: number; error?: string }> {
-  const supabase = await svc();
-
-  // Get the contact's phone
-  const { data: contact, error: contactErr } = await supabase
-    .from("contacts")
-    .select("phone")
-    .eq("id", contactId)
-    .single();
-  if (contactErr || !contact?.phone) {
-    return { ok: false, synced: 0, error: "Contact not found or has no phone number." };
-  }
-
-  const contactPhone = normalizePhone(contact.phone);
-  if (!contactPhone) return { ok: false, synced: 0, error: "Could not normalize contact phone." };
-
-  // Fetch up to 90 days of calls from Dialpad
-  const { listDialpadCalls } = await import("@/lib/dialpad");
-  let calls;
-  try {
-    calls = await listDialpadCalls({
-      maxTotal: 500,
-      started_after: Date.now() - 90 * 24 * 60 * 60 * 1000,
-    });
-  } catch (e) {
-    return { ok: false, synced: 0, error: e instanceof Error ? e.message : "Dialpad API error." };
-  }
-
-  // Filter to calls involving this contact's phone
-  const matched = calls.filter((c) => {
-    const ext = normalizePhone(c.external_number ?? "");
-    return ext === contactPhone;
-  });
-  if (matched.length === 0) return { ok: true, synced: 0 };
-
-  // Get existing dialpad_call_ids already in the timeline for this contact
-  const { data: existing } = await supabase
-    .from("timeline_events")
-    .select("metadata")
-    .eq("contact_id", contactId)
-    .eq("event_type", "call");
-
-  const knownIds = new Set(
-    (existing ?? [])
-      .map((e) => (e.metadata as Record<string, unknown>)?.dialpad_call_id as string | undefined)
-      .filter(Boolean)
-  );
-
-  // Insert only calls not already in the timeline
-  const toInsert = matched.filter((c) => !knownIds.has(c.id));
-  if (toInsert.length === 0) return { ok: true, synced: 0 };
-
-  const rows = toInsert.map((c) => {
-    const dir = c.direction ?? "inbound";
-    const dur = c.duration ?? null;
-    const durText = dur ? `Duration: ${Math.floor(dur / 60)}m ${dur % 60}s` : null;
-    return {
-      contact_id: contactId,
-      event_type: "call",
-      title: dir === "outbound" ? "Outbound Call" : "Inbound Call",
-      body: durText,
-      created_at: new Date(c.date_started).toISOString(),
-      metadata: {
-        direction: dir,
-        duration: dur,
-        recording_url: c.recording_url ?? null,
-        dialpad_call_id: c.id,
-        source: "dialpad_sync",
-      },
-      created_by: "system",
-    };
-  });
-
-  const { error: insertErr } = await supabase.from("timeline_events").insert(rows);
-  if (insertErr) return { ok: false, synced: 0, error: insertErr.message };
-
-  revalidatePath(`/pro/contacts/${contactId}`);
-  return { ok: true, synced: toInsert.length };
-}
-
 // ─── Integrity Engine ─────────────────────────────────────────────────────────
 
 type IntegrityFlag = { type: string; label: string };
@@ -2059,303 +1977,11 @@ export async function createContactFromQb(
   return { ok: true };
 }
 
-// ─── Dialpad Contact Import ───────────────────────────────────────────────────
-
-export type DpUnmatched = {
-  dpId: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-};
-
-export async function importDialpadContacts(): Promise<{
-  fetched: number;
-  linked: number;
-  alreadyLinked: number;
-  unmatched: DpUnmatched[];
-  mismatches: FieldMismatch[];
-  error?: string;
-}> {
-  const supabase = await svc();
-  try {
-    const { listDialpadContacts, dialpadContactPhones } = await import("@/lib/dialpad");
-    const dpContacts = await listDialpadContacts();
-
-    const { data: crmContacts } = await supabase
-      .from("contacts")
-      .select("id, name, email, phone, dialpad_contact_id");
-
-    const contacts = crmContacts ?? [];
-    const emailMap = new Map(contacts.filter(c => c.email).map(c => [c.email!.toLowerCase(), c]));
-    const phoneMap = new Map(
-      contacts.filter(c => c.phone).map(c => [normalizePhone(c.phone!), c])
-    );
-    const nameMap  = new Map(contacts.filter(c => c.name).map(c => [c.name!.toLowerCase().trim(), c]));
-
-    let linked = 0;
-    let alreadyLinked = 0;
-    const unmatched: DpUnmatched[] = [];
-    const mismatches: FieldMismatch[] = [];
-
-    for (const dp of dpContacts) {
-      const dpEmail = dp.emails?.[0]?.toLowerCase() ?? null;
-      const dpPhone = dialpadContactPhones(dp)[0] ? normalizePhone(dialpadContactPhones(dp)[0]) : null;
-      const dpName = dp.display_name?.toLowerCase().trim() ?? "";
-
-      // Exact match first, then prefix match for old "Name Vessel" combined format
-      const prefixMatch = dpName
-        ? contacts.find((c) => {
-            const n = c.name?.toLowerCase().trim() ?? "";
-            return n.length > 3 && dpName.startsWith(n + " ");
-          })
-        : undefined;
-
-      const match =
-        (dpEmail ? emailMap.get(dpEmail) : undefined) ??
-        (dpPhone ? phoneMap.get(dpPhone) : undefined) ??
-        (dpName ? nameMap.get(dpName) : undefined) ??
-        prefixMatch;
-
-      if (match) {
-        if (match.dialpad_contact_id === dp.id) {
-          alreadyLinked++;
-        } else {
-          await supabase.from("contacts").update({ dialpad_contact_id: dp.id }).eq("id", match.id);
-          linked++;
-        }
-        if (dpEmail && dpEmail !== (match.email?.toLowerCase() ?? "")) {
-          mismatches.push({ contactId: match.id, contactName: match.name, field: "email", crmValue: match.email, sourceValue: dp.emails![0] });
-        }
-        if (dpPhone && normalizePhone(match.phone ?? "") !== dpPhone) {
-          mismatches.push({ contactId: match.id, contactName: match.name, field: "phone", crmValue: match.phone, sourceValue: dpPhone });
-        }
-      } else {
-        unmatched.push({
-          dpId:  dp.id,
-          name:  dp.display_name ?? "Unknown",
-          email: dp.emails?.[0] ?? null,
-          phone: dpPhone,
-        });
-      }
-    }
-
-    return { fetched: dpContacts.length, linked, alreadyLinked, unmatched, mismatches };
-  } catch (err) {
-    return { fetched: 0, linked: 0, alreadyLinked: 0, unmatched: [], mismatches: [], error: err instanceof Error ? err.message : "Dialpad import failed." };
-  }
-}
-
-export async function createContactFromDialpad(
-  dpId: string,
-  name: string,
-  email: string | null,
-  phone: string | null,
-): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await svc();
-  try {
-    const { error } = await supabase.from("contacts").insert({
-      name,
-      email: email || null,
-      phone: phone || null,
-      dialpad_contact_id: dpId,
-      source: "dialpad",
-    });
-    if (error) return { ok: false, error: error.message };
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Failed to create contact." };
-  }
-}
-
-// ─── Dialpad Contact Sync ─────────────────────────────────────────────────────
-
-export async function syncDialpadContacts(): Promise<{ synced: number; mismatches: FieldMismatch[]; error?: string }> {
-  const supabase = await svc();
-  try {
-    const { listDialpadContacts, dialpadContactPhones } = await import("@/lib/dialpad");
-    const dpContacts = await listDialpadContacts();
-
-    const mismatches: FieldMismatch[] = [];
-
-    // Build phone → dp contact map (first dp contact wins per phone)
-    const phoneMap = new Map<string, (typeof dpContacts)[number]>();
-    for (const dp of dpContacts) {
-      const phones = dialpadContactPhones(dp);
-      for (const phone of phones) {
-        const normalized = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
-        if (!phoneMap.has(normalized)) phoneMap.set(normalized, dp);
-      }
-    }
-
-    // Fetch all matching CRM contacts in one query instead of one per phone
-    const phoneList = Array.from(phoneMap.keys());
-    const { data: matches } = phoneList.length > 0
-      ? await supabase.from("contacts").select("id, name, email, phone").in("phone", phoneList)
-      : { data: [] as { id: string; name: string | null; email: string | null; phone: string | null }[] };
-
-    // Deduplicate by CRM contact ID, collect updates and mismatches
-    const processedIds = new Set<string>();
-    const updates: { id: string; dp_id: string }[] = [];
-    for (const match of matches ?? []) {
-      if (processedIds.has(match.id)) continue;
-      processedIds.add(match.id);
-      const dp = phoneMap.get(match.phone ?? "");
-      if (!dp) continue;
-      updates.push({ id: match.id, dp_id: dp.id });
-      const dpEmail = dp.emails?.[0];
-      if (dpEmail && dpEmail.toLowerCase() !== (match.email?.toLowerCase() ?? "")) {
-        mismatches.push({ contactId: match.id, contactName: match.name, field: "email", crmValue: match.email, sourceValue: dpEmail });
-      }
-      const dpName = dp.display_name;
-      if (dpName && dpName.toLowerCase() !== (match.name?.toLowerCase() ?? "")) {
-        mismatches.push({ contactId: match.id, contactName: match.name, field: "name", crmValue: match.name, sourceValue: dpName });
-      }
-    }
-
-    await pMap(updates, async (u) => { await supabase.from("contacts").update({ dialpad_contact_id: u.dp_id }).eq("id", u.id); }, 10);
-
-    return { synced: updates.length, mismatches };
-  } catch (err) {
-    return { synced: 0, mismatches: [], error: err instanceof Error ? err.message : "Dialpad sync failed." };
-  }
-}
-
-export async function registerDialpadWebhook(): Promise<{ ok: boolean; id?: string; existing?: boolean; error?: string }> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!siteUrl) return { ok: false, error: "NEXT_PUBLIC_SITE_URL not set." };
-
-  const hookUrl = `${siteUrl}/api/webhooks/dialpad`;
-  const secret = process.env.DIALPAD_WEBHOOK_SECRET ?? "";
-
-  try {
-    const { listDialpadWebhooks, registerDialpadEventSubscription } = await import("@/lib/dialpad");
-
-    const existing = await listDialpadWebhooks();
-    const alreadyRegistered = existing.items?.find((s) => s.hook_url === hookUrl);
-    if (alreadyRegistered) return { ok: true, id: String(alreadyRegistered.id), existing: true };
-
-    const result = await registerDialpadEventSubscription(hookUrl, secret);
-    if (result.error) return { ok: false, error: result.error };
-    return { ok: true, id: String(result.webhookId) };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Unknown error." };
-  }
-}
-
-export async function pushCrmToDialpad(): Promise<{ updated: number; created: number; error?: string }> {
-  const supabase = await svc();
-  try {
-    const { updateDialpadContact, createDialpadContact } = await import("@/lib/dialpad");
-
-    const { data: contacts } = await supabase
-      .from("contacts")
-      .select("id, name, company_name, email, phone, dialpad_contact_id")
-      .eq("contact_type", "customer")
-      .not("name", "is", null);
-
-    const contactIds = (contacts ?? []).map((c) => c.id);
-    const vesselMap = new Map<string, string>();
-    if (contactIds.length > 0) {
-      const { data: vessels } = await supabase
-        .from("vessels")
-        .select("owner_id, year, make_model")
-        .in("owner_id", contactIds)
-        .order("created_at", { ascending: true });
-      for (const v of vessels ?? []) {
-        if (!vesselMap.has(v.owner_id)) {
-          const parts = [v.year, v.make_model].filter(Boolean).join(" ");
-          if (parts) vesselMap.set(v.owner_id, parts);
-        }
-      }
-    }
-
-    const counts = await pMap(contacts ?? [], async (c) => {
-      const payload = {
-        first_name: c.name ?? c.company_name ?? "",
-        last_name: vesselMap.get(c.id) ?? "",
-        ...(c.company_name ? { company: c.company_name } : {}),
-        ...(c.email ? { emails: [c.email] } : {}),
-        ...(c.phone ? { phone_numbers: [c.phone] } : {}),
-      };
-      if (c.dialpad_contact_id) {
-        await updateDialpadContact(c.dialpad_contact_id, payload);
-        return { updated: 1, created: 0 };
-      } else {
-        const newId = await createDialpadContact(payload);
-        if (newId) {
-          await supabase.from("contacts").update({ dialpad_contact_id: newId }).eq("id", c.id);
-          return { updated: 0, created: 1 };
-        }
-      }
-      return { updated: 0, created: 0 };
-    }, 3);
-
-    const updated = counts.reduce((a, b) => a + b.updated, 0);
-    const created = counts.reduce((a, b) => a + b.created, 0);
-    return { updated, created };
-  } catch (err) {
-    return { updated: 0, created: 0, error: err instanceof Error ? err.message : "Push failed." };
-  }
-}
-
-export async function promoteDialpadLocalToCompany(): Promise<{
-  promoted: number;
-  alreadyShared: number;
-  error?: string;
-}> {
-  try {
-    const { listDialpadContactsByType, createDialpadContact, dialpadContactPhones } = await import("@/lib/dialpad");
-    const [localContacts, companyContacts] = await Promise.all([
-      listDialpadContactsByType("local", 500),
-      listDialpadContactsByType("company", 500),
-    ]);
-
-    // Build dedup sets from existing company contacts
-    const sharedPhones = new Set(
-      companyContacts.flatMap((c) => dialpadContactPhones(c).map((p) => normalizePhone(p) ?? p))
-    );
-    const sharedEmails = new Set(
-      companyContacts.flatMap((c) => (c.emails ?? []).map((e: string) => e.toLowerCase()))
-    );
-
-    let promoted = 0;
-    let alreadyShared = 0;
-
-    for (const c of localContacts) {
-      const phones: string[] = dialpadContactPhones(c);
-      const emails: string[] = c.emails ?? [];
-      const alreadyInCompany =
-        phones.some((p: string) => sharedPhones.has(normalizePhone(p) ?? p)) ||
-        emails.some((e: string) => sharedEmails.has(e.toLowerCase()));
-
-      if (alreadyInCompany) {
-        alreadyShared++;
-        continue;
-      }
-
-      const newId = await createDialpadContact({
-        first_name: c.display_name,
-        ...(emails.length ? { emails } : {}),
-        ...(phones.length ? { phone_numbers: phones } : {}),
-      });
-      if (newId) {
-        phones.forEach((p: string) => sharedPhones.add(normalizePhone(p) ?? p));
-        emails.forEach((e: string) => sharedEmails.add(e.toLowerCase()));
-        promoted++;
-      }
-    }
-
-    return { promoted, alreadyShared };
-  } catch (err) {
-    return { promoted: 0, alreadyShared: 0, error: err instanceof Error ? err.message : "Promotion failed." };
-  }
-}
-
-// ─── OpenPhone Sync ──────────────────────────────────────────────────────────
+// ─── Quo Sync ─────────────────────────────────────────────────────────────────
 
 export type OpUnmatched = { opId: string; name: string; phone: string | null; email: string | null };
 
-export async function importOpenPhoneContacts(): Promise<{
+export async function importQuoContacts(): Promise<{
   fetched: number;
   linked: number;
   alreadyLinked: number;
@@ -2409,11 +2035,11 @@ export async function importOpenPhoneContacts(): Promise<{
 
     return { fetched: opContacts.length, linked, alreadyLinked, unmatched };
   } catch (err) {
-    return { fetched: 0, linked: 0, alreadyLinked: 0, unmatched: [], error: err instanceof Error ? err.message : "OpenPhone import failed." };
+    return { fetched: 0, linked: 0, alreadyLinked: 0, unmatched: [], error: err instanceof Error ? err.message : "Quo import failed." };
   }
 }
 
-export async function createContactFromOpenPhone(opId: string, name: string, phone: string | null, email: string | null): Promise<{ ok: boolean; error?: string }> {
+export async function createContactFromQuo(opId: string, name: string, phone: string | null, email: string | null): Promise<{ ok: boolean; error?: string }> {
   const supabase = await svc();
   try {
     const normalized = normalizePhone(phone ?? "") ?? phone ?? null;
@@ -2421,7 +2047,7 @@ export async function createContactFromOpenPhone(opId: string, name: string, pho
       name,
       phone: normalized,
       email: email ?? null,
-      source: "openphone",
+      source: "quo",
       contact_type: "customer",
       status: "lead",
       openphone_contact_id: opId,
@@ -2430,7 +2056,7 @@ export async function createContactFromOpenPhone(opId: string, name: string, pho
     await supabase.from("timeline_events").insert({
       contact_id: data.id,
       event_type: "lead_created",
-      title: "Lead created from OpenPhone contact import",
+      title: "Lead created from Quo contact import",
       body: null,
       created_by: "system",
     });
@@ -2440,7 +2066,7 @@ export async function createContactFromOpenPhone(opId: string, name: string, pho
   }
 }
 
-export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: number; error?: string }> {
+export async function pushCrmToQuo(): Promise<{ updated: number; created: number; error?: string }> {
   const supabase = await svc();
   try {
     const { listOpenPhoneContacts, createOpenPhoneContact, updateOpenPhoneContact, splitName } = await import("@/lib/openphone");
@@ -2467,7 +2093,7 @@ export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: 
       }
     }
 
-    // Build a phone index of existing OpenPhone contacts to avoid duplicates on create
+    // Build a phone index of existing Quo contacts to avoid duplicates on create
     const existing = await listOpenPhoneContacts();
     const existingByPhone = new Map(
       existing.flatMap((c) => (c.phoneNumbers ?? []).filter((p) => p.value).map((p) => [normalizePhone(p.value!) ?? p.value!, c.id]))
@@ -2505,7 +2131,7 @@ export async function pushCrmToOpenPhone(): Promise<{ updated: number; created: 
     const created = counts.reduce((a, b) => a + b.created, 0);
     return { updated, created };
   } catch (err) {
-    return { updated: 0, created: 0, error: err instanceof Error ? err.message : "OpenPhone push failed." };
+    return { updated: 0, created: 0, error: err instanceof Error ? err.message : "Quo push failed." };
   }
 }
 

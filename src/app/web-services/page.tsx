@@ -50,7 +50,7 @@ const features = [
   {
     icon: "⬡",
     title: "VoIP Call and SMS Logging",
-    body: "Every call and text is automatically logged to the right contact in the CRM. Supports Dialpad, RingCentral, and other VoIP providers.",
+    body: "Every call and text is automatically logged to the right contact in the CRM. Supports Quo, RingCentral, and other VoIP providers.",
   },
   {
     icon: "⬡",
@@ -108,7 +108,7 @@ const tiers = [
     badge: null,
     includes: [
       "Everything in Platform",
-      "VoIP call and SMS logging (Dialpad, RingCentral, and others)",
+      "VoIP call and SMS logging (Quo, RingCentral, and others)",
       "AI-optimized SEO: semantic content, FAQ schema, entity coverage",
       "Location and service area pages for local rank coverage",
       "Quarterly SEO and content updates",
@@ -540,7 +540,7 @@ export default function WebServicesPage() {
               },
               {
                 title: "VoIP call and SMS logging",
-                examples: "Dialpad, RingCentral, and others",
+                examples: "Quo, RingCentral, and others",
                 body: "Every call and text you make or receive is automatically logged to the relevant contact in the CRM with a timestamp, direction, and duration. You never lose track of a conversation. New callers who are not in the system yet are flagged for follow-up.",
               },
               {

@@ -11,10 +11,10 @@ import ContactDetailsCard from "./ContactDetailsCard";
 import ContactDocuments from "./ContactDocuments";
 import ActivityTimeline, { NotesList } from "./ActivityTimeline";
 import LogCallModal from "./LogCallModal";
-import SyncCallsButton from "./SyncCallsButton";
 import SyncToQbButton from "./SyncToQbButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteContactButton from "../DeleteContactButton";
+import MobileContactActionsSheet from "./MobileContactActionsSheet";
 import VendorDescriptor from "./VendorDescriptor";
 import type { PipelineStage } from "@/types/pipeline";
 import type { DriveFile } from "@/lib/google-drive";
@@ -193,8 +193,7 @@ export default async function ContactProfilePage({
             {contact.contact_type !== "vendor" && (
               <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
             )}
-            <SyncCallsButton contactId={contact.id} />
-            <LogCallModal contactId={contact.id} />
+<LogCallModal contactId={contact.id} />
             <DeleteContactButton contactId={contact.id} redirectTo="/pro/contacts" />
           </div>
         </div>
@@ -218,31 +217,13 @@ export default async function ContactProfilePage({
           </div>
         )}
 
-        {/* Mobile action strip */}
-        <div className="fixed bottom-16 inset-x-0 z-40 md:hidden bg-white border-t border-slate-200">
-          <div className="flex gap-2 px-4 py-3 overflow-x-auto">
-            <LogCallModal contactId={contact.id} />
-            <SyncCallsButton contactId={contact.id} />
-            {contact.contact_type !== "vendor" && (
-              <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
-            )}
-            {contact.contact_type !== "vendor" && (
-              contact.qb_customer_id ? (
-                <a
-                  href={`https://app.qbo.intuit.com/app/customerdetail?nameId=${contact.qb_customer_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="border border-slate-300 text-slate-600 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-medium transition-colors whitespace-nowrap shrink-0"
-                >
-                  View QB
-                </a>
-              ) : (
-                <SyncToQbButton contactId={contact.id} />
-              )
-            )}
-            <DeleteContactButton contactId={contact.id} redirectTo="/pro/contacts" />
-          </div>
-        </div>
+        {/* Mobile action sheet */}
+        <MobileContactActionsSheet
+          contactId={contact.id}
+          qbCustomerId={contact.qb_customer_id}
+          pipelineStage={contact.pipeline_stage}
+          isVendor={contact.contact_type === "vendor"}
+        />
 
         <div className="flex-1 px-4 md:px-8 py-6 flex flex-col gap-5 pb-36 md:pb-6">
 

@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
-import CalendarRegisterButton, { DialpadWebhookButton } from "./IntegrationsClient";
+import CalendarRegisterButton from "./IntegrationsClient";
 import SyncPanel from "./SyncPanel";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ async function getCalendarStatus(): Promise<{ connected: boolean; webhookExpiry:
   return { connected, webhookExpiry };
 }
 
-async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: string | null }; dialpad: { connected: boolean; oauthConnected: boolean }; openphone: { connected: boolean } }> {
+async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: string | null }; quo: { connected: boolean } }> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!
@@ -42,15 +42,13 @@ async function getOAuthStatus(): Promise<{ qb: { connected: boolean; realmId: st
   const { data } = await supabase
     .from("oauth_tokens")
     .select("provider, realm_id, expires_at")
-    .in("provider", ["quickbooks", "dialpad"]);
+    .in("provider", ["quickbooks"]);
 
   const qbRow = data?.find((r) => r.provider === "quickbooks");
-  const dpRow = data?.find((r) => r.provider === "dialpad");
 
   return {
     qb: { connected: !!qbRow, realmId: qbRow?.realm_id ?? null },
-    dialpad: { connected: !!dpRow || !!process.env.DIALPAD_API_KEY, oauthConnected: !!dpRow },
-    openphone: { connected: !!process.env.OPENPHONE_API_KEY },
+    quo: { connected: !!process.env.OPENPHONE_API_KEY },
   };
 }
 
@@ -71,12 +69,11 @@ function StatusBadge({ connected }: { connected: boolean }) {
 export default async function IntegrationsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ qb_connected?: string; qb_error?: string; dp_connected?: string; dp_error?: string }>;
+  searchParams?: Promise<{ qb_connected?: string; qb_error?: string }>;
 }) {
   const params = (await searchParams) ?? {};
   const { connected: calendarConnected, webhookExpiry } = await getCalendarStatus();
-  const { qb, dialpad, openphone } = await getOAuthStatus();
-  const dialpadOAuthAvailable = !!(process.env.DIALPAD_CLIENT_ID && process.env.DIALPAD_CLIENT_SECRET);
+  const { qb, quo } = await getOAuthStatus();
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? null;
 
 
@@ -89,7 +86,7 @@ export default async function IntegrationsPage({
           <p className="text-[#1E2938]/50 text-sm mt-0.5">Manage connections to external services.</p>
         </div>
 
-        {(params.qb_connected || params.qb_error || params.dp_connected || params.dp_error) && (
+        {(params.qb_connected || params.qb_error) && (
           <div className="mx-8 mt-4">
             {params.qb_connected && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-sm px-4 py-2.5 text-emerald-700 text-xs font-medium">
@@ -101,21 +98,11 @@ export default async function IntegrationsPage({
                 QuickBooks connection failed: {params.qb_error}. Check your credentials.
               </div>
             )}
-            {params.dp_connected && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-sm px-4 py-2.5 text-emerald-700 text-xs font-medium">
-                Dialpad connected successfully.
-              </div>
-            )}
-            {params.dp_error && (
-              <div className="bg-red-50 border border-red-200 rounded-sm px-4 py-2.5 text-red-700 text-xs font-medium">
-                Dialpad connection failed: {params.dp_error}. Check your credentials.
-              </div>
-            )}
           </div>
         )}
 
         <div className="px-8 py-6 flex flex-col gap-5">
-          <SyncPanel qbConnected={qb.connected} dialpadConnected={dialpad.connected} openphoneConnected={openphone.connected} />
+          <SyncPanel qbConnected={qb.connected} quoConnected={quo.connected} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
             {/* Google Calendar */}
@@ -178,93 +165,24 @@ export default async function IntegrationsPage({
               )}
             </div>
 
-            {/* Dialpad */}
+            {/* Quo */}
             <div className="bg-[#F1F2F5] neu-card rounded-md p-6 flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/60 rounded-md flex items-center justify-center shrink-0">
-                    <span className="text-slate-500 text-[10px] font-bold tracking-wider">DP</span>
+                    <span className="text-slate-500 text-[10px] font-bold tracking-wider">QUO</span>
                   </div>
                   <div>
-                    <h2 className="text-[#1E2938] text-sm font-bold">Dialpad</h2>
-                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Call logging and lead capture</p>
-                  </div>
-                </div>
-                <StatusBadge connected={dialpad.connected} />
-              </div>
-              <p className="text-slate-500 text-sm leading-relaxed flex-1">
-                Log inbound and outbound calls against contact records. Missed calls from unknown numbers auto-create a new lead with the voicemail transcript.
-              </p>
-              {dialpad.oauthConnected ? (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    Connected via OAuth
-                  </div>
-                  <p className="text-slate-400 text-[10px] leading-relaxed">
-                    Webhook URL for call logging: {process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/dialpad
-                  </p>
-                  {dialpadOAuthAvailable && (
-                    <a
-                      href="/api/auth/dialpad"
-                      className="w-full border border-slate-200 text-slate-500 text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-medium hover:border-slate-300 transition-colors text-center"
-                    >
-                      Re-authorize
-                    </a>
-                  )}
-                </div>
-              ) : dialpad.connected ? (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-amber-600 text-xs font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                    API key connected
-                  </div>
-                  <DialpadWebhookButton />
-                  {dialpadOAuthAvailable && (
-                    <a
-                      href="/api/auth/dialpad"
-                      className="w-full border border-slate-300 text-slate-500 text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-medium hover:border-slate-400 transition-colors text-center"
-                    >
-                      Upgrade to OAuth
-                    </a>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {dialpadOAuthAvailable ? (
-                    <a
-                      href="/api/auth/dialpad"
-                      className="w-full bg-[#000080] text-white text-[10px] tracking-widest uppercase py-2.5 rounded-sm font-semibold hover:bg-blue-900 transition-colors text-center"
-                    >
-                      Connect Dialpad
-                    </a>
-                  ) : (
-                    <p className="text-slate-400 text-[10px] leading-relaxed">
-                      Add DIALPAD_CLIENT_ID, DIALPAD_CLIENT_SECRET, and DIALPAD_REDIRECT_URI to Vercel to connect.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* OpenPhone */}
-            <div className="bg-[#F1F2F5] neu-card rounded-md p-6 flex flex-col gap-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/60 rounded-md flex items-center justify-center shrink-0">
-                    <span className="text-slate-500 text-[10px] font-bold tracking-wider">OP</span>
-                  </div>
-                  <div>
-                    <h2 className="text-[#1E2938] text-sm font-bold">OpenPhone</h2>
+                    <h2 className="text-[#1E2938] text-sm font-bold">Quo</h2>
                     <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Call and SMS logging</p>
                   </div>
                 </div>
-                <StatusBadge connected={openphone.connected} />
+                <StatusBadge connected={quo.connected} />
               </div>
               <p className="text-slate-500 text-sm leading-relaxed flex-1">
                 Log inbound and outbound calls and texts against contact records. Missed calls from unknown numbers auto-create a new lead.
               </p>
-              {openphone.connected ? (
+              {quo.connected ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />

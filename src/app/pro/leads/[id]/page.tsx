@@ -44,7 +44,7 @@ const sourceConfig: Record<string, { label: string; cls: string; description: st
   website:     { label: "Website Form",           cls: "bg-blue-50 text-blue-700 border border-blue-200",    description: "Submitted via the website." },
   waiver:      { label: "Liability Waiver",       cls: "bg-emerald-50 text-emerald-700 border border-emerald-200", description: "Created when the liability waiver was signed." },
   api:         { label: "API Ingest",             cls: "bg-slate-100 text-slate-600 border border-slate-200", description: "Received via the universal ingest API." },
-  dialpad:     { label: "Dialpad — Inbound Call", cls: "bg-purple-50 text-purple-700 border border-purple-200", description: "Auto-created from an inbound call via Dialpad." },
+  quo:         { label: "Quo — Inbound Call",     cls: "bg-purple-50 text-purple-700 border border-purple-200", description: "Auto-created from an inbound call via Quo." },
   google_ads:  { label: "Google Ads",             cls: "bg-green-50 text-green-700 border border-green-200",  description: "Generated from a Google Ads lead form." },
   manual:      { label: "Manual Entry",           cls: "bg-amber-50 text-amber-700 border border-amber-200",  description: "Entered manually by the team." },
 };
@@ -305,19 +305,19 @@ export default async function LeadDetailPage({
                 </div>
               </div>
 
-              {/* Future: Dialpad data */}
-              {lead.source === "dialpad" ? (
+              {/* Call data from Quo */}
+              {lead.source === "quo" ? (
                 <div className="bg-[#F1F2F5] neu-card rounded-md p-5">
                   <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-3">Call Details</p>
-                  <p className="text-slate-400 text-xs leading-relaxed">Call data will appear here once Dialpad is connected.</p>
+                  <p className="text-slate-400 text-xs leading-relaxed">Call data is logged automatically via the Quo webhook.</p>
                 </div>
               ) : (
                 <div className="bg-[#F1F2F5] neu-card rounded-md p-5 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Call Data</p>
-                    <span className="text-[9px] tracking-widest uppercase text-slate-300 border border-slate-200 px-2 py-0.5 rounded-sm">Dialpad</span>
+                    <span className="text-[9px] tracking-widest uppercase text-slate-300 border border-slate-200 px-2 py-0.5 rounded-sm">Quo</span>
                   </div>
-                  <p className="text-slate-400 text-xs leading-relaxed">Connect Dialpad to see inbound call data, duration, and recordings matched to this contact.</p>
+                  <p className="text-slate-400 text-xs leading-relaxed">Inbound call data, duration, and recordings are logged automatically via Quo.</p>
                 </div>
               )}
 

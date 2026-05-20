@@ -78,7 +78,7 @@ export default async function CallsPage() {
 
         <div className="bg-[#eceef1] border-b border-[#dcdee3] px-4 md:px-8 py-5">
           <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Calls</h1>
-          <p className="text-[#1E2938]/50 text-sm mt-0.5">Inbound and outbound activity from Dialpad.</p>
+          <p className="text-[#1E2938]/50 text-sm mt-0.5">Inbound and outbound activity from Quo.</p>
         </div>
 
         <div className="bg-[#F1F2F5] border-b border-[#dcdee3] px-4 md:px-8 py-2.5 flex items-center gap-5">
@@ -98,7 +98,7 @@ export default async function CallsPage() {
 
         <div className="flex-1 px-4 md:px-8 py-6 flex flex-col gap-4">
           {calls.length === 0 ? (
-            <p className="text-slate-400 text-sm">No calls logged yet. Connect Dialpad and register the webhook to start capturing activity.</p>
+            <p className="text-slate-400 text-sm">No calls logged yet. Calls and texts from Quo will appear here automatically via webhook.</p>
           ) : (
             <>
               {/* Desktop table */}
