@@ -23,7 +23,8 @@ import MobileBoard from "./MobileBoard";
 function groupByStage(cards: PipelineCard[]): Record<PipelineStage, PipelineCard[]> {
   const result = Object.fromEntries(STAGES.map((s) => [s, [] as PipelineCard[]])) as Record<PipelineStage, PipelineCard[]>;
   for (const card of cards) {
-    result[card.stage].push(card);
+    const bucket = result[card.stage] ?? result["new_leads"];
+    bucket.push(card);
   }
   return result;
 }
