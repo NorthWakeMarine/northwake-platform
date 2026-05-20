@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const WEBHOOK_URL = "https://northwakemarine.com/api/webhooks/openphone";
+const WEBHOOK_URL = "https://northwakemarine.com/api/webhooks/quo";
 
 const EVENTS = [
   "call.completed",
