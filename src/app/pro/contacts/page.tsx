@@ -217,7 +217,7 @@ export default async function ContactsPage({
       <div className="flex-1 flex flex-col">
 
         {/* Header */}
-        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 pt-5 flex flex-col gap-4">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-4 md:px-8 pt-5 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Contacts</h1>
@@ -253,7 +253,7 @@ export default async function ContactsPage({
           </div>
         </div>
 
-        <div className="px-8 py-6 flex flex-col gap-5">
+        <div className="px-4 md:px-8 py-6 flex flex-col gap-5">
 
           {/* Duplicate phone banner */}
           {duplicateGroups.length > 0 && (
@@ -295,7 +295,8 @@ export default async function ContactsPage({
             </div>
           )}
 
-          <div className="bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
+          {/* Desktop table */}
+          <div className="hidden md:block bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
             <div className="px-6 py-4 border-b border-[#dcdee3] flex items-center justify-between">
               <h2 className="text-[#1E2938] text-sm font-bold">
                 {term ? "Search Results" : isVendorTab ? "Vendors" : "Customers"}
@@ -400,6 +401,50 @@ export default async function ContactsPage({
                 </table>
               </div>
             )}
+          </div>
+
+          {/* Mobile card list */}
+          <div className="md:hidden flex flex-col gap-2">
+            {error ? (
+              <p className="text-red-500 text-sm text-center py-8">Failed to load contacts.</p>
+            ) : contacts.length === 0 ? (
+              <p className="text-slate-400 text-sm text-center py-12">
+                {searchHit ? `No results for "${term}".` : isVendorTab ? "No vendors yet." : "No customers yet."}
+              </p>
+            ) : contacts.map((c) => (
+              <Link
+                key={c.id}
+                href={`/pro/contacts/${c.id}`}
+                className="bg-white rounded-xl px-4 py-4 shadow-sm flex flex-col gap-2 active:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-slate-800 font-semibold text-base leading-snug">
+                    {c.name || <span className="text-slate-400 italic">Unknown</span>}
+                  </span>
+                  {!isVendorTab && <StatusBadges contact={c} hasVessel={vesselMap.has(c.id)} />}
+                  {isVendorTab && c.company_name && (
+                    <span className="text-slate-500 text-xs shrink-0">{c.company_name}</span>
+                  )}
+                </div>
+                {c.email && (
+                  <span className="text-slate-500 text-sm truncate">{c.email}</span>
+                )}
+                <div className="flex items-center justify-between gap-2 mt-0.5">
+                  <span className="text-slate-600 text-sm font-medium">
+                    {c.phone || <span className="text-slate-300 text-xs">No phone</span>}
+                  </span>
+                  {!isVendorTab && (() => {
+                    const v = vesselMap.get(c.id);
+                    if (!v) return null;
+                    return (
+                      <span className="text-slate-400 text-xs shrink-0">
+                        {[v.year, v.make_model].filter(Boolean).join(" ")}
+                      </span>
+                    );
+                  })()}
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>

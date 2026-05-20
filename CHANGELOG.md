@@ -2,6 +2,16 @@
 
 ## May 2026
 
+### May 20 | Pro portal mobile overhaul | CRM,Pro,Mobile
+
+- Replaced fixed top nav bar with a native-style bottom tab bar (Dashboard, Leads, Contacts, Calls, More) for one-thumb field navigation
+- More drawer slides up with Calendar, Integrations, Site Editor, and Release Notes links; auto-closes on navigation
+- Contacts and Leads list pages: tables replaced with tap-friendly card rows on mobile (name, email, phone, status badge, vessel); tables remain on desktop
+- Contact detail: action buttons (Log Call, Sync Calls, Add to Pipeline, View QB, Delete) moved to a scrollable sticky strip pinned above the bottom nav on mobile
+- Lead detail: Call, Email, Add to Pipeline, Convert, and Delete actions in a scrollable sticky strip on mobile; back link updated to go to Leads instead of Dashboard
+- Padding tightened to `px-4 md:px-8` across all /pro pages for proper mobile viewport fit
+- Touch targets and font sizes bumped across all list and detail views
+
 ### May 20 | Pro dashboard performance audit and optimization | CRM,Pro
 
 - Neumorphism reskin applied to all /pro routes: warm gray surface (#F1F2F5), soft extruded card shadows, compact density, dark sidebar unchanged

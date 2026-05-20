@@ -158,10 +158,10 @@ export default async function ContactProfilePage({
       <div className="flex-1 flex flex-col">
 
         {/* Top bar */}
-        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5 flex items-center gap-4">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-4 md:px-8 py-4 md:py-5 flex items-center gap-4">
           <Link
             href="/pro/contacts"
-            className="text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs shrink-0"
+            className="text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-sm shrink-0 py-1"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
@@ -169,10 +169,11 @@ export default async function ContactProfilePage({
             Contacts
           </Link>
           <span className="text-slate-200 text-xs">/</span>
-          <h1 className="text-[#1E2938] text-xl font-bold tracking-tight truncate flex-1">
+          <h1 className="text-[#1E2938] text-lg md:text-xl font-bold tracking-tight truncate flex-1">
             {contact.name || contact.email || "Unknown Contact"}
           </h1>
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Desktop actions */}
+          <div className="hidden md:flex items-center gap-2 shrink-0">
             {contact.contact_type !== "vendor" && (
               <>
                 {contact.qb_customer_id ? (
@@ -200,7 +201,7 @@ export default async function ContactProfilePage({
 
         {/* Waiver missing banner */}
         {contact.contact_type !== "vendor" && !contact.waiver_signed && (
-          <div className="bg-amber-50 border-b border-amber-200 px-8 py-3 flex items-center justify-between gap-4 flex-wrap">
+          <div className="bg-amber-50 border-b border-amber-200 px-4 md:px-8 py-3 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
@@ -217,7 +218,33 @@ export default async function ContactProfilePage({
           </div>
         )}
 
-        <div className="flex-1 px-8 py-6 flex flex-col gap-5">
+        {/* Mobile action strip */}
+        <div className="fixed bottom-16 inset-x-0 z-40 md:hidden bg-white border-t border-slate-200">
+          <div className="flex gap-2 px-4 py-3 overflow-x-auto">
+            <LogCallModal contactId={contact.id} />
+            <SyncCallsButton contactId={contact.id} />
+            {contact.contact_type !== "vendor" && (
+              <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
+            )}
+            {contact.contact_type !== "vendor" && (
+              contact.qb_customer_id ? (
+                <a
+                  href={`https://app.qbo.intuit.com/app/customerdetail?nameId=${contact.qb_customer_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border border-slate-300 text-slate-600 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-medium transition-colors whitespace-nowrap shrink-0"
+                >
+                  View QB
+                </a>
+              ) : (
+                <SyncToQbButton contactId={contact.id} />
+              )
+            )}
+            <DeleteContactButton contactId={contact.id} redirectTo="/pro/contacts" />
+          </div>
+        </div>
+
+        <div className="flex-1 px-4 md:px-8 py-6 flex flex-col gap-5 pb-36 md:pb-6">
 
           {/* Vendor descriptor */}
           {contact.contact_type === "vendor" && (

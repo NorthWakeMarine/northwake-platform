@@ -132,21 +132,22 @@ export default async function LeadDetailPage({
       <div className="flex-1 flex flex-col">
 
         {/* Top bar */}
-        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5 flex items-center gap-4 flex-wrap">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-4 md:px-8 py-4 md:py-5 flex items-center gap-4 flex-wrap">
           <Link
-            href="/pro/dashboard"
-            className="text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-xs shrink-0"
+            href="/pro/leads"
+            className="text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1.5 text-sm shrink-0 py-1"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            Dashboard
+            Leads
           </Link>
           <span className="text-slate-200 text-xs">/</span>
-          <h1 className="text-[#1E2938] text-xl font-bold tracking-tight flex-1 truncate">
+          <h1 className="text-[#1E2938] text-lg md:text-xl font-bold tracking-tight flex-1 truncate">
             {lead.name || lead.email}
           </h1>
-          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {/* Desktop actions */}
+          <div className="hidden md:flex items-center gap-2 shrink-0 flex-wrap">
             {lead.phone && (
               <a
                 href={`tel:${lead.phone}`}
@@ -193,7 +194,50 @@ export default async function LeadDetailPage({
           </div>
         </div>
 
-        <div className="flex-1 px-8 py-6">
+        {/* Mobile action strip */}
+        <div className="fixed bottom-16 inset-x-0 z-40 md:hidden bg-white border-t border-slate-200">
+          <div className="flex gap-2 px-4 py-3 overflow-x-auto">
+            {lead.phone && (
+              <a
+                href={`tel:${lead.phone}`}
+                className="flex items-center gap-2 bg-slate-800 text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold whitespace-nowrap shrink-0"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.35 2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.95-1.36a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                Call
+              </a>
+            )}
+            {lead.email && (
+              <a
+                href={`mailto:${lead.email}`}
+                className="flex items-center gap-2 bg-blue-600 text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold whitespace-nowrap shrink-0"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+                Email
+              </a>
+            )}
+            {lead.status === "converted" && contact ? (
+              <Link
+                href={`/pro/contacts/${contact.id}`}
+                className="flex items-center gap-2 bg-emerald-600 text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold whitespace-nowrap shrink-0"
+              >
+                View Profile
+              </Link>
+            ) : (
+              <>
+                <AddToPipelineButton id={lead.id} sourceType="lead" />
+                <ConvertButton leadId={lead.id} />
+              </>
+            )}
+            <DeleteLeadButton leadId={lead.id} redirectTo="/pro/leads" />
+          </div>
+        </div>
+
+        <div className="flex-1 px-4 md:px-8 py-6 pb-36 md:pb-6">
           <div className="grid lg:grid-cols-3 gap-5">
 
             {/* Left: lead data */}

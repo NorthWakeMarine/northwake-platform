@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import ClickableRow from "@/components/ClickableRow";
@@ -98,7 +99,7 @@ export default async function LeadsPage({
     <ProShell>
       <div className="flex-1 flex flex-col">
 
-        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-8 py-5 flex items-center justify-between">
+        <div className="bg-[#eceef1] border-b border-[#dcdee3] px-4 md:px-8 py-5 flex items-center justify-between">
           <div>
             <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Leads</h1>
             <p className="text-[#1E2938]/50 text-sm mt-0.5">Every lead received across all sources.</p>
@@ -109,9 +110,10 @@ export default async function LeadsPage({
           </div>
         </div>
 
-        <div className="px-8 py-6">
-          <div className="bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
+        <div className="px-4 md:px-8 py-6 flex flex-col gap-4">
 
+          {/* Desktop table */}
+          <div className="hidden md:block bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
             {error ? (
               <p className="text-red-500 text-xs px-6 py-6">Failed to load leads: {error.message}</p>
             ) : !leads || leads.length === 0 ? (
@@ -179,6 +181,53 @@ export default async function LeadsPage({
               </div>
             )}
           </div>
+
+          {/* Mobile card list */}
+          <div className="md:hidden flex flex-col gap-2">
+            {error ? (
+              <p className="text-red-500 text-sm text-center py-8">Failed to load leads.</p>
+            ) : !leads || leads.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 text-center py-12">
+                <p className="text-slate-400 text-sm">No leads yet.</p>
+                <p className="text-slate-400 text-sm max-w-xs leading-relaxed">
+                  Leads appear automatically when someone submits a quote request on the website.
+                </p>
+              </div>
+            ) : (leads as Lead[]).map((lead) => {
+              const src = sourceConfig[lead.source ?? "website"] ?? sourceConfig.website;
+              return (
+                <Link
+                  key={lead.id}
+                  href={`/pro/leads/${lead.id}`}
+                  className="bg-white rounded-xl px-4 py-4 shadow-sm flex flex-col gap-2 active:bg-slate-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-slate-800 font-semibold text-base leading-snug">
+                      {lead.name || <span className="text-slate-400 italic">Unknown</span>}
+                    </span>
+                    <span className="text-slate-400 text-xs shrink-0">{fmt(lead.created_at)}</span>
+                  </div>
+                  {lead.email && (
+                    <span className="text-slate-500 text-sm truncate">{lead.email}</span>
+                  )}
+                  <div className="flex items-center justify-between gap-2 mt-0.5">
+                    <span className="text-slate-600 text-sm font-medium">
+                      {lead.phone || <span className="text-slate-300 text-xs font-normal">No phone</span>}
+                    </span>
+                    <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium shrink-0 ${src.cls}`}>
+                      {src.label}
+                    </span>
+                  </div>
+                  {lead.vessel_type && (
+                    <span className="text-slate-400 text-xs">
+                      {lead.vessel_type}{lead.vessel_length ? ` · ${lead.vessel_length} ft` : ""}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+
         </div>
 
       </div>

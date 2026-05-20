@@ -8,6 +8,54 @@ import { signOut } from "@/app/actions";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { clientConfig } from "@/config/client";
 
+const bottomTabs = [
+  {
+    href: "/pro/dashboard",
+    label: "Dashboard",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+      </svg>
+    ),
+  },
+  {
+    href: "/pro/leads",
+    label: "Leads",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+      </svg>
+    ),
+  },
+  {
+    href: "/pro/contacts",
+    label: "Contacts",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    href: "/pro/calls",
+    label: "Calls",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+      </svg>
+    ),
+  },
+];
+
+const moreLinks = [
+  { href: "/pro/calendar", label: "Calendar" },
+  { href: "/pro/integrations", label: "Integrations" },
+  { href: "/pro/editor", label: "Site Editor" },
+  { href: "/pro/release-notes", label: "Release Notes" },
+];
+
 const navLinks = [
   {
     href: "/pro/dashboard",
@@ -108,6 +156,12 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("sidebar-collapsed") === "true"
   );
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMoreOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const supabase = createBrowserSupabase();
@@ -240,35 +294,64 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* ── Mobile top bar ── */}
-      <div className="md:hidden fixed top-0 inset-x-0 z-50 bg-[#06061a] border-b border-white/[0.07] px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#000080] flex items-center justify-center">
-            <Image src={clientConfig.logoWhiteSvg} alt={clientConfig.companyName} width={16} height={16} className="opacity-90" />
-          </div>
-          <p className="text-white text-xs font-bold tracking-wide">{clientConfig.proPortalName}</p>
-        </div>
-        <nav className="flex gap-1">
-          {navLinks.map(({ href, label }) => {
-            const active = pathname === href;
+      {/* ── Mobile bottom tab bar ── */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#06061a] border-t border-white/[0.07]">
+
+        {/* More drawer */}
+        {moreOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setMoreOpen(false)} />
+            <div className="relative z-50 bg-[#06061a] border-t border-white/[0.07] py-1">
+              {moreLinks.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-4 px-6 py-4 transition-colors ${
+                    pathname.startsWith(href)
+                      ? "text-white bg-[#000080]/30"
+                      : "text-white/60 hover:text-white hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <span className="text-base font-medium">{label}</span>
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Tab bar */}
+        <div className="flex h-16">
+          {bottomTabs.map(({ href, label, icon }) => {
+            const active = href === "/pro/dashboard" ? pathname === href : pathname.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
-                title={label}
-                className={`text-[9px] tracking-widest uppercase px-2.5 py-1.5 transition-colors ${
-                  active ? "text-white bg-[#000080]" : "text-white/40 hover:text-white"
+                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+                  active ? "text-white" : "text-white/35"
                 }`}
               >
-                {label.split(" ")[0]}
+                {icon}
+                <span className="text-[9px] tracking-widest uppercase font-semibold">{label}</span>
               </Link>
             );
           })}
-        </nav>
+          <button
+            onClick={() => setMoreOpen((v) => !v)}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+              moreOpen ? "text-white" : "text-white/35"
+            }`}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
+            </svg>
+            <span className="text-[9px] tracking-widest uppercase font-semibold">More</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 md:pt-0 pt-12">
+      <div className="flex-1 flex flex-col min-w-0 md:pt-0 pb-16 md:pb-0">
         {children}
       </div>
 
