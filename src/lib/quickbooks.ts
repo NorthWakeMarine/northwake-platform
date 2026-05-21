@@ -279,6 +279,7 @@ export type QbCustomer = {
   Active: boolean;
   Notes?: string;
   SyncToken?: string;
+  CustomField?: { DefinitionId: string; Name?: string; Type?: string; StringValue?: string }[];
 };
 
 export async function listQbCustomers(): Promise<QbCustomer[]> {
@@ -295,7 +296,56 @@ export async function getQbCustomer(qbCustomerId: string): Promise<QbCustomer> {
   return data.Customer;
 }
 
-// ── Notes-based vessel sync ───────────────────────────────────────────────────
+// ── Custom-field vessel sync ──────────────────────────────────────────────────
+
+export function parseVesselsFromCustomFields(customFields: unknown[]): NoteVessel[] {
+  if (!Array.isArray(customFields)) return [];
+  return customFields
+    .filter((f): f is Record<string, unknown> => !!f && typeof f === "object")
+    .sort((a, b) => parseInt(String(a.DefinitionId ?? "0")) - parseInt(String(b.DefinitionId ?? "0")))
+    .flatMap((f) => {
+      const raw = (f.StringValue as string | undefined)?.trim();
+      if (!raw) return [];
+      const parts = raw.split(" - ");
+      const yearStr = parts[0]?.trim() ?? "";
+      const makeModel = parts[1]?.trim() || null;
+      const lengthFt = parts[2]?.trim() || null;
+      const year = parseInt(yearStr, 10);
+      const parsedYear = !isNaN(year) && year > 1900 ? year : null;
+      const lengthOnly = /^\d+(\.\d+)?\s*ft$/i;
+      if (!parsedYear && (!makeModel || lengthOnly.test(makeModel))) return [];
+      return [{ year: parsedYear, makeModel, lengthFt }];
+    });
+}
+
+export function buildCustomFieldVessels(
+  existingFields: { DefinitionId: string }[],
+  vessels: NoteVessel[]
+): { DefinitionId: string; StringValue: string }[] {
+  const sorted = [...existingFields].sort((a, b) => parseInt(a.DefinitionId) - parseInt(b.DefinitionId));
+  return sorted.slice(0, 4).map((field, i) => {
+    const v = vessels[i];
+    if (!v) return { DefinitionId: field.DefinitionId, StringValue: "" };
+    const value = [v.year ?? "", v.makeModel ?? "", v.lengthFt ?? ""]
+      .join(" - ")
+      .replace(/(\s*-\s*)+$/, "")
+      .trim();
+    return { DefinitionId: field.DefinitionId, StringValue: value };
+  });
+}
+
+export async function updateQbCustomerCustomFields(
+  qbCustomerId: string,
+  syncToken: string,
+  fields: { DefinitionId: string; StringValue: string }[]
+): Promise<void> {
+  await qbRequest("/customer", {
+    method: "POST",
+    body: JSON.stringify({ Id: qbCustomerId, SyncToken: syncToken, sparse: true, CustomField: fields }),
+  });
+}
+
+// ── Notes-based vessel sync (legacy fallback) ─────────────────────────────────
 
 const VESSELS_PREFIX = "Vessels:";
 

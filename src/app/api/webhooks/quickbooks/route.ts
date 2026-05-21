@@ -87,7 +87,7 @@ async function qbFetch(tokens: { access_token: string; realm_id: string }, path:
 
 async function handleCustomer(qbCustomerId: string) {
   const supabase = svc();
-  const { getQbTokens, parseVesselsFromNotes } = await import("@/lib/quickbooks");
+  const { getQbTokens, parseVesselsFromCustomFields, parseVesselsFromNotes } = await import("@/lib/quickbooks");
   const tokens = await getQbTokens();
   if (!tokens) return;
 
@@ -154,8 +154,10 @@ async function handleCustomer(qbCustomerId: string) {
 
     await supabase.from("contacts").update(update).eq("id", match.id);
 
-    // Sync vessels from QB Notes
-    const noteVessels = parseVesselsFromNotes((qbC.Notes as string | null) ?? null);
+    // Sync vessels: custom fields first, Notes as fallback for legacy data
+    const rawCFs = (qbC.CustomField as unknown[] | undefined) ?? [];
+    const cfVessels = parseVesselsFromCustomFields(rawCFs);
+    const noteVessels = cfVessels.length > 0 ? cfVessels : parseVesselsFromNotes((qbC.Notes as string | null) ?? null);
     if (noteVessels.length > 0) {
       const { data: existing } = await supabase
         .from("vessels")

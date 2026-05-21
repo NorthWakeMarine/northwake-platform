@@ -1531,7 +1531,7 @@ export async function pushCrmToQuickBooks(): Promise<{ upserted: number; skipped
 export async function syncVesselsToQbNotes(): Promise<{ synced: number; error?: string }> {
   const supabase = await svc();
   try {
-    const { getQbTokens, getQbCustomer, buildNotesWithVessels, updateQbCustomerNotes } = await import("@/lib/quickbooks");
+    const { getQbTokens, getQbCustomer, buildCustomFieldVessels, updateQbCustomerCustomFields } = await import("@/lib/quickbooks");
     const tokens = await getQbTokens();
     if (!tokens) return { synced: 0, error: "QuickBooks not connected." };
 
@@ -1562,11 +1562,11 @@ export async function syncVesselsToQbNotes(): Promise<{ synced: number; error?: 
           lengthFt: v.length_ft as string | null,
         }));
         const customer = await getQbCustomer(c.qb_customer_id!);
-        const newNotes = buildNotesWithVessels(customer.Notes ?? null, noteVessels);
-        if (newNotes.trim() !== (customer.Notes ?? "").trim()) {
-          await updateQbCustomerNotes(c.qb_customer_id!, customer.SyncToken!, newNotes);
-          return 1;
-        }
+        const existingFields = (customer.CustomField as { DefinitionId: string }[] | undefined) ?? [];
+        if (existingFields.length === 0) return 0; // no custom fields defined in QB for this account
+        const newFields = buildCustomFieldVessels(existingFields, noteVessels);
+        await updateQbCustomerCustomFields(c.qb_customer_id!, customer.SyncToken!, newFields);
+        return 1;
       } catch { /* skip */ }
       return 0;
     }, 5);
@@ -1759,7 +1759,7 @@ export async function importQbCustomers(): Promise<{
   const supabase = await svc();
 
   try {
-    const { listQbCustomers, getQbTokens, parseVesselsFromNotes } = await import("@/lib/quickbooks");
+    const { listQbCustomers, getQbTokens, parseVesselsFromCustomFields, parseVesselsFromNotes } = await import("@/lib/quickbooks");
     const tokens = await getQbTokens();
     if (!tokens) return { linked: 0, alreadyLinked: 0, unmatched: [], mismatches: [], error: "QuickBooks not connected." };
 
@@ -1821,8 +1821,11 @@ export async function importQbCustomers(): Promise<{
           linked++;
         }
 
-        // Sync vessels from QB Notes → CRM
-        const noteVessels = parseVesselsFromNotes(qbC.Notes ?? null);
+        // Sync vessels: custom fields first, Notes as fallback for legacy data
+        const rawCFs = (qbC.CustomField as unknown[] | undefined) ?? [];
+        const noteVessels = rawCFs.length > 0
+          ? parseVesselsFromCustomFields(rawCFs)
+          : parseVesselsFromNotes(qbC.Notes ?? null);
         if (noteVessels.length > 0) {
           const { data: existing } = await supabase
             .from("vessels")
