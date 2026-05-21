@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, runIntegrityCheck, createContactFromQb, createContactFromQuo, pushCrmToQuickBooks, pushCrmToQuo, importQuoContacts, syncVesselsToQbNotes, updateContactFields, pushCrmFieldToQb, importQbInvoices, purgeGhostVessels } from "@/app/actions";
+import { importQbCustomers, runIntegrityCheck, createContactFromQb, createContactFromQuo, pushCrmToQuickBooks, pushCrmToQuo, importQuoContacts, syncVesselsToQbNotes, updateContactFields, pushCrmFieldToQb, importQbInvoices, purgeGhostVessels, clearQbNotes } from "@/app/actions";
 import type { FieldMismatch, OpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
@@ -24,6 +24,8 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
   const [importingOpId, setImportingOpId] = useState<string | null>(null);
   const [imported, setImported] = useState<Set<string>>(new Set());
   const [resolvedMismatches, setResolvedMismatches] = useState<Set<string>>(new Set());
+  const [clearNotesResult, setClearNotesResult] = useState<{ cleared: number; errors: string[]; error?: string } | null>(null);
+  const [isClearingNotes, startClearNotes] = useTransition();
 
   function handleSyncAll() {
     startTransition(async () => {
@@ -50,6 +52,13 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
         qbNotes: qbNotes ?? undefined,
         ghostPurge,
       });
+    });
+  }
+
+  function handleClearQbNotes() {
+    startClearNotes(async () => {
+      const res = await clearQbNotes();
+      setClearNotesResult(res);
     });
   }
 
@@ -118,6 +127,13 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={handleClearQbNotes}
+            disabled={isClearingNotes || !qbConnected}
+            className="border border-slate-300 text-slate-500 text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-medium hover:border-slate-400 hover:text-slate-600 disabled:opacity-40 transition-colors"
+          >
+            {isClearingNotes ? "Clearing..." : "Clear QB Notes"}
+          </button>
+          <button
             onClick={handleSyncAll}
             disabled={isPending || nothingConnected}
             className="bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase px-5 py-2.5 rounded-sm font-semibold disabled:opacity-40 transition-colors"
@@ -129,6 +145,22 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
 
       {nothingConnected && (
         <p className="text-slate-400 text-xs">Connect QuickBooks or Quo above to enable sync.</p>
+      )}
+
+      {clearNotesResult && (
+        <div className="flex items-center gap-1.5">
+          {clearNotesResult.error ? (
+            <p className="text-red-500 text-xs">{clearNotesResult.error}</p>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-slate-700 text-xs">
+                {clearNotesResult.cleared} QB customer notes cleared
+                {clearNotesResult.errors.length > 0 && ` (${clearNotesResult.errors.length} errors)`}
+              </span>
+            </>
+          )}
+        </div>
       )}
 
       {result && (
