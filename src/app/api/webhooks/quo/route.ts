@@ -29,10 +29,11 @@ function verifySignature(rawBody: string, header: string): boolean {
     if (!timestamp || !digest) return false;
     const signed = `${timestamp}.${rawBody}`;
     const expected = crypto
-      .createHmac("sha256", Buffer.from(secret, "base64"))
+      .createHmac("sha256", secret)
       .update(signed)
-      .digest("base64");
-    return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(expected));
+      .digest("hex");
+    const digestBuf = Buffer.from(digest.length === expected.length ? digest : Buffer.from(digest, "base64").toString("hex"), "hex");
+    return crypto.timingSafeEqual(digestBuf, Buffer.from(expected, "hex"));
   } catch {
     return false;
   }
