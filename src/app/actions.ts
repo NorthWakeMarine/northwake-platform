@@ -863,6 +863,29 @@ export async function createContact(fields: {
     .single();
   if (error) return { ok: false, error: error.message };
   revalidatePath("/pro/contacts");
+
+  // Push to Quo in the background — don't block the response
+  const contactId = data.id;
+  (async () => {
+    try {
+      const { createOpenPhoneContact, splitName } = await import("@/lib/openphone");
+      const { firstName, lastName } = splitName(fields.name?.trim() ?? "");
+      const payload = {
+        firstName,
+        lastName: lastName || undefined,
+        company: fields.company_name?.trim() || undefined,
+        phoneNumbers: fields.phone?.trim() ? [{ name: "main", value: fields.phone.trim() }] : [],
+        emails: fields.email?.trim() ? [{ name: "main", value: fields.email.trim() }] : [],
+      };
+      const newId = await createOpenPhoneContact(payload);
+      if (newId) {
+        const { createClient: cc } = await import("@supabase/supabase-js");
+        const sb = cc(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
+        await sb.from("contacts").update({ openphone_contact_id: newId }).eq("id", contactId);
+      }
+    } catch { /* non-fatal */ }
+  })();
+
   return { ok: true, id: data.id };
 }
 
