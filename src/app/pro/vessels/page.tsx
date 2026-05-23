@@ -207,7 +207,7 @@ export default async function VesselsPage() {
                               )}
                             </td>
                             <td className="px-4 py-3.5 text-slate-600 text-sm">
-                              {[vessel.year, vessel.length_ft || null].filter(Boolean).join(" / ") || "--"}
+                              {[vessel.year, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" / ") || "--"}
                             </td>
                             <td className="px-4 py-3.5">
                               <div className="flex items-center gap-2">
@@ -258,7 +258,7 @@ export default async function VesselsPage() {
                           <div className={`text-[11px] font-semibold ${healthTextCls[status]}`}>{healthLabel[status]}</div>
                           {(vessel.year || vessel.length_ft) && (
                             <div className="text-[11px] text-slate-400 mt-0.5">
-                              {[vessel.year, vessel.length_ft || null].filter(Boolean).join(" / ")}
+                              {[vessel.year, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" / ")}
                             </div>
                           )}
                         </div>
