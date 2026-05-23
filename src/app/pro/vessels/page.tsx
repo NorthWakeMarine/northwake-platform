@@ -16,7 +16,7 @@ type Vessel = {
   name: string | null;
   make_model: string | null;
   year: number | null;
-  length_ft: number | null;
+  length_ft: string | null;
   last_service_date: string | null;
   service_interval_days: number | null;
   asset_type: string | null;
@@ -207,7 +207,7 @@ export default async function VesselsPage() {
                               )}
                             </td>
                             <td className="px-4 py-3.5 text-slate-600 text-sm">
-                              {[vessel.year, vessel.length_ft ? `${vessel.length_ft}ft` : null].filter(Boolean).join(" / ") || "--"}
+                              {[vessel.year, vessel.length_ft || null].filter(Boolean).join(" / ") || "--"}
                             </td>
                             <td className="px-4 py-3.5">
                               <div className="flex items-center gap-2">
@@ -258,7 +258,7 @@ export default async function VesselsPage() {
                           <div className={`text-[11px] font-semibold ${healthTextCls[status]}`}>{healthLabel[status]}</div>
                           {(vessel.year || vessel.length_ft) && (
                             <div className="text-[11px] text-slate-400 mt-0.5">
-                              {[vessel.year, vessel.length_ft ? `${vessel.length_ft}ft` : null].filter(Boolean).join(" / ")}
+                              {[vessel.year, vessel.length_ft || null].filter(Boolean).join(" / ")}
                             </div>
                           )}
                         </div>
