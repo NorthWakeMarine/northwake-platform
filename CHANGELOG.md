@@ -2,6 +2,14 @@
 
 ## May 2026
 
+### May 23 | Mobile CRM audit, documents UX, Kanban and timeline fixes | CRM,Mobile,Pro
+
+- Kanban cards now show phone or email when contact name is missing instead of hardcoded "Unknown"; fix applied at data layer in pipeline.ts so the fallback chain is name > phone > email > null
+- Contact documents card: multi-file upload (select several files at once; uploads sequentially with "Uploading X of N" progress); list capped at 5 rows with internal scroll; "Open Drive" renamed to "Open Folder"
+- Google Drive: all customer files now route to a single shared contact folder; adding a vessel no longer creates a separate asset-named folder (createAssetFolder replaced with getOrCreateContactFolder which deduplicates by name)
+- Activity timeline: Payment Received events hidden; only invoices (Paid/Unpaid) and other event types shown
+- Mobile CRM audit: added viewport export with viewport-fit=cover for notched iPhones; global CSS forces 16px on all inputs/textareas/selects on mobile (fixes iOS auto-zoom); all modals converted to bottom-sheet pattern (LogCallModal, InvoiceDraftModal, ConvertButton, 3 CalendarClient modals); EditableField pencil icon always visible on mobile (was hover-only); Save/Cancel buttons and ContactDetailsCard edit controls have 44px minimum tap targets
+
 ### May 20 | Create Contact, hero background, Kanban cleanup | CRM,Landing,Pro
 
 - Added Create Contact button to the contacts page header: opens a modal with Name, Email, Phone, Address, Type (Customer/Vendor), and Waiver fields; Company field only shown for vendors; redirects to new contact detail page on save
