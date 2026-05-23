@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import Link from "next/link";
 import TimeDisplay from "./TimeDisplay";
+import DeleteCallButton from "./DeleteCallButton";
 
 type CallRow = {
   id: string;
@@ -103,12 +104,13 @@ export default async function CallsPage() {
             <>
               {/* Desktop table */}
               <div className="hidden md:block bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
-                <div className="grid grid-cols-[auto_1fr_auto_auto_auto] text-[11px] tracking-widest uppercase font-semibold text-[#1E2938]/50 px-4 py-2.5 border-b border-[#dcdee3] gap-4">
+                <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] text-[11px] tracking-widest uppercase font-semibold text-[#1E2938]/50 px-4 py-2.5 border-b border-[#dcdee3] gap-4">
                   <span>Type</span>
                   <span>Contact</span>
                   <span>Direction</span>
                   <span>Duration</span>
                   <span>Date</span>
+                  <span></span>
                 </div>
                 <div className="divide-y divide-[#dcdee3]/60">
                   {calls.map((c) => {
@@ -117,7 +119,7 @@ export default async function CallsPage() {
                     const phone = c.metadata?.caller_number ?? c.metadata?.from_number ?? c.contact_phone;
 
                     return (
-                      <div key={c.id} className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-3 gap-4 hover:bg-white/60 transition-colors">
+                      <div key={c.id} className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] items-center px-4 py-3 gap-4 hover:bg-white/60 transition-colors">
                         <div>
                           {c.event_type === "sms" ? (
                             <span className="text-[9px] tracking-widest uppercase font-semibold px-1.5 py-0.5 rounded-sm bg-blue-50 text-blue-600 border border-blue-100">SMS</span>
@@ -149,6 +151,9 @@ export default async function CallsPage() {
                         </span>
                         <div className="text-right">
                           <TimeDisplay iso={c.created_at} />
+                        </div>
+                        <div className="flex justify-end">
+                          <DeleteCallButton id={c.id} />
                         </div>
                       </div>
                     );
@@ -183,7 +188,10 @@ export default async function CallsPage() {
                             <span className="text-slate-600 text-sm font-semibold truncate">{phone ?? "Unknown number"}</span>
                           )}
                         </div>
-                        <TimeDisplay iso={c.created_at} />
+                        <div className="flex items-center gap-3 shrink-0">
+                          <TimeDisplay iso={c.created_at} />
+                          <DeleteCallButton id={c.id} />
+                        </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className={`text-xs font-medium uppercase tracking-wider ${dir === "outbound" ? "text-[#000080]" : "text-slate-500"}`}>
