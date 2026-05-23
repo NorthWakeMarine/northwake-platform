@@ -16,6 +16,7 @@ type Lead = {
   vessel_length: string | null;
   service: string | null;
   source: string | null;
+  hasNote?: boolean;
 };
 
 const sourceConfig: Record<string, { label: string; cls: string }> = {
@@ -88,6 +89,19 @@ export default async function LeadsPage({
     .select("id, created_at, name, email, phone, vessel_type, vessel_length, service, source")
     .order(sortField, { ascending: sortDir === "asc" });
 
+  // Batch lookup for which phone numbers have a note
+  const phones = (leads ?? []).map(l => l.phone).filter(Boolean) as string[];
+  let notePhones = new Set<string>();
+  if (phones.length > 0) {
+    const { data: pnRows } = await supabase
+      .from("phone_notes")
+      .select("phone")
+      .in("phone", phones);
+    notePhones = new Set((pnRows ?? []).map(n => n.phone));
+  }
+
+  const leadsWithNotes: Lead[] = (leads ?? []).map(l => ({ ...l, hasNote: notePhones.has(l.phone ?? "") }));
+
   const total = leads?.length ?? 0;
   const thisMonth = leads?.filter((l) => {
     const d = new Date(l.created_at);
@@ -148,12 +162,17 @@ export default async function LeadsPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {(leads as Lead[]).map((lead) => {
+                    {leadsWithNotes.map((lead) => {
                       const src = sourceConfig[lead.source ?? "website"] ?? sourceConfig.website;
                       return (
                         <ClickableRow key={lead.id} href={`/pro/leads/${lead.id}`} className="border-b border-[#dcdee3]/50 hover:bg-white/60 transition-colors group">
                           <td className="py-3 px-4 first:pl-6 text-slate-400 whitespace-nowrap">{fmt(lead.created_at)}</td>
-                          <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{lead.name || <span className="text-slate-300">—</span>}</td>
+                          <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">
+                            <span className="flex items-center gap-1.5">
+                              {lead.name || <span className="text-slate-300">—</span>}
+                              {lead.hasNote && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="Has caller note" />}
+                            </span>
+                          </td>
                           <td className="py-3 px-4 text-slate-500">
                             <a href={`mailto:${lead.email}`} className="hover:text-blue-600 transition-colors">{lead.email}</a>
                           </td>
@@ -193,7 +212,7 @@ export default async function LeadsPage({
                   Leads appear automatically when someone submits a quote request on the website.
                 </p>
               </div>
-            ) : (leads as Lead[]).map((lead) => {
+            ) : leadsWithNotes.map((lead) => {
               const src = sourceConfig[lead.source ?? "website"] ?? sourceConfig.website;
               return (
                 <Link
@@ -202,8 +221,9 @@ export default async function LeadsPage({
                   className="bg-white rounded-xl px-4 py-4 shadow-sm flex flex-col gap-2 active:bg-slate-50 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-slate-800 font-semibold text-base leading-snug">
-                      {lead.name || <span className="text-slate-400 italic">Unknown</span>}
+                    <span className="text-slate-800 font-semibold text-base leading-snug flex items-center gap-1.5">
+                      {lead.name || <span className="text-slate-400 italic font-normal text-sm">Unknown</span>}
+                      {lead.hasNote && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-0.5" />}
                     </span>
                     <span className="text-slate-400 text-xs shrink-0">{fmt(lead.created_at)}</span>
                   </div>

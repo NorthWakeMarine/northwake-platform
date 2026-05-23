@@ -7,6 +7,7 @@ import ProShell from "@/components/ProShell";
 import ConvertButton from "./ConvertButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteLeadButton from "../DeleteLeadButton";
+import PhoneNoteForm from "./PhoneNoteForm";
 
 type TimelineEvent = {
   id: string;
@@ -96,6 +97,16 @@ export default async function LeadDetailPage({
 
   if (leadError) console.error("Lead fetch error:", leadError.message);
   if (!lead) notFound();
+
+  let phoneNote: string | null = null;
+  if (lead.phone) {
+    const { data: pn } = await svcClient
+      .from("phone_notes")
+      .select("note")
+      .eq("phone", lead.phone)
+      .maybeSingle();
+    phoneNote = pn?.note?.trim() || null;
+  }
 
   // Try to find a matching contact record by email
   let contact: Contact | null = null;
@@ -286,6 +297,14 @@ export default async function LeadDetailPage({
                   })()}
                 </dl>
               </div>
+
+              {/* Caller note — only for leads with a phone number */}
+              {lead.phone && (
+                <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
+                  <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Caller Note</p>
+                  <PhoneNoteForm phone={lead.phone} initialNote={phoneNote} />
+                </div>
+              )}
 
             </div>
 

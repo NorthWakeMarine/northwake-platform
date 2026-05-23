@@ -309,6 +309,29 @@ export async function addTimelineNote(
   return { success: true };
 }
 
+// ─── Phone Notes ──────────────────────────────────────────────────────────────
+
+export type PhoneNoteState = { success?: boolean; error?: string };
+
+export async function savePhoneNote(
+  _prev: PhoneNoteState,
+  formData: FormData
+): Promise<PhoneNoteState> {
+  const phone = (formData.get("phone") as string ?? "").trim();
+  const note  = (formData.get("note")  as string ?? "").trim();
+  if (!phone) return { error: "Missing phone number." };
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase
+    .from("phone_notes")
+    .upsert({ phone, note, updated_at: new Date().toISOString() }, { onConflict: "phone" });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/pro/leads");
+  return { success: true };
+}
+
 export async function updateTimelineNote(
   id: string,
   body: string
@@ -595,26 +618,39 @@ export async function convertLead(
 
   if (leadErr || !lead) return { error: "Lead not found." };
 
+  // Fetch any phone note saved for this number
+  let phoneNote: string | null = null;
+  if (lead.phone) {
+    const { data: pn } = await supabase
+      .from("phone_notes")
+      .select("note")
+      .eq("phone", normalizePhone(lead.phone) ?? lead.phone)
+      .maybeSingle();
+    phoneNote = pn?.note?.trim() || null;
+  }
+
   let contactId: string | null = null;
 
   if (!force_create) {
     const { data: existing } = await supabase
       .from("contacts")
-      .select("id")
+      .select("id, notes")
       .eq("email", lead.email)
       .maybeSingle();
-    if (existing) contactId = existing.id;
+    if (existing) {
+      contactId = existing.id;
+      const mergedNotes = [existing.notes, phoneNote].filter(Boolean).join("\n\n---\n\n") || null;
+      await supabase
+        .from("contacts")
+        .update({ name: lead.name, phone: normalizePhone(lead.phone), vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, status: "client", ...(mergedNotes !== null ? { notes: mergedNotes } : {}) })
+        .eq("id", contactId);
+    }
   }
 
-  if (contactId) {
-    await supabase
-      .from("contacts")
-      .update({ name: lead.name, phone: normalizePhone(lead.phone), vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, status: "client" })
-      .eq("id", contactId);
-  } else {
+  if (!contactId) {
     const { data: newContact, error: contactErr } = await supabase
       .from("contacts")
-      .insert({ name: lead.name, email: lead.email, phone: normalizePhone(lead.phone), vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, source: lead.source ?? "website", status: "client" })
+      .insert({ name: lead.name, email: lead.email, phone: normalizePhone(lead.phone), vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, source: lead.source ?? "website", status: "client", notes: phoneNote })
       .select("id")
       .single();
     if (contactErr || !newContact) return { error: contactErr?.message ?? "Failed to create contact." };
@@ -659,6 +695,24 @@ export async function mergeLead(
 
   if (leadErr || !lead) return { error: "Lead not found." };
 
+  // Fetch phone note and existing contact notes to merge
+  let phoneNote: string | null = null;
+  if (lead.phone) {
+    const { data: pn } = await supabase
+      .from("phone_notes")
+      .select("note")
+      .eq("phone", normalizePhone(lead.phone) ?? lead.phone)
+      .maybeSingle();
+    phoneNote = pn?.note?.trim() || null;
+  }
+
+  const { data: existingContact } = await supabase
+    .from("contacts")
+    .select("notes")
+    .eq("id", contact_id)
+    .maybeSingle();
+  const mergedNotes = [existingContact?.notes, phoneNote].filter(Boolean).join("\n\n---\n\n") || null;
+
   // Patch any new info onto the existing contact
   await supabase
     .from("contacts")
@@ -668,6 +722,7 @@ export async function mergeLead(
       ...(lead.vessel_type   ? { vessel_type: lead.vessel_type }     : {}),
       ...(lead.vessel_length ? { vessel_length: lead.vessel_length } : {}),
       ...(lead.waiver_signed ? { waiver_signed: true }               : {}),
+      ...(mergedNotes !== null ? { notes: mergedNotes } : {}),
       status: "client",
     })
     .eq("id", contact_id);

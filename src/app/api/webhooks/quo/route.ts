@@ -108,8 +108,10 @@ async function createQuoLead(supabase: AnySupabase, phone: string) {
 
 async function handleCompletedCall(obj: Record<string, unknown>) {
   const supabase = svc();
-  const direction = (obj.direction as string | undefined) ?? "inbound";
-  const callerPhone = direction === "inbound"
+  const rawDirection = (obj.direction as string | undefined) ?? "incoming";
+  const isInbound = rawDirection === "inbound" || rawDirection === "incoming";
+  const direction = isInbound ? "inbound" : "outbound";
+  const callerPhone = isInbound
     ? (obj.from as string | undefined)
     : (obj.to as string | undefined);
   if (!callerPhone) return;
@@ -136,18 +138,20 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
     created_by: "system",
   });
 
-  // Unknown inbound caller who actually talked (>5s) becomes a lead
-  if (!contact && direction === "inbound" && (duration ?? 0) > 5) {
+  // Unknown inbound caller who actually talked (>20s) becomes a lead — filters pocket dials
+  if (!contact && direction === "inbound" && (duration ?? 0) > 20) {
     await createQuoLead(supabase, normalized);
   }
 }
 
 async function handleMissedCall(obj: Record<string, unknown>) {
   const supabase = svc();
-  const direction = (obj.direction as string | undefined) ?? "inbound";
+  const rawDirection = (obj.direction as string | undefined) ?? "incoming";
+  const isInbound = rawDirection === "inbound" || rawDirection === "incoming";
+  const direction = isInbound ? "inbound" : "outbound";
 
   // For inbound missed calls the caller is in `from`; for outbound (voicemail left) it's `to`
-  const contactPhone = direction === "inbound"
+  const contactPhone = isInbound
     ? (obj.from as string | undefined)
     : (obj.to as string | undefined);
   if (!contactPhone) return;

@@ -2,6 +2,16 @@
 
 ## May 2026
 
+### May 23 | Caller notes, Quo direction fix, lead webhook threshold | CRM,Pro
+
+- **phone_notes table**: new DB table keyed by E.164 phone number; one note per number, independent of leads and contacts. Notes survive lead deletion and reappear if the number calls again.
+- **Caller Note card** on lead detail page: textarea pre-filled with any existing note for that number, Save button; only shown for leads with a phone number.
+- **Leads list amber dot**: small amber dot next to lead name (desktop + mobile) when a phone note exists for that number. Single batch query, indexed on phone.
+- **On conversion**: phone note is carried into the contact's Notes field automatically (both `convertLead` and `mergeLead`). If the contact already has notes, the phone note is appended with a `---` separator.
+- **`savePhoneNote` server action** added to actions.ts; uses upsert on phone conflict key.
+- **Quo webhook direction bug fixed**: OpenPhone sends `direction: "incoming"` not `"inbound"`. Normalized to inbound/outbound before comparing — fixes wrong number (own number) being stored as caller, and ensures leads are created correctly.
+- **Webhook threshold raised to 20s**: unknown inbound answered calls now require >20s duration to create a lead (was 5s), filtering out more pocket dials and quick hangups. Missed calls are unaffected.
+
 ### May 23 | Pipeline rename, Vessels page, QB sync fixes, vessel data cleanup | CRM,Pro
 
 - Renamed /pro/dashboard route to /pro/pipeline throughout: directory moved, middleware updated, all revalidatePath calls updated, sidebar logo link updated, nav labels updated
