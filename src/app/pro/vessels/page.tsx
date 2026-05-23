@@ -176,7 +176,6 @@ export default async function VesselsPage() {
                       <tr className="border-b border-slate-100">
                         <th className="text-left px-6 py-3 text-[10px] tracking-widest uppercase text-slate-400 font-semibold">Vessel</th>
                         <th className="text-left px-4 py-3 text-[10px] tracking-widest uppercase text-slate-400 font-semibold">Owner</th>
-                        <th className="text-left px-4 py-3 text-[10px] tracking-widest uppercase text-slate-400 font-semibold">Year / Length</th>
                         <th className="text-left px-4 py-3 text-[10px] tracking-widest uppercase text-slate-400 font-semibold">Health</th>
                         <th className="text-left px-4 py-3 text-[10px] tracking-widest uppercase text-slate-400 font-semibold">Next Service</th>
                       </tr>
@@ -196,6 +195,11 @@ export default async function VesselsPage() {
                               {vessel.name && vessel.make_model && (
                                 <div className="text-[11px] text-slate-400 mt-0.5">{vessel.name}</div>
                               )}
+                              {(vessel.year || vessel.length_ft) && (
+                                <div className="text-[11px] text-slate-400 mt-0.5">
+                                  {[vessel.year, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" / ")}
+                                </div>
+                              )}
                             </td>
                             <td className="px-4 py-3.5">
                               {ownerId ? (
@@ -205,9 +209,6 @@ export default async function VesselsPage() {
                               ) : (
                                 <span className="text-slate-400 text-sm">{ownerName}</span>
                               )}
-                            </td>
-                            <td className="px-4 py-3.5 text-slate-600 text-sm">
-                              {[vessel.year, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" / ") || "--"}
                             </td>
                             <td className="px-4 py-3.5">
                               <div className="flex items-center gap-2">
@@ -247,6 +248,11 @@ export default async function VesselsPage() {
                           <div className="font-semibold text-slate-800 text-sm truncate">
                             {vessel.make_model ?? vessel.name ?? "Unnamed"}
                           </div>
+                          {(vessel.year || vessel.length_ft) && (
+                            <div className="text-[11px] text-slate-400 mt-0.5">
+                              {[vessel.year, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" / ")}
+                            </div>
+                          )}
                           <div className="text-xs text-slate-500 mt-0.5">{ownerName}</div>
                           {due && (
                             <div className={`text-xs mt-1 ${healthTextCls[status]}`}>
@@ -256,11 +262,6 @@ export default async function VesselsPage() {
                         </div>
                         <div className="text-right shrink-0">
                           <div className={`text-[11px] font-semibold ${healthTextCls[status]}`}>{healthLabel[status]}</div>
-                          {(vessel.year || vessel.length_ft) && (
-                            <div className="text-[11px] text-slate-400 mt-0.5">
-                              {[vessel.year, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" / ")}
-                            </div>
-                          )}
                         </div>
                       </Link>
                     );
