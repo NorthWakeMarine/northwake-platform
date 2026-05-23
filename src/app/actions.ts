@@ -707,7 +707,7 @@ export async function addAsset(
   const yearRaw     = formData.get("year") as string;
   const year        = yearRaw ? parseInt(yearRaw, 10) : null;
   const color       = (formData.get("color")       as string)?.trim() || null;
-  const length_ft   = (formData.get("length_ft")   as string)?.trim() || null;
+  const length_ft   = (formData.get("length_ft")   as string)?.trim().replace(/\s*ft\s*$/i, "") || null;
   const location    = (formData.get("location")    as string)?.trim() || null;
   const registration = (formData.get("registration") as string)?.trim() || null;
   const notes       = (formData.get("notes")       as string)?.trim() || null;
@@ -797,7 +797,7 @@ export async function updateAsset(
     make_model: (formData.get("make_model") as string)?.trim() || null,
     year:       parseInt(formData.get("year") as string, 10) || null,
     color:      (formData.get("color")      as string)?.trim() || null,
-    length_ft:  (formData.get("length_ft")  as string)?.trim() || null,
+    length_ft:  (formData.get("length_ft")  as string)?.trim().replace(/\s*ft\s*$/i, "") || null,
     registration: (formData.get("registration") as string)?.trim() || null,
     location:   (formData.get("location")   as string)?.trim() || null,
   }).eq("id", asset_id);
@@ -1669,7 +1669,7 @@ export async function syncVesselsToQbNotes(): Promise<{ synced: number; error?: 
         const noteVessels = vessels.map((v) => ({
           year: v.year as number | null,
           makeModel: v.make_model as string | null,
-          lengthFt: v.length_ft as string | null,
+          lengthFt: v.length_ft ? `${(v.length_ft as string).replace(/\s*ft\s*$/i, "")}ft` : null,
         }));
         const customer = await getQbCustomer(c.qb_customer_id!);
         const existingFields = (customer.CustomField as { DefinitionId: string }[] | undefined) ?? [];
@@ -1946,7 +1946,7 @@ export async function importQbCustomers(): Promise<{
             if (!existingKeys.has(key)) {
               await supabase.from("vessels").insert({
                 owner_id: match.id, asset_type: "vessel",
-                year: nv.year, make_model: nv.makeModel, length_ft: nv.lengthFt,
+                year: nv.year, make_model: nv.makeModel, length_ft: nv.lengthFt?.replace(/\s*ft\s*$/i, "").trim() || null,
               });
             }
           }

@@ -179,7 +179,7 @@ async function handleCustomer(qbCustomerId: string) {
             asset_type: "vessel",
             year: nv.year,
             make_model: nv.makeModel,
-            length_ft: nv.lengthFt,
+            length_ft: nv.lengthFt?.replace(/\s*ft\s*$/i, "").trim() || null,
           }))
         );
       }

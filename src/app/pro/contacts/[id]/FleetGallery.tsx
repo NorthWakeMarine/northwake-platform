@@ -526,7 +526,7 @@ function AssetModal({ asset, contactId, services, onClose }: {
               {[
                 { label: "Type",         value: cfg.label },
                 { label: "Color",        value: asset.color },
-                { label: "Length",       value: asset.length_ft ? `${asset.length_ft.replace(/ft$/i, "").trim()} ft` : null },
+                { label: "Length (ft)",  value: asset.length_ft ? asset.length_ft.replace(/\s*ft\s*$/i, "").trim() : null },
                 { label: "Registration", value: asset.registration },
                 { label: "Location",     value: asset.location },
               ]
