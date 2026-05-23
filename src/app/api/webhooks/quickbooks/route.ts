@@ -289,8 +289,8 @@ async function handleTransaction(txnType: "Invoice" | "SalesReceipt" | "CreditMe
       });
     }
 
-    // Move to invoiced stage when an invoice is created/updated
-    if (txnType === "Invoice" && status !== "Paid") {
+    // Move to done/invoiced only when the invoice is fully paid
+    if (txnType === "Invoice" && status === "Paid") {
       await supabase
         .from("contacts")
         .update({ pipeline_stage: "done_invoiced" })
