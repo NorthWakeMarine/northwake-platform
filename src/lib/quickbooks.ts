@@ -312,8 +312,9 @@ export function parseVesselsFromCustomFields(customFields: unknown[]): NoteVesse
       const lengthFt = parts[2]?.trim() || null;
       const year = parseInt(yearStr, 10);
       const parsedYear = !isNaN(year) && year > 1900 ? year : null;
-      const lengthOnly = /^\d+(\.\d+)?\s*ft$/i;
-      if (!parsedYear && (!makeModel || lengthOnly.test(makeModel))) return [];
+      const junk = /^[\s\-]+$|^\d+(\.\d+)?(\s*ft)?\s*[\-\s]*$/i;
+      if (!parsedYear && (!makeModel || junk.test(makeModel))) return [];
+      if (!parsedYear && !makeModel) return [];
       return [{ year: parsedYear, makeModel, lengthFt }];
     });
 }
@@ -362,9 +363,8 @@ export function parseVesselsFromNotes(notes: string | null): NoteVessel[] {
     const lengthFt = parts[2]?.trim() || null;
     const year = parseInt(yearStr, 10);
     const parsedYear = !isNaN(year) && year > 1900 ? year : null;
-    // Skip entries with no identifying info — blank or a bare dimension in makeModel slot
-    const lengthOnly = /^\d+(\.\d+)?\s*ft$/i;
-    if (!parsedYear && (!makeModel || lengthOnly.test(makeModel))) return [];
+    const junk = /^[\s\-]+$|^\d+(\.\d+)?(\s*ft)?\s*[\-\s]*$/i;
+    if (!parsedYear && (!makeModel || junk.test(makeModel))) return [];
     return [{ year: parsedYear, makeModel, lengthFt }];
   });
 }
