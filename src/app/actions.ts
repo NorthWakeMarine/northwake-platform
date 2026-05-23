@@ -1021,6 +1021,29 @@ export async function markServiced(
   return { success: true };
 }
 
+export async function updateVesselService(
+  _prev: VesselServiceState,
+  formData: FormData
+): Promise<VesselServiceState> {
+  const service_id           = formData.get("service_id")           as string;
+  const contact_id           = formData.get("contact_id")           as string;
+  const service_name         = (formData.get("service_name") as string)?.trim();
+  const interval_days        = parseInt(formData.get("interval_days") as string, 10);
+  const notifications_enabled = formData.get("notifications_enabled") === "true";
+
+  if (!service_id || !service_name) return { error: "Service name required." };
+  if (isNaN(interval_days))         return { error: "Valid interval required." };
+
+  const supabase = await svc();
+  const { error } = await supabase
+    .from("vessel_services")
+    .update({ service_name, interval_days, notifications_enabled })
+    .eq("id", service_id);
+  if (error) return { error: error.message };
+  if (contact_id) revalidatePath(`/pro/contacts/${contact_id}`);
+  return { success: true };
+}
+
 export async function deleteVesselService(
   _prev: VesselServiceState,
   formData: FormData
