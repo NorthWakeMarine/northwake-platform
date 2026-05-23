@@ -281,7 +281,7 @@ export default function ActivityTimeline({ events }: { events: TimelineEvent[] }
     try { localStorage.setItem("nwm_clean_view", next ? "1" : "0"); } catch { /* ignore */ }
   }
 
-  const nonNotes = events.filter((ev) => ev.event_type !== "note");
+  const nonNotes = events.filter((ev) => ev.event_type !== "note" && ev.event_type !== "payment");
   const visible = cleanView
     ? nonNotes.filter((ev) => HUMAN_EVENT_TYPES.has(ev.event_type) && ev.created_by !== "system")
     : nonNotes;
