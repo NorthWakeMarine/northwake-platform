@@ -2,6 +2,16 @@
 
 ## May 2026
 
+### May 23 | Pipeline rename, Vessels page, QB sync fixes, vessel data cleanup | CRM,Pro
+
+- Renamed /pro/dashboard route to /pro/pipeline throughout: directory moved, middleware updated, all revalidatePath calls updated, sidebar logo link updated, nav labels updated
+- Added /pro/vessels page: 4 summary metric cards (Total, Overdue, Due Soon, Healthy), sortable vessel list (worst service health first), desktop table and mobile card stack, links to contact profile
+- Vessels page and pipeline cards now display vessel as "Year - Make/Model - Length" format; vessel nickname shown as subtitle
+- Anchor icon added to Vessels in sidebar nav; Vessels added to mobile More drawer
+- Fixed QB webhook: pipeline card now only moves to done/invoiced when invoice is fully paid (was incorrectly moving on unpaid invoice create/update); invoice paid/unpaid status auto-updates on timeline via Invoice.Update webhook
+- Deleted 9 junk vessel records from DB (bare dashes, bare numbers, bare lengths like "24ft -", "60ft -", "30"); tightened QB vessel parse filter to reject these patterns on future syncs
+- length_ft now stored as plain number string in DB (no ft suffix); 54 existing records cleaned; ft appended only at display time on vessels page and in QB custom fields
+
 ### May 23 | Mobile CRM audit, documents UX, Kanban and timeline fixes | CRM,Mobile,Pro
 
 - Kanban cards now show phone or email when contact name is missing instead of hardcoded "Unknown"; fix applied at data layer in pipeline.ts so the fallback chain is name > phone > email > null
