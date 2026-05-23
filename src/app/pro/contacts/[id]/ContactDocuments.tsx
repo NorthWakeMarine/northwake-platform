@@ -97,7 +97,7 @@ export default function ContactDocuments({
               rel="noopener noreferrer"
               className="text-[9px] tracking-widest uppercase text-slate-400 hover:text-slate-600 font-medium border border-slate-200 px-2.5 py-1.5 rounded-sm transition-colors"
             >
-              Open Drive
+              Open Folder
             </a>
           )}
           <label className={`flex items-center gap-1.5 text-[10px] tracking-widest uppercase font-semibold px-3 py-1.5 rounded-sm cursor-pointer transition-colors border ${
@@ -126,64 +126,68 @@ export default function ContactDocuments({
         <p className="text-red-500 text-xs px-6 py-3 border-b border-red-100">{error}</p>
       )}
 
-      {/* Waivers from timeline events (submitted via website) */}
-      {waiverEvents.length > 0 && (
-        <ul className="divide-y divide-slate-50">
-          {waiverEvents.map((ev) => {
-            const m = ev.metadata;
-            return (
-              <li key={ev.id} className="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 transition-colors">
-                <div className="w-8 h-8 rounded-sm bg-emerald-50 flex items-center justify-center shrink-0">
-                  <span className="text-[8px] font-bold text-emerald-600 tracking-wider">WAV</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-slate-800 text-xs font-medium truncate">
-                    Signed Waiver{m?.name ? ` — ${m.name}` : ""}
-                  </p>
-                  <p className="text-slate-400 text-[10px] mt-0.5">
-                    {m?.date ?? fmtDate(ev.created_at)}
-                    {m?.boat ? ` · ${m.boat}` : ""}
-                  </p>
-                </div>
-                <span className="text-[10px] tracking-widest uppercase text-emerald-600 font-medium whitespace-nowrap shrink-0">
-                  Signed
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
       {files.length === 0 && waiverEvents.length === 0 ? (
         <div className="px-6 py-10 text-center">
           <p className="text-slate-400 text-sm">No documents yet.</p>
           <p className="text-slate-300 text-xs mt-1">Upload a signed waiver, COI, or any other file.</p>
         </div>
-      ) : files.length > 0 ? (
-        <ul className="divide-y divide-slate-50">
-          {files.map((f) => (
-            <li key={f.id} className="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 transition-colors">
-              <div className="w-8 h-8 rounded-sm bg-slate-100 flex items-center justify-center shrink-0">
-                <span className="text-[8px] font-bold text-slate-500 tracking-wider">{fileIcon(f.mimeType)}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-slate-800 text-xs font-medium truncate">{f.name}</p>
-                <p className="text-slate-400 text-[10px] mt-0.5">
-                  {fmtDate(f.createdTime)}{f.size ? ` · ${fmtSize(f.size)}` : ""}
-                </p>
-              </div>
-              <a
-                href={f.webViewLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap shrink-0"
-              >
-                Open
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      ) : (
+        <div className="overflow-y-auto" style={{ maxHeight: "calc(5 * 56px)" }}>
+          {/* Waivers from timeline events (submitted via website) */}
+          {waiverEvents.length > 0 && (
+            <ul className="divide-y divide-slate-50">
+              {waiverEvents.map((ev) => {
+                const m = ev.metadata;
+                return (
+                  <li key={ev.id} className="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                    <div className="w-8 h-8 rounded-sm bg-emerald-50 flex items-center justify-center shrink-0">
+                      <span className="text-[8px] font-bold text-emerald-600 tracking-wider">WAV</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-slate-800 text-xs font-medium truncate">
+                        Signed Waiver{m?.name ? ` — ${m.name}` : ""}
+                      </p>
+                      <p className="text-slate-400 text-[10px] mt-0.5">
+                        {m?.date ?? fmtDate(ev.created_at)}
+                        {m?.boat ? ` · ${m.boat}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-[10px] tracking-widest uppercase text-emerald-600 font-medium whitespace-nowrap shrink-0">
+                      Signed
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {files.length > 0 && (
+            <ul className="divide-y divide-slate-50">
+              {files.map((f) => (
+                <li key={f.id} className="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                  <div className="w-8 h-8 rounded-sm bg-slate-100 flex items-center justify-center shrink-0">
+                    <span className="text-[8px] font-bold text-slate-500 tracking-wider">{fileIcon(f.mimeType)}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-slate-800 text-xs font-medium truncate">{f.name}</p>
+                    <p className="text-slate-400 text-[10px] mt-0.5">
+                      {fmtDate(f.createdTime)}{f.size ? ` · ${fmtSize(f.size)}` : ""}
+                    </p>
+                  </div>
+                  <a
+                    href={f.webViewLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap shrink-0"
+                  >
+                    Open
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }
