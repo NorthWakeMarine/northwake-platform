@@ -92,7 +92,7 @@ export default function ConvertButton({ leadId }: { leadId: string }) {
 
       {/* Duplicate found modal */}
       {stage === "modal" && duplicate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"
@@ -100,7 +100,7 @@ export default function ConvertButton({ leadId }: { leadId: string }) {
           />
 
           {/* Card */}
-          <div className="relative bg-white rounded-sm border border-slate-200 shadow-xl max-w-md w-full p-6 flex flex-col gap-5">
+          <div className="relative bg-white rounded-t-xl sm:rounded-sm border border-slate-200 shadow-xl w-full sm:max-w-md p-6 flex flex-col gap-5 max-h-[90dvh] overflow-y-auto">
 
             {/* Header */}
             <div className="flex items-start gap-3">

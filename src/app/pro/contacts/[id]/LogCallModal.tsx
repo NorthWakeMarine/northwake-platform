@@ -60,9 +60,9 @@ export default function LogCallModal({ contactId }: { contactId: string }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Log a call">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-label="Log a call">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
-          <div ref={dialogRef} className="relative bg-white rounded-sm border border-slate-200 shadow-xl w-full max-w-sm flex flex-col">
+          <div ref={dialogRef} className="relative bg-white rounded-t-xl sm:rounded-sm border border-slate-200 shadow-xl w-full sm:max-w-sm flex flex-col max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <h2 className="text-slate-800 text-sm font-semibold">Log Call</h2>
               <button onClick={() => setOpen(false)} className="text-slate-300 hover:text-slate-600 transition-colors">

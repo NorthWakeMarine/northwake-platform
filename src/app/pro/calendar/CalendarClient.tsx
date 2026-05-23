@@ -101,8 +101,8 @@ function EventDetailModal({ event, onEdit, onDelete, onClose }: {
   const timeStr = isAllDay ? "All day" : `${fmtTime(event.start)} – ${fmtTime(event.end)}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4">
+      <div className="bg-white rounded-t-xl sm:rounded-sm shadow-2xl w-full sm:max-w-lg flex flex-col max-h-[90dvh]">
         <div className="px-6 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-slate-900 text-base font-bold leading-snug">{event.title}</h2>
@@ -177,8 +177,8 @@ function EventModal({ event, defaultDate, onClose }: {
     : (defaultDate ? defaultDate.split("T")[0] : "");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-sm shadow-2xl w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4">
+      <div className="bg-white rounded-t-xl sm:rounded-sm shadow-2xl w-full sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-slate-800 text-sm font-semibold">{isEdit ? "Edit Event" : "New Event"}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
@@ -276,8 +276,8 @@ function DeleteConfirm({ event, onClose }: { event: CalendarEvent; onClose: () =
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-sm shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4">
+      <div className="bg-white rounded-t-xl sm:rounded-sm shadow-2xl w-full sm:max-w-sm p-6 flex flex-col gap-4">
         <h2 className="text-slate-800 text-sm font-semibold">Delete Event?</h2>
         <p className="text-slate-500 text-xs leading-relaxed">
           This will permanently delete <span className="font-semibold text-slate-700">{event.title}</span> from Google Calendar.

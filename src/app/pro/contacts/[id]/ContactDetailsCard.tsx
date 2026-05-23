@@ -69,14 +69,14 @@ export default function ContactDetailsCard(props: Props) {
             <button
               onClick={handleCancel}
               disabled={isPending}
-              className="text-slate-400 hover:text-slate-600 text-[10px] tracking-widest uppercase font-medium transition-colors"
+              className="text-slate-400 hover:text-slate-600 text-[10px] tracking-widest uppercase font-medium transition-colors py-2 px-1 min-h-[44px]"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={isPending}
-              className="text-[#000080] hover:text-[#0000a0] text-[10px] tracking-widest uppercase font-semibold transition-colors disabled:opacity-50"
+              className="text-[#000080] hover:text-[#0000a0] text-[10px] tracking-widest uppercase font-semibold transition-colors disabled:opacity-50 py-2 px-1 min-h-[44px]"
             >
               {isPending ? "Saving..." : "Save"}
             </button>
@@ -84,7 +84,7 @@ export default function ContactDetailsCard(props: Props) {
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="text-slate-300 hover:text-slate-500 transition-colors"
+            className="text-slate-300 hover:text-slate-500 transition-colors p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
             title="Edit contact details"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -103,7 +103,7 @@ export default function ContactDetailsCard(props: Props) {
               <input
                 value={draft.name}
                 onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-                className="w-full border border-slate-200 rounded-sm px-2 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                className="w-full border border-slate-200 rounded-sm px-2 py-2.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
                 placeholder="Full name"
               />
             ) : (
@@ -119,7 +119,7 @@ export default function ContactDetailsCard(props: Props) {
               <input
                 value={draft.company_name}
                 onChange={(e) => setDraft((d) => ({ ...d, company_name: e.target.value }))}
-                className="w-full border border-slate-200 rounded-sm px-2 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                className="w-full border border-slate-200 rounded-sm px-2 py-2.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
                 placeholder="Company name"
               />
             ) : (
@@ -136,7 +136,7 @@ export default function ContactDetailsCard(props: Props) {
                 type="email"
                 value={draft.email}
                 onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))}
-                className="w-full border border-slate-200 rounded-sm px-2 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                className="w-full border border-slate-200 rounded-sm px-2 py-2.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
                 placeholder="email@example.com"
               />
             ) : props.email ? (
@@ -155,7 +155,7 @@ export default function ContactDetailsCard(props: Props) {
                 type="tel"
                 value={draft.phone}
                 onChange={(e) => setDraft((d) => ({ ...d, phone: e.target.value }))}
-                className="w-full border border-slate-200 rounded-sm px-2 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                className="w-full border border-slate-200 rounded-sm px-2 py-2.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
                 placeholder="+1 (555) 000-0000"
               />
             ) : props.phone ? (
@@ -174,7 +174,7 @@ export default function ContactDetailsCard(props: Props) {
                 value={draft.address}
                 onChange={(e) => setDraft((d) => ({ ...d, address: e.target.value }))}
                 rows={2}
-                className="w-full border border-slate-200 rounded-sm px-2 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080] resize-none"
+                className="w-full border border-slate-200 rounded-sm px-2 py-2.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080] resize-none"
                 placeholder="Street address"
               />
             ) : (
@@ -213,7 +213,7 @@ export default function ContactDetailsCard(props: Props) {
               <select
                 value={draft.contact_type}
                 onChange={(e) => setDraft((d) => ({ ...d, contact_type: e.target.value }))}
-                className="w-full border border-slate-200 rounded-sm px-2 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080] bg-white"
+                className="w-full border border-slate-200 rounded-sm px-2 py-2.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080] bg-white"
               >
                 <option value="customer">Customer</option>
                 <option value="vendor">Vendor</option>

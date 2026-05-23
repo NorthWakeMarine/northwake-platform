@@ -31,7 +31,7 @@ export default function NoteForm({ contactId }: { contactId: string }) {
         <button
           type="submit"
           disabled={isPending}
-          className="bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase px-5 py-2 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          className="bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase px-5 py-3 min-h-[44px] rounded-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
         >
           {isPending ? "Saving..." : "Save Note"}
         </button>

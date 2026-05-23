@@ -29,6 +29,13 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Prevent iOS auto-zoom on input focus (requires font-size >= 16px on mobile) */
+@media (max-width: 767px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 /* Keyboard focus indicator for all interactive elements */
 :focus-visible {
   outline: 2px solid #000080;

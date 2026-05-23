@@ -40,7 +40,7 @@ export default function EditableField({
           ? <span className="text-slate-700">{value}</span>
           : <span className="text-slate-300">{placeholder ?? "Not provided"}</span>}
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-          className="text-slate-300 opacity-0 group-hover/field:opacity-100 transition-opacity shrink-0">
+          className="text-slate-300 opacity-100 md:opacity-0 md:group-hover/field:opacity-100 transition-opacity shrink-0">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
         </svg>
@@ -67,11 +67,11 @@ export default function EditableField({
         onKeyDown={(e) => { if (e.key === "Escape") setEditing(false); }}
       />
       <button type="submit" disabled={isPending}
-        className="text-[9px] tracking-widest uppercase text-[#000080] font-semibold disabled:opacity-50 whitespace-nowrap">
+        className="text-[10px] tracking-widest uppercase text-[#000080] font-semibold disabled:opacity-50 whitespace-nowrap py-2 px-1 min-h-[36px]">
         {isPending ? "..." : "Save"}
       </button>
       <button type="button" onClick={() => setEditing(false)}
-        className="text-[9px] text-slate-400 hover:text-slate-600 whitespace-nowrap">
+        className="text-[10px] text-slate-400 hover:text-slate-600 whitespace-nowrap py-2 px-1 min-h-[36px]">
         Cancel
       </button>
       {state.error && <p className="text-red-500 text-[11px]">{state.error}</p>}

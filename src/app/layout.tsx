@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -21,6 +21,12 @@ const geistMono = Geist_Mono({
 });
 
 const { siteUrl, companyName, seoTitle, seoDescription, seoKeywords, ogImagePath, faviconPath, geo, businessHours, sameAs, services, email, phoneE164, city, state, localBusinessType } = clientConfig;
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
