@@ -720,7 +720,7 @@ export async function addAsset(
 
   const { data: contactRow } = await supabase
     .from("contacts")
-    .select("name")
+    .select("name, drive_folder_id, drive_folder_url")
     .eq("id", contact_id)
     .maybeSingle();
   const contactName = contactRow?.name ?? "Unknown";
@@ -741,11 +741,15 @@ export async function addAsset(
 
   if (error) return { error: error.message };
 
-  const assetLabel = name || make_model || asset_type;
   try {
-    const { createAssetFolder } = await import("@/lib/google-drive");
-    const driveUrl = await createAssetFolder(contactName, assetLabel);
-    await supabase.from("vessels").update({ drive_folder_url: driveUrl }).eq("id", inserted.id);
+    const { getOrCreateContactFolder } = await import("@/lib/google-drive");
+    const folder = await getOrCreateContactFolder(contactName);
+    // Point the vessel at the shared contact folder
+    await supabase.from("vessels").update({ drive_folder_url: folder.url }).eq("id", inserted.id);
+    // Persist folder id/url on the contact if not already set
+    if (!contactRow?.drive_folder_id) {
+      await supabase.from("contacts").update({ drive_folder_id: folder.id, drive_folder_url: folder.url }).eq("id", contact_id);
+    }
   } catch {
     // Drive folder creation is best-effort; don't fail the asset save
   }
