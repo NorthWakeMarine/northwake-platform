@@ -35,7 +35,7 @@ export interface PipelineCard {
   sourceType: "contact" | "lead";
   contactId: string | null;
   leadId: string | null;
-  name: string;
+  name: string | null;
   stage: PipelineStage;
   assetType: "vessel" | "car" | "plane" | "other" | null;
   heat: HeatLevel | null;
