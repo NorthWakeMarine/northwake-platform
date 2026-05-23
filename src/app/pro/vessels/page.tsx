@@ -190,15 +190,10 @@ export default async function VesselsPage() {
                           <tr key={vessel.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
                             <td className="px-6 py-3.5">
                               <div className="font-medium text-slate-800">
-                                {vessel.make_model ?? vessel.name ?? "Unnamed"}
+                                {[vessel.year, vessel.make_model, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" - ") || "Unnamed"}
                               </div>
-                              {vessel.name && vessel.make_model && (
+                              {vessel.name && (
                                 <div className="text-[11px] text-slate-400 mt-0.5">{vessel.name}</div>
-                              )}
-                              {(vessel.year || vessel.length_ft) && (
-                                <div className="text-[11px] text-slate-400 mt-0.5">
-                                  {[vessel.year, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" / ")}
-                                </div>
                               )}
                             </td>
                             <td className="px-4 py-3.5">
@@ -246,12 +241,10 @@ export default async function VesselsPage() {
                         <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${healthDot[status]}`} />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-slate-800 text-sm truncate">
-                            {vessel.make_model ?? vessel.name ?? "Unnamed"}
+                            {[vessel.year, vessel.make_model, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" - ") || "Unnamed"}
                           </div>
-                          {(vessel.year || vessel.length_ft) && (
-                            <div className="text-[11px] text-slate-400 mt-0.5">
-                              {[vessel.year, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" / ")}
-                            </div>
+                          {vessel.name && (
+                            <div className="text-[11px] text-slate-400 mt-0.5">{vessel.name}</div>
                           )}
                           <div className="text-xs text-slate-500 mt-0.5">{ownerName}</div>
                           {due && (

@@ -28,7 +28,7 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
   const [contactsRes, leadsRes] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, name, email, phone, status, pipeline_stage, last_contact_at, created_at, contact_type, health_flags, vessels ( id, name, asset_type, last_service_date, service_interval_days )")
+      .select("id, name, email, phone, status, pipeline_stage, last_contact_at, created_at, contact_type, health_flags, vessels ( id, name, make_model, year, length_ft, asset_type, last_service_date, service_interval_days )")
       .eq("contact_type", "customer")
       .not("pipeline_stage", "is", null)
       .order("created_at", { ascending: false }),
@@ -72,7 +72,7 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
       lastContactAt: c.last_contact_at ?? null,
       isReturningClient: isReturning,
       returningReason,
-      vesselName: vessel?.name ?? null,
+      vesselName: [vessel?.year, vessel?.make_model, vessel?.length_ft ? `${(vessel.length_ft as string).replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" - ") || null,
       email: c.email ?? null,
       phone: c.phone ?? null,
       healthFlags: Array.isArray(c.health_flags) ? (c.health_flags as HealthFlag[]) : [],
