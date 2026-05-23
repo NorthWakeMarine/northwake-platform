@@ -187,7 +187,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
     <div className="pro-shell flex min-h-screen bg-[#F1F2F5]">
 
       {/* ── Sidebar ── */}
-      <aside className={`hidden md:flex ${collapsed ? "w-14" : "w-60"} shrink-0 flex-col bg-[#06061a] sticky top-0 h-screen transition-all duration-200 ${collapsed ? "overflow-visible" : "overflow-hidden"}`}>
+      <aside className={`hidden md:flex ${collapsed ? "w-14" : "w-60"} shrink-0 flex-col bg-[#06061a] sticky top-0 h-screen transition-all duration-200 z-10 ${collapsed ? "overflow-visible" : "overflow-hidden"}`}>
 
         {/* Logo */}
         <div className="px-3 py-5 border-b border-white/[0.07] flex items-center justify-center">
