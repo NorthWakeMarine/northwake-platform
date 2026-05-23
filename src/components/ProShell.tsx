@@ -10,8 +10,8 @@ import { clientConfig } from "@/config/client";
 
 const bottomTabs = [
   {
-    href: "/pro/dashboard",
-    label: "Dashboard",
+    href: "/pro/pipeline",
+    label: "Pipeline",
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
@@ -50,6 +50,7 @@ const bottomTabs = [
 ];
 
 const moreLinks = [
+  { href: "/pro/vessels", label: "Vessels" },
   { href: "/pro/calendar", label: "Calendar" },
   { href: "/pro/integrations", label: "Integrations" },
   { href: "/pro/editor", label: "Site Editor" },
@@ -58,12 +59,23 @@ const moreLinks = [
 
 const navLinks = [
   {
-    href: "/pro/dashboard",
-    label: "Dashboard",
+    href: "/pro/pipeline",
+    label: "Pipeline",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
         <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+      </svg>
+    ),
+  },
+  {
+    href: "/pro/vessels",
+    label: "Vessels",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="5" r="3" />
+        <line x1="12" y1="8" x2="12" y2="22" />
+        <path d="M5 15H2a10 10 0 0 0 20 0h-3" />
       </svg>
     ),
   },
@@ -191,7 +203,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
 
         {/* Logo */}
         <div className="px-3 py-5 border-b border-white/[0.07] flex items-center justify-center">
-          <Link href="/pro/dashboard" className="flex items-center gap-3 min-w-0">
+          <Link href="/pro/pipeline" className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 bg-[#000080] flex items-center justify-center shrink-0">
               <Image
                 src={clientConfig.logoWhiteSvg}
@@ -322,7 +334,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
         {/* Tab bar */}
         <div className="flex h-16">
           {bottomTabs.map(({ href, label, icon }) => {
-            const active = href === "/pro/dashboard" ? pathname === href : pathname.startsWith(href);
+            const active = href === "/pro/pipeline" ? pathname === href || pathname.startsWith("/pro/pipeline") : pathname.startsWith(href);
             return (
               <Link
                 key={href}

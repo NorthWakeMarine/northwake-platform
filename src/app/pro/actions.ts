@@ -90,7 +90,7 @@ export async function loginAction(
   //   });
   //   if (error) { recordFailure(ip); await secureDelay(); return { error: "Invalid credentials." }; }
   //   // set httpOnly session cookie, then:
-  //   redirect("/pro/dashboard");
+  //   redirect("/pro/pipeline");
   // ─────────────────────────────────────────────────────────────────────────
 
   await secureDelay();

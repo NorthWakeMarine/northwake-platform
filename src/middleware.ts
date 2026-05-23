@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // /pro sub-routes that require an authenticated session
-const PROTECTED_PRO = /^\/pro\/(dashboard|contacts|leads|integrations|editor|clients|vessels|schedule|settings)(\/.*)?$/;
+const PROTECTED_PRO = /^\/pro\/(pipeline|contacts|leads|integrations|editor|clients|vessels|schedule|settings)(\/.*)?$/;
 
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Frame-Options":                    "DENY",
@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
 
   // ── /pro (login page) — skip if already authenticated
   if (pathname === "/pro" && user) {
-    return NextResponse.redirect(new URL("/pro/dashboard", request.url));
+    return NextResponse.redirect(new URL("/pro/pipeline", request.url));
   }
 
   // ── /pro/(dashboard|clients|...) — require Supabase session

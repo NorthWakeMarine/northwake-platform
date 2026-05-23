@@ -219,8 +219,8 @@ export async function login(
 
   const email    = formData.get("email");
   const password = formData.get("password");
-  const redirectTo = (formData.get("redirectTo") as string | null) || "/pro/dashboard";
-  const safeRedirect = redirectTo.startsWith("/") ? redirectTo : "/pro/dashboard";
+  const redirectTo = (formData.get("redirectTo") as string | null) || "/pro/pipeline";
+  const safeRedirect = redirectTo.startsWith("/") ? redirectTo : "/pro/pipeline";
 
   if (
     typeof email    !== "string" || !email    ||
@@ -1181,7 +1181,7 @@ export async function syncAppointmentToGoogle(
     });
 
     revalidatePath(`/pro/contacts/${contact_id}`);
-    revalidatePath("/pro/dashboard");
+    revalidatePath("/pro/pipeline");
     return { success: true, eventId };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Calendar sync failed.";
@@ -1297,7 +1297,7 @@ export async function createStandaloneEvent(
       isAllDay:    is_all_day,
     });
     revalidatePath("/pro/calendar");
-    revalidatePath("/pro/dashboard");
+    revalidatePath("/pro/pipeline");
     return { success: true, eventId };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to create event." };
@@ -1336,7 +1336,7 @@ export async function updateStandaloneEvent(
       isAllDay:    is_all_day,
     });
     revalidatePath("/pro/calendar");
-    revalidatePath("/pro/dashboard");
+    revalidatePath("/pro/pipeline");
     return { success: true };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to update event." };
@@ -1348,7 +1348,7 @@ export async function deleteStandaloneEvent(eventId: string): Promise<{ error?: 
     const { deleteCalendarEvent } = await import("@/lib/google-calendar");
     await deleteCalendarEvent(eventId);
     revalidatePath("/pro/calendar");
-    revalidatePath("/pro/dashboard");
+    revalidatePath("/pro/pipeline");
     return {};
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to delete event." };
@@ -1405,7 +1405,7 @@ export async function deleteLead(leadId: string): Promise<{ error?: string }> {
   const { error } = await supabase.from("leads").delete().eq("id", leadId);
   if (error) return { error: error.message };
   revalidatePath("/pro/leads");
-  revalidatePath("/pro/dashboard");
+  revalidatePath("/pro/pipeline");
   return {};
 }
 
@@ -1484,7 +1484,7 @@ export async function updatePipelineStage(
       .limit(1)
       .maybeSingle();
 
-    revalidatePath("/pro/dashboard");
+    revalidatePath("/pro/pipeline");
     revalidatePath("/pro/leads");
     return { ok: true, contactId: contactId!, contactName: lead.name ?? "Unknown", vesselName: vessel?.name ?? null };
   }
@@ -1511,14 +1511,14 @@ export async function updatePipelineStage(
     .limit(1)
     .maybeSingle();
 
-  revalidatePath("/pro/dashboard");
+  revalidatePath("/pro/pipeline");
   return { ok: true, contactId: id, contactName: contact.name ?? "Unknown", vesselName: vessel?.name ?? null };
 }
 
 export async function removeFromPipeline(contactId: string): Promise<{ ok: boolean }> {
   const supabase = await svc();
   await supabase.from("contacts").update({ pipeline_stage: null }).eq("id", contactId);
-  revalidatePath("/pro/dashboard");
+  revalidatePath("/pro/pipeline");
   return { ok: true };
 }
 
@@ -1837,7 +1837,7 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
 
   const flagged = results.filter(Boolean).length;
 
-  revalidatePath("/pro/dashboard");
+  revalidatePath("/pro/pipeline");
   return { checked: contacts.length, flagged };
 }
 
@@ -1963,7 +1963,7 @@ export async function importQbCustomers(): Promise<{
     }
 
     revalidatePath("/pro/contacts");
-    revalidatePath("/pro/dashboard");
+    revalidatePath("/pro/pipeline");
     return { linked, alreadyLinked, unmatched, mismatches };
   } catch (err) {
     return { linked: 0, alreadyLinked: 0, unmatched: [], mismatches: [], error: err instanceof Error ? err.message : "Import failed." };
@@ -2110,7 +2110,7 @@ export async function createContactFromQb(
   }
 
   revalidatePath("/pro/contacts");
-  revalidatePath("/pro/dashboard");
+  revalidatePath("/pro/pipeline");
   return { ok: true };
 }
 
