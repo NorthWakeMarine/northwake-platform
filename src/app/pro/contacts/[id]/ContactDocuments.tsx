@@ -41,40 +41,45 @@ export default function ContactDocuments({
   waiverEvents: WaiverEvent[];
 }) {
   const [files, setFiles] = useState<DriveFile[]>(initialFiles);
-  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
+    const selected = Array.from(e.target.files ?? []);
+    if (!selected.length) return;
     setError(null);
 
-    const fd = new FormData();
-    fd.append("contact_id", contactId);
-    fd.append("file", file);
+    const errors: string[] = [];
+    for (let i = 0; i < selected.length; i++) {
+      const file = selected[i];
+      setUploadProgress(selected.length > 1 ? `Uploading ${i + 1} of ${selected.length}...` : "Uploading...");
 
-    try {
-      const res = await fetch("/api/drive-upload", { method: "POST", body: fd });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Upload failed.");
-      const uploaded: DriveFile = {
-        id:          json.file.id,
-        name:        json.file.name,
-        mimeType:    file.type || "application/octet-stream",
-        webViewLink: json.file.url,
-        createdTime: new Date().toISOString(),
-        size:        String(file.size),
-      };
-      setFiles((prev) => [uploaded, ...prev]);
+      const fd = new FormData();
+      fd.append("contact_id", contactId);
+      fd.append("file", file);
 
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
+      try {
+        const res = await fetch("/api/drive-upload", { method: "POST", body: fd });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Upload failed.");
+        const uploaded: DriveFile = {
+          id:          json.file.id,
+          name:        json.file.name,
+          mimeType:    file.type || "application/octet-stream",
+          webViewLink: json.file.url,
+          createdTime: new Date().toISOString(),
+          size:        String(file.size),
+        };
+        setFiles((prev) => [uploaded, ...prev]);
+      } catch (err) {
+        errors.push(`${file.name}: ${err instanceof Error ? err.message : "Upload failed."}`);
+      }
     }
+
+    setUploadProgress(null);
+    if (errors.length) setError(errors.join(" · "));
+    if (inputRef.current) inputRef.current.value = "";
   }
 
   return (
@@ -96,19 +101,20 @@ export default function ContactDocuments({
             </a>
           )}
           <label className={`flex items-center gap-1.5 text-[10px] tracking-widest uppercase font-semibold px-3 py-1.5 rounded-sm cursor-pointer transition-colors border ${
-            uploading
+            uploadProgress
               ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
               : "bg-[#000080] text-white border-[#000080] hover:bg-[#0000a0]"
           }`}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            {uploading ? "Uploading..." : "Upload"}
+            {uploadProgress ?? "Upload"}
             <input
               ref={inputRef}
               type="file"
               className="hidden"
-              disabled={uploading}
+              multiple
+              disabled={!!uploadProgress}
               onChange={handleUpload}
               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.heic"
             />
