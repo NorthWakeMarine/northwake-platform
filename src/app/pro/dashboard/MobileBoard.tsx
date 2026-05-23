@@ -157,7 +157,7 @@ function MobileCard({
       <div className="flex items-center gap-2.5">
         <AssetIcon type={card.assetType} />
         <span className="flex-1 text-slate-800 text-sm font-semibold leading-snug truncate">
-          {card.name}
+          {card.name || card.phone || card.email || <span className="text-slate-400 italic font-normal">Unknown</span>}
         </span>
         <HealthWarningIcon flags={card.healthFlags} />
         <HeatDot heat={card.heat} lastContactAt={card.lastContactAt} />
