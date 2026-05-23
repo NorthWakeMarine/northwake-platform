@@ -864,8 +864,18 @@ export async function createContact(fields: {
   if (error) return { ok: false, error: error.message };
   revalidatePath("/pro/contacts");
 
-  // Push to Quo in the background — don't block the response
+  // Push to QB in the background
   const contactId = data.id;
+  (async () => {
+    try {
+      const { findOrCreateQbCustomer, getQbTokens } = await import("@/lib/quickbooks");
+      const tokens = await getQbTokens();
+      if (!tokens) return;
+      await findOrCreateQbCustomer({ id: contactId, name: fields.name?.trim() ?? null, company_name: fields.company_name?.trim() ?? null, email: fields.email?.trim() ?? null, phone: fields.phone?.trim() ?? null });
+    } catch { /* non-fatal */ }
+  })();
+
+  // Push to Quo in the background — don't block the response
   (async () => {
     try {
       const { createOpenPhoneContact, splitName } = await import("@/lib/openphone");
@@ -906,6 +916,28 @@ export async function updateContactFields(
   const { error } = await supabase.from("contacts").update(patch).eq("id", contactId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/pro/contacts/${contactId}`);
+
+  // Push name/email/phone changes to Quo in the background
+  const quoFields = ["name", "email", "phone", "company_name"] as const;
+  const hasQuoField = quoFields.some((f) => f in fields);
+  if (hasQuoField) {
+    (async () => {
+      try {
+        const { data: contact } = await supabase.from("contacts").select("openphone_contact_id, name, email, phone, company_name").eq("id", contactId).single();
+        if (!contact?.openphone_contact_id) return;
+        const { updateOpenPhoneContact, splitName } = await import("@/lib/openphone");
+        const { firstName, lastName } = splitName(contact.name?.trim() ?? "");
+        await updateOpenPhoneContact(contact.openphone_contact_id, {
+          firstName,
+          lastName: lastName || undefined,
+          company: contact.company_name?.trim() || undefined,
+          phoneNumbers: contact.phone ? [{ name: "main", value: contact.phone }] : [],
+          emails: contact.email ? [{ name: "main", value: contact.email }] : [],
+        });
+      } catch { /* non-fatal */ }
+    })();
+  }
+
   return { ok: true };
 }
 
@@ -1304,6 +1336,14 @@ export async function deleteStandaloneEvent(eventId: string): Promise<{ error?: 
 
 export async function deleteContact(contactId: string): Promise<{ error?: string }> {
   const supabase = await svc();
+
+  // Fetch external IDs before deleting
+  const { data: contact } = await supabase
+    .from("contacts")
+    .select("openphone_contact_id, qb_customer_id")
+    .eq("id", contactId)
+    .single();
+
   // Cascade: vessels, linked_contacts, and timeline_events should be set up
   // with ON DELETE CASCADE in Supabase, but delete children explicitly to be safe
   await supabase.from("vessels").delete().eq("owner_id", contactId);
@@ -1312,6 +1352,26 @@ export async function deleteContact(contactId: string): Promise<{ error?: string
   const { error } = await supabase.from("contacts").delete().eq("id", contactId);
   if (error) return { error: error.message };
   revalidatePath("/pro/contacts");
+
+  // Clean up external systems in the background
+  if (contact?.openphone_contact_id) {
+    (async () => {
+      try {
+        const { deleteOpenPhoneContact } = await import("@/lib/openphone");
+        await deleteOpenPhoneContact(contact.openphone_contact_id!);
+      } catch { /* non-fatal */ }
+    })();
+  }
+  if (contact?.qb_customer_id) {
+    (async () => {
+      try {
+        const { getQbTokens, inactivateQbCustomer } = await import("@/lib/quickbooks");
+        const tokens = await getQbTokens();
+        if (tokens) await inactivateQbCustomer(contact.qb_customer_id!);
+      } catch { /* non-fatal */ }
+    })();
+  }
+
   return {};
 }
 

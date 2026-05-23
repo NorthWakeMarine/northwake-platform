@@ -380,6 +380,15 @@ export function buildNotesWithVessels(existingNotes: string | null, vessels: Not
   return otherLines ? `${vesselLine}\n${otherLines}` : vesselLine;
 }
 
+export async function inactivateQbCustomer(qbCustomerId: string): Promise<void> {
+  const data = await qbRequest<{ Customer: { SyncToken: string } }>(`/customer/${qbCustomerId}`);
+  const syncToken = data.Customer.SyncToken;
+  await qbRequest("/customer", {
+    method: "POST",
+    body: JSON.stringify({ Id: qbCustomerId, SyncToken: syncToken, sparse: true, Active: false }),
+  });
+}
+
 export async function updateQbCustomerNotes(qbCustomerId: string, syncToken: string, notes: string): Promise<void> {
   await qbRequest("/customer", {
     method: "POST",

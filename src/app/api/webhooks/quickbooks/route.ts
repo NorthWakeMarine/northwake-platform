@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
           return handlePayment(entity.id);
         } else if (entity.name === "Customer" && (entity.operation === "Create" || entity.operation === "Update")) {
           return handleCustomer(entity.id);
+        } else if (entity.name === "Customer" && entity.operation === "Delete") {
+          return handleCustomerDelete(entity.id);
         } else if (
           (entity.name === "Invoice" || entity.name === "SalesReceipt" || entity.name === "CreditMemo") &&
           (entity.operation === "Create" || entity.operation === "Update")
@@ -356,5 +358,17 @@ async function handlePayment(qbPaymentId: string) {
     });
   } catch (err) {
     console.error("QB payment handler error:", err);
+  }
+}
+
+async function handleCustomerDelete(qbCustomerId: string) {
+  const supabase = svc();
+  try {
+    await supabase
+      .from("contacts")
+      .update({ qb_customer_id: null })
+      .eq("qb_customer_id", qbCustomerId);
+  } catch (err) {
+    console.error("QB customer delete handler error:", err);
   }
 }

@@ -84,6 +84,10 @@ export async function updateOpenPhoneContact(id: string, fields: OpenPhoneContac
   });
 }
 
+export async function deleteOpenPhoneContact(id: string): Promise<void> {
+  await opRequest(`/contacts/${id}`, { method: "DELETE" });
+}
+
 export function splitName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/);
   return {
