@@ -202,7 +202,7 @@ export default function AntigravityBackground({
     let isIntersecting = false;
 
     // --- 3. Generate Points ---
-    const size = 256;
+    const size = 128;
     const count = size * size;
     // Map density to Poisson Disk Sampling distance
     const densityVal = 200; // default density option
@@ -277,7 +277,7 @@ export default function AntigravityBackground({
         uDeltaTime: { value: 0 },
         uRingWidth: { value: 0.107 },
         uRingWidth2: { value: 0.05 },
-        uRingDisplacement: { value: 0.15 },
+        uRingDisplacement: { value: 0.05 },
         uTime: { value: 0 },
       },
       vertexShader: `
@@ -300,14 +300,14 @@ export default function AntigravityBackground({
         ${simplexNoiseGLSL}
 
         void main() {
-          vec2 simTexCoords = gl_FragCoord.xy / 256.0;
+          vec2 simTexCoords = gl_FragCoord.xy / ${size}.0;
           vec4 pFrame = texture2D(uPosition, simTexCoords);
 
           float scale = pFrame.z;
           float velocity = pFrame.w;
           vec2 refPos = texture2D(uPosRefs, simTexCoords).xy;
 
-          float time = uTime * 0.5;
+          float time = uTime * 0.12;
           vec2 curentPos = refPos;
 
           vec2 pos = pFrame.xy;
@@ -331,17 +331,17 @@ export default function AntigravityBackground({
           float nS = snoise(vec3(curentPos.xy * 2.0 + vec2(18.4924, 72.9744), time * 0.5));
           t += pow((nS + 1.5) * 0.5, 2.0) * 0.6;
 
-          float noise1 = snoise(vec3(curentPos.xy * 4.0 + vec2(88.494, 32.4397), time * 0.35));
-          float noise2 = snoise(vec3(curentPos.xy * 4.0 + vec2(50.904, 120.947), time * 0.35));
+          float noise1 = snoise(vec3(curentPos.xy * 4.0 + vec2(88.494, 32.4397), time * 0.2));
+          float noise2 = snoise(vec3(curentPos.xy * 4.0 + vec2(50.904, 120.947), time * 0.2));
 
-          float noise3 = snoise(vec3(curentPos.xy * 20.0 + vec2(18.4924, 72.9744), time * 0.5));
-          float noise4 = snoise(vec3(curentPos.xy * 20.0 + vec2(50.904, 120.947), time * 0.5));
+          float noise3 = snoise(vec3(curentPos.xy * 20.0 + vec2(18.4924, 72.9744), time * 0.3));
+          float noise4 = snoise(vec3(curentPos.xy * 20.0 + vec2(50.904, 120.947), time * 0.3));
 
-          vec2 disp = vec2(noise1, noise2) * 0.03;
-          disp += vec2(noise3, noise4) * 0.005;
+          vec2 disp = vec2(noise1, noise2) * 0.012;
+          disp += vec2(noise3, noise4) * 0.002;
 
-          disp.x += sin((refPos.x * 20.0) + (time * 4.0)) * 0.02 * clamp(dist, 0.0, 1.0);
-          disp.y += cos((refPos.y * 20.0) + (time * 3.0)) * 0.02 * clamp(dist, 0.0, 1.0);
+          disp.x += sin((refPos.x * 20.0) + (time * 1.5)) * 0.006 * clamp(dist, 0.0, 1.0);
+          disp.y += cos((refPos.y * 20.0) + (time * 1.2)) * 0.006 * clamp(dist, 0.0, 1.0);
 
           pos -= (uRingPos - (curentPos + disp)) * pow(t2, 0.75) * uRingDisplacement;
 
@@ -427,7 +427,7 @@ export default function AntigravityBackground({
           gl_Position = projectionMatrix * viewSpace;
           vScreenPos = gl_Position.xy;
 
-          gl_PointSize = (vScale * 7.0) * (uPixelRatio * 0.5) * uParticleScale;
+          gl_PointSize = (vScale * 4.5) * (uPixelRatio * 0.5) * uParticleScale;
         }
       `,
       fragmentShader: `
@@ -490,7 +490,11 @@ export default function AntigravityBackground({
           float rounded = sdRoundBox(uv, vec2(0.5, 0.2), vec4(0.25));
           rounded = smoothstep(0.1, 0.0, rounded);
 
-          float a = uAlpha * rounded * smoothstep(0.1, 0.2, vScale);
+          // Radial falloff: fade out particles that are far from the center (0, 0)
+          float centerDist = length(vLocalPos);
+          float radialFade = smoothstep(0.8, 0.4, centerDist);
+
+          float a = uAlpha * rounded * smoothstep(0.1, 0.2, vScale) * radialFade;
           if (a < 0.01) {
             discard;
           }
@@ -571,20 +575,20 @@ export default function AntigravityBackground({
       lastTime = elapsedTime;
 
       // Slow drift values using multi-frequency sine waves (acting as a lightweight 1D noise)
-      const driftX = (Math.sin(elapsedTime * 0.66) * 0.5) * 2;
-      const driftY = (Math.cos(elapsedTime * 0.75) * 0.5) * 2;
+      const driftX = (Math.sin(elapsedTime * 0.2) * 0.5) * 1.2;
+      const driftY = (Math.cos(elapsedTime * 0.25) * 0.5) * 1.2;
 
       if (isIntersecting) {
         // Blend mouse input with a tiny bit of drift
         cursorPos.x = cursorPos.x + driftX * 0.1;
         cursorPos.y = cursorPos.y + driftY * 0.1;
         // Faster interpolation when mouse is active
-        ringPos.lerp(cursorPos, 0.02);
+        ringPos.lerp(cursorPos, 0.015);
       } else {
         // Drift to default center pattern when mouse is away
         cursorPos.set(driftX * 0.2, driftY * 0.1);
         // Slower interpolation when drifting freely
-        ringPos.lerp(cursorPos, 0.01);
+        ringPos.lerp(cursorPos, 0.008);
       }
 
       // Update simulation uniforms
