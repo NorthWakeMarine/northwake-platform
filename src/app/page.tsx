@@ -12,6 +12,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { CarouselSlideSource } from "@/components/HeroCarousel";
 import { getGoogleReviews } from "@/lib/google-places";
 import { clientConfig } from "@/config/client";
+import AntigravityBackground from "@/components/AntigravityBackground";
 
 async function getCMS(): Promise<Record<string, string>> {
   try {
@@ -81,18 +82,8 @@ export default async function Home() {
         >
           {/* White base */}
           <div aria-hidden="true" className="absolute inset-0 bg-white" />
-          {/* Dot grid fading toward edges */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 hero-grid"
-            style={{ maskImage: "radial-gradient(ellipse 80% 70% at 50% 45%, black 30%, transparent 75%)" }}
-          />
-          {/* Subtle navy depth glow */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0"
-            style={{ background: "radial-gradient(ellipse 80% 60% at 50% 70%, rgba(0,0,128,0.05) 0%, transparent 70%)" }}
-          />
+          {/* Interactive weightless particle background */}
+          <AntigravityBackground />
 
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
 
