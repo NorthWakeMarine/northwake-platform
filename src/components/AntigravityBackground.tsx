@@ -325,12 +325,12 @@ export default function AntigravityBackground({
           t = pow(t, 2.0);
           t2 = pow(t2, 3.0);
 
-          t += t2 * 0.8;
-          t += t3 * 0.2;
-          t += snoise(vec3(curentPos.xy * 30.0 + vec2(11.4924, 12.9744), time * 0.5)) * t3 * 0.25;
+          t += t2 * 2.5;
+          t += t3 * 0.3;
+          t += snoise(vec3(curentPos.xy * 30.0 + vec2(11.4924, 12.9744), time * 0.5)) * t3 * 0.4;
 
           float nS = snoise(vec3(curentPos.xy * 2.0 + vec2(18.4924, 72.9744), time * 0.5));
-          t += pow((nS + 1.5) * 0.5, 2.0) * 2.0;
+          t += pow((nS + 1.5) * 0.5, 2.0) * 0.5;
 
           float noise1 = snoise(vec3(curentPos.xy * 4.0 + vec2(88.494, 32.4397), time * 0.2));
           float noise2 = snoise(vec3(curentPos.xy * 4.0 + vec2(50.904, 120.947), time * 0.2));
@@ -542,14 +542,17 @@ export default function AntigravityBackground({
         return;
       }
 
-      // Don't activate when cursor is over an overlapping element (e.g. the sticky header)
-      const topEl = document.elementFromPoint(e.clientX, e.clientY);
-      if (topEl && !container.contains(topEl) && topEl !== container) {
-        isIntersecting = false;
-        return;
+      // Skip if cursor is over the sticky header
+      const header = document.querySelector("header");
+      if (header) {
+        const hr = header.getBoundingClientRect();
+        if (e.clientY >= hr.top && e.clientY <= hr.bottom) {
+          isIntersecting = false;
+          return;
+        }
       }
 
-      // Don't activate inside explicitly excluded zones (data-antigravity-exclude)
+      // Skip if cursor is over an explicitly excluded zone (data-antigravity-exclude)
       const excludeZones = document.querySelectorAll("[data-antigravity-exclude]");
       for (const zone of excludeZones) {
         const zr = zone.getBoundingClientRect();

@@ -137,7 +137,7 @@ export default async function Home() {
             </div>
 
             {/* ── Right: Free Quote form card ── */}
-            <div className="order-2 chrome-stage-light bg-white/95 backdrop-blur-md p-5 sm:p-7 shadow-sm">
+            <div data-antigravity-exclude className="order-2 chrome-stage-light bg-white/95 backdrop-blur-md p-5 sm:p-7 shadow-sm">
               <div className="flex flex-col gap-0.5 mb-4">
                 <h2 className="text-gray-900 text-xl font-bold tracking-tight">{clientConfig.ctaText}</h2>
                 <p className="text-gray-500 text-xs tracking-wide">{clientConfig.ctaSubtext}</p>
