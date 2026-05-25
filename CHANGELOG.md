@@ -2,6 +2,14 @@
 
 ## May 2026
 
+### May 24 | Antigravity ambient particle background, About team photo | Landing
+
+- **AntigravityBackground component**: Three.js GPU particle simulation on the home page hero, using Poisson disk sampling and simplex noise. Particles gently glimmer in navy, pewter, and silver with no cursor interaction.
+- **Cursor interaction removed**: Raycaster, raycast plane, and pointer event listener stripped. Ring is parked permanently off-screen so particles rest in ambient state only.
+- **Color palette**: Black, navy (#000080), pewter (#686a6c) replaced original Google-reference blue/red/yellow.
+- **Particle tuning**: Base noise contribution tuned to 0.75 for subtle glimmer; resting particles are small and non-intrusive behind logo and text.
+- **About page team photo**: Ian and Alex photo (`Ian&Alex.jpeg`) added above the team member cards on the About page, cropped 4:3 with `object-cover object-top`.
+
 ### May 23 | Caller notes, Quo direction fix, lead webhook threshold | CRM,Pro
 
 - **phone_notes table**: new DB table keyed by E.164 phone number; one note per number, independent of leads and contacts. Notes survive lead deletion and reappear if the number calls again.
