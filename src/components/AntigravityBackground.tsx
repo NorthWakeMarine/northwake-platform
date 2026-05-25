@@ -549,6 +549,16 @@ export default function AntigravityBackground({
         return;
       }
 
+      // Don't activate inside explicitly excluded zones (data-antigravity-exclude)
+      const excludeZones = document.querySelectorAll("[data-antigravity-exclude]");
+      for (const zone of excludeZones) {
+        const zr = zone.getBoundingClientRect();
+        if (e.clientX >= zr.left && e.clientX <= zr.right && e.clientY >= zr.top && e.clientY <= zr.bottom) {
+          isIntersecting = false;
+          return;
+        }
+      }
+
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       mouse.x = (x / rect.width) * 2 - 1;

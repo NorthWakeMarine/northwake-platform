@@ -88,7 +88,7 @@ export default async function Home() {
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
 
             {/* ── Left: logo + tagline ── */}
-            <div className="flex flex-col gap-4 order-1 text-center items-center">
+            <div data-antigravity-exclude className="flex flex-col gap-4 order-1 text-center items-center">
               <Image
                 src={clientConfig.logoFullBlackSvg}
                 alt={`${clientConfig.companyName}, ${clientConfig.seoDescription}`}
