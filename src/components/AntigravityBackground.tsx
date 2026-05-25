@@ -325,12 +325,12 @@ export default function AntigravityBackground({
           t = pow(t, 2.0);
           t2 = pow(t2, 3.0);
 
-          t += t2 * 1.5;
+          t += t2 * 0.8;
           t += t3 * 0.2;
           t += snoise(vec3(curentPos.xy * 30.0 + vec2(11.4924, 12.9744), time * 0.5)) * t3 * 0.25;
 
           float nS = snoise(vec3(curentPos.xy * 2.0 + vec2(18.4924, 72.9744), time * 0.5));
-          t += pow((nS + 1.5) * 0.5, 2.0) * 1.4;
+          t += pow((nS + 1.5) * 0.5, 2.0) * 2.0;
 
           float noise1 = snoise(vec3(curentPos.xy * 4.0 + vec2(88.494, 32.4397), time * 0.2));
           float noise2 = snoise(vec3(curentPos.xy * 4.0 + vec2(50.904, 120.947), time * 0.2));
@@ -533,11 +533,18 @@ export default function AntigravityBackground({
 
     const handlePointerMove = (e: PointerEvent) => {
       const rect = container.getBoundingClientRect();
-      
+
       const isInsideY = e.clientY >= rect.top && e.clientY <= rect.bottom;
       const isInsideX = e.clientX >= rect.left && e.clientX <= rect.right;
 
       if (!isInsideX || !isInsideY) {
+        isIntersecting = false;
+        return;
+      }
+
+      // Don't activate when cursor is over an overlapping element (e.g. the sticky header)
+      const topEl = document.elementFromPoint(e.clientX, e.clientY);
+      if (topEl && !container.contains(topEl) && topEl !== container) {
         isIntersecting = false;
         return;
       }
@@ -588,7 +595,7 @@ export default function AntigravityBackground({
       simMaterial.uniforms.uTime.value = elapsedTime;
       simMaterial.uniforms.uDeltaTime.value = deltaTime;
       simMaterial.uniforms.uRingPos.value = ringPos;
-      simMaterial.uniforms.uRingRadius.value = 0.2;
+      simMaterial.uniforms.uRingRadius.value = 0.12;
 
       // Step simulation: render to rt2
       renderer.setRenderTarget(rt2);
