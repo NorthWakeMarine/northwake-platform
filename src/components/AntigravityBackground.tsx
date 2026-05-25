@@ -155,9 +155,9 @@ export interface AntigravityBackgroundProps {
 }
 
 export default function AntigravityBackground({
-  color1 = "#2c64ed",
-  color2 = "#f84242",
-  color3 = "#ffcf03",
+  color1 = "#000000",
+  color2 = "#000080",
+  color3 = "#686a6c",
 }: AntigravityBackgroundProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -197,8 +197,9 @@ export default function AntigravityBackground({
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    const ringPos = new THREE.Vector2(0, 0);
+    const ringPos = new THREE.Vector2(10, 10);
     const cursorPos = new THREE.Vector2(0, 0);
+    const offScreen = new THREE.Vector2(10, 10);
     let isIntersecting = false;
 
     // --- 3. Generate Points ---
@@ -574,21 +575,12 @@ export default function AntigravityBackground({
       const deltaTime = elapsedTime - lastTime;
       lastTime = elapsedTime;
 
-      // Slow drift values using multi-frequency sine waves (acting as a lightweight 1D noise)
-      const driftX = (Math.sin(elapsedTime * 0.2) * 0.5) * 1.2;
-      const driftY = (Math.cos(elapsedTime * 0.25) * 0.5) * 1.2;
-
       if (isIntersecting) {
-        // Blend mouse input with a tiny bit of drift
-        cursorPos.x = cursorPos.x + driftX * 0.1;
-        cursorPos.y = cursorPos.y + driftY * 0.1;
-        // Faster interpolation when mouse is active
-        ringPos.lerp(cursorPos, 0.015);
+        // Follow the cursor
+        ringPos.lerp(cursorPos, 0.12);
       } else {
-        // Drift to default center pattern when mouse is away
-        cursorPos.set(driftX * 0.2, driftY * 0.1);
-        // Slower interpolation when drifting freely
-        ringPos.lerp(cursorPos, 0.008);
+        // Park the ring far off-screen so particles return to rest
+        ringPos.lerp(offScreen, 0.05);
       }
 
       // Update simulation uniforms
@@ -596,7 +588,7 @@ export default function AntigravityBackground({
       simMaterial.uniforms.uTime.value = elapsedTime;
       simMaterial.uniforms.uDeltaTime.value = deltaTime;
       simMaterial.uniforms.uRingPos.value = ringPos;
-      simMaterial.uniforms.uRingRadius.value = 0.175 + Math.sin(elapsedTime * 1.0) * 0.03 + Math.cos(elapsedTime * 3.0) * 0.02;
+      simMaterial.uniforms.uRingRadius.value = 0.2;
 
       // Step simulation: render to rt2
       renderer.setRenderTarget(rt2);
