@@ -188,19 +188,8 @@ export default function AntigravityBackground({
     renderer.setPixelRatio(pixelRatio);
     container.appendChild(renderer.domElement);
 
-    // --- 2. Interactive Raycast Plane ---
-    const raycastPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(12.5, 12.5),
-      new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide })
-    );
-    scene.add(raycastPlane);
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
+    // Ring parked permanently off-screen (no cursor interaction)
     const ringPos = new THREE.Vector2(10, 10);
-    const cursorPos = new THREE.Vector2(0, 0);
-    const offScreen = new THREE.Vector2(10, 10);
-    let isIntersecting = false;
 
     // --- 3. Generate Points ---
     const size = 128;
@@ -330,7 +319,7 @@ export default function AntigravityBackground({
           t += snoise(vec3(curentPos.xy * 30.0 + vec2(11.4924, 12.9744), time * 0.5)) * t3 * 0.4;
 
           float nS = snoise(vec3(curentPos.xy * 2.0 + vec2(18.4924, 72.9744), time * 0.5));
-          t += pow((nS + 1.5) * 0.5, 2.0) * 0.5;
+          t += pow((nS + 1.5) * 0.5, 2.0) * 0.75;
 
           float noise1 = snoise(vec3(curentPos.xy * 4.0 + vec2(88.494, 32.4397), time * 0.2));
           float noise2 = snoise(vec3(curentPos.xy * 4.0 + vec2(50.904, 120.947), time * 0.2));
@@ -491,7 +480,7 @@ export default function AntigravityBackground({
           float rounded = sdRoundBox(uv, vec2(0.5, 0.2), vec4(0.25));
           rounded = smoothstep(0.1, 0.0, rounded);
 
-          // Radial falloff: fade out particles that are far from the center (0, 0)
+          // Radial falloff: fade out particles far from center
           float centerDist = length(vLocalPos);
           float radialFade = smoothstep(0.8, 0.4, centerDist);
 
@@ -531,56 +520,6 @@ export default function AntigravityBackground({
     };
     window.addEventListener("resize", handleResize);
 
-    const handlePointerMove = (e: PointerEvent) => {
-      const rect = container.getBoundingClientRect();
-
-      const isInsideY = e.clientY >= rect.top && e.clientY <= rect.bottom;
-      const isInsideX = e.clientX >= rect.left && e.clientX <= rect.right;
-
-      if (!isInsideX || !isInsideY) {
-        isIntersecting = false;
-        return;
-      }
-
-      // Skip if cursor is over the sticky header
-      const header = document.querySelector("header");
-      if (header) {
-        const hr = header.getBoundingClientRect();
-        if (e.clientY >= hr.top && e.clientY <= hr.bottom) {
-          isIntersecting = false;
-          return;
-        }
-      }
-
-      // Skip if cursor is over an explicitly excluded zone (data-antigravity-exclude)
-      const excludeZones = document.querySelectorAll("[data-antigravity-exclude]");
-      for (const zone of excludeZones) {
-        const zr = zone.getBoundingClientRect();
-        if (e.clientX >= zr.left && e.clientX <= zr.right && e.clientY >= zr.top && e.clientY <= zr.bottom) {
-          isIntersecting = false;
-          return;
-        }
-      }
-
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      mouse.x = (x / rect.width) * 2 - 1;
-      mouse.y = -(y / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObject(raycastPlane);
-      if (intersects.length > 0) {
-        isIntersecting = true;
-        cursorPos.set(
-          intersects[0].point.x * 0.175,
-          intersects[0].point.y * 0.175
-        );
-      } else {
-        isIntersecting = false;
-      }
-    };
-    window.addEventListener("pointermove", handlePointerMove);
-
     // --- 8. Animation loop ---
     let lastTime = 0;
     let everRendered = false;
@@ -595,15 +534,7 @@ export default function AntigravityBackground({
       const deltaTime = elapsedTime - lastTime;
       lastTime = elapsedTime;
 
-      if (isIntersecting) {
-        // Follow the cursor
-        ringPos.lerp(cursorPos, 0.12);
-      } else {
-        // Park the ring far off-screen so particles return to rest
-        ringPos.lerp(offScreen, 0.05);
-      }
-
-      // Update simulation uniforms
+      // Update simulation uniforms (ring parked off-screen, ambient only)
       simMaterial.uniforms.uPosition.value = everRendered ? rt1.texture : posTex;
       simMaterial.uniforms.uTime.value = elapsedTime;
       simMaterial.uniforms.uDeltaTime.value = deltaTime;
@@ -635,7 +566,6 @@ export default function AntigravityBackground({
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
-      window.removeEventListener("pointermove", handlePointerMove);
 
       particlesMesh.geometry.dispose();
       renderMaterial.dispose();
@@ -644,8 +574,6 @@ export default function AntigravityBackground({
       rt1.dispose();
       rt2.dispose();
       posTex.dispose();
-      raycastPlane.geometry.dispose();
-      raycastPlane.material.dispose();
 
       renderer.dispose();
       if (renderer.domElement && container.contains(renderer.domElement)) {
