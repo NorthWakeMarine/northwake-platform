@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ScrollDepthTracker from "@/components/ScrollDepthTracker";
@@ -109,8 +110,18 @@ export default async function AboutPage() {
               </div>
             </div>
 
-            {/* Team cards */}
-            <h2 className="sr-only">Our Team</h2>
+            {/* Team photo + cards */}
+            <div className="flex flex-col gap-4">
+              <h2 className="sr-only">Our Team</h2>
+              <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/3" }}>
+                <Image
+                  src="/brand/Ian%26Alex.jpeg"
+                  alt="Ian (left) and Alex (right), co-founders of NorthWake Marine"
+                  fill
+                  className="object-cover object-top"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gray-200 list-none">
               {team.map((member) => (
                 <li
@@ -134,6 +145,7 @@ export default async function AboutPage() {
                 </li>
               ))}
             </ul>
+            </div>
           </div>
           <div
             aria-hidden="true"
