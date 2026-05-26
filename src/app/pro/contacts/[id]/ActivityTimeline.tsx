@@ -206,11 +206,13 @@ function InvoiceItem({
     doc_number?: string;
     total?: number;
     status?: string;
+    gcal_event_id?: string;
   } | null;
 
-  const qbInvoiceId = meta?.qb_txn_id ?? null;
-  const docNumber   = meta?.doc_number ?? null;
-  const invoiceUrl  = meta?.invoice_url ?? null;
+  const qbInvoiceId  = meta?.qb_txn_id ?? null;
+  const docNumber    = meta?.doc_number ?? null;
+  const invoiceUrl   = meta?.invoice_url ?? null;
+  const linkedToGcal = !!meta?.gcal_event_id;
 
   const alreadyScheduled = qbInvoiceId
     ? allEvents.some(e =>
@@ -218,6 +220,8 @@ function InvoiceItem({
         (e.metadata as Record<string, unknown> | null)?.qb_invoice_id === qbInvoiceId
       )
     : false;
+
+  const showScheduleButton = qbInvoiceId && !alreadyScheduled && !linkedToGcal;
 
   return (
     <li className="flex gap-4 relative group">
@@ -247,13 +251,21 @@ function InvoiceItem({
               View in QB
             </a>
           )}
-          {qbInvoiceId && (
+          {showScheduleButton && (
             <button
               onClick={() => setShowSchedule(true)}
               className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] border border-[#000080]/30 px-2 py-0.5 rounded-sm hover:bg-[#000080]/5 transition-colors"
             >
-              {alreadyScheduled ? "Reschedule Job" : "Schedule Job"}
+              Schedule Job
             </button>
+          )}
+          {linkedToGcal && (
+            <a
+              href="/pro/calendar"
+              className="text-[10px] tracking-widest uppercase font-semibold text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-sm hover:bg-emerald-50 transition-colors"
+            >
+              On Calendar
+            </a>
           )}
         </div>
       </div>
