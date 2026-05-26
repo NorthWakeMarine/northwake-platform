@@ -307,7 +307,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── Mobile bottom tab bar ── */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#06061a] border-t border-white/[0.07]">
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#06061a] border-t border-white/[0.07] pb-[env(safe-area-inset-bottom)]">
 
         {/* More drawer */}
         {moreOpen && (
@@ -363,7 +363,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 md:pt-0 pb-16 md:pb-0">
+      <div className="flex-1 flex flex-col min-w-0 pt-[env(safe-area-inset-top)] md:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
       </div>
 
