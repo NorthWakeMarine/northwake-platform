@@ -239,9 +239,6 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
   const titleParts = event.title.split(" - ");
   const suggestedName    = titleParts[0].trim();
   const suggestedService = titleParts[titleParts.length - 1].trim();
-  const eventDate        = event.start.includes("T")
-    ? new Date(event.start).toISOString().slice(0, 10)
-    : event.start;
 
   // ── Link form state ──
   const [showLinkForm, setShowLinkForm] = useState(false);
@@ -271,8 +268,8 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
   // Debounced contact search
   useEffect(() => {
     if (!showLinkForm || picked) return;
-    if (query.length < 2) { setResults([]); return; }
     const t = setTimeout(() => {
+      if (query.length < 2) { setResults([]); return; }
       startSearch(async () => {
         const r = await searchContactsByName(query);
         setResults(r);
@@ -283,13 +280,16 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
 
   // Fetch vessels when contact picked
   useEffect(() => {
-    if (!picked) { setVessels([]); setVesselId(""); return; }
+    if (!picked) {
+      setTimeout(() => { setVessels([]); setVesselId(""); }, 0);
+      return;
+    }
     startFetchV(async () => {
       const v = await getVesselsByContactId(picked.id);
       setVessels(v);
       setVesselId(v[0]?.id ?? "");
     });
-  }, [picked?.id]);
+  }, [picked]);
 
   async function handleUnlink() {
     setUnlinking(true);
@@ -778,7 +778,6 @@ function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDelet
             {/* Date number cells */}
             <div className="grid grid-cols-7 h-full absolute inset-0 pointer-events-none">
               {week.map((day, di) => {
-                const isToday     = isSameDay(day, today);
                 const isThisMonth = day.getMonth() === month;
                 return (
                   <div
