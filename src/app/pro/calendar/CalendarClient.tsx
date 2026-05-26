@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   createStandaloneEvent,
   updateStandaloneEvent,
@@ -232,7 +233,7 @@ type InvoiceRecord = { id: string; title: string | null; body: string | null; me
 function LinkedPanel({
   event, link, suggestedService, inputCls,
   showInvoice, setShowInvoice, invoiceState, invoiceAction, invoicing,
-  unlinking, unlinkError, handleUnlink,
+  unlinking, unlinkError, handleUnlink, onInvoiceCreated,
 }: {
   event: CalendarEvent;
   link: EventLink;
@@ -247,7 +248,9 @@ function LinkedPanel({
   unlinking: boolean;
   unlinkError: string;
   handleUnlink: () => void;
+  onInvoiceCreated: (url: string, docNumber: string) => void;
 }) {
+  const router = useRouter();
   const [showClaimInvoice,  setShowClaimInvoice]  = useState(false);
   const [invoices,          setInvoices]           = useState<InvoiceRecord[]>([]);
   const [loadingInvoices,   startLoadInvoices]     = useTransition();
@@ -268,7 +271,7 @@ function LinkedPanel({
     setClaimError("");
     const res = await claimGcalEventToInvoice(invoiceTimelineId, event.id);
     if (res.error) { setClaimError(res.error); setClaimingId(null); }
-    else { setClaimedId(invoiceTimelineId); setClaimingId(null); }
+    else { setClaimedId(invoiceTimelineId); setClaimingId(null); router.refresh(); }
   }
 
   return (
@@ -421,11 +424,16 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
   // ── Unlink state ──
   const [unlinking,   setUnlinking]   = useState(false);
   const [unlinkError, setUnlinkError] = useState("");
+  const router = useRouter();
 
-  useEffect(() => { if (linkState.success) onLinked(); }, [linkState.success, onLinked]);
+  useEffect(() => {
+    if (linkState.success) { router.refresh(); onLinked(); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkState.success]);
   useEffect(() => {
     if (invoiceState.success) onInvoiceCreated(invoiceState.invoiceUrl ?? "", invoiceState.docNumber ?? "");
-  }, [invoiceState.success, invoiceState.invoiceUrl, invoiceState.docNumber, onInvoiceCreated]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoiceState.success]);
 
   // Debounced contact search
   useEffect(() => {
@@ -458,7 +466,7 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
     setUnlinkError("");
     const res = await unlinkCalendarEvent(linkKey);
     if (res.error) { setUnlinkError(res.error); setUnlinking(false); }
-    else onUnlinked();
+    else { router.refresh(); onUnlinked(); }
   }
 
   const inputCls = "border border-slate-200 rounded-sm px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080] w-full bg-white";
@@ -483,6 +491,7 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
         unlinking={unlinking}
         unlinkError={unlinkError}
         handleUnlink={handleUnlink}
+        onInvoiceCreated={onInvoiceCreated}
       />
     );
   }
