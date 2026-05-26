@@ -70,7 +70,7 @@ async function refreshQbTokens(tokens: QbTokenData): Promise<QbTokenData> {
   return refreshed;
 }
 
-async function getValidTokens(): Promise<QbTokenData> {
+export async function getValidTokens(): Promise<QbTokenData> {
   const tokens = await getQbTokens();
   if (!tokens) throw new Error("QuickBooks not connected. Visit /pro/integrations to authorize.");
 
@@ -393,6 +393,60 @@ export async function updateQbCustomerNotes(qbCustomerId: string, syncToken: str
   await qbRequest("/customer", {
     method: "POST",
     body: JSON.stringify({ Id: qbCustomerId, SyncToken: syncToken, sparse: true, Notes: notes }),
+  });
+}
+
+// ── Recurring Invoice Templates ───────────────────────────────────────────────
+
+export type QbRecurringTransaction = {
+  RecurringInfo: {
+    Name: string;
+    RecurType: string;
+    Active: boolean;
+  };
+  Invoice: {
+    CustomerRef: { value: string; name: string };
+    Line: unknown[];
+    CurrencyRef?: { value: string };
+  };
+};
+
+export async function listQbRecurringInvoiceTemplates(): Promise<QbRecurringTransaction[]> {
+  const query = "SELECT * FROM RecurringTransaction MAXRESULTS 500";
+  const data = await qbRequest<{ QueryResponse: { RecurringTransaction?: unknown[] } }>(
+    `/query?query=${encodeURIComponent(query)}`
+  );
+  const all = data.QueryResponse.RecurringTransaction ?? [];
+  return (all as QbRecurringTransaction[]).filter(
+    t => t.RecurringInfo?.Active && t.Invoice?.CustomerRef
+  );
+}
+
+export async function createQbInvoiceFromTemplate(
+  template: QbRecurringTransaction,
+  txnDate: string
+): Promise<{ invoiceId: string; docNumber: string }> {
+  const payload = {
+    ...template.Invoice,
+    TxnDate: txnDate,
+  };
+  const data = await qbRequest<{ Invoice: { Id: string; DocNumber: string } }>("/invoice", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return { invoiceId: data.Invoice.Id, docNumber: data.Invoice.DocNumber };
+}
+
+export async function updateQbInvoiceTxnDate(invoiceId: string, newDate: string): Promise<void> {
+  const data = await qbRequest<{ Invoice: { Id: string; SyncToken: string } }>(`/invoice/${invoiceId}`);
+  await qbRequest("/invoice", {
+    method: "POST",
+    body: JSON.stringify({
+      Id:        data.Invoice.Id,
+      SyncToken: data.Invoice.SyncToken,
+      sparse:    true,
+      TxnDate:   newDate,
+    }),
   });
 }
 

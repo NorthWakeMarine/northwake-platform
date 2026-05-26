@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, startTransition, useTransi
 import {
   addAsset, updateAssetNotes, updateAsset, type AssetState,
   addVesselService, markServiced, deleteVesselService, updateVesselService, type VesselServiceState,
+  createMaintenanceInvoice, type MaintenanceInvoiceState,
   deleteAsset,
 } from "@/app/actions";
 
@@ -14,6 +15,7 @@ export type VesselService = {
   interval_days: number;
   last_service_date: string | null;
   notifications_enabled: boolean | null;
+  typical_price: number | null;
 };
 
 export type Asset = {
@@ -265,13 +267,15 @@ function AddAssetForm({ contactId, onDone }: { contactId: string; onDone: () => 
 function ServiceScheduleSection({ asset, contactId, services }: {
   asset: Asset; contactId: string; services: VesselService[];
 }) {
-  const [addState,    addAction,    isAdding]    = useActionState<VesselServiceState, FormData>(addVesselService, {});
-  const [markState,   markAction,   isMarking]   = useActionState<VesselServiceState, FormData>(markServiced, {});
-  const [delState,    delAction,    isDeleting]  = useActionState<VesselServiceState, FormData>(deleteVesselService, {});
-  const [editState,   editAction,   isEditing]   = useActionState<VesselServiceState, FormData>(updateVesselService, {});
+  const [addState,     addAction,     isAdding]    = useActionState<VesselServiceState, FormData>(addVesselService, {});
+  const [markState,    markAction,    isMarking]   = useActionState<VesselServiceState, FormData>(markServiced, {});
+  const [delState,     delAction,     isDeleting]  = useActionState<VesselServiceState, FormData>(deleteVesselService, {});
+  const [editState,    editAction,    isEditing]   = useActionState<VesselServiceState, FormData>(updateVesselService, {});
+  const [invoiceState, invoiceAction, isInvoicing] = useActionState<MaintenanceInvoiceState, FormData>(createMaintenanceInvoice, {});
   const addRef  = useRef<HTMLFormElement>(null);
   const [showAdd, setShowAdd]     = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [invoicingId, setInvoicingId] = useState<string | null>(null);
 
   useEffect(() => { if (addState.success)  { addRef.current?.reset(); startTransition(() => setShowAdd(false));    } }, [addState.success]);
   useEffect(() => { if (editState.success) { startTransition(() => setEditingId(null)); } }, [editState.success]);
@@ -319,6 +323,12 @@ function ServiceScheduleSection({ asset, contactId, services }: {
                   {INTERVAL_OPTIONS.map((o) => <option key={o.days} value={o.days}>{o.label}</option>)}
                 </select>
               </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
+                <input type="number" name="typical_price" step="0.01" min="0"
+                  placeholder="0.00" defaultValue={s.typical_price ?? ""}
+                  className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
+              </div>
               <NotificationsField defaultValue={notifOn} />
               {editState.error && <p className="text-red-500 text-[11px]">{editState.error}</p>}
               <div className="flex gap-2 pt-1">
@@ -360,6 +370,10 @@ function ServiceScheduleSection({ asset, contactId, services }: {
                     Mark Done
                   </button>
                 </form>
+                <button type="button" onClick={() => setInvoicingId(invoicingId === s.id ? null : s.id)}
+                  className="text-[9px] tracking-widest uppercase text-[#000080] font-semibold hover:text-[#0000a0]">
+                  Create Invoice
+                </button>
                 <button type="button" onClick={() => setEditingId(s.id)}
                   className="text-[9px] tracking-widest uppercase text-slate-400 hover:text-slate-700 font-semibold">
                   Edit
@@ -376,6 +390,33 @@ function ServiceScheduleSection({ asset, contactId, services }: {
             </div>
             {s.last_service_date && (
               <p className="text-[10px] text-slate-400">Last: {new Date(s.last_service_date + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+            )}
+            {s.typical_price !== null && s.typical_price !== undefined && (
+              <p className="text-[10px] text-slate-400">Typical: ${s.typical_price.toFixed(2)}</p>
+            )}
+            {invoicingId === s.id && (
+              invoiceState.success && invoiceState.invoiceUrl ? (
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="text-emerald-600 text-[10px] font-medium">Invoice #{invoiceState.docNumber} created.</span>
+                  <a href={invoiceState.invoiceUrl} target="_blank" rel="noopener noreferrer"
+                    className="text-[10px] text-[#000080] underline underline-offset-2">
+                    Open in QB
+                  </a>
+                  <button onClick={() => setInvoicingId(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Dismiss</button>
+                </div>
+              ) : (
+                <form action={invoiceAction} className="mt-1.5 flex items-center gap-2">
+                  <input type="hidden" name="service_id" value={s.id} />
+                  <input type="hidden" name="contact_id" value={contactId} />
+                  <button type="submit" disabled={isInvoicing}
+                    className="text-[9px] tracking-widest uppercase bg-[#000080] text-white px-3 py-1 rounded-sm font-semibold disabled:opacity-50">
+                    {isInvoicing ? "Creating..." : "Confirm — Create QB Draft"}
+                  </button>
+                  <button type="button" onClick={() => setInvoicingId(null)}
+                    className="text-[9px] text-slate-400 hover:text-slate-600">Cancel</button>
+                  {invoiceState.error && <p className="text-red-500 text-[10px]">{invoiceState.error}</p>}
+                </form>
+              )
             )}
           </div>
         );
@@ -400,6 +441,11 @@ function ServiceScheduleSection({ asset, contactId, services }: {
                 className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400 bg-white">
                 {INTERVAL_OPTIONS.map((o) => <option key={o.days} value={o.days}>{o.label}</option>)}
               </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
+              <input type="number" name="typical_price" step="0.01" min="0" placeholder="0.00"
+                className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Last Done</label>

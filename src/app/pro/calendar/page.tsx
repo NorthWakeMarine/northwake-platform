@@ -1,6 +1,7 @@
 import ProShell from "@/components/ProShell";
-import CalendarClient from "./CalendarClient";
+import CalendarClient, { type EventLink } from "./CalendarClient";
 import type { CalendarEvent } from "@/lib/google-calendar";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +17,39 @@ async function fetchEvents(): Promise<CalendarEvent[]> {
   }
 }
 
+async function fetchLinkMap(): Promise<Record<string, EventLink>> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data } = await supabase
+      .from("calendar_contact_links")
+      .select("gcal_event_id, contact_id, vessel_id, contacts(name), vessels(name, make_model)");
+
+    const map: Record<string, EventLink> = {};
+    for (const row of data ?? []) {
+      const c = row.contacts as unknown as { name: string | null } | null;
+      const v = row.vessels  as unknown as { name: string | null; make_model: string | null } | null;
+      map[row.gcal_event_id] = {
+        contactId:   row.contact_id,
+        contactName: c?.name ?? null,
+        vesselId:    row.vessel_id ?? null,
+        vesselLabel: v ? [v.name, v.make_model].filter(Boolean).join(" ") : null,
+      };
+    }
+    return map;
+  } catch {
+    return {};
+  }
+}
+
 export default async function CalendarPage() {
-  const events = await fetchEvents();
+  const [events, linkMap] = await Promise.all([fetchEvents(), fetchLinkMap()]);
   return (
     <ProShell>
       <div className="flex-1 flex flex-col min-h-0">
-        <CalendarClient events={events} />
+        <CalendarClient events={events} linkMap={linkMap} />
       </div>
     </ProShell>
   );

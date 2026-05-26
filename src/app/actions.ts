@@ -1055,12 +1055,16 @@ export async function addVesselService(
 
   if (!vessel_id || !service_name) return { error: "Vessel and service name are required." };
 
+  const priceRaw    = (formData.get("typical_price") as string)?.trim();
+  const typical_price = priceRaw ? parseFloat(priceRaw) : null;
+
   const supabase = await svc();
   const { error } = await supabase.from("vessel_services").insert({
     vessel_id,
     service_name,
     interval_days: isNaN(interval_days) ? 90 : interval_days,
     last_service_date: last_service_date || null,
+    typical_price: typical_price !== null && !isNaN(typical_price) ? typical_price : null,
   });
   if (error) return { error: error.message };
   if (contact_id) revalidatePath(`/pro/contacts/${contact_id}`);
@@ -1097,6 +1101,8 @@ export async function updateVesselService(
   const service_name         = (formData.get("service_name") as string)?.trim();
   const interval_days        = parseInt(formData.get("interval_days") as string, 10);
   const notifications_enabled = formData.get("notifications_enabled") === "true";
+  const priceRaw             = (formData.get("typical_price") as string)?.trim();
+  const typical_price        = priceRaw ? parseFloat(priceRaw) : null;
 
   if (!service_id || !service_name) return { error: "Service name required." };
   if (isNaN(interval_days))         return { error: "Valid interval required." };
@@ -1104,7 +1110,12 @@ export async function updateVesselService(
   const supabase = await svc();
   const { error } = await supabase
     .from("vessel_services")
-    .update({ service_name, interval_days, notifications_enabled })
+    .update({
+      service_name,
+      interval_days,
+      notifications_enabled,
+      typical_price: typical_price !== null && !isNaN(typical_price) ? typical_price : null,
+    })
     .eq("id", service_id);
   if (error) return { error: error.message };
   if (contact_id) revalidatePath(`/pro/contacts/${contact_id}`);
@@ -1125,6 +1136,186 @@ export async function deleteVesselService(
   if (error) return { error: error.message };
   if (contact_id) revalidatePath(`/pro/contacts/${contact_id}`);
   return { success: true };
+}
+
+// ─── Create Maintenance Invoice from Vessel Service ───────────────────────────
+
+export type MaintenanceInvoiceState = { error?: string; success?: boolean; invoiceUrl?: string; docNumber?: string };
+
+export async function createMaintenanceInvoice(
+  _prev: MaintenanceInvoiceState,
+  formData: FormData
+): Promise<MaintenanceInvoiceState> {
+  const service_id = formData.get("service_id") as string;
+  const contact_id = formData.get("contact_id") as string;
+
+  if (!service_id || !contact_id) return { error: "Missing required fields." };
+
+  const supabase = await svc();
+
+  const { data: service } = await supabase
+    .from("vessel_services")
+    .select("service_name, typical_price, vessel_id")
+    .eq("id", service_id)
+    .single();
+  if (!service) return { error: "Service record not found." };
+
+  const { data: contact } = await supabase
+    .from("contacts")
+    .select("qb_customer_id, name")
+    .eq("id", contact_id)
+    .single();
+  if (!contact?.qb_customer_id) return { error: "Contact has no linked QuickBooks customer. Link the contact to QuickBooks first." };
+
+  try {
+    const { createQbInvoiceDraft, getQbInvoiceUrl, getValidTokens } = await import("@/lib/quickbooks");
+    const tokens = await getValidTokens();
+    const { invoiceId, docNumber } = await createQbInvoiceDraft({
+      qbCustomerId:    contact.qb_customer_id,
+      lineDescription: service.service_name,
+      amount:          service.typical_price ?? 0,
+    });
+
+    const invoiceUrl = getQbInvoiceUrl(tokens.realm_id, invoiceId);
+
+    const today = new Date().toISOString().split("T")[0];
+    await supabase.from("vessel_services").update({ last_service_date: today }).eq("id", service_id);
+
+    await supabase.from("timeline_events").insert({
+      contact_id,
+      event_type: "invoice",
+      title:      `Invoice #${docNumber}`,
+      body:       `${service.service_name}${service.typical_price ? ` — $${service.typical_price.toFixed(2)}` : ""}`,
+      metadata:   { qb_invoice_id: `Invoice:${invoiceId}`, doc_number: docNumber, invoice_url: invoiceUrl, total: service.typical_price ?? 0, status: "Unpaid" },
+      created_by: "pro",
+    });
+
+    revalidatePath(`/pro/contacts/${contact_id}`);
+    return { success: true, invoiceUrl, docNumber };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to create invoice." };
+  }
+}
+
+// ─── Calendar Event → Contact Linking ────────────────────────────────────────
+
+export type CalendarLinkState = { error?: string; success?: boolean };
+
+export async function linkCalendarEvent(
+  _prev: CalendarLinkState,
+  formData: FormData
+): Promise<CalendarLinkState> {
+  const gcal_event_id  = formData.get("gcal_event_id")  as string;
+  const contact_id     = formData.get("contact_id")     as string;
+  const vessel_id      = (formData.get("vessel_id") as string)?.trim() || null;
+
+  if (!gcal_event_id || !contact_id) return { error: "Missing required fields." };
+
+  const supabase = await svc();
+  const { error } = await supabase
+    .from("calendar_contact_links")
+    .upsert({ gcal_event_id, contact_id, vessel_id }, { onConflict: "gcal_event_id" });
+  if (error) return { error: error.message };
+
+  revalidatePath("/pro/calendar");
+  return { success: true };
+}
+
+export async function unlinkCalendarEvent(gcalEventId: string): Promise<{ error?: string }> {
+  const supabase = await svc();
+  const { error } = await supabase
+    .from("calendar_contact_links")
+    .delete()
+    .eq("gcal_event_id", gcalEventId);
+  if (error) return { error: error.message };
+  revalidatePath("/pro/calendar");
+  return {};
+}
+
+export type CalendarInvoiceState = { error?: string; success?: boolean; invoiceUrl?: string; docNumber?: string };
+
+export async function createInvoiceFromCalendarEvent(
+  _prev: CalendarInvoiceState,
+  formData: FormData
+): Promise<CalendarInvoiceState> {
+  const contact_id    = formData.get("contact_id")    as string;
+  const gcal_event_id = formData.get("gcal_event_id") as string;
+  const service_label = (formData.get("service_label") as string)?.trim() || "Maintenance Wash";
+  const amountRaw     = (formData.get("amount") as string)?.trim();
+  const amount        = amountRaw ? parseFloat(amountRaw) : 0;
+
+  if (!contact_id || !gcal_event_id) return { error: "Missing required fields." };
+
+  const supabase = await svc();
+  const { data: contact } = await supabase
+    .from("contacts")
+    .select("qb_customer_id")
+    .eq("id", contact_id)
+    .single();
+  if (!contact?.qb_customer_id) return { error: "Contact has no linked QuickBooks customer." };
+
+  try {
+    const { createQbInvoiceDraft, getQbInvoiceUrl, getValidTokens } = await import("@/lib/quickbooks");
+    const tokens = await getValidTokens();
+    const { invoiceId, docNumber } = await createQbInvoiceDraft({
+      qbCustomerId:    contact.qb_customer_id,
+      lineDescription: service_label,
+      amount:          isNaN(amount) ? 0 : amount,
+    });
+    const invoiceUrl = getQbInvoiceUrl(tokens.realm_id, invoiceId);
+
+    await supabase.from("timeline_events").insert({
+      contact_id,
+      event_type: "invoice",
+      title:      `Invoice #${docNumber}`,
+      body:       `${service_label}${amount ? ` — $${amount.toFixed(2)}` : ""}`,
+      metadata:   {
+        qb_invoice_id:   `Invoice:${invoiceId}`,
+        doc_number:      docNumber,
+        invoice_url:     invoiceUrl,
+        total:           isNaN(amount) ? 0 : amount,
+        status:          "Unpaid",
+        gcal_event_id,
+        linked_from:     "calendar_event",
+      },
+      created_by: "pro",
+    });
+
+    revalidatePath(`/pro/contacts/${contact_id}`);
+    revalidatePath("/pro/calendar");
+    return { success: true, invoiceUrl, docNumber };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to create invoice." };
+  }
+}
+
+// ─── Calendar Contact Search Helpers ─────────────────────────────────────────
+
+export async function searchContactsByName(
+  query: string
+): Promise<{ id: string; name: string; email: string | null }[]> {
+  if (!query || query.trim().length < 2) return [];
+  const supabase = await svc();
+  const { data } = await supabase
+    .from("contacts")
+    .select("id, name, email")
+    .ilike("name", `%${query.trim()}%`)
+    .limit(6)
+    .order("name");
+  return (data ?? []) as { id: string; name: string; email: string | null }[];
+}
+
+export async function getVesselsByContactId(
+  contactId: string
+): Promise<{ id: string; name: string | null; make_model: string | null }[]> {
+  if (!contactId) return [];
+  const supabase = await svc();
+  const { data } = await supabase
+    .from("vessels")
+    .select("id, name, make_model")
+    .eq("owner_id", contactId)
+    .order("created_at");
+  return (data ?? []) as { id: string; name: string | null; make_model: string | null }[];
 }
 
 // ─── Linked Contacts ──────────────────────────────────────────────────────────

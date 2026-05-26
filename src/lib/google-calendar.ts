@@ -112,7 +112,8 @@ export type CalendarEvent = {
   end: string;
   description?: string;
   location?: string;
-  colorId?: string; // Google Calendar colorId "1"–"11"
+  colorId?: string;           // Google Calendar colorId "1"–"11"
+  recurringEventId?: string;  // set on modified "change this event only" occurrences
 };
 
 export async function listUpcomingEvents(days = 14): Promise<CalendarEvent[]> {
@@ -143,7 +144,8 @@ export async function listEvents(from: Date, to: Date): Promise<CalendarEvent[]>
       end:         e.end?.dateTime   ?? e.end?.date   ?? "",
       description: e.description ?? undefined,
       location:    e.location    ?? undefined,
-      colorId:     e.colorId     ?? undefined,
+      colorId:          e.colorId          ?? undefined,
+      recurringEventId: e.recurringEventId ?? undefined,
     }));
 }
 

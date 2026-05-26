@@ -1,13 +1,27 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
+import { useActionState, useState, useEffect, useTransition } from "react";
 import {
   createStandaloneEvent,
   updateStandaloneEvent,
   deleteStandaloneEvent,
+  linkCalendarEvent,
+  unlinkCalendarEvent,
+  createInvoiceFromCalendarEvent,
+  searchContactsByName,
+  getVesselsByContactId,
   type CalendarEventState,
+  type CalendarLinkState,
+  type CalendarInvoiceState,
 } from "@/app/actions";
 import type { CalendarEvent } from "@/lib/google-calendar";
+
+export type EventLink = {
+  contactId: string;
+  contactName: string | null;
+  vesselId: string | null;
+  vesselLabel: string | null;
+};
 
 // ── Google Calendar color map ──────────────────────────────────────────────────
 
@@ -209,10 +223,269 @@ function computeSegments(events: CalendarEvent[], weeks: Date[][]): EventSegment
   return segments;
 }
 
+// ── Event Link Panel ───────────────────────────────────────────────────────────
+
+type ContactResult = { id: string; name: string; email: string | null };
+type VesselOption  = { id: string; name: string | null; make_model: string | null };
+
+function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceCreated }: {
+  event: CalendarEvent;
+  link: EventLink | undefined;
+  linkKey: string;
+  onLinked: () => void;
+  onUnlinked: () => void;
+  onInvoiceCreated: (url: string, docNumber: string) => void;
+}) {
+  const titleParts = event.title.split(" - ");
+  const suggestedName    = titleParts[0].trim();
+  const suggestedService = titleParts[titleParts.length - 1].trim();
+  const eventDate        = event.start.includes("T")
+    ? new Date(event.start).toISOString().slice(0, 10)
+    : event.start;
+
+  // ── Link form state ──
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [query,        setQuery]        = useState(suggestedName);
+  const [results,      setResults]      = useState<ContactResult[]>([]);
+  const [picked,       setPicked]       = useState<ContactResult | null>(null);
+  const [vessels,      setVessels]      = useState<VesselOption[]>([]);
+  const [vesselId,     setVesselId]     = useState("");
+  const [isRecurring,  setIsRecurring]  = useState(!!event.recurringEventId);
+  const [searching,    startSearch]     = useTransition();
+  const [fetchingV,    startFetchV]     = useTransition();
+  const [linkState,    linkAction, linking] = useActionState<CalendarLinkState, FormData>(linkCalendarEvent, {});
+
+  // ── Invoice form state ──
+  const [showInvoice,   setShowInvoice]   = useState(false);
+  const [invoiceState,  invoiceAction, invoicing] = useActionState<CalendarInvoiceState, FormData>(createInvoiceFromCalendarEvent, {});
+
+  // ── Unlink state ──
+  const [unlinking,   setUnlinking]   = useState(false);
+  const [unlinkError, setUnlinkError] = useState("");
+
+  useEffect(() => { if (linkState.success) onLinked(); }, [linkState.success, onLinked]);
+  useEffect(() => {
+    if (invoiceState.success) onInvoiceCreated(invoiceState.invoiceUrl ?? "", invoiceState.docNumber ?? "");
+  }, [invoiceState.success, invoiceState.invoiceUrl, invoiceState.docNumber, onInvoiceCreated]);
+
+  // Debounced contact search
+  useEffect(() => {
+    if (!showLinkForm || picked) return;
+    if (query.length < 2) { setResults([]); return; }
+    const t = setTimeout(() => {
+      startSearch(async () => {
+        const r = await searchContactsByName(query);
+        setResults(r);
+      });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query, showLinkForm, picked]);
+
+  // Fetch vessels when contact picked
+  useEffect(() => {
+    if (!picked) { setVessels([]); setVesselId(""); return; }
+    startFetchV(async () => {
+      const v = await getVesselsByContactId(picked.id);
+      setVessels(v);
+      setVesselId(v[0]?.id ?? "");
+    });
+  }, [picked?.id]);
+
+  async function handleUnlink() {
+    setUnlinking(true);
+    setUnlinkError("");
+    const res = await unlinkCalendarEvent(linkKey);
+    if (res.error) { setUnlinkError(res.error); setUnlinking(false); }
+    else onUnlinked();
+  }
+
+  const inputCls = "border border-slate-200 rounded-sm px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080] w-full bg-white";
+
+  // gcal_event_id to store: prefer series base ID when recurring
+  const gcalIdToStore = isRecurring && event.recurringEventId ? event.recurringEventId : event.id;
+
+  // ── LINKED STATE ──
+  if (link) {
+    return (
+      <div className="border-t border-slate-100 px-6 py-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <div>
+              <p className="text-slate-800 text-xs font-semibold">
+                {link.contactName ?? "Linked Contact"}
+              </p>
+              {link.vesselLabel && (
+                <p className="text-slate-400 text-[11px]">{link.vesselLabel}</p>
+              )}
+            </div>
+          </div>
+          <a
+            href={`/pro/contacts/${link.contactId}`}
+            className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0"
+          >
+            View
+          </a>
+        </div>
+
+        {!showInvoice ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowInvoice(true)}
+              className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors"
+            >
+              Create Invoice
+            </button>
+            <button
+              onClick={handleUnlink}
+              disabled={unlinking}
+              className="px-3 py-2 text-[10px] tracking-widest uppercase font-semibold text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
+            >
+              {unlinking ? "..." : "Unlink"}
+            </button>
+          </div>
+        ) : (
+          <form action={invoiceAction} className="flex flex-col gap-3">
+            <input type="hidden" name="contact_id"    value={link.contactId} />
+            <input type="hidden" name="gcal_event_id" value={event.id} />
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service</label>
+              <input name="service_label" defaultValue={suggestedService} className={inputCls} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Amount ($)</label>
+              <input type="number" name="amount" step="0.01" min="0" placeholder="0.00" className={inputCls} />
+            </div>
+            {invoiceState.error && <p className="text-red-600 text-[11px]">{invoiceState.error}</p>}
+            <div className="flex gap-2">
+              <button type="submit" disabled={invoicing}
+                className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
+                {invoicing ? "Creating..." : "Create Invoice"}
+              </button>
+              <button type="button" onClick={() => setShowInvoice(false)}
+                className="px-3 text-[10px] text-slate-500 hover:text-slate-800 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+        {unlinkError && <p className="text-red-600 text-[11px]">{unlinkError}</p>}
+      </div>
+    );
+  }
+
+  // ── UNLINKED STATE ──
+  if (!showLinkForm) {
+    return (
+      <div className="border-t border-slate-100 px-6 py-4">
+        <button
+          onClick={() => setShowLinkForm(true)}
+          className="w-full border border-dashed border-slate-300 text-slate-400 text-[10px] tracking-widest uppercase font-semibold py-2.5 rounded-sm hover:border-slate-400 hover:text-slate-600 transition-colors"
+        >
+          Link to Contact
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-slate-100 px-6 py-4 flex flex-col gap-3">
+      <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-widest">Link to Contact</p>
+
+      {/* Contact search */}
+      {!picked ? (
+        <div className="relative">
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search contact name..."
+            className={inputCls}
+            autoFocus
+          />
+          {searching && (
+            <span className="absolute right-3 top-2.5 text-[10px] text-slate-400">searching...</span>
+          )}
+          {results.length > 0 && (
+            <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-sm shadow-lg overflow-hidden">
+              {results.map(r => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => { setPicked(r); setResults([]); }}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors"
+                >
+                  <p className="text-xs font-medium text-slate-800">{r.name}</p>
+                  {r.email && <p className="text-[10px] text-slate-400">{r.email}</p>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-sm px-3 py-2">
+          <span className="text-xs font-medium text-slate-800">{picked.name}</span>
+          <button type="button" onClick={() => { setPicked(null); setVessels([]); setVesselId(""); }}
+            className="text-slate-400 hover:text-slate-600 text-xs ml-2">&times;</button>
+        </div>
+      )}
+
+      {/* Vessel selector */}
+      {picked && vessels.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Vessel (optional)</label>
+          <select value={vesselId} onChange={e => setVesselId(e.target.value)} className={inputCls}>
+            <option value="">No vessel</option>
+            {vessels.map(v => (
+              <option key={v.id} value={v.id}>
+                {[v.name, v.make_model].filter(Boolean).join(" ")}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {fetchingV && <p className="text-[10px] text-slate-400">Loading vessels...</p>}
+
+      {/* Recurring toggle */}
+      <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+        <div
+          onClick={() => setIsRecurring(v => !v)}
+          className={`w-8 h-4 rounded-full relative transition-colors ${isRecurring ? "bg-[#000080]" : "bg-slate-200"}`}
+        >
+          <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${isRecurring ? "translate-x-4" : "translate-x-0.5"}`} />
+        </div>
+        <span className="text-xs text-slate-500">Link entire recurring series</span>
+      </label>
+      {isRecurring && (
+        <p className="text-[10px] text-slate-400 -mt-1">
+          All future occurrences will show as linked automatically.
+        </p>
+      )}
+
+      {linkState.error && <p className="text-red-600 text-[11px]">{linkState.error}</p>}
+
+      {/* Submit */}
+      <form action={linkAction} className="flex gap-2">
+        <input type="hidden" name="gcal_event_id" value={gcalIdToStore} />
+        <input type="hidden" name="contact_id"    value={picked?.id ?? ""} />
+        <input type="hidden" name="vessel_id"     value={vesselId} />
+        <button type="submit" disabled={!picked || linking}
+          className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
+          {linking ? "Saving..." : "Save Link"}
+        </button>
+        <button type="button" onClick={() => setShowLinkForm(false)}
+          className="px-3 text-[10px] text-slate-500 hover:text-slate-800 transition-colors">
+          Cancel
+        </button>
+      </form>
+    </div>
+  );
+}
+
 // ── Event Detail Modal ─────────────────────────────────────────────────────────
 
-function EventDetailModal({ event, onEdit, onDelete, onClose }: {
+function EventDetailModal({ event, linkMap, onEdit, onDelete, onClose }: {
   event: CalendarEvent;
+  linkMap: Record<string, EventLink>;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -223,6 +496,12 @@ function EventDetailModal({ event, onEdit, onDelete, onClose }: {
     : new Date(event.start).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const timeStr = isAllDay ? "All day" : `${fmtTime(event.start)} – ${fmtTime(event.end)}`;
   const color = getEventColor(event.colorId);
+
+  // Resolve link: prefer direct ID match, fall back to series base ID
+  const link = linkMap[event.id] ?? (event.recurringEventId ? linkMap[event.recurringEventId] : undefined);
+  const linkKey = linkMap[event.id] !== undefined ? event.id : (event.recurringEventId ?? event.id);
+
+  const [invoiceSuccess, setInvoiceSuccess] = useState<{ url: string; docNumber: string } | null>(null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4">
@@ -241,14 +520,33 @@ function EventDetailModal({ event, onEdit, onDelete, onClose }: {
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none shrink-0">&times;</button>
         </div>
 
-        {event.description && (
-          <div className="px-6 py-4 overflow-y-auto flex-1">
-            <div
-              className="prose prose-sm prose-slate max-w-none text-slate-700 text-sm leading-relaxed [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mt-1"
-              dangerouslySetInnerHTML={{ __html: event.description }}
+        <div className="overflow-y-auto flex-1">
+          {event.description && (
+            <div className="px-6 py-4">
+              <div
+                className="prose prose-sm prose-slate max-w-none text-slate-700 text-sm leading-relaxed [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mt-1"
+                dangerouslySetInnerHTML={{ __html: event.description }}
+              />
+            </div>
+          )}
+
+          {invoiceSuccess ? (
+            <div className="border-t border-slate-100 px-6 py-4 flex flex-col gap-2">
+              <p className="text-emerald-600 text-xs font-semibold">Invoice #{invoiceSuccess.docNumber} created.</p>
+              <a href={invoiceSuccess.url} target="_blank" rel="noopener noreferrer"
+                className="text-[#000080] text-xs underline">Open in QuickBooks</a>
+            </div>
+          ) : (
+            <EventLinkPanel
+              event={event}
+              link={link}
+              linkKey={linkKey}
+              onLinked={onClose}
+              onUnlinked={onClose}
+              onInvoiceCreated={(url, docNumber) => setInvoiceSuccess({ url, docNumber })}
             />
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="px-6 py-4 border-t border-slate-100 flex items-center gap-3">
           <button
@@ -677,7 +975,7 @@ function WeekGrid({ weekStart, events, today, onDayClick, onEventClick, onDelete
 
 type ViewMode = "month" | "week";
 
-export default function CalendarClient({ events }: { events: CalendarEvent[] }) {
+export default function CalendarClient({ events, linkMap }: { events: CalendarEvent[]; linkMap: Record<string, EventLink> }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -817,6 +1115,7 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
       {modal === "detail" && selected && (
         <EventDetailModal
           event={selected}
+          linkMap={linkMap}
           onEdit={() => openEdit(selected)}
           onDelete={() => openDelete(selected)}
           onClose={closeModal}

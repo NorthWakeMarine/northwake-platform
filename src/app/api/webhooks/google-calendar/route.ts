@@ -186,6 +186,34 @@ async function processGoogleEvent(
       }
     }
 
+    // Sync QB invoice TxnDate if a maintenance invoice is linked to this event
+    try {
+      const supabaseForLink = db();
+      const { data: linkRow } = await supabaseForLink
+        .from("calendar_contact_links")
+        .select("contact_id")
+        .or(`gcal_event_id.eq.${googleEventId}${gEvent.recurringEventId ? `,gcal_event_id.eq.${gEvent.recurringEventId}` : ""}`)
+        .maybeSingle();
+
+      if (linkRow) {
+        const { data: invoiceEvent } = await supabaseForLink
+          .from("timeline_events")
+          .select("metadata")
+          .eq("contact_id", linkRow.contact_id)
+          .eq("event_type", "invoice")
+          .filter("metadata->>gcal_event_id", "eq", googleEventId)
+          .maybeSingle();
+
+        const qbInvoiceId = (invoiceEvent?.metadata as { qb_invoice_id?: string } | null)?.qb_invoice_id;
+        if (qbInvoiceId) {
+          const rawId = qbInvoiceId.replace(/^Invoice:/, "");
+          const newDate = serviceDate;
+          const { updateQbInvoiceTxnDate } = await import("@/lib/quickbooks");
+          await updateQbInvoiceTxnDate(rawId, newDate);
+        }
+      }
+    } catch { /* QB sync is best-effort — don't fail the webhook */ }
+
     // Conflict check: does the new time overlap any other CRM appointment?
     const { data: others } = await supabase
       .from("timeline_events")

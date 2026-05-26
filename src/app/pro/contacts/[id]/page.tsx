@@ -139,7 +139,7 @@ export default async function ContactProfilePage({
   const { data: vesselServicesData } = vesselIds.length > 0
     ? await supabase
         .from("vessel_services")
-        .select("id, vessel_id, service_name, interval_days, last_service_date, notifications_enabled")
+        .select("id, vessel_id, service_name, interval_days, last_service_date, notifications_enabled, typical_price")
         .in("vessel_id", vesselIds)
         .order("created_at", { ascending: true })
     : { data: [] };
