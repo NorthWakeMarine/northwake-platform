@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import React from "react";
 import { readFileSync } from "fs";
 import { join } from "path";
 import ProShell from "@/components/ProShell";
@@ -16,7 +17,7 @@ const TAG_COLORS: Record<string, string> = {
   Pro:          "bg-indigo-50 text-indigo-600 border-indigo-200",
 };
 
-type Entry = { date: string; headline: string; detail: string; tags: string[] };
+type Entry = { date: string; headline: string; lines: string[]; tags: string[] };
 type Month = { label: string; entries: Entry[] };
 
 function parseChangelog(): Month[] {
@@ -38,19 +39,51 @@ function parseChangelog(): Month[] {
         date: entryMatch[1].trim(),
         headline: entryMatch[2].trim(),
         tags: entryMatch[3].split(",").map((t) => t.trim()),
-        detail: "",
+        lines: [],
       });
       continue;
     }
 
-    // Append body lines to the last entry
     if (current && current.entries.length > 0 && line.trim()) {
-      const last = current.entries[current.entries.length - 1];
-      last.detail = last.detail ? `${last.detail} ${line.trim()}` : line.trim();
+      current.entries[current.entries.length - 1].lines.push(line.trim());
     }
   }
 
   return months;
+}
+
+function renderInline(text: string): React.ReactNode[] {
+  const parts = text.split(/\*\*(.+?)\*\*/g);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <strong key={i} className="font-semibold text-[#1E2938]">{part}</strong> : part
+  );
+}
+
+function EntryDetail({ lines }: { lines: string[] }) {
+  const bullets = lines.filter((l) => l.startsWith("- "));
+  const prose = lines.filter((l) => !l.startsWith("- "));
+
+  if (bullets.length === 0 && prose.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {prose.map((line, i) => (
+        <p key={i} className="text-slate-500 text-xs leading-relaxed">
+          {renderInline(line)}
+        </p>
+      ))}
+      {bullets.length > 0 && (
+        <ul className="flex flex-col gap-1">
+          {bullets.map((line, i) => (
+            <li key={i} className="flex gap-2 text-xs leading-relaxed text-slate-500">
+              <span className="mt-[5px] w-1 h-1 rounded-full bg-slate-300 shrink-0" />
+              <span>{renderInline(line.slice(2))}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 export default function ReleaseNotesPage() {
@@ -112,9 +145,7 @@ export default function ReleaseNotesPage() {
                                 ))}
                               </div>
                             </div>
-                            <p className="text-slate-500 text-xs leading-relaxed">
-                              {entry.detail}
-                            </p>
+                            <EntryDetail lines={entry.lines} />
                           </article>
                         ))}
                       </div>
