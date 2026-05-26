@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withPWA from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
   images: {
@@ -55,4 +56,25 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA({
+  dest: "public",
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: false,
+  disable: process.env.NODE_ENV === "development",
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: /^\/(pro|api)(\/.*)?$/,
+        handler: "NetworkOnly",
+      },
+      {
+        urlPattern: /\/(brand|images|icons)\//,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "static-assets",
+          expiration: { maxAgeSeconds: 7 * 24 * 60 * 60 },
+        },
+      },
+    ],
+  },
+})(nextConfig);

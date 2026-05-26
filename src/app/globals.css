@@ -29,6 +29,16 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Remove gray tap flash on touch — app-like feel */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent rubber-band scroll bounce on the dashboard shell */
+.pro-shell {
+  overscroll-behavior: none;
+}
+
 /* Prevent iOS auto-zoom on input focus (requires font-size >= 16px on mobile) */
 @media (max-width: 767px) {
   input, textarea, select {

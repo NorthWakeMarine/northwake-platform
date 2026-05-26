@@ -25,15 +25,23 @@ const { siteUrl, companyName, seoTitle, seoDescription, seoKeywords, ogImagePath
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
   viewportFit: "cover",
+  themeColor: "#000080",
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: faviconPath,
     shortcut: faviconPath,
-    apple: faviconPath,
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "NorthWake",
+    statusBarStyle: "black-translucent",
   },
   title: {
     default: seoTitle,

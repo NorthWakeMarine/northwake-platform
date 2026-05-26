@@ -18,6 +18,13 @@
 - CRM: Lead tracking, vessel management, and service interval logic.
 - Integrations: Dialpad, Google Calendar, QuickBooks, Google Ads.
 
+## Mobile UX Standards
+See [MOBILE-UX-STANDARDS.md](./MOBILE-UX-STANDARDS.md) for the full protocol. Key rules:
+- Touch targets minimum 44x44px on all interactive elements.
+- Landing page hero: form column is `order-1 md:order-2` (form first on mobile).
+- Dashboard uses `.pro-shell` with `overscroll-behavior: none` and a fixed bottom tab bar.
+- PWA service worker: NetworkOnly for `/pro` and `/api` — never cache CRM data.
+
 ## Landing Site UI Standards (enforce on all pages)
 
 ### Color mode

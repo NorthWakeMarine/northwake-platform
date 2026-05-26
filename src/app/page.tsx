@@ -96,7 +96,7 @@ export default async function Home() {
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
 
             {/* ── Left: logo + tagline ── */}
-            <div className="flex flex-col gap-4 order-1 text-center items-center">
+            <div className="flex flex-col gap-4 order-2 md:order-1 text-center items-center">
               <Image
                 src={clientConfig.logoFullWhitePng}
                 alt={`${clientConfig.companyName}, ${clientConfig.seoDescription}`}
@@ -145,7 +145,7 @@ export default async function Home() {
             </div>
 
             {/* ── Right: Free Quote form card ── */}
-            <div className="order-2 chrome-stage-light bg-white/95 backdrop-blur-md p-5 sm:p-7 shadow-sm">
+            <div className="order-1 md:order-2 chrome-stage-light bg-white/95 backdrop-blur-md p-5 sm:p-7 shadow-sm">
               <div className="flex flex-col gap-0.5 mb-4">
                 <h2 className="text-gray-900 text-xl font-bold tracking-tight">{clientConfig.ctaText}</h2>
                 <p className="text-gray-500 text-xs tracking-wide">{clientConfig.ctaSubtext}</p>
