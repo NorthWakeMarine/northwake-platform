@@ -74,7 +74,7 @@ export default function MobileContactActionsSheet({
   return (
     <>
       {/* Fixed bottom bar */}
-      <div className="fixed bottom-16 inset-x-0 z-40 md:hidden bg-white border-t border-slate-200 px-4 pt-3 pb-2 safe-area-bottom">
+      <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] inset-x-0 z-40 md:hidden bg-white border-t border-slate-200 px-4 pt-3 pb-2">
         <div className={`grid gap-2 ${isVendor ? "grid-cols-1" : "grid-cols-2"}`}>
           {!isVendor && (
             <button
@@ -128,7 +128,7 @@ export default function MobileContactActionsSheet({
             <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
             <h2 className="text-slate-800 text-base font-semibold">Move to Stage</h2>
           </div>
-          <div className="pb-10">
+          <div className="pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
             {STAGES.map((s) => (
               <button
                 key={s}
@@ -153,7 +153,7 @@ export default function MobileContactActionsSheet({
 
       {/* More Sheet */}
       {activeSheet === "more" && (
-        <div className="fixed bottom-0 inset-x-0 z-[70] md:hidden bg-white rounded-t-2xl px-5 pt-5 pb-10">
+        <div className="fixed bottom-0 inset-x-0 z-[70] md:hidden bg-white rounded-t-2xl px-5 pt-5 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
           <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
 
           <div className="flex flex-col gap-3">
