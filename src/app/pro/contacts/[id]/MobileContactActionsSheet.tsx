@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  logManualCall,
   updatePipelineStage,
   syncContactToQuickBooks,
   deleteContact,
@@ -17,7 +16,7 @@ interface Props {
   isVendor: boolean;
 }
 
-type ActiveSheet = "log_call" | "pipeline" | "more" | null;
+type ActiveSheet = "pipeline" | "more" | null;
 
 export default function MobileContactActionsSheet({
   contactId,
@@ -27,12 +26,6 @@ export default function MobileContactActionsSheet({
 }: Props) {
   const router = useRouter();
   const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
-
-  // Log call
-  const [direction, setDirection] = useState<"inbound" | "outbound">("outbound");
-  const [callNotes, setCallNotes] = useState("");
-  const [callError, setCallError] = useState("");
-  const [isPendingCall, startCallTransition] = useTransition();
 
   // Pipeline
   const [stage, setStage] = useState<PipelineStage | null>(pipelineStage);
@@ -50,20 +43,6 @@ export default function MobileContactActionsSheet({
   function close() {
     setActiveSheet(null);
     setDeleteConfirm(false);
-    setCallError("");
-  }
-
-  function handleLogCall() {
-    if (!callNotes.trim()) { setCallError("Please add call notes."); return; }
-    setCallError("");
-    startCallTransition(async () => {
-      const res = await logManualCall(contactId, direction, callNotes);
-      if (!res.ok) { setCallError(res.error ?? "Failed."); return; }
-      setCallNotes("");
-      setDirection("outbound");
-      close();
-      router.refresh();
-    });
   }
 
   function handleStageSelect(s: PipelineStage) {
@@ -78,7 +57,7 @@ export default function MobileContactActionsSheet({
     startQbTransition(async () => {
       const res = await syncContactToQuickBooks(contactId);
       setQbResult(res);
-      if (res.ok) router.refresh();
+      if (res.ok) { setLinkedId(res.qbCustomerId ?? linkedId); router.refresh(); }
     });
   }
 
@@ -96,17 +75,7 @@ export default function MobileContactActionsSheet({
     <>
       {/* Fixed bottom bar */}
       <div className="fixed bottom-16 inset-x-0 z-40 md:hidden bg-white border-t border-slate-200 px-4 pt-3 pb-2 safe-area-bottom">
-        <div className={`grid gap-2 ${isVendor ? "grid-cols-2" : "grid-cols-2"}`}>
-          <button
-            onClick={() => setActiveSheet("log_call")}
-            className="flex items-center justify-center gap-2 bg-[#000080] text-white text-sm font-semibold rounded-xl h-12"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            Log Call
-          </button>
-
+        <div className={`grid gap-2 ${isVendor ? "grid-cols-1" : "grid-cols-2"}`}>
           {!isVendor && (
             <button
               onClick={() => setActiveSheet("pipeline")}
@@ -145,63 +114,11 @@ export default function MobileContactActionsSheet({
             More
           </button>
         </div>
-
       </div>
 
       {/* Backdrop */}
       {activeSheet && (
         <div className="fixed inset-0 bg-black/40 z-[60] md:hidden" onClick={close} />
-      )}
-
-      {/* Log Call Sheet */}
-      {activeSheet === "log_call" && (
-        <div className="fixed bottom-0 inset-x-0 z-[70] md:hidden bg-white rounded-t-2xl px-5 pt-5 pb-8">
-          <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
-          <h2 className="text-slate-800 text-base font-semibold mb-4">Log Call</h2>
-
-          <div className="flex gap-2 mb-4">
-            {(["outbound", "inbound"] as const).map((d) => (
-              <button
-                key={d}
-                onClick={() => setDirection(d)}
-                className={`flex-1 py-3 text-sm font-semibold rounded-xl border transition-colors capitalize ${
-                  direction === d
-                    ? "bg-[#000080] border-[#000080] text-white"
-                    : "border-slate-200 text-slate-500"
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-
-          <textarea
-            value={callNotes}
-            onChange={(e) => setCallNotes(e.target.value)}
-            rows={3}
-            placeholder="Call summary..."
-            autoFocus
-            className="w-full border border-slate-200 bg-slate-50 text-slate-800 text-sm px-4 py-3 rounded-xl resize-none focus:outline-none focus:border-[#000080] transition-colors mb-3"
-          />
-
-          {callError && <p className="text-red-500 text-sm mb-3">{callError}</p>}
-
-          <div className="flex gap-2">
-            <button
-              onClick={close}
-              className="flex-1 h-12 rounded-xl border border-slate-200 text-slate-500 text-sm font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleLogCall}
-              disabled={isPendingCall}
-              className="flex-1 h-12 rounded-xl bg-[#000080] text-white text-sm font-semibold disabled:opacity-50"
-            >
-              {isPendingCall ? "Saving..." : "Save Call"}
-            </button>
-          </div>
-        </div>
       )}
 
       {/* Pipeline Sheet */}

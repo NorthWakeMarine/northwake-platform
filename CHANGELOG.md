@@ -2,6 +2,25 @@
 
 ## May 2026
 
+### May 24 | Remove Log Call button CRM-wide | CRM
+
+- **Log Call removed**: Log Call button and sheet removed from contact detail page (desktop) and mobile bottom-sheet actions. Associated state, handler, and `logManualCall` import cleaned up from `MobileContactActionsSheet`. `LogCallModal.tsx` is now unused. Calls from Quo appear automatically via webhook.
+
+### May 26 | Hero water photo, Quo webhook fix, security hardening fix, Lead button | Landing,CRM
+
+- **Hero water photo**: Replaced white background with `water-hero.jpg` full-bleed photo behind the particle effect. White wash removed. Logo switched to white PNG, all hero text lightened to white/white-with-opacity. Waves at bottom removed.
+- **Quo webhook payload fix**: OpenPhone wraps events under a top-level `object` key in some payloads and at the root in others. Handler now correctly unwraps both shapes — was silently dropping every event since launch.
+- **Trigger search_path fix**: `ALTER FUNCTION ... SET search_path = ''` from the May 24 security hardening broke the `update_contact_last_contact` trigger (referenced `contacts` without schema prefix). Rewrote as `CREATE OR REPLACE` with `public.contacts` — all timeline inserts were failing since May 24.
+- **Quo webhook array phone fix**: `extractPhone()` helper added to handle OpenPhone sending `from`/`to` as either a string or array depending on event type.
+- **Calls page limit**: Raised from 200 to 500 rows.
+- **Create Lead button**: Unknown-number rows on the Calls page now show an inline "Lead" button. Clicking it creates a lead from the caller's number if one doesn't already exist. Uses service role key.
+
+### May 24 | About page photo polish | Landing
+
+- **Team card initials removed**: "I" and "A" avatar boxes removed from Ian and Alex member cards now that the photo is present.
+- **Photo aspect ratio**: About page team photo changed from 4:3 to 16:9 to reduce height; crop anchor changed from `object-top` to `object-center`.
+- **Team card order swapped**: Ian now appears as the left card and Alexander as the right card, matching their left-to-right positions in the photo.
+
 ### May 24 | Antigravity ambient particle background, About team photo | Landing
 
 - **AntigravityBackground component**: Three.js GPU particle simulation on the home page hero, using Poisson disk sampling and simplex noise. Particles gently glimmer in navy, pewter, and silver with no cursor interaction.
