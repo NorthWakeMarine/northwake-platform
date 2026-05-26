@@ -10,6 +10,7 @@ import FleetGallery, { type Asset } from "./FleetGallery";
 import ContactDetailsCard from "./ContactDetailsCard";
 import ContactDocuments from "./ContactDocuments";
 import ActivityTimeline, { NotesList } from "./ActivityTimeline";
+import CorrespondenceTimeline from "./CorrespondenceTimeline";
 import SyncToQbButton from "./SyncToQbButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteContactButton from "../DeleteContactButton";
@@ -289,12 +290,23 @@ export default async function ContactProfilePage({
                 </div>
               </div>
 
-              {/* Activity Timeline (calls, invoices, etc.) */}
+              {/* Correspondence (calls + texts) */}
+              <div className="bg-[#F1F2F5] neu-card rounded-md flex flex-col">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="text-slate-800 text-sm font-semibold">Correspondence</h3>
+                  <span className="text-slate-400 text-[11px]">
+                    {(events as TimelineEvent[])?.filter(e => e.event_type === "call" || e.event_type === "sms").length ?? 0} items
+                  </span>
+                </div>
+                <CorrespondenceTimeline events={(events as TimelineEvent[]) ?? []} />
+              </div>
+
+              {/* Activity Timeline (system events, invoices, etc.) */}
               <div className="bg-[#F1F2F5] neu-card rounded-md flex flex-col">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="text-slate-800 text-sm font-semibold">Activity Timeline</h3>
                   <span className="text-slate-400 text-[11px]">
-                    {(events as TimelineEvent[])?.filter(e => e.event_type !== "note").length ?? 0} events
+                    {(events as TimelineEvent[])?.filter(e => !["note", "call", "sms", "payment"].includes(e.event_type)).length ?? 0} events
                   </span>
                 </div>
                 <ActivityTimeline events={(events as TimelineEvent[]) ?? []} />
