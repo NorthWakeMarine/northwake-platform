@@ -1422,6 +1422,74 @@ export async function deleteStandaloneEvent(eventId: string): Promise<{ error?: 
   }
 }
 
+// ─── Schedule Job from Invoice ────────────────────────────────────────────────
+
+export type ScheduleJobState = { error?: string; success?: boolean; eventId?: string };
+
+export async function scheduleJobFromInvoice(
+  _prev: ScheduleJobState,
+  formData: FormData
+): Promise<ScheduleJobState> {
+  const contact_id    = formData.get("contact_id")    as string;
+  const contact_name  = formData.get("contact_name")  as string | null;
+  const qb_invoice_id = formData.get("qb_invoice_id") as string;
+  const doc_number    = formData.get("doc_number")    as string | null;
+  const title         = formData.get("title")         as string;
+  const start_time    = formData.get("start_time")    as string;
+  const end_time      = formData.get("end_time")      as string;
+  const description   = formData.get("description")   as string | null;
+  const location      = formData.get("location")      as string | null;
+  const is_all_day    = formData.get("is_all_day")    === "true";
+
+  if (!contact_id || !title || !start_time || !end_time) {
+    return { error: "Missing required fields." };
+  }
+
+  function nextDay(dateStr: string): string {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${next.getFullYear()}-${p(next.getMonth() + 1)}-${p(next.getDate())}`;
+  }
+
+  try {
+    const { createCalendarEvent } = await import("@/lib/google-calendar");
+    const eventId = await createCalendarEvent({
+      title,
+      description: description ?? undefined,
+      location:    location    ?? undefined,
+      startTime:   start_time,
+      endTime:     is_all_day ? nextDay(end_time) : end_time,
+      isAllDay:    is_all_day,
+      qbInvoiceId: qb_invoice_id,
+    });
+
+    const supabase = await svc();
+    await supabase.from("timeline_events").insert({
+      contact_id,
+      event_type: "appointment_scheduled",
+      title: `Job Scheduled from Invoice`,
+      body: `${title}`,
+      metadata: {
+        google_event_id: eventId,
+        qb_invoice_id,
+        doc_number: doc_number ?? null,
+        start_time,
+        end_time,
+        location: location ?? null,
+        linked_from: "invoice_timeline",
+      },
+      created_by: "pro",
+    });
+
+    revalidatePath(`/pro/contacts/${contact_id}`);
+    revalidatePath("/pro/calendar");
+    return { success: true, eventId };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to schedule job." };
+  }
+}
+
 // ─── Delete Contact ───────────────────────────────────────────────────────────
 
 export async function deleteContact(contactId: string): Promise<{ error?: string }> {

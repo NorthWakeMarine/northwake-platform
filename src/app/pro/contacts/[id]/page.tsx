@@ -311,7 +311,11 @@ export default async function ContactProfilePage({
                     {(events as TimelineEvent[])?.filter(e => !["note", "call", "sms", "payment"].includes(e.event_type)).length ?? 0} events
                   </span>
                 </div>
-                <ActivityTimeline events={(events as TimelineEvent[]) ?? []} />
+                <ActivityTimeline
+                  events={(events as TimelineEvent[]) ?? []}
+                  contactId={contact.id}
+                  contactName={contact.name ?? null}
+                />
               </div>
 
             </div>

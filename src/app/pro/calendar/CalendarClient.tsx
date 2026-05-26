@@ -9,6 +9,28 @@ import {
 } from "@/app/actions";
 import type { CalendarEvent } from "@/lib/google-calendar";
 
+// ── Google Calendar color map ──────────────────────────────────────────────────
+
+const GCAL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  "1":  { bg: "#EEF0FB", text: "#3949AB", border: "#7986CB" }, // Lavender
+  "2":  { bg: "#E6F4EA", text: "#1B7F40", border: "#33B679" }, // Sage
+  "3":  { bg: "#F5E6FB", text: "#6A1B99", border: "#8E24AA" }, // Grape
+  "4":  { bg: "#FCE8E6", text: "#C0392B", border: "#E67C73" }, // Flamingo
+  "5":  { bg: "#FEF9E0", text: "#B37C00", border: "#F6BF26" }, // Banana
+  "6":  { bg: "#FDE9E0", text: "#C0392B", border: "#F4511E" }, // Tangerine
+  "7":  { bg: "#E3F5FD", text: "#0277BD", border: "#039BE5" }, // Peacock
+  "8":  { bg: "#F1F1F1", text: "#424242", border: "#616161" }, // Graphite
+  "9":  { bg: "#E8EAF6", text: "#283593", border: "#3F51B5" }, // Blueberry
+  "10": { bg: "#E6F4EA", text: "#0B5E30", border: "#0B8043" }, // Basil
+  "11": { bg: "#FCE8E6", text: "#B71C1C", border: "#D50000" }, // Tomato
+};
+const DEFAULT_COLOR = { bg: "#000080", text: "#fff", border: "#000060" };
+
+function getEventColor(colorId?: string) {
+  if (!colorId) return DEFAULT_COLOR;
+  return GCAL_COLORS[colorId] ?? DEFAULT_COLOR;
+}
+
 // ── Date utils ─────────────────────────────────────────────────────────────────
 
 function startOfWeek(d: Date): Date {
@@ -30,12 +52,29 @@ function isSameDay(a: Date, b: Date): boolean {
     a.getDate() === b.getDate();
 }
 
-function eventDay(iso: string): Date {
-  if (!iso.includes("T")) {
-    const [y, m, d] = iso.split("-").map(Number);
+function daysBetween(a: Date, b: Date): number {
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
+function eventStartDay(ev: CalendarEvent): Date {
+  if (!ev.start.includes("T")) {
+    const [y, m, d] = ev.start.split("-").map(Number);
     return new Date(y, m - 1, d);
   }
-  return new Date(iso);
+  const dt = new Date(ev.start);
+  return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+}
+
+function eventEndDay(ev: CalendarEvent): Date {
+  if (!ev.end.includes("T")) {
+    // Google all-day end is exclusive (next day) — subtract 1
+    const [y, m, d] = ev.end.split("-").map(Number);
+    const excl = new Date(y, m - 1, d);
+    excl.setDate(excl.getDate() - 1);
+    return excl;
+  }
+  const dt = new Date(ev.end);
+  return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
 }
 
 function htmlToPlainText(html: string): string {
@@ -66,6 +105,10 @@ function fmtWeekRange(start: Date): string {
   return `${s} – ${e}, ${start.getFullYear()}`;
 }
 
+function fmtMonthYear(d: Date): string {
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
 function fmtTime(iso: string): string {
   if (!iso.includes("T")) return "All day";
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -86,6 +129,86 @@ function allDayEndDisplay(isoEnd: string): string {
   return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
 }
 
+// ── Month grid layout ──────────────────────────────────────────────────────────
+
+type EventSegment = {
+  event: CalendarEvent;
+  weekIndex: number;
+  colStart: number;
+  colSpan: number;
+  isStart: boolean;
+  isEnd: boolean;
+  slotRow: number;
+};
+
+function buildMonthGrid(year: number, month: number): Date[][] {
+  const firstDay = new Date(year, month, 1);
+  const startSunday = new Date(firstDay);
+  startSunday.setDate(firstDay.getDate() - firstDay.getDay());
+
+  const weeks: Date[][] = [];
+  const current = new Date(startSunday);
+  while (weeks.length < 6) {
+    const week: Date[] = [];
+    for (let d = 0; d < 7; d++) {
+      week.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    weeks.push(week);
+    if (weeks.length >= 5 && current.getMonth() !== month) break;
+  }
+  return weeks;
+}
+
+function computeSegments(events: CalendarEvent[], weeks: Date[][]): EventSegment[] {
+  const segments: EventSegment[] = [];
+
+  const sorted = [...events].sort((a, b) => {
+    const aLen = daysBetween(eventStartDay(a), eventEndDay(a));
+    const bLen = daysBetween(eventStartDay(b), eventEndDay(b));
+    if (bLen !== aLen) return bLen - aLen;
+    return eventStartDay(a).getTime() - eventStartDay(b).getTime();
+  });
+
+  for (const ev of sorted) {
+    const evStart = eventStartDay(ev);
+    const evEnd   = eventEndDay(ev);
+
+    for (let wi = 0; wi < weeks.length; wi++) {
+      const weekStart = weeks[wi][0];
+      const weekEnd   = weeks[wi][6];
+
+      if (evEnd < weekStart || evStart > weekEnd) continue;
+
+      const segStart = evStart < weekStart ? weekStart : evStart;
+      const segEnd   = evEnd   > weekEnd   ? weekEnd   : evEnd;
+
+      const colStart = segStart.getDay();
+      const colSpan  = daysBetween(segStart, segEnd) + 1;
+
+      const takenSlots = segments
+        .filter(s => s.weekIndex === wi)
+        .filter(s => s.colStart < colStart + colSpan && s.colStart + s.colSpan > colStart)
+        .map(s => s.slotRow);
+
+      let slotRow = 0;
+      while (takenSlots.includes(slotRow)) slotRow++;
+
+      segments.push({
+        event: ev,
+        weekIndex: wi,
+        colStart,
+        colSpan,
+        isStart: evStart >= weekStart,
+        isEnd:   evEnd   <= weekEnd,
+        slotRow,
+      });
+    }
+  }
+
+  return segments;
+}
+
 // ── Event Detail Modal ─────────────────────────────────────────────────────────
 
 function EventDetailModal({ event, onEdit, onDelete, onClose }: {
@@ -99,17 +222,21 @@ function EventDetailModal({ event, onEdit, onDelete, onClose }: {
     ? new Date(...(event.start.split("-").map(Number) as [number, number, number]).map((v, i) => i === 1 ? v - 1 : v) as [number, number, number]).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
     : new Date(event.start).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const timeStr = isAllDay ? "All day" : `${fmtTime(event.start)} – ${fmtTime(event.end)}`;
+  const color = getEventColor(event.colorId);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4">
       <div className="bg-white rounded-t-xl sm:rounded-sm shadow-2xl w-full sm:max-w-lg flex flex-col max-h-[90dvh]">
         <div className="px-6 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="text-slate-900 text-base font-bold leading-snug">{event.title}</h2>
-            <p className="text-slate-500 text-xs mt-1">{dateStr} &middot; {timeStr}</p>
-            {event.location && (
-              <p className="text-slate-400 text-xs mt-0.5">{event.location}</p>
-            )}
+          <div className="min-w-0 flex items-start gap-2.5">
+            <span className="w-3 h-3 rounded-full shrink-0 mt-1" style={{ backgroundColor: color.border }} />
+            <div>
+              <h2 className="text-slate-900 text-base font-bold leading-snug">{event.title}</h2>
+              <p className="text-slate-500 text-xs mt-1">{dateStr} &middot; {timeStr}</p>
+              {event.location && (
+                <p className="text-slate-400 text-xs mt-0.5">{event.location}</p>
+              )}
+            </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none shrink-0">&times;</button>
         </div>
@@ -168,7 +295,6 @@ function EventModal({ event, defaultDate, onClose }: {
 
   const inputCls = "border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080] w-full";
 
-  // For all-day events, Google's end is exclusive — subtract 1 day for display
   const defaultStart = event
     ? (isAllDay && !event.start.includes("T") ? event.start : toLocalDateTimeInput(event.start))
     : (defaultDate ? defaultDate.split("T")[0] : "");
@@ -194,7 +320,6 @@ function EventModal({ event, defaultDate, onClose }: {
               className={inputCls} />
           </div>
 
-          {/* All-day toggle */}
           <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
             <div
               onClick={() => setIsAllDay(v => !v)}
@@ -298,9 +423,172 @@ function DeleteConfirm({ event, onClose }: { event: CalendarEvent; onClose: () =
   );
 }
 
-// ── Week Grid ──────────────────────────────────────────────────────────────────
+// ── Month Grid ─────────────────────────────────────────────────────────────────
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const HEADER_H = 52;   // px — height of the date-number row per week band
+const EVENT_H  = 22;   // px — height of each event banner
+const EVENT_GAP = 2;   // px — gap between banner rows
+const MAX_SLOTS = 3;   // visible event rows before "+N more"
+
+function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDeleteClick }: {
+  monthDate: Date;
+  events: CalendarEvent[];
+  today: Date;
+  onDayClick: (iso: string) => void;
+  onEventClick: (e: CalendarEvent) => void;
+  onDeleteClick: (e: CalendarEvent) => void;
+}) {
+  const year  = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const weeks = buildMonthGrid(year, month);
+  const segments = computeSegments(events, weeks);
+
+  return (
+    <div className="flex flex-col border border-slate-200 rounded-sm overflow-hidden bg-white flex-1">
+      {/* Day-of-week header */}
+      <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+        {DAY_LABELS.map(d => (
+          <div key={d} className="py-2 text-center text-[10px] font-semibold tracking-widest uppercase text-slate-400">
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* Week bands */}
+      {weeks.map((week, wi) => {
+        const weekSegs = segments.filter(s => s.weekIndex === wi);
+        const maxSlot  = weekSegs.reduce((m, s) => Math.max(m, s.slotRow), -1);
+        const bandHeight = HEADER_H + (Math.min(maxSlot + 1, MAX_SLOTS)) * (EVENT_H + EVENT_GAP) + 10;
+
+        // Compute overflow per day: how many segs exceed MAX_SLOTS for that column
+        const overflowByCol: number[] = Array(7).fill(0);
+        weekSegs.forEach(s => {
+          if (s.slotRow >= MAX_SLOTS) {
+            for (let c = s.colStart; c < s.colStart + s.colSpan; c++) {
+              overflowByCol[c] = (overflowByCol[c] ?? 0) + 1;
+            }
+          }
+        });
+
+        return (
+          <div
+            key={wi}
+            className="relative border-b border-slate-100 last:border-b-0"
+            style={{ minHeight: bandHeight }}
+          >
+            {/* Date number cells */}
+            <div className="grid grid-cols-7 h-full absolute inset-0 pointer-events-none">
+              {week.map((day, di) => {
+                const isToday     = isSameDay(day, today);
+                const isThisMonth = day.getMonth() === month;
+                return (
+                  <div
+                    key={di}
+                    className={`border-r border-slate-100 last:border-r-0 ${isThisMonth ? "" : "bg-slate-50/60"}`}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Clickable date headers */}
+            <div className="grid grid-cols-7 relative z-10">
+              {week.map((day, di) => {
+                const isToday     = isSameDay(day, today);
+                const isThisMonth = day.getMonth() === month;
+                const overflow    = overflowByCol[di] ?? 0;
+                const p = (n: number) => String(n).padStart(2, "0");
+                const isoPrefix   = `${day.getFullYear()}-${p(day.getMonth() + 1)}-${p(day.getDate())}`;
+
+                return (
+                  <div
+                    key={di}
+                    className="flex flex-col items-center pt-1.5 pb-0.5 cursor-pointer hover:bg-slate-50/80 transition-colors"
+                    style={{ height: HEADER_H }}
+                    onClick={() => onDayClick(`${isoPrefix}T09:00`)}
+                  >
+                    <div className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                      isToday
+                        ? "bg-[#000080] text-white"
+                        : isThisMonth
+                          ? "text-slate-700 hover:bg-slate-100"
+                          : "text-slate-300"
+                    }`}>
+                      {day.getDate()}
+                    </div>
+                    {overflow > 0 && (
+                      <span className="text-[9px] text-slate-400 font-medium mt-auto mb-1">
+                        +{overflow} more
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Event banners — absolutely positioned over the band */}
+            {weekSegs
+              .filter(s => s.slotRow < MAX_SLOTS)
+              .map((seg, si) => {
+                const color = getEventColor(seg.event.colorId);
+                const isAllDay = !seg.event.start.includes("T");
+                const timeLabel = isAllDay ? null : fmtTime(seg.event.start);
+                const isMultiDay = seg.colSpan > 1 || !seg.isStart || !seg.isEnd;
+
+                return (
+                  <div
+                    key={`${seg.event.id}-${wi}-${si}`}
+                    className="absolute cursor-pointer group"
+                    style={{
+                      top:    HEADER_H + seg.slotRow * (EVENT_H + EVENT_GAP),
+                      left:   `calc(${seg.colStart} / 7 * 100% + 2px)`,
+                      width:  `calc(${seg.colSpan} / 7 * 100% - 4px)`,
+                      height: EVENT_H,
+                      borderRadius: isMultiDay
+                        ? `${seg.isStart ? "4px" : "0"} ${seg.isEnd ? "4px" : "0"} ${seg.isEnd ? "4px" : "0"} ${seg.isStart ? "4px" : "0"}`
+                        : "4px",
+                      backgroundColor: isAllDay || isMultiDay ? color.border : color.bg,
+                      borderLeft:  isMultiDay && !seg.isStart ? "none" : `1px solid ${color.border}`,
+                      borderRight: isMultiDay && !seg.isEnd   ? "none" : `1px solid ${color.border}`,
+                      borderTop:    `1px solid ${color.border}`,
+                      borderBottom: `1px solid ${color.border}`,
+                      zIndex: 10,
+                    }}
+                    onClick={(e) => { e.stopPropagation(); onEventClick(seg.event); }}
+                  >
+                    <div
+                      className="flex items-center gap-1 px-1.5 h-full overflow-hidden"
+                      style={{ color: isAllDay || isMultiDay ? "#fff" : color.text }}
+                    >
+                      {seg.isStart && (
+                        <>
+                          <span className="text-[11px] font-semibold truncate leading-none">{seg.event.title}</span>
+                          {timeLabel && !isMultiDay && (
+                            <span className="text-[10px] opacity-70 shrink-0">{timeLabel}</span>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Delete button on hover */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteClick(seg.event); }}
+                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 text-white/80 hover:text-white transition-opacity text-xs leading-none w-4 h-4 flex items-center justify-center"
+                      title="Delete"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                );
+              })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Week Grid ──────────────────────────────────────────────────────────────────
 
 function WeekGrid({ weekStart, events, today, onDayClick, onEventClick, onDeleteClick }: {
   weekStart: Date;
@@ -315,14 +603,17 @@ function WeekGrid({ weekStart, events, today, onDayClick, onEventClick, onDelete
   return (
     <div className="grid grid-cols-7 flex-1 divide-x divide-slate-100 border border-slate-200 rounded-sm overflow-hidden bg-white">
       {days.map((day, i) => {
-        const isToday = isSameDay(day, today);
-        const dayEvents = events.filter(ev => isSameDay(eventDay(ev.start), day));
-        const dateLabel = day.getDate();
+        const isToday  = isSameDay(day, today);
+        const dayEvents = events.filter(ev => {
+          const evS = eventStartDay(ev);
+          const evE = eventEndDay(ev);
+          return evS <= day && day <= evE;
+        });
+        const dateLabel  = day.getDate();
         const monthLabel = day.toLocaleDateString("en-US", { month: "short" });
 
         return (
           <div key={i} className="flex flex-col min-h-0">
-            {/* Day header */}
             <div
               className={`px-2 py-2.5 text-center border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors ${isToday ? "bg-[#000080]/5" : ""}`}
               onClick={() => {
@@ -344,31 +635,36 @@ function WeekGrid({ weekStart, events, today, onDayClick, onEventClick, onDelete
               )}
             </div>
 
-            {/* Events */}
             <div className="flex-1 p-1.5 flex flex-col gap-1 overflow-y-auto">
-              {dayEvents.length === 0 && (
-                <div className="flex-1" />
-              )}
-              {dayEvents.map(ev => (
-                <div
-                  key={ev.id}
-                  className="group relative bg-[#000080]/8 border border-[#000080]/20 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-[#000080]/15 transition-colors"
-                  onClick={() => onEventClick(ev)}
-                >
-                  <p className="text-[11px] font-semibold text-slate-800 leading-tight line-clamp-2">{ev.title}</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">{fmtTime(ev.start)}</p>
-                  {ev.location && (
-                    <p className="text-[9px] text-slate-400 truncate mt-0.5">{ev.location}</p>
-                  )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDeleteClick(ev); }}
-                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all text-xs leading-none w-4 h-4 flex items-center justify-center"
-                    title="Delete"
+              {dayEvents.map(ev => {
+                const color = getEventColor(ev.colorId);
+                return (
+                  <div
+                    key={ev.id}
+                    className="group relative rounded-sm px-2 py-1.5 cursor-pointer transition-colors"
+                    style={{
+                      backgroundColor: color.bg,
+                      border: `1px solid ${color.border}`,
+                    }}
+                    onClick={() => onEventClick(ev)}
                   >
-                    &times;
-                  </button>
-                </div>
-              ))}
+                    <p className="text-[11px] font-semibold leading-tight line-clamp-2" style={{ color: color.text }}>
+                      {ev.title}
+                    </p>
+                    <p className="text-[10px] mt-0.5 opacity-70" style={{ color: color.text }}>{fmtTime(ev.start)}</p>
+                    {ev.location && (
+                      <p className="text-[9px] truncate mt-0.5 opacity-60" style={{ color: color.text }}>{ev.location}</p>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteClick(ev); }}
+                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all text-xs leading-none w-4 h-4 flex items-center justify-center"
+                      title="Delete"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
@@ -379,25 +675,45 @@ function WeekGrid({ weekStart, events, today, onDayClick, onEventClick, onDelete
 
 // ── Main Client ────────────────────────────────────────────────────────────────
 
+type ViewMode = "month" | "week";
+
 export default function CalendarClient({ events }: { events: CalendarEvent[] }) {
-  const today      = new Date();
+  const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
-  const [modal, setModal]         = useState<"create" | "detail" | "edit" | "delete" | null>(null);
-  const [selected, setSelected]   = useState<CalendarEvent | null>(null);
+
+  const [viewMode,   setViewMode]   = useState<ViewMode>("month");
+  const [monthDate,  setMonthDate]  = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [weekStart,  setWeekStart]  = useState(() => startOfWeek(today));
+  const [modal,      setModal]      = useState<"create" | "detail" | "edit" | "delete" | null>(null);
+  const [selected,   setSelected]   = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
 
-  function prevWeek() { setWeekStart(d => addDays(d, -7)); }
-  function nextWeek() { setWeekStart(d => addDays(d, 7)); }
-  function goToday()  { setWeekStart(startOfWeek(today)); }
+  function prevPeriod() {
+    if (viewMode === "month") setMonthDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    else setWeekStart(d => addDays(d, -7));
+  }
+  function nextPeriod() {
+    if (viewMode === "month") setMonthDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+    else setWeekStart(d => addDays(d, 7));
+  }
+  function goToday() {
+    setMonthDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    setWeekStart(startOfWeek(today));
+  }
 
   function openCreate(iso?: string) { setDefaultDate(iso); setSelected(null); setModal("create"); }
   function openDetail(ev: CalendarEvent) { setSelected(ev); setModal("detail"); }
-  function openEdit(ev: CalendarEvent) { setSelected(ev); setModal("edit"); }
+  function openEdit(ev: CalendarEvent)   { setSelected(ev); setModal("edit"); }
   function openDelete(ev: CalendarEvent) { setSelected(ev); setModal("delete"); }
   function closeModal() { setModal(null); setSelected(null); setDefaultDate(undefined); }
 
-  const isCurrentWeek = isSameDay(weekStart, startOfWeek(today));
+  const isCurrentPeriod = viewMode === "month"
+    ? monthDate.getFullYear() === today.getFullYear() && monthDate.getMonth() === today.getMonth()
+    : isSameDay(weekStart, startOfWeek(today));
+
+  const headerLabel = viewMode === "month"
+    ? fmtMonthYear(monthDate)
+    : fmtWeekRange(weekStart);
 
   return (
     <>
@@ -406,15 +722,14 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
         {/* Header */}
         <div className="bg-[#eceef1] border-b border-[#dcdee3] px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            {/* Nav arrows */}
             <div className="flex items-center gap-1">
-              <button onClick={prevWeek}
+              <button onClick={prevPeriod}
                 className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-sm text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
               </button>
-              <button onClick={nextWeek}
+              <button onClick={nextPeriod}
                 className="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-sm text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="9 18 15 12 9 6" />
@@ -423,11 +738,11 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
             </div>
 
             <div>
-              <h1 className="text-[#1E2938] text-base font-bold tracking-tight">{fmtWeekRange(weekStart)}</h1>
+              <h1 className="text-[#1E2938] text-base font-bold tracking-tight">{headerLabel}</h1>
               <p className="text-[#1E2938]/50 text-sm mt-0.5">Calendar</p>
             </div>
 
-            {!isCurrentWeek && (
+            {!isCurrentPeriod && (
               <button onClick={goToday}
                 className="text-[10px] tracking-widest uppercase text-[#000080] font-semibold border border-[#000080]/30 px-2.5 py-1 rounded-sm hover:bg-[#000080]/5 transition-colors">
                 Today
@@ -436,6 +751,22 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
           </div>
 
           <div className="flex items-center gap-2">
+            {/* View toggle */}
+            <div className="flex border border-slate-200 rounded-sm overflow-hidden">
+              <button
+                onClick={() => setViewMode("month")}
+                className={`px-3 py-2 text-[10px] tracking-widest uppercase font-semibold transition-colors ${viewMode === "month" ? "bg-[#000080] text-white" : "text-slate-500 hover:text-slate-800 bg-white"}`}
+              >
+                Month
+              </button>
+              <button
+                onClick={() => setViewMode("week")}
+                className={`px-3 py-2 text-[10px] tracking-widest uppercase font-semibold transition-colors ${viewMode === "week" ? "bg-[#000080] text-white" : "text-slate-500 hover:text-slate-800 bg-white"}`}
+              >
+                Week
+              </button>
+            </div>
+
             <a
               href="https://calendar.google.com"
               target="_blank"
@@ -447,7 +778,7 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
                 <polyline points="15 3 21 3 21 9" />
                 <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
-              Open Google Calendar
+              Google Cal
             </a>
             <button onClick={() => openCreate()}
               className="flex items-center gap-1.5 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm hover:bg-blue-900 transition-colors">
@@ -459,16 +790,27 @@ export default function CalendarClient({ events }: { events: CalendarEvent[] }) 
           </div>
         </div>
 
-        {/* Week grid */}
-        <div className="flex-1 px-6 py-4 min-h-0 overflow-auto">
-          <WeekGrid
-            weekStart={weekStart}
-            events={events}
-            today={today}
-            onDayClick={openCreate}
-            onEventClick={openDetail}
-            onDeleteClick={openDelete}
-          />
+        {/* Grid */}
+        <div className="flex-1 px-6 py-4 min-h-0 overflow-auto flex flex-col">
+          {viewMode === "month" ? (
+            <MonthGrid
+              monthDate={monthDate}
+              events={events}
+              today={today}
+              onDayClick={openCreate}
+              onEventClick={openDetail}
+              onDeleteClick={openDelete}
+            />
+          ) : (
+            <WeekGrid
+              weekStart={weekStart}
+              events={events}
+              today={today}
+              onDayClick={openCreate}
+              onEventClick={openDetail}
+              onDeleteClick={openDelete}
+            />
+          )}
         </div>
       </div>
 

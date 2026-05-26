@@ -47,6 +47,7 @@ export type CalendarEventInput = {
   endTime: string;    // ISO 8601 datetime or YYYY-MM-DD for all-day
   isAllDay?: boolean;
   googleEventId?: string;
+  qbInvoiceId?: string; // links GCal event to a QuickBooks invoice
 };
 
 function gcalTime(iso: string, allDay: boolean) {
@@ -68,6 +69,7 @@ export async function createCalendarEvent(event: CalendarEventInput): Promise<st
       location:    event.location,
       start: gcalTime(event.startTime, allDay),
       end:   gcalTime(event.endTime,   allDay),
+      ...(event.qbInvoiceId ? { extendedProperties: { private: { qb_invoice_id: event.qbInvoiceId } } } : {}),
     },
   });
 
@@ -110,6 +112,7 @@ export type CalendarEvent = {
   end: string;
   description?: string;
   location?: string;
+  colorId?: string; // Google Calendar colorId "1"–"11"
 };
 
 export async function listUpcomingEvents(days = 14): Promise<CalendarEvent[]> {
@@ -140,6 +143,7 @@ export async function listEvents(from: Date, to: Date): Promise<CalendarEvent[]>
       end:         e.end?.dateTime   ?? e.end?.date   ?? "",
       description: e.description ?? undefined,
       location:    e.location    ?? undefined,
+      colorId:     e.colorId     ?? undefined,
     }));
 }
 

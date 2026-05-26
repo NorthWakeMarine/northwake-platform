@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateTimelineNote, deleteTimelineNote, deleteTimelineEvent } from "@/app/actions";
+import { InvoiceScheduleModal } from "./InvoiceScheduleModal";
 
 type EditEntry = { edited_at: string; edited_by?: string };
 
@@ -187,6 +188,89 @@ function NoteItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
   );
 }
 
+function InvoiceItem({
+  ev, isLast, contactId, contactName, allEvents,
+}: {
+  ev: TimelineEvent;
+  isLast: boolean;
+  contactId: string;
+  contactName: string | null;
+  allEvents: TimelineEvent[];
+}) {
+  const [showSchedule, setShowSchedule] = useState(false);
+  const cfg = eventConfig.invoice;
+
+  const meta = ev.metadata as {
+    qb_txn_id?: string;
+    invoice_url?: string;
+    doc_number?: string;
+    total?: number;
+    status?: string;
+  } | null;
+
+  const qbInvoiceId = meta?.qb_txn_id ?? null;
+  const docNumber   = meta?.doc_number ?? null;
+  const invoiceUrl  = meta?.invoice_url ?? null;
+
+  const alreadyScheduled = qbInvoiceId
+    ? allEvents.some(e =>
+        e.event_type === "appointment_scheduled" &&
+        (e.metadata as Record<string, unknown> | null)?.qb_invoice_id === qbInvoiceId
+      )
+    : false;
+
+  return (
+    <li className="flex gap-4 relative group">
+      {!isLast && <div className="absolute left-[5px] top-4 bottom-0 w-px bg-slate-100" />}
+      <div className="pt-0.5 shrink-0">
+        <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 block ${cfg.dot}`} />
+      </div>
+      <div className="pb-5 flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-slate-700 text-xs font-medium">{cfg.label}</span>
+          {ev.title && (
+            <span className="text-slate-500 text-xs">{ev.title}</span>
+          )}
+          <span className="text-slate-300 text-[10px] ml-auto whitespace-nowrap">{fmtFull(ev.created_at)}</span>
+        </div>
+        {ev.body && (
+          <p className="text-slate-500 text-xs mt-1 leading-relaxed">{ev.body}</p>
+        )}
+        <div className="flex items-center gap-2 mt-2">
+          {invoiceUrl && (
+            <a
+              href={invoiceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors"
+            >
+              View in QB
+            </a>
+          )}
+          {qbInvoiceId && (
+            <button
+              onClick={() => setShowSchedule(true)}
+              className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] border border-[#000080]/30 px-2 py-0.5 rounded-sm hover:bg-[#000080]/5 transition-colors"
+            >
+              {alreadyScheduled ? "Reschedule Job" : "Schedule Job"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {showSchedule && qbInvoiceId && (
+        <InvoiceScheduleModal
+          contactId={contactId}
+          contactName={contactName}
+          qbInvoiceId={qbInvoiceId}
+          docNumber={docNumber}
+          onClose={() => setShowSchedule(false)}
+        />
+      )}
+    </li>
+  );
+}
+
 function StaticItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
   const cfg = eventConfig[ev.event_type] ?? { dot: "bg-slate-300", label: ev.event_type };
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -269,7 +353,15 @@ export function NotesList({ events }: { events: TimelineEvent[] }) {
   );
 }
 
-export default function ActivityTimeline({ events }: { events: TimelineEvent[] }) {
+export default function ActivityTimeline({
+  events,
+  contactId,
+  contactName,
+}: {
+  events: TimelineEvent[];
+  contactId: string;
+  contactName: string | null;
+}) {
   const [cleanView, setCleanView] = useState(() => {
     if (typeof window === "undefined") return false;
     try { return localStorage.getItem("nwm_clean_view") === "1"; } catch { return false; }
@@ -303,9 +395,20 @@ export default function ActivityTimeline({ events }: { events: TimelineEvent[] }
           <p className="text-slate-400 text-sm px-6 py-8">No activity yet.</p>
         ) : (
           <ul className="px-6 py-4 flex flex-col gap-0">
-            {visible.map((ev, i) => (
-              <StaticItem key={ev.id} ev={ev} isLast={i === visible.length - 1} />
-            ))}
+            {visible.map((ev, i) =>
+              ev.event_type === "invoice" ? (
+                <InvoiceItem
+                  key={ev.id}
+                  ev={ev}
+                  isLast={i === visible.length - 1}
+                  contactId={contactId}
+                  contactName={contactName}
+                  allEvents={events}
+                />
+              ) : (
+                <StaticItem key={ev.id} ev={ev} isLast={i === visible.length - 1} />
+              )
+            )}
           </ul>
         )}
       </div>

@@ -7,10 +7,9 @@ export const dynamic = "force-dynamic";
 async function fetchEvents(): Promise<CalendarEvent[]> {
   try {
     const { listEvents } = await import("@/lib/google-calendar");
-    const from = new Date();
-    from.setDate(from.getDate() - 7); // 1 week back
-    const to = new Date();
-    to.setDate(to.getDate() + 56);   // 8 weeks ahead
+    const now = new Date();
+    const from = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const to   = new Date(now.getFullYear(), now.getMonth() + 3, 1);
     return await listEvents(from, to);
   } catch {
     return [];
