@@ -10,6 +10,8 @@ import {
   createInvoiceFromCalendarEvent,
   searchContactsByName,
   getVesselsByContactId,
+  getContactInvoices,
+  claimGcalEventToInvoice,
   type CalendarEventState,
   type CalendarLinkState,
   type CalendarInvoiceState,
@@ -223,6 +225,166 @@ function computeSegments(events: CalendarEvent[], weeks: Date[][]): EventSegment
   return segments;
 }
 
+// ── Linked Panel (extracted to avoid hook-in-conditional issues) ───────────────
+
+type InvoiceRecord = { id: string; title: string | null; body: string | null; metadata: Record<string, unknown> | null };
+
+function LinkedPanel({
+  event, link, suggestedService, inputCls,
+  showInvoice, setShowInvoice, invoiceState, invoiceAction, invoicing,
+  unlinking, unlinkError, handleUnlink,
+}: {
+  event: CalendarEvent;
+  link: EventLink;
+  linkKey: string;
+  suggestedService: string;
+  inputCls: string;
+  showInvoice: boolean;
+  setShowInvoice: (v: boolean) => void;
+  invoiceState: CalendarInvoiceState;
+  invoiceAction: (payload: FormData) => void;
+  invoicing: boolean;
+  unlinking: boolean;
+  unlinkError: string;
+  handleUnlink: () => void;
+}) {
+  const [showClaimInvoice,  setShowClaimInvoice]  = useState(false);
+  const [invoices,          setInvoices]           = useState<InvoiceRecord[]>([]);
+  const [loadingInvoices,   startLoadInvoices]     = useTransition();
+  const [claimingId,        setClaimingId]          = useState<string | null>(null);
+  const [claimError,        setClaimError]          = useState("");
+  const [claimedId,         setClaimedId]           = useState<string | null>(null);
+
+  function openClaimInvoice() {
+    setShowClaimInvoice(true);
+    startLoadInvoices(async () => {
+      const list = await getContactInvoices(link.contactId);
+      setInvoices(list);
+    });
+  }
+
+  async function handleClaim(invoiceTimelineId: string) {
+    setClaimingId(invoiceTimelineId);
+    setClaimError("");
+    const res = await claimGcalEventToInvoice(invoiceTimelineId, event.id);
+    if (res.error) { setClaimError(res.error); setClaimingId(null); }
+    else { setClaimedId(invoiceTimelineId); setClaimingId(null); }
+  }
+
+  return (
+    <div className="border-t border-slate-100 px-6 py-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+          <div>
+            <p className="text-slate-800 text-xs font-semibold">
+              {link.contactName ?? "Linked Contact"}
+            </p>
+            {link.vesselLabel && (
+              <p className="text-slate-400 text-[11px]">{link.vesselLabel}</p>
+            )}
+          </div>
+        </div>
+        <a
+          href={`/pro/contacts/${link.contactId}`}
+          className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0"
+        >
+          View
+        </a>
+      </div>
+
+      {!showInvoice && !showClaimInvoice && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowInvoice(true)}
+            className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors"
+          >
+            Create Invoice
+          </button>
+          <button
+            onClick={openClaimInvoice}
+            className="flex-1 border border-slate-200 text-slate-600 text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:border-slate-300 hover:text-slate-800 transition-colors"
+          >
+            Claim to Invoice
+          </button>
+          <button
+            onClick={handleUnlink}
+            disabled={unlinking}
+            className="w-full text-[10px] tracking-widest uppercase font-semibold text-red-400 hover:text-red-600 transition-colors disabled:opacity-50 py-1"
+          >
+            {unlinking ? "..." : "Unlink"}
+          </button>
+        </div>
+      )}
+
+      {showInvoice && (
+        <form action={invoiceAction} className="flex flex-col gap-3">
+          <input type="hidden" name="contact_id"    value={link.contactId} />
+          <input type="hidden" name="gcal_event_id" value={event.id} />
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service</label>
+            <input name="service_label" defaultValue={suggestedService} className={inputCls} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Amount ($)</label>
+            <input type="number" name="amount" step="0.01" min="0" placeholder="0.00" className={inputCls} />
+          </div>
+          {invoiceState.error && <p className="text-red-600 text-[11px]">{invoiceState.error}</p>}
+          <div className="flex gap-2">
+            <button type="submit" disabled={invoicing}
+              className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
+              {invoicing ? "Creating..." : "Create Invoice"}
+            </button>
+            <button type="button" onClick={() => setShowInvoice(false)}
+              className="px-3 text-[10px] text-slate-500 hover:text-slate-800 transition-colors">
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {showClaimInvoice && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Pick an existing invoice</p>
+            <button onClick={() => setShowClaimInvoice(false)} className="text-slate-400 hover:text-slate-600 text-xs">&times;</button>
+          </div>
+          {loadingInvoices && <p className="text-[11px] text-slate-400">Loading...</p>}
+          {!loadingInvoices && invoices.length === 0 && (
+            <p className="text-[11px] text-slate-400 italic">No invoices found for this contact.</p>
+          )}
+          {invoices.map(inv => {
+            const alreadyClaimed = (inv.metadata?.gcal_event_id as string | undefined) === event.id;
+            const justClaimed    = claimedId === inv.id;
+            return (
+              <div key={inv.id} className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-100 rounded-sm px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-slate-800 truncate">{inv.title ?? "Invoice"}</p>
+                  {inv.body && <p className="text-[10px] text-slate-400 truncate">{inv.body}</p>}
+                </div>
+                {alreadyClaimed || justClaimed ? (
+                  <span className="text-[10px] text-emerald-600 font-semibold shrink-0">Linked</span>
+                ) : (
+                  <button
+                    onClick={() => handleClaim(inv.id)}
+                    disabled={claimingId === inv.id}
+                    className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] border border-[#000080]/30 px-2 py-1 rounded-sm hover:bg-[#000080]/5 transition-colors disabled:opacity-50 shrink-0"
+                  >
+                    {claimingId === inv.id ? "..." : "Claim"}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {claimError && <p className="text-red-600 text-[11px]">{claimError}</p>}
+        </div>
+      )}
+
+      {unlinkError && <p className="text-red-600 text-[11px]">{unlinkError}</p>}
+    </div>
+  );
+}
+
 // ── Event Link Panel ───────────────────────────────────────────────────────────
 
 type ContactResult = { id: string; name: string; email: string | null };
@@ -307,70 +469,21 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
   // ── LINKED STATE ──
   if (link) {
     return (
-      <div className="border-t border-slate-100 px-6 py-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-            <div>
-              <p className="text-slate-800 text-xs font-semibold">
-                {link.contactName ?? "Linked Contact"}
-              </p>
-              {link.vesselLabel && (
-                <p className="text-slate-400 text-[11px]">{link.vesselLabel}</p>
-              )}
-            </div>
-          </div>
-          <a
-            href={`/pro/contacts/${link.contactId}`}
-            className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0"
-          >
-            View
-          </a>
-        </div>
-
-        {!showInvoice ? (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowInvoice(true)}
-              className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors"
-            >
-              Create Invoice
-            </button>
-            <button
-              onClick={handleUnlink}
-              disabled={unlinking}
-              className="px-3 py-2 text-[10px] tracking-widest uppercase font-semibold text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
-            >
-              {unlinking ? "..." : "Unlink"}
-            </button>
-          </div>
-        ) : (
-          <form action={invoiceAction} className="flex flex-col gap-3">
-            <input type="hidden" name="contact_id"    value={link.contactId} />
-            <input type="hidden" name="gcal_event_id" value={event.id} />
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service</label>
-              <input name="service_label" defaultValue={suggestedService} className={inputCls} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Amount ($)</label>
-              <input type="number" name="amount" step="0.01" min="0" placeholder="0.00" className={inputCls} />
-            </div>
-            {invoiceState.error && <p className="text-red-600 text-[11px]">{invoiceState.error}</p>}
-            <div className="flex gap-2">
-              <button type="submit" disabled={invoicing}
-                className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
-                {invoicing ? "Creating..." : "Create Invoice"}
-              </button>
-              <button type="button" onClick={() => setShowInvoice(false)}
-                className="px-3 text-[10px] text-slate-500 hover:text-slate-800 transition-colors">
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
-        {unlinkError && <p className="text-red-600 text-[11px]">{unlinkError}</p>}
-      </div>
+      <LinkedPanel
+        event={event}
+        link={link}
+        linkKey={linkKey}
+        suggestedService={suggestedService}
+        inputCls={inputCls}
+        showInvoice={showInvoice}
+        setShowInvoice={setShowInvoice}
+        invoiceState={invoiceState}
+        invoiceAction={invoiceAction}
+        invoicing={invoicing}
+        unlinking={unlinking}
+        unlinkError={unlinkError}
+        handleUnlink={handleUnlink}
+      />
     );
   }
 

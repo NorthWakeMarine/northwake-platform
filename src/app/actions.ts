@@ -1289,6 +1289,43 @@ export async function createInvoiceFromCalendarEvent(
   }
 }
 
+// ─── Claim Calendar Event to Existing Invoice ────────────────────────────────
+
+export async function getContactInvoices(
+  contactId: string
+): Promise<{ id: string; title: string | null; body: string | null; metadata: Record<string, unknown> | null }[]> {
+  const supabase = await svc();
+  const { data } = await supabase
+    .from("timeline_events")
+    .select("id, title, body, metadata")
+    .eq("contact_id", contactId)
+    .eq("event_type", "invoice")
+    .order("created_at", { ascending: false });
+  return (data ?? []) as { id: string; title: string | null; body: string | null; metadata: Record<string, unknown> | null }[];
+}
+
+export async function claimGcalEventToInvoice(
+  timelineEventId: string,
+  gcalEventId: string
+): Promise<{ error?: string }> {
+  const supabase = await svc();
+  const { data: ev } = await supabase
+    .from("timeline_events")
+    .select("metadata, contact_id")
+    .eq("id", timelineEventId)
+    .single();
+  if (!ev) return { error: "Invoice not found." };
+
+  const { error } = await supabase
+    .from("timeline_events")
+    .update({ metadata: { ...(ev.metadata ?? {}), gcal_event_id: gcalEventId } })
+    .eq("id", timelineEventId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/pro/contacts/${ev.contact_id}`);
+  return {};
+}
+
 // ─── Calendar Contact Search Helpers ─────────────────────────────────────────
 
 export async function searchContactsByName(
