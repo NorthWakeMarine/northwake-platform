@@ -12,6 +12,7 @@ import ContactDocuments from "./ContactDocuments";
 import ActivityTimeline, { NotesList } from "./ActivityTimeline";
 import CorrespondenceTimeline from "./CorrespondenceTimeline";
 import SyncToQbButton from "./SyncToQbButton";
+import SyncQuoButton from "./SyncQuoButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteContactButton from "../DeleteContactButton";
 import MobileContactActionsSheet from "./MobileContactActionsSheet";
@@ -193,6 +194,7 @@ export default async function ContactProfilePage({
             {contact.contact_type !== "vendor" && (
               <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
             )}
+            <SyncQuoButton contactId={contact.id} />
             <DeleteContactButton contactId={contact.id} redirectTo="/pro/contacts" />
           </div>
         </div>

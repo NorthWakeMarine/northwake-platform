@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   updatePipelineStage,
   syncContactToQuickBooks,
+  syncQuoForContact,
   deleteContact,
 } from "@/app/actions";
 import { STAGE_LABELS, STAGES, type PipelineStage } from "@/types/pipeline";
@@ -36,6 +37,10 @@ export default function MobileContactActionsSheet({
   const [qbResult, setQbResult] = useState<{ ok: boolean; error?: string } | null>(null);
   const [linkedId, setLinkedId] = useState(qbCustomerId);
 
+  // Quo sync
+  const [isPendingQuo, startQuoTransition] = useTransition();
+  const [quoResult, setQuoResult] = useState<{ ok: boolean; imported?: number; error?: string } | null>(null);
+
   // Delete
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -58,6 +63,13 @@ export default function MobileContactActionsSheet({
       const res = await syncContactToQuickBooks(contactId);
       setQbResult(res);
       if (res.ok) { setLinkedId(res.qbCustomerId ?? linkedId); router.refresh(); }
+    });
+  }
+
+  function handleQuoSync() {
+    startQuoTransition(async () => {
+      const res = await syncQuoForContact(contactId);
+      setQuoResult(res);
     });
   }
 
@@ -182,6 +194,16 @@ export default function MobileContactActionsSheet({
                 </button>
               )
             )}
+
+            <button
+              onClick={handleQuoSync}
+              disabled={isPendingQuo}
+              className="flex items-center justify-center h-12 rounded-xl border border-slate-200 text-slate-700 text-sm font-medium disabled:opacity-50"
+            >
+              {quoResult?.ok
+                ? (quoResult.imported === 0 ? "Quo Up to Date" : `${quoResult.imported} Records Imported`)
+                : isPendingQuo ? "Syncing Quo..." : "Sync Quo History"}
+            </button>
 
             {!deleteConfirm ? (
               <button

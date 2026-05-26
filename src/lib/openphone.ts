@@ -88,6 +88,54 @@ export async function deleteOpenPhoneContact(id: string): Promise<void> {
   await opRequest(`/contacts/${id}`, { method: "DELETE" });
 }
 
+export type OpenPhoneCall = {
+  id: string;
+  direction: string;
+  from: string | string[];
+  to: string | string[];
+  answeredAt: string | null;
+  completedAt: string | null;
+  recordingUrl: string | null;
+  createdAt: string;
+};
+
+export type OpenPhoneMessage = {
+  id: string;
+  direction: string;
+  from: string | string[];
+  to: string | string[];
+  body: string;
+  createdAt: string;
+};
+
+export async function fetchCallsByPhone(phone: string, maxTotal = 500): Promise<OpenPhoneCall[]> {
+  type Resp = { data: OpenPhoneCall[]; meta?: { nextPageToken?: string } };
+  const all: OpenPhoneCall[] = [];
+  let pageToken: string | undefined;
+  do {
+    const params = new URLSearchParams({ "participants[]": phone, maxResults: "100" });
+    if (pageToken) params.set("pageToken", pageToken);
+    const data = await opRequest<Resp>(`/calls?${params}`);
+    all.push(...(data.data ?? []));
+    pageToken = data.meta?.nextPageToken;
+  } while (pageToken && all.length < maxTotal);
+  return all;
+}
+
+export async function fetchMessagesByPhone(phone: string, maxTotal = 500): Promise<OpenPhoneMessage[]> {
+  type Resp = { data: OpenPhoneMessage[]; meta?: { nextPageToken?: string } };
+  const all: OpenPhoneMessage[] = [];
+  let pageToken: string | undefined;
+  do {
+    const params = new URLSearchParams({ "participants[]": phone, maxResults: "100" });
+    if (pageToken) params.set("pageToken", pageToken);
+    const data = await opRequest<Resp>(`/messages?${params}`);
+    all.push(...(data.data ?? []));
+    pageToken = data.meta?.nextPageToken;
+  } while (pageToken && all.length < maxTotal);
+  return all;
+}
+
 export function splitName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/);
   return {

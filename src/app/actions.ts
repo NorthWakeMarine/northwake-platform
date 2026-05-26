@@ -2422,3 +2422,121 @@ export async function mergeContacts(keepId: string, dropId: string): Promise<{ e
   revalidatePath(`/pro/contacts/${keepId}`);
   return {};
 }
+
+export async function syncQuoForContact(
+  contactId: string
+): Promise<{ ok: boolean; imported: number; skipped: number; error?: string }> {
+  const supabase = await svc();
+
+  const { data: contact, error } = await supabase
+    .from("contacts")
+    .select("id, phone")
+    .eq("id", contactId)
+    .single();
+  if (error || !contact) return { ok: false, imported: 0, skipped: 0, error: "Contact not found." };
+  if (!contact.phone) return { ok: false, imported: 0, skipped: 0, error: "Contact has no phone number on file." };
+
+  try {
+    const { fetchCallsByPhone, fetchMessagesByPhone } = await import("@/lib/openphone");
+
+    const { data: existing } = await supabase
+      .from("timeline_events")
+      .select("metadata")
+      .eq("contact_id", contactId)
+      .in("event_type", ["call", "sms"]);
+
+    type Meta = Record<string, string> | null;
+    const existingCallIds = new Set(
+      (existing ?? []).map((e) => (e.metadata as Meta)?.quo_call_id).filter(Boolean)
+    );
+    const existingMsgIds = new Set(
+      (existing ?? []).map((e) => (e.metadata as Meta)?.quo_message_id).filter(Boolean)
+    );
+
+    const [calls, messages] = await Promise.all([
+      fetchCallsByPhone(contact.phone),
+      fetchMessagesByPhone(contact.phone),
+    ]);
+
+    let imported = 0;
+    let skipped = 0;
+    const inserts: Record<string, unknown>[] = [];
+
+    for (const call of calls) {
+      if (existingCallIds.has(call.id)) { skipped++; continue; }
+
+      const rawDir = call.direction ?? "incoming";
+      const isInbound = rawDir === "inbound" || rawDir === "incoming";
+      const direction = isInbound ? "inbound" : "outbound";
+      const answered = !!call.answeredAt;
+
+      let duration: number | null = null;
+      if (call.answeredAt && call.completedAt) {
+        const ms = new Date(call.completedAt).getTime() - new Date(call.answeredAt).getTime();
+        duration = Math.floor(ms / 1000);
+      }
+
+      const callerPhone = isInbound
+        ? (Array.isArray(call.from) ? call.from[0] : call.from)
+        : (Array.isArray(call.to) ? call.to[0] : call.to);
+
+      if (answered) {
+        inserts.push({
+          contact_id: contactId,
+          event_type: "call",
+          title: direction === "outbound" ? "Outbound Call" : "Inbound Call",
+          body: duration != null
+            ? `Duration: ${Math.floor(duration / 60)}m ${Math.floor(duration % 60)}s`
+            : "Call completed.",
+          metadata: { direction, duration, caller_number: callerPhone, recording_url: call.recordingUrl ?? null, quo_call_id: call.id },
+          created_by: "system",
+          created_at: call.createdAt,
+        });
+      } else {
+        inserts.push({
+          contact_id: contactId,
+          event_type: "call",
+          title: direction === "outbound" ? "Voicemail Left" : "Missed Call",
+          body: direction === "outbound" ? "Outbound call — went to voicemail." : "Missed call. No voicemail.",
+          metadata: { direction, caller_number: callerPhone, quo_call_id: call.id },
+          created_by: "system",
+          created_at: call.createdAt,
+        });
+      }
+      imported++;
+    }
+
+    for (const msg of messages) {
+      if (existingMsgIds.has(msg.id)) { skipped++; continue; }
+
+      const rawDir = msg.direction ?? "incoming";
+      const isInbound = rawDir === "incoming" || rawDir === "inbound";
+      const msgPhone = isInbound
+        ? (Array.isArray(msg.from) ? msg.from[0] : msg.from)
+        : (Array.isArray(msg.to) ? msg.to[0] : msg.to);
+
+      inserts.push({
+        contact_id: contactId,
+        event_type: "sms",
+        title: isInbound ? "Inbound SMS" : "Outbound SMS",
+        body: msg.body,
+        metadata: isInbound
+          ? { direction: "inbound", from_number: msgPhone, quo_message_id: msg.id }
+          : { direction: "outbound", to_number: msgPhone, quo_message_id: msg.id },
+        created_by: "system",
+        created_at: msg.createdAt,
+      });
+      imported++;
+    }
+
+    if (inserts.length > 0) {
+      const { error: insertErr } = await supabase.from("timeline_events").insert(inserts);
+      if (insertErr) return { ok: false, imported: 0, skipped, error: insertErr.message };
+    }
+
+    revalidatePath(`/pro/contacts/${contactId}`);
+    return { ok: true, imported, skipped };
+  } catch (err) {
+    return { ok: false, imported: 0, skipped: 0, error: err instanceof Error ? err.message : "Sync failed." };
+  }
+}
