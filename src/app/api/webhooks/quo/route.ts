@@ -22,8 +22,15 @@ function normalizePhone(raw: string | null | undefined): string | null {
 function verifySignature(rawBody: string, header: string): boolean {
   const secret = process.env.QUO_WEBHOOK_SECRET;
   if (!secret) return true;
+  if (!header) return false;
   try {
-    const parts = Object.fromEntries(header.split(",").map((p) => p.split("=")));
+    // Header format: t=<timestamp>,v1=<hex_digest>
+    const parts = Object.fromEntries(
+      header.split(",").map((p) => {
+        const idx = p.indexOf("=");
+        return [p.slice(0, idx), p.slice(idx + 1)];
+      })
+    );
     const timestamp = parts["t"];
     const digest = parts["v1"];
     if (!timestamp || !digest) return false;
@@ -32,8 +39,9 @@ function verifySignature(rawBody: string, header: string): boolean {
       .createHmac("sha256", secret)
       .update(signed)
       .digest("hex");
-    const digestBuf = Buffer.from(digest.length === expected.length ? digest : Buffer.from(digest, "base64").toString("hex"), "hex");
-    return crypto.timingSafeEqual(digestBuf, Buffer.from(expected, "hex"));
+    // Both should be 64-char hex strings — compare safely
+    if (digest.length !== expected.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(digest, "hex"), Buffer.from(expected, "hex"));
   } catch {
     return false;
   }
@@ -65,8 +73,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const type = payload.type as string | undefined;
-  const obj = (payload.data as Record<string, unknown>)?.object as Record<string, unknown> | undefined;
+  // OpenPhone payload varies: sometimes event is under payload.object (nested),
+  // sometimes payload.object is just the string "event" and data is at the top level
+  const event = (typeof payload.object === "object" && payload.object !== null
+    ? payload.object
+    : payload) as Record<string, unknown>;
+  const type = event.type as string | undefined;
+  const obj = (event.data as Record<string, unknown>)?.object as Record<string, unknown> | undefined;
   if (!type || !obj) return NextResponse.json({ ok: true });
 
   if (type === "call.completed") {
@@ -102,8 +115,15 @@ async function createQuoLead(supabase: AnySupabase, phone: string) {
     phone,
     source: "quo",
     name: null,
-    email: null,
+    email: "",
   });
+}
+
+// OpenPhone sometimes sends `from`/`to` as a string or as a string array — normalise both
+function extractPhone(val: unknown): string | undefined {
+  if (typeof val === "string") return val || undefined;
+  if (Array.isArray(val) && val.length > 0) return String(val[0]) || undefined;
+  return undefined;
 }
 
 async function handleCompletedCall(obj: Record<string, unknown>) {
@@ -112,8 +132,8 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
   const isInbound = rawDirection === "inbound" || rawDirection === "incoming";
   const direction = isInbound ? "inbound" : "outbound";
   const callerPhone = isInbound
-    ? (obj.from as string | undefined)
-    : (obj.to as string | undefined);
+    ? extractPhone(obj.from)
+    : extractPhone(obj.to);
   if (!callerPhone) return;
 
   const normalized = normalizePhone(callerPhone);
@@ -127,7 +147,8 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
 
   const contact = await findContactByPhone(supabase, normalized);
 
-  await supabase.from("timeline_events").insert({
+  console.log("[quo webhook] inserting call", { direction, normalized, duration, contact_id: contact?.id ?? null });
+  const { error: callErr } = await supabase.from("timeline_events").insert({
     contact_id: contact?.id ?? null,
     event_type: "call",
     title:      direction === "outbound" ? "Outbound Call" : "Inbound Call",
@@ -137,6 +158,7 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
     metadata:   { direction, duration, caller_number: normalized, recording_url: obj.recordingUrl ?? null, quo_call_id: obj.id },
     created_by: "system",
   });
+  console.log("[quo webhook] call insert result", { error: callErr ?? null });
 
   // Unknown inbound caller who actually talked (>20s) becomes a lead — filters pocket dials
   if (!contact && direction === "inbound" && (duration ?? 0) > 20) {
@@ -152,8 +174,8 @@ async function handleMissedCall(obj: Record<string, unknown>) {
 
   // For inbound missed calls the caller is in `from`; for outbound (voicemail left) it's `to`
   const contactPhone = isInbound
-    ? (obj.from as string | undefined)
-    : (obj.to as string | undefined);
+    ? extractPhone(obj.from)
+    : extractPhone(obj.to);
   if (!contactPhone) return;
 
   const normalized = normalizePhone(contactPhone);
@@ -164,7 +186,7 @@ async function handleMissedCall(obj: Record<string, unknown>) {
   const title = direction === "outbound" ? "Voicemail Left" : "Missed Call";
   const body  = direction === "outbound" ? "Outbound call — went to voicemail." : "Missed call. No voicemail.";
 
-  await supabase.from("timeline_events").insert({
+  const { error: missedErr } = await supabase.from("timeline_events").insert({
     contact_id: contact?.id ?? null,
     event_type: "call",
     title,
@@ -172,6 +194,7 @@ async function handleMissedCall(obj: Record<string, unknown>) {
     metadata:   { direction, caller_number: normalized, quo_call_id: obj.id },
     created_by: "system",
   });
+  if (missedErr) console.error("[quo webhook] missed call insert error", missedErr);
 
   // Only create a lead for inbound missed calls — outbound means we already know them
   if (!contact && direction === "inbound") {
@@ -181,7 +204,7 @@ async function handleMissedCall(obj: Record<string, unknown>) {
 
 async function handleInboundSms(obj: Record<string, unknown>) {
   const supabase = svc();
-  const from = obj.from as string | undefined;
+  const from = extractPhone(obj.from);
   const body = obj.body as string | undefined;
   if (!from || !body) return;
 
@@ -190,7 +213,7 @@ async function handleInboundSms(obj: Record<string, unknown>) {
 
   const contact = await findContactByPhone(supabase, normalized);
 
-  await supabase.from("timeline_events").insert({
+  const { error: smsErr } = await supabase.from("timeline_events").insert({
     contact_id: contact?.id ?? null,
     event_type: "sms",
     title:      "Inbound SMS",
@@ -198,6 +221,7 @@ async function handleInboundSms(obj: Record<string, unknown>) {
     metadata:   { direction: "inbound", from_number: normalized, quo_message_id: obj.id },
     created_by: "system",
   });
+  if (smsErr) console.error("[quo webhook] sms insert error", smsErr);
 
   if (!contact) {
     const trimmed = body.trim();
@@ -211,7 +235,7 @@ async function handleInboundSms(obj: Record<string, unknown>) {
 async function handleOutboundSms(obj: Record<string, unknown>) {
   const supabase = svc();
   // message.delivered: from = our number, to = customer's number
-  const to = obj.to as string | undefined;
+  const to = extractPhone(obj.to);
   const body = obj.body as string | undefined;
   if (!to || !body) return;
 

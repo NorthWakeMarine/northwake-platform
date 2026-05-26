@@ -5,6 +5,7 @@ import ProShell from "@/components/ProShell";
 import Link from "next/link";
 import TimeDisplay from "./TimeDisplay";
 import DeleteCallButton from "./DeleteCallButton";
+import CreateLeadButton from "./CreateLeadButton";
 
 type CallRow = {
   id: string;
@@ -42,7 +43,7 @@ async function getCalls(): Promise<CallRow[]> {
     `)
     .in("event_type", ["call", "sms"])
     .order("created_at", { ascending: false })
-    .limit(200);
+    .limit(500);
 
   return (data ?? []).map((r) => ({
     id: r.id,
@@ -66,8 +67,14 @@ function formatDuration(raw: number): string {
 }
 
 
+async function getLeadPhones(): Promise<Set<string>> {
+  const supabase = svc();
+  const { data } = await supabase.from("leads").select("phone").not("phone", "is", null);
+  return new Set((data ?? []).map((r) => r.phone).filter(Boolean));
+}
+
 export default async function CallsPage() {
-  const calls = await getCalls();
+  const [calls, leadPhones] = await Promise.all([getCalls(), getLeadPhones()]);
 
   const totalCalls = calls.filter((c) => c.event_type === "call").length;
   const totalSms = calls.filter((c) => c.event_type === "sms").length;
@@ -137,7 +144,10 @@ export default async function CallsPage() {
                               {c.contact_name ?? phone ?? "Unknown"}
                             </Link>
                           ) : (
-                            <span className="text-slate-500 text-sm truncate block">{phone ?? "Unknown number"}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500 text-sm truncate">{phone ?? "Unknown number"}</span>
+                              {phone && <CreateLeadButton phone={phone} isLead={leadPhones.has(phone)} />}
+                            </div>
                           )}
                           {c.body && c.event_type === "sms" && (
                             <p className="text-slate-400 text-[10px] truncate mt-0.5">{c.body}</p>
@@ -185,7 +195,10 @@ export default async function CallsPage() {
                               {c.contact_name ?? phone ?? "Unknown"}
                             </Link>
                           ) : (
-                            <span className="text-slate-600 text-sm font-semibold truncate">{phone ?? "Unknown number"}</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-slate-600 text-sm font-semibold truncate">{phone ?? "Unknown number"}</span>
+                              {phone && <CreateLeadButton phone={phone} isLead={leadPhones.has(phone)} />}
+                            </div>
                           )}
                         </div>
                         <div className="flex items-center gap-3 shrink-0">

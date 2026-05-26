@@ -80,9 +80,17 @@ export default async function Home() {
           aria-labelledby="hero-heading"
           className="relative min-h-screen flex items-center overflow-hidden pt-[65px]"
         >
-          {/* White base */}
-          <div aria-hidden="true" className="absolute inset-0 bg-white" />
-          {/* Interactive weightless particle background */}
+          {/* Water background photo */}
+          <div aria-hidden="true" className="absolute inset-0">
+            <Image
+              src="/brand/water-hero.jpg"
+              alt=""
+              fill
+              className="object-cover object-center"
+              priority
+            />
+          </div>
+          {/* Antigravity particle layer — transparent canvas sits on top of water */}
           <AntigravityBackground />
 
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
@@ -90,7 +98,7 @@ export default async function Home() {
             {/* ── Left: logo + tagline ── */}
             <div className="flex flex-col gap-4 order-1 text-center items-center">
               <Image
-                src={clientConfig.logoFullBlackSvg}
+                src={clientConfig.logoFullWhitePng}
                 alt={`${clientConfig.companyName}, ${clientConfig.seoDescription}`}
                 width={260}
                 height={70}
@@ -99,14 +107,14 @@ export default async function Home() {
               />
               <div className="flex flex-col gap-1.5 items-center">
                 <h1 id="hero-heading" className="flex flex-col items-center gap-0.5 uppercase leading-snug">
-                  <span className="text-gray-900 font-black text-xl sm:text-2xl lg:text-3xl tracking-wide">
+                  <span className="text-white font-black text-xl sm:text-2xl lg:text-3xl tracking-wide drop-shadow">
                     {heroHeadline}
                   </span>
-                  <span className="text-gray-600 font-bold text-base sm:text-lg lg:text-xl tracking-widest">
+                  <span className="text-white/80 font-bold text-base sm:text-lg lg:text-xl tracking-widest drop-shadow">
                     {heroSubheadline}
                   </span>
                 </h1>
-                <p className="text-gray-500 text-xs tracking-[0.45em] uppercase">
+                <p className="text-white/70 text-xs tracking-[0.45em] uppercase drop-shadow">
                   {clientConfig.city}, {clientConfig.state} &nbsp;·&nbsp; Est. {clientConfig.foundedYear}
                 </p>
                 <p className="sr-only">
@@ -116,20 +124,20 @@ export default async function Home() {
               <div className="hidden md:flex gap-4 justify-center">
                 <Link
                   href="/services"
-                  className="border border-gray-500 text-gray-700 text-xs font-semibold tracking-[0.3em] uppercase px-6 py-3 hover:border-navy hover:text-navy transition-colors duration-300"
+                  className="border border-white/60 text-white text-xs font-semibold tracking-[0.3em] uppercase px-6 py-3 hover:border-white hover:text-white transition-colors duration-300 drop-shadow"
                 >
                   View Services
                 </Link>
                 <Link
                   href="/about"
-                  className="text-gray-500 text-xs font-semibold tracking-[0.3em] uppercase px-6 py-3 hover:text-navy transition-colors duration-300"
+                  className="text-white/70 text-xs font-semibold tracking-[0.3em] uppercase px-6 py-3 hover:text-white transition-colors duration-300 drop-shadow"
                 >
                   About Us
                 </Link>
               </div>
               <a
                 href={`tel:${clientConfig.phoneE164}`}
-                className="text-gray-700 text-sm font-semibold tracking-widest hover:text-navy transition-colors duration-200"
+                className="text-white/80 text-sm font-semibold tracking-widest hover:text-white transition-colors duration-200 drop-shadow"
                 aria-label={`Call ${clientConfig.companyName}`}
               >
                 {clientConfig.phone}
@@ -147,15 +155,6 @@ export default async function Home() {
 
           </div>
 
-          {/* Animated wave */}
-          <div aria-hidden="true" className="pointer-events-none absolute bottom-0 inset-x-0 overflow-hidden" style={{ height: "110px" }}>
-            <svg viewBox="0 0 2880 110" preserveAspectRatio="none" className="hero-wave hero-wave-1" xmlns="http://www.w3.org/2000/svg">
-              <path d="M0,55 C240,95 480,15 720,55 C960,95 1200,15 1440,55 C1680,95 1920,15 2160,55 C2400,95 2640,15 2880,55 L2880,110 L0,110 Z" fill="rgba(0,0,128,0.06)" />
-            </svg>
-            <svg viewBox="0 0 2880 110" preserveAspectRatio="none" className="hero-wave hero-wave-2" xmlns="http://www.w3.org/2000/svg">
-              <path d="M0,75 C360,35 720,85 1080,60 C1440,35 1800,85 2160,60 C2520,35 2880,85 2880,65 L2880,110 L0,110 Z" fill="rgba(0,0,128,0.04)" />
-            </svg>
-          </div>
         </section>
 
 

@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import ProShell from "@/components/ProShell";
 import ClickableRow from "@/components/ClickableRow";
 import { clientConfig } from "@/config/client";
+import NewLeadButton from "./NewLeadButton";
 
 type Lead = {
   id: string;
@@ -116,9 +117,10 @@ export default async function LeadsPage({
         <div className="bg-[#eceef1] border-b border-[#dcdee3] px-4 md:px-8 py-5">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Leads</h1>
-            <div className="flex items-center gap-4 text-xs text-[#1E2938]/50 shrink-0">
-              <span><strong className="text-[#1E2938] tabular-nums">{total}</strong> total</span>
-              <span><strong className="text-[#1E2938] tabular-nums">{thisMonth}</strong> this month</span>
+            <div className="flex items-center gap-4 shrink-0">
+              <span className="text-xs text-[#1E2938]/50"><strong className="text-[#1E2938] tabular-nums">{total}</strong> total</span>
+              <span className="text-xs text-[#1E2938]/50"><strong className="text-[#1E2938] tabular-nums">{thisMonth}</strong> this month</span>
+              <NewLeadButton />
             </div>
           </div>
           <p className="text-[#1E2938]/50 text-sm mt-1">Every lead received across all sources.</p>

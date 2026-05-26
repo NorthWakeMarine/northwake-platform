@@ -311,6 +311,18 @@ export async function addTimelineNote(
 
 // ─── Phone Notes ──────────────────────────────────────────────────────────────
 
+export async function createLeadFromCall(phone: string, name?: string): Promise<{ ok: boolean; error?: string }> {
+  if (!phone) return { ok: false, error: "No phone number." };
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
+  const { data: existing } = await supabase.from("leads").select("id").eq("phone", phone).maybeSingle();
+  if (existing) return { ok: true }; // already a lead
+  const { error } = await supabase.from("leads").insert({ phone, name: name?.trim() || null, source: "quo", email: "" });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/pro/leads");
+  return { ok: true };
+}
+
 export type PhoneNoteState = { success?: boolean; error?: string };
 
 export async function savePhoneNote(

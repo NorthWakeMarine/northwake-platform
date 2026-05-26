@@ -652,16 +652,16 @@ export const clientConfig: ClientConfig = {
 
   team: [
     {
-      name: "Alexander S.",
-      role: "Co-Founder & Development",
-      bio: "A licensed captain with firsthand knowledge of what boat owners actually need on the water, Alexander shapes the direction NorthWake grows. He leads strategy, client partnerships, and the business side of building something worth being proud of.",
-      initial: "A",
-    },
-    {
       name: "Ian W.",
       role: "Co-Founder & Operations",
       bio: "NorthWake started as a shared vision between close friends who wanted to build something real together. Ian brings an engineering and technical mindset to everything the company touches, from how services are structured to the precision behind every job on the water.",
       initial: "I",
+    },
+    {
+      name: "Alexander S.",
+      role: "Co-Founder & Development",
+      bio: "A licensed captain with firsthand knowledge of what boat owners actually need on the water, Alexander shapes the direction NorthWake grows. He leads strategy, client partnerships, and the business side of building something worth being proud of.",
+      initial: "A",
     },
   ],
 

@@ -113,12 +113,12 @@ export default async function AboutPage() {
             {/* Team photo + cards */}
             <div className="flex flex-col gap-4">
               <h2 className="sr-only">Our Team</h2>
-              <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/3" }}>
+              <div className="relative w-full overflow-hidden" style={{ aspectRatio: "16/9" }}>
                 <Image
                   src="/brand/Ian%26Alex.jpeg"
                   alt="Ian (left) and Alex (right), co-founders of NorthWake Marine"
                   fill
-                  className="object-cover object-top"
+                  className="object-cover object-center"
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               </div>
@@ -128,13 +128,6 @@ export default async function AboutPage() {
                   key={member.name}
                   className="group bg-white p-7 flex flex-col gap-4 hover:bg-gray-50 transition-colors duration-300"
                 >
-                  <div
-                    aria-hidden="true"
-                    className="w-14 h-14 border border-gray-200 flex items-center justify-center shrink-0"
-                    style={{ background: "linear-gradient(135deg, #e8eaf0 0%, #c8ccdc 100%)" }}
-                  >
-                    <span className="chrome-text-dark text-xl font-bold">{member.initial}</span>
-                  </div>
                   <div>
                     <h3 className="text-gray-900 text-sm font-bold">{member.name}</h3>
                     <p className="text-gray-500 text-xs tracking-[0.25em] uppercase mt-0.5">

@@ -171,7 +171,7 @@ export default function AntigravityBackground({
 
     // --- 1. Three.js Setup ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#ffffff");
+    scene.background = null; // transparent — background handled by page layer below canvas
 
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
     camera.position.z = 3.1;

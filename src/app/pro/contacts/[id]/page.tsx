@@ -10,7 +10,6 @@ import FleetGallery, { type Asset } from "./FleetGallery";
 import ContactDetailsCard from "./ContactDetailsCard";
 import ContactDocuments from "./ContactDocuments";
 import ActivityTimeline, { NotesList } from "./ActivityTimeline";
-import LogCallModal from "./LogCallModal";
 import SyncToQbButton from "./SyncToQbButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteContactButton from "../DeleteContactButton";
@@ -193,7 +192,6 @@ export default async function ContactProfilePage({
             {contact.contact_type !== "vendor" && (
               <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
             )}
-<LogCallModal contactId={contact.id} />
             <DeleteContactButton contactId={contact.id} redirectTo="/pro/contacts" />
           </div>
         </div>

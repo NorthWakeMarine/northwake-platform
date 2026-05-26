@@ -6,14 +6,19 @@
 
 - **Log Call removed**: Log Call button and sheet removed from contact detail page (desktop) and mobile bottom-sheet actions. Associated state, handler, and `logManualCall` import cleaned up from `MobileContactActionsSheet`. `LogCallModal.tsx` is now unused. Calls from Quo appear automatically via webhook.
 
-### May 26 | Hero water photo, Quo webhook fix, security hardening fix, Lead button | Landing,CRM
+### May 26 | Hero water photo, Quo webhook fixes, Lead buttons, team card order | Landing,CRM
 
 - **Hero water photo**: Replaced white background with `water-hero.jpg` full-bleed photo behind the particle effect. White wash removed. Logo switched to white PNG, all hero text lightened to white/white-with-opacity. Waves at bottom removed.
-- **Quo webhook payload fix**: OpenPhone wraps events under a top-level `object` key in some payloads and at the root in others. Handler now correctly unwraps both shapes — was silently dropping every event since launch.
-- **Trigger search_path fix**: `ALTER FUNCTION ... SET search_path = ''` from the May 24 security hardening broke the `update_contact_last_contact` trigger (referenced `contacts` without schema prefix). Rewrote as `CREATE OR REPLACE` with `public.contacts` — all timeline inserts were failing since May 24.
+- **AntigravityBackground transparent**: Scene background set to `null` so the water hero photo shows through the particle canvas.
+- **Quo webhook payload fix**: OpenPhone wraps events under a top-level `object` key in some payloads and at the root in others. Handler now correctly unwraps both shapes, was silently dropping every event since launch.
+- **Quo webhook signature fix**: Signature header parser now splits on the first `=` only, preventing digest truncation when the hex value contains `=`. Added null guard for missing signature header.
+- **Trigger search_path fix**: `ALTER FUNCTION ... SET search_path = ''` from the May 24 security hardening broke the `update_contact_last_contact` trigger (referenced `contacts` without schema prefix). Rewrote as `CREATE OR REPLACE` with `public.contacts`, all timeline inserts were failing since May 24.
 - **Quo webhook array phone fix**: `extractPhone()` helper added to handle OpenPhone sending `from`/`to` as either a string or array depending on event type.
 - **Calls page limit**: Raised from 200 to 500 rows.
-- **Create Lead button**: Unknown-number rows on the Calls page now show an inline "Lead" button. Clicking it creates a lead from the caller's number if one doesn't already exist. Uses service role key.
+- **Create Lead button**: Unknown-number rows on the Calls page now show an inline "Lead" button. Clicking it creates a lead from the caller's number if one does not already exist. Button shows "Added" once created or if number is already a lead.
+- **New Lead button**: Leads page header now has a "+ New Lead" button. Opens a modal to manually create a lead from a phone number with an optional name field.
+- **Team card order**: Ian now appears as the left card and Alexander as the right card on the About page, matching their photo positions. Initials avatar boxes removed since the team photo is present.
+- **About photo aspect ratio**: Team photo changed from 4:3 to 16:9, crop anchor changed to `object-center`.
 
 ### May 24 | About page photo polish | Landing
 
