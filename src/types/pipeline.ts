@@ -4,7 +4,8 @@ export type PipelineStage =
   | "estimate_sent"
   | "needs_attention"
   | "work_scheduled"
-  | "done_invoiced";
+  | "done_invoiced"
+  | "lost";
 
 export const STAGE_LABELS: Record<PipelineStage, string> = {
   new_leads:       "New Leads",
@@ -13,6 +14,7 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   needs_attention: "Needs Attention",
   work_scheduled:  "Work Scheduled",
   done_invoiced:   "Done / Invoiced",
+  lost:            "Lost",
 };
 
 export const STAGES: PipelineStage[] = [
@@ -21,6 +23,7 @@ export const STAGES: PipelineStage[] = [
   "estimate_sent",
   "work_scheduled",
   "done_invoiced",
+  "lost",
 ];
 
 export type HeatLevel = "red" | "amber" | "green";
