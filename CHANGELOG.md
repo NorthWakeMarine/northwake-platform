@@ -2,6 +2,20 @@
 
 ## May 2026
 
+### May 26 | Full PWA, mobile safe areas, Correspondence section, Sync Quo | CRM,Landing,Mobile
+
+- **Full PWA**: Installed `@ducanh2912/next-pwa` with Workbox service worker. Static assets (icons, brand, images) are CacheFirst 7-day. All `/pro` and `/api` routes are NetworkOnly so CRM data is never stale. Disabled in dev.
+- **PWA manifest**: `public/manifest.webmanifest` with standalone display, navy theme color, pipeline start URL. Icons (192px, 512px, 180px apple-touch) generated from white logo on navy background via `scripts/generate-pwa-icons.mjs`.
+- **Layout PWA metadata**: manifest link, apple-touch icon, `appleWebApp` meta for iOS standalone status bar, `themeColor`, and `maximumScale:1` on viewport.
+- **iOS safe area insets**: ProShell main content uses `pt-[env(safe-area-inset-top)]` so content clears the status bar in standalone mode. Bottom tab bar uses `pb-[env(safe-area-inset-bottom)]` so icons sit above the home indicator. Main content bottom padding grows to `calc(4rem + env(safe-area-inset-bottom))`.
+- **Contact action buttons safe area**: `MobileContactActionsSheet` fixed bar changed from `bottom-16` to `bottom-[calc(4rem+env(safe-area-inset-bottom))]`. Both bottom sheets updated from `pb-10` to `calc(2.5rem+env(safe-area-inset-bottom))`.
+- **CSS touch refinements**: `-webkit-tap-highlight-color: transparent` added globally (removes gray tap flash). `.pro-shell { overscroll-behavior: none }` prevents rubber-band bounce on dashboard.
+- **Landing page mobile hero reorder**: Lead form column now uses `order-1 md:order-2` so the form appears first on mobile, above the logo and tagline, improving conversion for dockside users.
+- **MOBILE-UX-STANDARDS.md**: Persistent UX protocol file at project root covering viewport rules, touch targets, dashboard patterns, landing page patterns, PWA caching rules, and a regression checklist. Referenced in CLAUDE.md so it is enforced every session.
+- **Correspondence section on contact page**: New dedicated card on contact profile for calls and texts, extracted from Activity Timeline. Shows phone/message icon, Inbound/Outbound/Missed/Voicemail direction badge, duration or SMS body, and recording playback link. Activity Timeline now excludes call/sms events (only system and lifecycle events remain).
+- **Company field removed**: Company line removed from ContactDetailsCard on contact profile page.
+- **Sync Quo button**: Per-contact Quo history sync added to desktop action bar and mobile More sheet. Calls `fetchCallsByPhone` and `fetchMessagesByPhone` on the OpenPhone API (new functions in `lib/openphone.ts`), deduplicates by `quo_call_id`/`quo_message_id`, and inserts any missing records with their original timestamps. Backfills correspondence missed while the webhook was down.
+
 ### May 24 | Remove Log Call button CRM-wide | CRM
 
 - **Log Call removed**: Log Call button and sheet removed from contact detail page (desktop) and mobile bottom-sheet actions. Associated state, handler, and `logManualCall` import cleaned up from `MobileContactActionsSheet`. `LogCallModal.tsx` is now unused. Calls from Quo appear automatically via webhook.
