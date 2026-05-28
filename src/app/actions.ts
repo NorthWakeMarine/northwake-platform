@@ -520,27 +520,11 @@ export async function submitWaiver(
       }).eq("id", id);
     }
 
-    const waiverText = [
-      clientConfig.waiverTitle,
-      "=====================================",
-      "",
-      `Full Name:    ${name}`,
-      `Date Signed:  ${date}`,
-      `Email:        ${email}`,
-      `Phone:        ${phone}`,
-      `Address:      ${address}`,
-      `Vessel/Boat:  ${boat}`,
-      "",
-      "ELECTRONIC SIGNATURE",
-      "---------------------",
-      signature,
-      "",
-      `The signer acknowledged and agreed to the ${clientConfig.companyName} Liability`,
-      "Waiver and Release of Claims on the date above.",
-    ].join("\n");
+    const { generateWaiverPdf } = await import("@/lib/waiver-pdf");
+    const pdfBuffer = await generateWaiverPdf({ name, address, phone, email, boat, date, signature });
 
-    const fileName = `Waiver - ${name} - ${date}.txt`;
-    await uploadFileToFolder(folderId, fileName, "text/plain", Buffer.from(waiverText, "utf-8"));
+    const fileName = `Waiver - ${name} - ${date}.pdf`;
+    await uploadFileToFolder(folderId, fileName, "application/pdf", pdfBuffer);
   } catch (err) {
     console.error("Waiver Drive upload failed (non-fatal):", err);
   }
