@@ -1,4 +1,8 @@
 # NorthWake Platform (Web-Only)
+
+## Git
+- Never add "Co-Authored-By: Claude" trailers to commit messages.
+
 - Custom Business Engine for NorthWake Marine.
 - Main Color Palette: #686A6C, #000000, #FFFFFF, #000080; It is okay to sometimes use other colors if its for visual effect like chrome.
 

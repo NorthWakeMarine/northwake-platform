@@ -17,7 +17,6 @@ import { STAGES } from "@/types/pipeline";
 import { updatePipelineStage } from "@/app/actions";
 import PipelineColumn from "./PipelineColumn";
 import PipelineCardComponent from "./PipelineCard";
-import SummaryBar from "./SummaryBar";
 import MobileBoard from "./MobileBoard";
 
 function groupByStage(cards: PipelineCard[]): Record<PipelineStage, PipelineCard[]> {
@@ -29,7 +28,7 @@ function groupByStage(cards: PipelineCard[]): Record<PipelineStage, PipelineCard
   return result;
 }
 
-export default function PipelineBoard({ initialCards, stats }: { initialCards: PipelineCard[]; stats?: { newLeadsWeek: number; callsWeek: number; totalContacts: number; convertedMonth: number } }) {
+export default function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }) {
   const [columns, setColumns] = useState<Record<PipelineStage, PipelineCard[]>>(() =>
     groupByStage(initialCards)
   );
@@ -152,8 +151,6 @@ export default function PipelineBoard({ initialCards, stats }: { initialCards: P
           <p className="text-[#1E2938]/50 text-sm mt-0.5 md:hidden">Tap a stage to view and move cards.</p>
         </div>
       </div>
-
-      <SummaryBar columns={columns} newLeadsWeek={stats?.newLeadsWeek ?? 0} callsWeek={stats?.callsWeek ?? 0} totalContacts={stats?.totalContacts ?? 0} convertedMonth={stats?.convertedMonth ?? 0} />
 
       <MobileBoard
         columns={columns}
