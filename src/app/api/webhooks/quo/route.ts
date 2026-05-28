@@ -47,15 +47,37 @@ function verifySignature(rawBody: string, header: string): boolean {
   }
 }
 
-async function findContactByPhone(supabase: AnySupabase, phone: string) {
+async function findContactByPhone(
+  supabase: AnySupabase,
+  phone: string
+): Promise<{ id: string; name: string | null; callerName: string | null } | null> {
   const normalized = normalizePhone(phone);
   if (!normalized) return null;
-  const { data } = await supabase
+
+  // Check primary contacts first
+  const { data: contact } = await supabase
     .from("contacts")
     .select("id, name")
     .eq("phone", normalized)
     .maybeSingle();
-  return data ?? null;
+  if (contact) return { id: contact.id, name: contact.name, callerName: contact.name };
+
+  // Check linked (household) contacts — resolve to primary contact, use linked name as caller
+  const { data: linked } = await supabase
+    .from("linked_contacts")
+    .select("id, name, primary_contact_id")
+    .eq("phone", normalized)
+    .maybeSingle();
+  if (linked) {
+    const { data: primary } = await supabase
+      .from("contacts")
+      .select("id, name")
+      .eq("id", linked.primary_contact_id)
+      .maybeSingle();
+    if (primary) return { id: primary.id, name: primary.name, callerName: linked.name };
+  }
+
+  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -147,20 +169,24 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
 
   const contact = await findContactByPhone(supabase, normalized);
 
+  const callerLabel = contact?.callerName ? ` (${contact.callerName})` : "";
+  const callTitle = direction === "outbound" ? `Outbound Call${callerLabel}` : `Inbound Call${callerLabel}`;
+
   console.log("[quo webhook] inserting call", { direction, normalized, duration, contact_id: contact?.id ?? null });
   const { error: callErr } = await supabase.from("timeline_events").insert({
     contact_id: contact?.id ?? null,
     event_type: "call",
-    title:      direction === "outbound" ? "Outbound Call" : "Inbound Call",
+    title:      callTitle,
     body:       duration != null
       ? `Duration: ${Math.floor(duration / 60)}m ${Math.floor(duration % 60)}s`
       : "Call completed.",
-    metadata:   { direction, duration, caller_number: normalized, recording_url: obj.recordingUrl ?? null, quo_call_id: obj.id },
+    metadata:   { direction, duration, caller_number: normalized, caller_name: contact?.callerName ?? null, recording_url: obj.recordingUrl ?? null, quo_call_id: obj.id },
     created_by: "system",
   });
   console.log("[quo webhook] call insert result", { error: callErr ?? null });
 
   // Unknown inbound caller who actually talked (>20s) becomes a lead — filters pocket dials
+  // Skip if the number belongs to a linked/household contact (already resolved to primary)
   if (!contact && direction === "inbound" && (duration ?? 0) > 20) {
     await createQuoLead(supabase, normalized);
   }
@@ -183,7 +209,8 @@ async function handleMissedCall(obj: Record<string, unknown>) {
 
   const contact = await findContactByPhone(supabase, normalized);
 
-  const title = direction === "outbound" ? "Voicemail Left" : "Missed Call";
+  const callerLabel = contact?.callerName ? ` (${contact.callerName})` : "";
+  const title = direction === "outbound" ? "Voicemail Left" : `Missed Call${callerLabel}`;
   const body  = direction === "outbound" ? "Outbound call — went to voicemail." : "Missed call. No voicemail.";
 
   const { error: missedErr } = await supabase.from("timeline_events").insert({
@@ -191,12 +218,13 @@ async function handleMissedCall(obj: Record<string, unknown>) {
     event_type: "call",
     title,
     body,
-    metadata:   { direction, caller_number: normalized, quo_call_id: obj.id },
+    metadata:   { direction, caller_number: normalized, caller_name: contact?.callerName ?? null, quo_call_id: obj.id },
     created_by: "system",
   });
   if (missedErr) console.error("[quo webhook] missed call insert error", missedErr);
 
   // Only create a lead for inbound missed calls — outbound means we already know them
+  // Skip if the number belongs to a linked/household contact (already resolved to primary)
   if (!contact && direction === "inbound") {
     await createQuoLead(supabase, normalized);
   }
@@ -213,12 +241,14 @@ async function handleInboundSms(obj: Record<string, unknown>) {
 
   const contact = await findContactByPhone(supabase, normalized);
 
+  const smsTitle = contact?.callerName ? `Inbound SMS (${contact.callerName})` : "Inbound SMS";
+
   const { error: smsErr } = await supabase.from("timeline_events").insert({
     contact_id: contact?.id ?? null,
     event_type: "sms",
-    title:      "Inbound SMS",
+    title:      smsTitle,
     body,
-    metadata:   { direction: "inbound", from_number: normalized, quo_message_id: obj.id },
+    metadata:   { direction: "inbound", from_number: normalized, caller_name: contact?.callerName ?? null, quo_message_id: obj.id },
     created_by: "system",
   });
   if (smsErr) console.error("[quo webhook] sms insert error", smsErr);
