@@ -2,6 +2,23 @@
 
 ## May 2026
 
+### May 27 | Calendar month grid, maintenance wash invoicing system | CRM
+
+- **Calendar month view**: Full Google Calendar-style month grid replaces the basic week view as default. Events span multiple columns across week boundaries (banner layout). Month/week toggle in header. Google Calendar color codes (all 11 colorIds) applied to event banners.
+- **Calendar event-to-contact linking**: One-time claim flow on any GCal event. Open the event modal, click "Link to Contact", search for a contact by name (auto-filled from first segment of event title), pick a vessel, toggle "Link entire recurring series" (on by default if the event is recurring). Stored in `calendar_contact_links` table. Modified ("change this event only") occurrences inherit the link via `recurringEventId` fallback, so changing one occurrence never breaks the contact connection.
+- **EventLinkPanel in calendar modal**: When an event is linked, the modal shows the contact name, vessel, "Create Invoice", "Claim to Invoice", and "Unlink" buttons. When unlinked, shows a dashed "Link to Contact" button that expands the search form.
+- **Create Invoice from calendar event**: From the calendar event modal, when linked to a contact, "Create Invoice" pre-fills the service label from the event title and opens an amount field. Creates a QB draft invoice and logs it to the contact's activity timeline with `gcal_event_id` in metadata. Timeline entry shows a green "On Calendar" badge instead of "Schedule Job".
+- **Claim calendar event to existing invoice**: "Claim to Invoice" button in the linked event modal lists all the contact's existing invoices. Clicking "Claim" writes `gcal_event_id` into that invoice's timeline metadata, activating date sync and replacing the "Schedule Job" button with "On Calendar".
+- **vessel_services typical_price field**: New price field on service schedule records. Editable in both Add and Edit forms. Used as the pre-filled amount when creating an invoice from a vessel service.
+- **Create Invoice from vessel service**: Each service schedule item now has a "Create Invoice" button next to "Mark Done". Clicking it creates a QB draft invoice using `typical_price` and marks the service as done.
+- **Monthly maintenance invoice cron**: `GET /api/maintenance-invoices` runs on the 15th of each month at 8am UTC. Fetches next month's GCal events, matches them to linked contacts, looks up each contact's QB recurring invoice template (`RecurringTransaction` API), creates QB invoices from those templates with the event date as TxnDate, and logs each result to `timeline_events`. Results summary written to `system_flags`. pMap(5) concurrency. Added to `vercel.json` crons.
+- **QB date sync on GCal event move**: GCal webhook extended to detect when a linked maintenance event is moved to a new date. Finds the linked QB invoice via `timeline_events.metadata.gcal_event_id`, fetches the full invoice (for SyncToken), then patches the QB `TxnDate` to match the new event date.
+- **Schedule Job button logic**: "Schedule Job" on invoice timeline items is now hidden when the invoice was created from a calendar event (`gcal_event_id` in metadata) or when a job has already been scheduled. Legacy QB-imported invoices without a calendar connection still show it.
+- **New DB table**: `calendar_contact_links` (gcal_event_id UNIQUE, contact_id, vessel_id). Run `supabase/migrations/20260526_calendar_contact_links.sql`.
+- **New DB column**: `vessel_services.typical_price NUMERIC(10,2)`. Run `supabase/migrations/20260526_vessel_service_price.sql`.
+- **New QB helpers**: `listQbRecurringInvoiceTemplates`, `createQbInvoiceFromTemplate`, `updateQbInvoiceTxnDate`, `getValidTokens` (exported).
+- **New server actions**: `linkCalendarEvent`, `unlinkCalendarEvent`, `createInvoiceFromCalendarEvent`, `createMaintenanceInvoice`, `searchContactsByName`, `getVesselsByContactId`, `getContactInvoices`, `claimGcalEventToInvoice`.
+
 ### May 26 | Full PWA, mobile safe areas, Correspondence section, Sync Quo | CRM,Landing,Mobile
 
 - **Full PWA**: Installed `@ducanh2912/next-pwa` with Workbox service worker. Static assets (icons, brand, images) are CacheFirst 7-day. All `/pro` and `/api` routes are NetworkOnly so CRM data is never stale. Disabled in dev.
