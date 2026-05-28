@@ -38,3 +38,32 @@ export async function sendLeadNotification(lead: {
 
   if (error) throw new Error(error.message);
 }
+
+export async function sendWaiverCompletionNotification(waiver: {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  boat: string;
+  contactId: string;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
+
+  const lines = [
+    `Name:    ${waiver.name}`,
+    `Email:   ${waiver.email}`,
+    `Phone:   ${waiver.phone}`,
+    `Address: ${waiver.address}`,
+    `Vessel:  ${waiver.boat}`,
+  ].join("\n");
+
+  const { error } = await resend.emails.send({
+    from: `${clientConfig.companyName} CRM <crm@northwakemarine.com>`,
+    to: "admin@northwakemarine.com",
+    subject: `Waiver Signed: ${waiver.name}`,
+    text: `A liability waiver has been completed.\n\n${lines}\n\nView contact: ${clientConfig.crmUrl}/contacts/${waiver.contactId}`,
+  });
+
+  if (error) throw new Error(error.message);
+}

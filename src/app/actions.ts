@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ingestContact } from "@/lib/ingest";
-import { sendLeadNotification } from "@/lib/gmail";
+import { sendLeadNotification, sendWaiverCompletionNotification } from "@/lib/gmail";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { clientConfig } from "@/config/client";
 
@@ -476,7 +476,7 @@ export async function submitWaiver(
   if (id) {
     await supabase
       .from("contacts")
-      .update({ waiver_signed: true, name, phone })
+      .update({ waiver_signed: true, name, phone, email, address })
       .eq("id", id);
   } else {
     const { data: newContact, error: createErr } = await supabase
@@ -544,6 +544,43 @@ export async function submitWaiver(
   } catch (err) {
     console.error("Waiver Drive upload failed (non-fatal):", err);
   }
+
+  // Email notification
+  try {
+    await sendWaiverCompletionNotification({ name, email, phone, address, boat, contactId: id! });
+  } catch (err) {
+    console.error("Waiver email notification failed (non-fatal):", err);
+  }
+
+  // Auto-sync to QuickBooks
+  (async () => {
+    try {
+      const { findOrCreateQbCustomer, getQbTokens } = await import("@/lib/quickbooks");
+      const tokens = await getQbTokens();
+      if (!tokens) return;
+      await findOrCreateQbCustomer({ id: id!, name, email, phone });
+    } catch { /* non-fatal */ }
+  })();
+
+  // Auto-sync to OpenPhone (Quo)
+  (async () => {
+    try {
+      const { data: contactRow } = await supabase
+        .from("contacts")
+        .select("openphone_contact_id")
+        .eq("id", id)
+        .single();
+      if (!contactRow?.openphone_contact_id) return;
+      const { updateOpenPhoneContact, splitName } = await import("@/lib/openphone");
+      const { firstName, lastName } = splitName(name?.trim() ?? "");
+      await updateOpenPhoneContact(contactRow.openphone_contact_id, {
+        firstName,
+        lastName: lastName || undefined,
+        phoneNumbers: phone ? [{ name: "main", value: phone }] : [],
+        emails: email ? [{ name: "main", value: email }] : [],
+      });
+    } catch { /* non-fatal */ }
+  })();
 
   revalidatePath(`/pro/contacts/${id}`);
   return { success: true };
