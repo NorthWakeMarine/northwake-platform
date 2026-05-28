@@ -240,7 +240,7 @@ export async function listQbTransactionsForCustomer(qbCustomerId: string): Promi
 
   if (inv.status === "fulfilled") {
     for (const r of inv.value.QueryResponse.Invoice ?? []) {
-      const status = r.Balance === 0 ? "Paid" : r.Balance < r.TotalAmt ? "Partial" : "Unpaid";
+      const status = r.Balance < 0.01 ? "Paid" : r.Balance < r.TotalAmt ? "Partial" : "Unpaid";
       results.push({ id: r.Id, txnType: "Invoice", docNumber: r.DocNumber ?? null, txnDate: r.TxnDate, totalAmt: r.TotalAmt, body: parseLines(r.Line), status });
     }
   }
