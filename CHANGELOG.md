@@ -2,6 +2,19 @@
 
 ## May 2026
 
+### May 28 | Waiver completion automation, calendar link fix, Kanban updates, QB paid status fix, vessel appointments | CRM
+
+- **Waiver completion email**: When a customer submits the liability waiver, `crm@northwakemarine.com` sends a notification to `admin@northwakemarine.com` with subject "Waiver Signed: [Name]" containing name, email, phone, address, and vessel. Email goes only to admin, never to the customer.
+- **Waiver profile auto-update**: Contact record is now updated with email and address from the waiver form (previously only name and phone were written). New fields: `email`, `address`.
+- **Waiver QB auto-sync**: On waiver submission, `findOrCreateQbCustomer` fires in the background — creates or links the QB customer record automatically. Non-fatal if QB is not connected.
+- **Waiver OpenPhone auto-sync**: On waiver submission, if the contact has an `openphone_contact_id`, pushes updated name/email/phone to OpenPhone in the background. Non-fatal.
+- **Calendar contact-link bug fixed**: `fetchLinkMap()` in `pro/calendar/page.tsx` was referencing `SUPABASE_SERVICE_ROLE_KEY` which does not exist — actual var is `SUPABASE_SECRET_KEY`. Link map was always returning `{}`, so all events appeared unlinked. Now fixed.
+- **Kanban "Paid" column**: New pipeline stage `paid` added between `done_invoiced` and `lost`. Accent: emerald-600 border. `checkIntegrity` now excludes both `done_invoiced` and `paid` contacts from health flag scans.
+- **Kanban dot — stage-based timer**: Heat dot now tracks time-in-stage, not time-since-last-contact. Rules: `work_scheduled` and `paid` always green; `lost` always red; all other stages green for 0-24h, amber 24-48h, red after 48h. Timer resets to green on any drag-drop (including same-column). New DB column `stage_entered_at TIMESTAMPTZ DEFAULT now()` on contacts. `updatePipelineStage` stamps it on every move including lead conversions.
+- **QB invoice "Paid" accuracy fix**: `Balance === 0` comparison replaced with `Balance < 0.01` to handle QuickBooks ledger rounding that returns tiny non-zero balances on fully paid invoices.
+- **Vessel appointments section**: Asset modal (opened from Fleet card on contact profile) now has an "Appointments" section below the service schedule. Loads all calendar events linked to that contact via `calendar_contact_links`. Upcoming appointments show with a navy dot, title, date/time, and location. Past appointments collapse under a disclosure toggle at 50% opacity. New server action: `getContactCalendarEvents`. New Google Calendar helper: `getEventById`.
+- **New DB migration**: `supabase/migrations/20260527_stage_entered_at.sql` — adds `stage_entered_at` column to contacts.
+
 ### May 27 | Household contacts, call log fixes, Quo sync, Kanban cleanup | CRM
 
 - **Household section restored**: LinkedContacts card re-added to customer contact page (left column, below Documents). Stores spouse/family/assistant/associate contacts in CRM. NOT synced to QB as separate customers. Add, remove, relationship label, and "Authorized to Approve" toggle all functional.
