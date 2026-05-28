@@ -2,6 +2,16 @@
 
 ## May 2026
 
+### May 27 | Household contacts, call log fixes, Quo sync, Kanban cleanup | CRM
+
+- **Household section restored**: LinkedContacts card re-added to customer contact page (left column, below Documents). Stores spouse/family/assistant/associate contacts in CRM. NOT synced to QB as separate customers. Add, remove, relationship label, and "Authorized to Approve" toggle all functional.
+- **New DB table**: `linked_contacts` (id, primary_contact_id, name, phone, email, relationship, authorized_to_approve, created_at). Run `supabase/migrations/20260527_linked_contacts.sql`. Phone index included for fast webhook lookup.
+- **Linked contacts in call/SMS webhook**: `findContactByPhone` in Quo webhook now checks `linked_contacts` as a fallback. When a household member calls or texts, the event logs against the primary contact with the linked member's name in the title (e.g. "Inbound Call (Sarah Johnson)"). No new lead is created for household numbers.
+- **SMS short code filter**: Ingest endpoint now rejects any phone number with fewer than 10 digits. Short codes (5-6 digit SMS codes) no longer create leads. If a short code arrives with a valid email it still creates the contact but drops the invalid phone.
+- **Sync Quo button fixed**: Now upserts the contact into OpenPhone first (create if no `openphone_contact_id`, update if one exists) with name, company, phone, and email — then imports history as before. Vendor contacts and any contact with a company name will now appear in OpenPhone after clicking Sync Quo.
+- **Auto-sync to OpenPhone on create**: New contacts created through the CRM (including vendors) auto-push to OpenPhone on save with full name and company fields. This was already in place; confirmed working for all contact types.
+- **Kanban summary bar removed**: Stats bar (column counts, new leads, calls, total clients, converted) removed from pipeline board. Saves 4 DB queries on every pipeline page load.
+
 ### May 27 | Calendar month grid, maintenance wash invoicing system | CRM
 
 - **Calendar month view**: Full Google Calendar-style month grid replaces the basic week view as default. Events span multiple columns across week boundaries (banner layout). Month/week toggle in header. Google Calendar color codes (all 11 colorIds) applied to event banners.
