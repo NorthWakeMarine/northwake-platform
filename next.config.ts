@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 import withPWA from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    // pdfkit needs its AFM font metric files at runtime on Vercel
+    "/**": ["./node_modules/pdfkit/js/data/**/*"],
+  },
+
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
