@@ -843,6 +843,50 @@ function DeleteConfirm({ event, onClose }: { event: CalendarEvent; onClose: () =
   );
 }
 
+// ── Day Events Modal (overflow) ────────────────────────────────────────────────
+
+function DayEventsModal({ day, dayEvents, onEventClick, onClose }: {
+  day: Date;
+  dayEvents: CalendarEvent[];
+  onEventClick: (e: CalendarEvent) => void;
+  onClose: () => void;
+}) {
+  const dateLabel = day.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4">
+      <div className="bg-white rounded-t-xl sm:rounded-sm shadow-2xl w-full sm:max-w-sm max-h-[80dvh] flex flex-col">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="text-slate-800 text-sm font-semibold">{dateLabel}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+        </div>
+        <div className="overflow-y-auto flex-1 p-3 flex flex-col gap-2">
+          {dayEvents.map(ev => {
+            const color = getEventColor(ev.colorId);
+            const isAllDay = !ev.start.includes("T");
+            return (
+              <button
+                key={ev.id}
+                onClick={() => { onClose(); onEventClick(ev); }}
+                className="w-full text-left rounded-sm px-3 py-2.5 transition-opacity hover:opacity-80"
+                style={{ backgroundColor: color.bg, border: `1px solid ${color.border}` }}
+              >
+                <p className="text-xs font-semibold" style={{ color: color.text }}>{ev.title}</p>
+                <p className="text-[10px] mt-0.5 opacity-70" style={{ color: color.text }}>
+                  {isAllDay ? "All day" : `${fmtTime(ev.start)} – ${fmtTime(ev.end)}`}
+                </p>
+                {ev.location && (
+                  <p className="text-[10px] mt-0.5 opacity-60 truncate" style={{ color: color.text }}>{ev.location}</p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Month Grid ─────────────────────────────────────────────────────────────────
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -851,13 +895,14 @@ const EVENT_H  = 22;   // px — height of each event banner
 const EVENT_GAP = 2;   // px — gap between banner rows
 const MAX_SLOTS = 3;   // visible event rows before "+N more"
 
-function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDeleteClick }: {
+function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDeleteClick, onOverflowClick }: {
   monthDate: Date;
   events: CalendarEvent[];
   today: Date;
   onDayClick: (iso: string) => void;
   onEventClick: (e: CalendarEvent) => void;
   onDeleteClick: (e: CalendarEvent) => void;
+  onOverflowClick: (day: Date, dayEvents: CalendarEvent[]) => void;
 }) {
   const year  = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -936,9 +981,20 @@ function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDelet
                       {day.getDate()}
                     </div>
                     {overflow > 0 && (
-                      <span className="text-[9px] text-slate-400 font-medium mt-auto mb-1">
+                      <button
+                        className="text-[9px] text-[#000080] font-semibold mt-auto mb-1 hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const allDayEvents = events.filter(ev => {
+                            const evS = eventStartDay(ev);
+                            const evE = eventEndDay(ev);
+                            return evS <= day && day <= evE;
+                          });
+                          onOverflowClick(day, allDayEvents);
+                        }}
+                      >
                         +{overflow} more
-                      </span>
+                      </button>
                     )}
                   </div>
                 );
@@ -1106,6 +1162,8 @@ export default function CalendarClient({ events, linkMap }: { events: CalendarEv
   const [modal,      setModal]      = useState<"create" | "detail" | "edit" | "delete" | null>(null);
   const [selected,   setSelected]   = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
+  const [overflowDay, setOverflowDay] = useState<Date | null>(null);
+  const [overflowDayEvents, setOverflowDayEvents] = useState<CalendarEvent[]>([]);
 
   function prevPeriod() {
     if (viewMode === "month") setMonthDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
@@ -1125,6 +1183,8 @@ export default function CalendarClient({ events, linkMap }: { events: CalendarEv
   function openEdit(ev: CalendarEvent)   { setSelected(ev); setModal("edit"); }
   function openDelete(ev: CalendarEvent) { setSelected(ev); setModal("delete"); }
   function closeModal() { setModal(null); setSelected(null); setDefaultDate(undefined); }
+  function openOverflow(day: Date, dayEvs: CalendarEvent[]) { setOverflowDay(day); setOverflowDayEvents(dayEvs); }
+  function closeOverflow() { setOverflowDay(null); setOverflowDayEvents([]); }
 
   const isCurrentPeriod = viewMode === "month"
     ? monthDate.getFullYear() === today.getFullYear() && monthDate.getMonth() === today.getMonth()
@@ -1219,6 +1279,7 @@ export default function CalendarClient({ events, linkMap }: { events: CalendarEv
               onDayClick={openCreate}
               onEventClick={openDetail}
               onDeleteClick={openDelete}
+              onOverflowClick={openOverflow}
             />
           ) : (
             <WeekGrid
@@ -1251,6 +1312,14 @@ export default function CalendarClient({ events, linkMap }: { events: CalendarEv
       )}
       {modal === "delete" && selected && (
         <DeleteConfirm event={selected} onClose={closeModal} />
+      )}
+      {overflowDay && (
+        <DayEventsModal
+          day={overflowDay}
+          dayEvents={overflowDayEvents}
+          onEventClick={openDetail}
+          onClose={closeOverflow}
+        />
       )}
     </>
   );
