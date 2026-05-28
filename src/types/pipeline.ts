@@ -5,6 +5,7 @@ export type PipelineStage =
   | "needs_attention"
   | "work_scheduled"
   | "done_invoiced"
+  | "paid"
   | "lost";
 
 export const STAGE_LABELS: Record<PipelineStage, string> = {
@@ -14,6 +15,7 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   needs_attention: "Needs Attention",
   work_scheduled:  "Work Scheduled",
   done_invoiced:   "Done / Invoiced",
+  paid:            "Paid",
   lost:            "Lost",
 };
 
@@ -23,6 +25,7 @@ export const STAGES: PipelineStage[] = [
   "estimate_sent",
   "work_scheduled",
   "done_invoiced",
+  "paid",
   "lost",
 ];
 

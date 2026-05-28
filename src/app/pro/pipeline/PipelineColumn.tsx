@@ -14,6 +14,7 @@ const ACCENT: Record<PipelineStage, string> = {
   needs_attention: "border-l-2 border-red-400",
   work_scheduled:  "border-l-2 border-[#000080]",
   done_invoiced:   "border-l-2 border-slate-300",
+  paid:            "border-l-2 border-emerald-600",
   lost:            "border-l-2 border-rose-400",
 };
 

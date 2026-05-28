@@ -2166,7 +2166,7 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
     .from("contacts")
     .select("id, pipeline_stage, qb_customer_id, waiver_signed, vessels ( id )")
     .eq("contact_type", "customer")
-    .not("pipeline_stage", "eq", "done_invoiced");
+    .not("pipeline_stage", "in", '("done_invoiced","paid")');
 
   if (error) return { checked: 0, flagged: 0, error: error.message };
   if (!contacts?.length) return { checked: 0, flagged: 0 };
