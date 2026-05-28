@@ -939,7 +939,7 @@ function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDelet
         return (
           <div
             key={wi}
-            className="relative border-b border-slate-100 last:border-b-0"
+            className="relative overflow-hidden border-b border-slate-100 last:border-b-0"
             style={{ minHeight: bandHeight }}
           >
             {/* Date number cells */}
