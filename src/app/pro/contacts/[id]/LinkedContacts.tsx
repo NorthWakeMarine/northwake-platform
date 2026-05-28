@@ -81,7 +81,7 @@ function AddForm({ contactId, onDone }: { contactId: string; onDone: () => void 
   }, [state.success, onDone]);
 
   return (
-    <form ref={formRef} action={action} className="flex flex-col gap-3 pt-3 border-t border-slate-100 mt-1">
+    <form ref={formRef} action={action} className="flex flex-col gap-3 pt-2 border-t border-slate-100 mt-1">
       <input type="hidden" name="primary_contact_id" value={contactId} />
       <p className="text-slate-700 text-[11px] font-semibold">Add Linked Contact</p>
       {state.error && <p className="text-red-500 text-[11px]">{state.error}</p>}
@@ -156,7 +156,7 @@ export default function LinkedContacts({
   const [showForm, setShowForm] = useState(false);
 
   return (
-    <div className="bg-[#F1F2F5] neu-card rounded-md p-5 flex flex-col gap-4">
+    <div className="bg-[#F1F2F5] neu-card rounded-md p-5 flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <h3 className="text-slate-800 text-sm font-semibold">Household</h3>
         {!showForm && (
