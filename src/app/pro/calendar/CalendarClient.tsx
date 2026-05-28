@@ -982,7 +982,7 @@ function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDelet
                     </div>
                     {overflow > 0 && (
                       <button
-                        className="text-[9px] text-[#000080] font-semibold mt-auto mb-1 hover:underline"
+                        className="text-[9px] text-[#000080] font-semibold mt-auto mb-1 px-1.5 py-0.5 border border-[#000080]/30 rounded-sm hover:bg-[#000080]/5 hover:border-[#000080]/60 transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           const allDayEvents = events.filter(ev => {
