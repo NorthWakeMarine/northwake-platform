@@ -20,10 +20,23 @@ export type IngestPayload = {
   metadata?: Record<string, unknown>;
 };
 
+function isValidPhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 10;
+}
+
 export async function ingestContact(
   payload: IngestPayload
 ): Promise<{ contact_id: string; created: boolean }> {
   const supabase = serviceClient();
+
+  // Reject short codes and non-phone strings (SMS short codes are < 10 digits)
+  if (payload.phone && !isValidPhone(payload.phone)) {
+    if (!payload.email) {
+      throw new Error(`Rejected: "${payload.phone}" is not a valid phone number.`);
+    }
+    payload = { ...payload, phone: undefined };
+  }
 
   // Look up existing contact by email first, then phone
   let contact: { id: string } | null = null;
