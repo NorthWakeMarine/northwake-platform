@@ -2726,14 +2726,31 @@ export async function syncQuoForContact(
 
   const { data: contact, error } = await supabase
     .from("contacts")
-    .select("id, phone")
+    .select("id, name, email, phone, company_name, openphone_contact_id")
     .eq("id", contactId)
     .single();
   if (error || !contact) return { ok: false, imported: 0, skipped: 0, error: "Contact not found." };
   if (!contact.phone) return { ok: false, imported: 0, skipped: 0, error: "Contact has no phone number on file." };
 
   try {
-    const { fetchCallsByPhone, fetchMessagesByPhone } = await import("@/lib/openphone");
+    const { createOpenPhoneContact, updateOpenPhoneContact, splitName, fetchCallsByPhone, fetchMessagesByPhone } = await import("@/lib/openphone");
+    const { firstName, lastName } = splitName(contact.name?.trim() ?? "");
+    const opPayload = {
+      firstName,
+      lastName: lastName || undefined,
+      company: contact.company_name?.trim() || undefined,
+      phoneNumbers: [{ name: "main", value: contact.phone }],
+      emails: contact.email?.trim() ? [{ name: "main", value: contact.email.trim() }] : [],
+    };
+
+    if (contact.openphone_contact_id) {
+      await updateOpenPhoneContact(contact.openphone_contact_id, opPayload).catch(() => null);
+    } else {
+      const newId = await createOpenPhoneContact(opPayload).catch(() => null);
+      if (newId) {
+        await supabase.from("contacts").update({ openphone_contact_id: newId }).eq("id", contactId);
+      }
+    }
 
     const { data: existing } = await supabase
       .from("timeline_events")
