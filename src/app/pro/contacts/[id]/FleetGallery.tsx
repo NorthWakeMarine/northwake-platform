@@ -6,6 +6,7 @@ import {
   addVesselService, markServiced, deleteVesselService, updateVesselService, type VesselServiceState,
   createMaintenanceInvoice, type MaintenanceInvoiceState,
   deleteAsset,
+  getContactCalendarEvents, type ContactCalendarEvent,
 } from "@/app/actions";
 
 export type VesselService = {
@@ -488,6 +489,82 @@ function NotificationsField({ defaultValue }: { defaultValue: boolean }) {
   );
 }
 
+function fmtEventDate(iso: string): string {
+  if (!iso.includes("T")) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  }
+  const dt = new Date(iso);
+  return dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) +
+    " · " + dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function CalendarEventsSection({ contactId }: { contactId: string }) {
+  const [events, setEvents] = useState<ContactCalendarEvent[] | null>(null);
+  const [loading, startLoad] = useTransition();
+
+  useEffect(() => {
+    startLoad(async () => {
+      const ev = await getContactCalendarEvents(contactId);
+      setEvents(ev);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contactId]);
+
+  const now = new Date().toISOString();
+  const upcoming = (events ?? []).filter((e) => e.end >= now);
+  const past     = (events ?? []).filter((e) => e.end <  now);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Appointments</p>
+
+      {loading && <p className="text-slate-400 text-xs">Loading...</p>}
+
+      {!loading && events !== null && events.length === 0 && (
+        <p className="text-slate-400 text-xs">No appointments linked. Link events from the Calendar.</p>
+      )}
+
+      {upcoming.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {upcoming.map((ev) => (
+            <div key={ev.id} className="flex items-start gap-2.5 border border-slate-100 rounded-sm px-3 py-2.5">
+              <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-[#000080] shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-slate-800 truncate">{ev.title}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{fmtEventDate(ev.start)}</p>
+                {ev.location && <p className="text-[10px] text-slate-400 truncate">{ev.location}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {past.length > 0 && (
+        <details className="group">
+          <summary className="text-[9px] tracking-widest uppercase text-slate-400 font-medium cursor-pointer hover:text-slate-600 select-none list-none flex items-center gap-1">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-90">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+            {past.length} past {past.length === 1 ? "appointment" : "appointments"}
+          </summary>
+          <div className="flex flex-col gap-2 mt-2">
+            {past.slice().reverse().map((ev) => (
+              <div key={ev.id} className="flex items-start gap-2.5 border border-slate-100 rounded-sm px-3 py-2 opacity-50">
+                <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-slate-600 truncate">{ev.title}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{fmtEventDate(ev.start)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
 function AssetModal({ asset, contactId, services, onClose }: {
   asset: Asset; contactId: string; services: VesselService[]; onClose: () => void;
 }) {
@@ -587,6 +664,8 @@ function AssetModal({ asset, contactId, services, onClose }: {
           )}
 
           <ServiceScheduleSection asset={asset} contactId={contactId} services={services} />
+
+          <CalendarEventsSection contactId={contactId} />
 
           <div className="flex flex-col gap-2">
             <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Notes</p>

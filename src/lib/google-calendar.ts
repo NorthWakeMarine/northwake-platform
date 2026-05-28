@@ -149,6 +149,27 @@ export async function listEvents(from: Date, to: Date): Promise<CalendarEvent[]>
     }));
 }
 
+export async function getEventById(eventId: string): Promise<CalendarEvent | null> {
+  try {
+    const auth     = getAuth();
+    const calendar = google.calendar({ version: "v3", auth });
+    const res = await calendar.events.get({ calendarId: CALENDAR_ID, eventId });
+    const e = res.data;
+    if (!e.id || e.status === "cancelled") return null;
+    return {
+      id:               e.id,
+      title:            e.summary ?? "(No title)",
+      start:            e.start?.dateTime ?? e.start?.date ?? "",
+      end:              e.end?.dateTime   ?? e.end?.date   ?? "",
+      location:         e.location        ?? undefined,
+      colorId:          e.colorId         ?? undefined,
+      recurringEventId: e.recurringEventId ?? undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // Fetch events and detect discrepancies (event moved/deleted outside CRM)
 export type DiscrepancyReport = {
   googleEventId: string;
