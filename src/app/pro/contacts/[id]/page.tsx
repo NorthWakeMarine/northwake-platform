@@ -17,6 +17,7 @@ import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteContactButton from "../DeleteContactButton";
 import MobileContactActionsSheet from "./MobileContactActionsSheet";
 import VendorDescriptor from "./VendorDescriptor";
+import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
 import type { PipelineStage } from "@/types/pipeline";
 import type { DriveFile } from "@/lib/google-drive";
 
@@ -112,6 +113,7 @@ export default async function ContactProfilePage({
     { data: contact },
     { data: events },
     { data: rawVessels },
+    { data: rawLinkedContacts },
   ] = await Promise.all([
     supabase
       .from("contacts")
@@ -127,6 +129,11 @@ export default async function ContactProfilePage({
       .from("vessels")
       .select("id, asset_type, name, make_model, year, color, length_ft, location, registration, notes, last_service_date, vessel_type, service_interval_days")
       .eq("owner_id", id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("linked_contacts")
+      .select("id, name, phone, email, relationship, authorized_to_approve")
+      .eq("primary_contact_id", id)
       .order("created_at", { ascending: true }),
   ]);
 
@@ -269,6 +276,14 @@ export default async function ContactProfilePage({
                 folderUrl={contact.drive_folder_url}
                 waiverEvents={(events as TimelineEvent[])?.filter(e => e.event_type === "waiver_signed") ?? []}
               />
+
+              {/* Household — customers only */}
+              {contact.contact_type !== "vendor" && (
+                <LinkedContacts
+                  contactId={contact.id}
+                  linkedContacts={(rawLinkedContacts ?? []) as LinkedContact[]}
+                />
+              )}
 
             </div>
 
