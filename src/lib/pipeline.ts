@@ -8,9 +8,11 @@ function svc() {
   );
 }
 
-function computeHeat(lastContactAt: string | null): HeatLevel | null {
-  if (!lastContactAt) return "red";
-  const diffHours = (Date.now() - new Date(lastContactAt).getTime()) / 3_600_000;
+function computeStageHeat(stage: PipelineStage, stageEnteredAt: string | null): HeatLevel {
+  if (stage === "work_scheduled" || stage === "paid") return "green";
+  if (stage === "lost") return "red";
+  if (!stageEnteredAt) return "green";
+  const diffHours = (Date.now() - new Date(stageEnteredAt).getTime()) / 3_600_000;
   if (diffHours > 48) return "red";
   if (diffHours > 24) return "amber";
   return "green";
@@ -28,7 +30,7 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
   const [contactsRes, leadsRes] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, name, email, phone, status, pipeline_stage, last_contact_at, created_at, contact_type, health_flags, vessels ( id, name, make_model, year, length_ft, asset_type, last_service_date, service_interval_days )")
+      .select("id, name, email, phone, status, pipeline_stage, last_contact_at, stage_entered_at, created_at, contact_type, health_flags, vessels ( id, name, make_model, year, length_ft, asset_type, last_service_date, service_interval_days )")
       .eq("contact_type", "customer")
       .not("pipeline_stage", "is", null)
       .order("created_at", { ascending: false }),
@@ -68,8 +70,9 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
       name: c.name ?? c.phone ?? c.email ?? null,
       stage: (c.pipeline_stage ?? "new_leads") as PipelineStage,
       assetType: mapAssetType(vessel?.asset_type ?? null),
-      heat: computeHeat(c.last_contact_at),
+      heat: computeStageHeat((c.pipeline_stage ?? "new_leads") as PipelineStage, c.stage_entered_at ?? c.created_at),
       lastContactAt: c.last_contact_at ?? null,
+      stageEnteredAt: c.stage_entered_at ?? c.created_at ?? null,
       isReturningClient: isReturning,
       returningReason,
       vesselName: [vessel?.year, vessel?.make_model, vessel?.length_ft ? `${(vessel.length_ft as string).replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" - ") || null,
@@ -92,8 +95,9 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
       name: l.name ?? l.phone ?? l.email ?? null,
       stage: "new_leads" as PipelineStage,
       assetType: mapAssetType(l.vessel_type),
-      heat: "red" as HeatLevel,
+      heat: "green" as HeatLevel,
       lastContactAt: null,
+      stageEnteredAt: l.created_at ?? null,
       isReturningClient: false,
       returningReason: null,
       vesselName: null,

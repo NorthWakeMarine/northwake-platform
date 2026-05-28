@@ -46,6 +46,7 @@ export interface PipelineCard {
   assetType: "vessel" | "car" | "plane" | "other" | null;
   heat: HeatLevel | null;
   lastContactAt: string | null;
+  stageEnteredAt: string | null;
   isReturningClient: boolean;
   returningReason: "new_lead" | "overdue_service" | null;
   vesselName: string | null;

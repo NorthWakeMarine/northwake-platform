@@ -61,15 +61,26 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
 
   const moveCard = useCallback(
     (card: PipelineCard, targetStage: PipelineStage) => {
-      if (card.stage === targetStage) return;
+      const now = new Date().toISOString();
+      const newHeat: PipelineCard["heat"] =
+        targetStage === "work_scheduled" || targetStage === "paid" ? "green"
+        : targetStage === "lost" ? "red"
+        : "green";
 
       const prevColumns = columns;
 
       setColumns((prev) => {
         const next = { ...prev };
-        next[card.stage] = prev[card.stage].filter((c) => c.id !== card.id);
-        const updated = { ...card, stage: targetStage };
-        next[targetStage] = [updated, ...prev[targetStage]];
+        if (card.stage !== targetStage) {
+          next[card.stage] = prev[card.stage].filter((c) => c.id !== card.id);
+          const updated = { ...card, stage: targetStage, heat: newHeat, stageEnteredAt: now };
+          next[targetStage] = [updated, ...prev[targetStage]];
+        } else {
+          // Same-column drop: just reset the heat dot without reordering
+          next[card.stage] = prev[card.stage].map((c) =>
+            c.id === card.id ? { ...c, heat: newHeat, stageEnteredAt: now } : c
+          );
+        }
         return next;
       });
 

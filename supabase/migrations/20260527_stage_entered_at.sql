@@ -1,0 +1,2 @@
+ALTER TABLE contacts
+  ADD COLUMN IF NOT EXISTS stage_entered_at TIMESTAMPTZ DEFAULT now();

@@ -1844,6 +1844,7 @@ export async function updatePipelineStage(
         ...(lead.name  ? { name: lead.name }  : {}),
         ...(lead.phone ? { phone: normalizePhone(lead.phone) ?? lead.phone } : {}),
         pipeline_stage: newStage,
+        stage_entered_at: new Date().toISOString(),
         status: "client",
       }).eq("id", contactId);
     } else {
@@ -1857,6 +1858,7 @@ export async function updatePipelineStage(
           source: lead.source ?? "website",
           status: "client",
           pipeline_stage: newStage,
+          stage_entered_at: new Date().toISOString(),
         })
         .select("id")
         .single();
@@ -1897,7 +1899,7 @@ export async function updatePipelineStage(
     .single();
   if (cErr || !contact) return { ok: false, error: "Contact not found." };
 
-  const updatePayload: Record<string, unknown> = { pipeline_stage: newStage };
+  const updatePayload: Record<string, unknown> = { pipeline_stage: newStage, stage_entered_at: new Date().toISOString() };
   if (contact.pipeline_stage === "needs_attention") {
     updatePayload.health_flags = [];
   }

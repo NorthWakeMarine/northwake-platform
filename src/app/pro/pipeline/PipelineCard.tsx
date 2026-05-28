@@ -34,15 +34,15 @@ function AssetIcon({ type }: { type: PipelineCardType["assetType"] }) {
   );
 }
 
-function getHours(lastContactAt: string | null): number | null {
-  if (!lastContactAt) return null;
-  return Math.floor((new Date().getTime() - new Date(lastContactAt).getTime()) / 3_600_000);
+function getHours(isoAt: string | null): number | null {
+  if (!isoAt) return null;
+  return Math.floor((new Date().getTime() - new Date(isoAt).getTime()) / 3_600_000);
 }
 
-function HeatDot({ heat, lastContactAt }: { heat: PipelineCardType["heat"]; lastContactAt: string | null }) {
+function HeatDot({ heat, stageEnteredAt }: { heat: PipelineCardType["heat"]; stageEnteredAt: string | null }) {
   if (!heat) return null;
-  const hours = getHours(lastContactAt);
-  const title = hours !== null ? `Last contact ${hours}h ago` : "No contact recorded";
+  const hours = getHours(stageEnteredAt);
+  const title = hours !== null ? `In stage ${hours}h` : "Stage time unknown";
 
   return (
     <span
@@ -130,7 +130,7 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
           {card.name || card.phone || card.email || <span className="text-slate-400 italic font-normal">Unknown</span>}
         </span>
         <HealthWarningIcon flags={card.healthFlags} />
-        <HeatDot heat={card.heat} lastContactAt={card.lastContactAt} />
+        <HeatDot heat={card.heat} stageEnteredAt={card.stageEnteredAt} />
         {(card.contactId || (card.sourceType === "lead" && card.leadId)) && (
           confirming ? (
             <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
