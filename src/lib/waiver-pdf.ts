@@ -80,7 +80,7 @@ export async function generateWaiverPdf(data: WaiverData): Promise<Buffer> {
       width = CONTENT_W,
       lineHeight,
     } = opts;
-    const lh = lineHeight ?? size * 1.45;
+    const lh = lineHeight ?? size * 1.35;
     const charsPerLine = Math.floor(width / (size * 0.52));
     const wrapped = wordWrap(text, charsPerLine);
     for (const line of wrapped) {
@@ -150,8 +150,8 @@ export async function generateWaiverPdf(data: WaiverData): Promise<Buffer> {
     need(30);
 
     // Section heading
-    page.drawText(`${section.num}. ${section.title}`, { x: MARGIN, y: y - 10, size: 9.5, font: bold, color: NAVY });
-    y -= 18;
+    page.drawText(`${section.num}. ${section.title}`, { x: MARGIN, y: y - 8, size: 9.5, font: bold, color: NAVY });
+    y -= 14;
 
     if (section.body) {
       drawText(section.body, { size: 8.5, font: regular, color: BODY });
@@ -184,7 +184,7 @@ export async function generateWaiverPdf(data: WaiverData): Promise<Buffer> {
     // Section rule
     need(10);
     page.drawLine({ start: { x: MARGIN, y: y }, end: { x: PAGE_W - MARGIN, y: y }, thickness: 0.5, color: LGRAY });
-    y -= 14;
+    y -= 10;
   }
 
   // ── Signature block + closing text ───────────────────────────────
