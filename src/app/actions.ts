@@ -978,7 +978,7 @@ export async function createContact(fields: {
       name:          fields.name?.trim()         || null,
       company_name:  fields.company_name?.trim() || null,
       email:         fields.email?.trim()        || null,
-      phone:         fields.phone?.trim()        || null,
+      phone:         normalizePhone(fields.phone) || null,
       address:       fields.address?.trim()      || null,
       contact_type:  fields.contact_type         || "customer",
       waiver_signed: fields.waiver_signed        ?? false,
@@ -1033,7 +1033,7 @@ export async function updateContactFields(
   if ("name"          in fields) patch.name          = fields.name?.trim()         || null;
   if ("company_name"  in fields) patch.company_name  = fields.company_name?.trim() || null;
   if ("email"         in fields) patch.email         = fields.email?.trim()        || null;
-  if ("phone"         in fields) patch.phone         = fields.phone?.trim()        || null;
+  if ("phone"         in fields) patch.phone         = normalizePhone(fields.phone) || null;
   if ("address"       in fields) patch.address       = fields.address?.trim()      || null;
   if ("notes"         in fields) patch.notes         = fields.notes?.trim()        || null;
   if ("waiver_signed" in fields) patch.waiver_signed = fields.waiver_signed ?? false;
