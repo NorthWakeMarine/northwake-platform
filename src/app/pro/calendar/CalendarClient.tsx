@@ -408,6 +408,7 @@ function LinkedPanel({
         <form action={invoiceAction} className="flex flex-col gap-3">
           <input type="hidden" name="contact_id"    value={link.contactId} />
           <input type="hidden" name="gcal_event_id" value={event.id} />
+          <input type="hidden" name="event_date"    value={event.start.includes("T") ? new Date(event.start).toISOString().slice(0, 10) : event.start} />
           <div className="flex flex-col gap-1">
             <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service</label>
             <input name="service_label" defaultValue={suggestedService} className={inputCls} />

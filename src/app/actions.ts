@@ -1311,16 +1311,25 @@ export async function createInvoiceFromCalendarEvent(
   const service_label = (formData.get("service_label") as string)?.trim() || "Maintenance Wash";
   const amountRaw     = (formData.get("amount") as string)?.trim();
   const amount        = amountRaw ? parseFloat(amountRaw) : 0;
+  const event_date    = (formData.get("event_date") as string)?.trim() || undefined;
 
   if (!contact_id || !gcal_event_id) return { error: "Missing required fields." };
 
   const supabase = await svc();
-  const { data: contact } = await supabase
-    .from("contacts")
-    .select("qb_customer_id")
-    .eq("id", contact_id)
-    .single();
+
+  const [{ data: contact }, { data: calLink }] = await Promise.all([
+    supabase.from("contacts").select("qb_customer_id").eq("id", contact_id).single(),
+    supabase
+      .from("calendar_contact_links")
+      .select("service_template_id, service_templates(description)")
+      .eq("gcal_event_id", gcal_event_id)
+      .maybeSingle(),
+  ]);
+
   if (!contact?.qb_customer_id) return { error: "Contact has no linked QuickBooks customer." };
+
+  const tpl = calLink?.service_templates as unknown as { description: string | null } | null;
+  const lineBody = tpl?.description ?? null;
 
   try {
     const { createQbInvoiceDraft, getQbInvoiceUrl, getValidTokens } = await import("@/lib/quickbooks");
@@ -1328,7 +1337,9 @@ export async function createInvoiceFromCalendarEvent(
     const { invoiceId, docNumber } = await createQbInvoiceDraft({
       qbCustomerId:    contact.qb_customer_id,
       lineDescription: service_label,
+      lineBody,
       amount:          isNaN(amount) ? 0 : amount,
+      txnDate:         event_date,
     });
     const invoiceUrl = getQbInvoiceUrl(tokens.realm_id, invoiceId);
 

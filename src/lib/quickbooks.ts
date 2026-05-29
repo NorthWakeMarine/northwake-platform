@@ -166,27 +166,46 @@ export async function findOrCreateQbCustomer(contact: {
   return qbId;
 }
 
+async function findQbItemByName(name: string): Promise<string | null> {
+  try {
+    const escaped = name.replace(/'/g, "\\'");
+    type Resp = { QueryResponse: { Item?: { Id: string }[] } };
+    const data = await qbRequest<Resp>(
+      `/query?query=${encodeURIComponent(`SELECT Id FROM Item WHERE Name = '${escaped}' AND Active = true MAXRESULTS 1`)}`
+    );
+    return data.QueryResponse.Item?.[0]?.Id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function createQbInvoiceDraft(opts: {
   qbCustomerId: string;
   lineDescription: string;
+  lineBody?: string | null;
   amount?: number;
   discount?: number;
+  txnDate?: string;
 }): Promise<{ invoiceId: string; docNumber: string }> {
   const gross = opts.amount ?? 0;
   const disc  = opts.discount ?? 0;
   const net   = Math.max(0, gross - disc);
 
-  const body = {
+  const itemId = await findQbItemByName(opts.lineDescription) ?? "1";
+
+  const body: Record<string, unknown> = {
     CustomerRef: { value: opts.qbCustomerId },
     Line: [
       {
         DetailType: "SalesItemLineDetail",
         Amount: net,
-        Description: opts.lineDescription,
-        SalesItemLineDetail: { ItemRef: { value: "1" } },
+        Description: opts.lineBody ?? opts.lineDescription,
+        SalesItemLineDetail: { ItemRef: { value: itemId } },
       },
     ],
   };
+
+  if (opts.txnDate) body.TxnDate = opts.txnDate;
 
   type InvoiceResponse = { Invoice: { Id: string; DocNumber: string } };
   const data = await qbRequest<InvoiceResponse>("/invoice", {

@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   // 1. Fetch all auto-invoice links that have a price set
   const { data: links, error: linkErr } = await supabase
     .from("calendar_contact_links")
-    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, contacts(qb_customer_id, name)")
+    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, service_templates(description), contacts(qb_customer_id, name)")
     .eq("auto_invoice", true)
     .not("invoice_amount", "is", null)
     .gt("invoice_amount", 0);
@@ -53,21 +53,24 @@ export async function GET(req: NextRequest) {
     qbCustomerId: string | null;
     contactName: string | null;
     serviceLabel: string;
+    serviceDescription: string | null;
     invoiceAmount: number;
     invoiceDiscount: number;
   };
 
   const linkBySeriesId = new Map<string, LinkInfo>();
   for (const l of links) {
-    const c = l.contacts as unknown as { qb_customer_id: string | null; name: string | null } | null;
+    const c  = l.contacts         as unknown as { qb_customer_id: string | null; name: string | null } | null;
+    const st = l.service_templates as unknown as { description: string | null } | null;
     if (!c?.qb_customer_id) continue;
     linkBySeriesId.set(l.gcal_event_id, {
-      contactId:       l.contact_id,
-      qbCustomerId:    c.qb_customer_id,
-      contactName:     c.name ?? null,
-      serviceLabel:    l.service_label ?? "Maintenance Service",
-      invoiceAmount:   Number(l.invoice_amount),
-      invoiceDiscount: Number(l.invoice_discount ?? 0),
+      contactId:          l.contact_id,
+      qbCustomerId:       c.qb_customer_id,
+      contactName:        c.name ?? null,
+      serviceLabel:       l.service_label ?? "Maintenance Service",
+      serviceDescription: st?.description ?? null,
+      invoiceAmount:      Number(l.invoice_amount),
+      invoiceDiscount:    Number(l.invoice_discount ?? 0),
     });
   }
 
@@ -140,8 +143,10 @@ export async function GET(req: NextRequest) {
       const { invoiceId, docNumber } = await createQbInvoiceDraft({
         qbCustomerId:    w.link.qbCustomerId!,
         lineDescription: w.link.serviceLabel,
+        lineBody:        w.link.serviceDescription,
         amount:          w.link.invoiceAmount,
         discount:        w.link.invoiceDiscount,
+        txnDate:         w.txnDate,
       });
       const invoiceUrl = getQbInvoiceUrl(tokens.realm_id, invoiceId);
 
