@@ -45,10 +45,9 @@ function wordWrap(text: string, charsPerLine: number): string[] {
 
 export async function generateWaiverPdf(data: WaiverData): Promise<Buffer> {
   const pdfDoc = await PDFDocument.create();
-  const regular   = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const bold      = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const oblique   = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-  const boldObl   = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+  const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold    = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const boldObl = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
 
   let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
   let y = PAGE_H; // current cursor (top-down, but pdf-lib uses bottom-up coords)
@@ -188,42 +187,29 @@ export async function generateWaiverPdf(data: WaiverData): Promise<Buffer> {
     y -= 14;
   }
 
-  // ── Signature block ───────────────────────────────────────────────
-  // 130 sig box + 30 closing text + 70 footer gap = keep it all together
-  need(230);
-  y -= 6;
-  page.drawText("ELECTRONIC SIGNATURE & ACKNOWLEDGMENT", { x: MARGIN, y, size: 7, font: bold, color: GRAY });
-  y -= 12;
+  // ── Signature + closing + footer: one atomic block, never split across pages ──
+  // Total height: 18 (heading) + 104 (sig box) + 12 (gap) + 30 (closing text) + 16 (gap) + 38 (footer) = 218
+  need(218);
+
+  page.drawText("ELECTRONIC SIGNATURE & ACKNOWLEDGMENT", { x: MARGIN, y: y - 6, size: 7, font: bold, color: GRAY });
 
   const SIG_H = 104;
-  page.drawRectangle({ x: MARGIN, y: y - SIG_H, width: CONTENT_W, height: SIG_H, color: BGRAY, borderColor: LGRAY, borderWidth: 0.75 });
+  const sigTop = y - 18;
+  page.drawRectangle({ x: MARGIN, y: sigTop - SIG_H, width: CONTENT_W, height: SIG_H, color: BGRAY, borderColor: LGRAY, borderWidth: 0.75 });
+  page.drawText("Digital Signature (Full Legal Name)", { x: MARGIN + 12, y: sigTop - 14, size: 7, font: bold, color: GRAY });
+  page.drawText(data.signature, { x: MARGIN + 12, y: sigTop - 32, size: 14, font: boldObl, color: NAVY });
+  page.drawText("Date Signed", { x: MARGIN + 12, y: sigTop - 62, size: 7, font: bold, color: GRAY });
+  page.drawText(data.date, { x: MARGIN + 12, y: sigTop - 76, size: 9, font: regular, color: BLACK });
 
-  page.drawText("Digital Signature (Full Legal Name)", { x: MARGIN + 12, y: y - 14, size: 7, font: bold, color: GRAY });
-  page.drawText(data.signature, { x: MARGIN + 12, y: y - 32, size: 14, font: boldObl, color: NAVY });
+  const afterSig = sigTop - SIG_H - 12;
+  // Closing text — two lines, drawn directly to avoid any internal need() call
+  page.drawText("By submitting this form, the customer has read, understood, and agreed to all terms above.", { x: MARGIN, y: afterSig, size: 7.5, font: regular, color: GRAY });
+  page.drawText("This agreement is governed by the laws of the State of Florida.", { x: MARGIN, y: afterSig - 12, size: 7.5, font: regular, color: GRAY });
 
-  page.drawText("Date Signed", { x: MARGIN + 12, y: y - 62, size: 7, font: bold, color: GRAY });
-  page.drawText(data.date, { x: MARGIN + 12, y: y - 76, size: 9, font: regular, color: BLACK });
-
-  y -= SIG_H + 12;
-
-  drawText(
-    "By submitting this form, the customer has read, understood, and agreed to all terms above. " +
-      "This agreement is governed by the laws of the State of Florida.",
-    { size: 7.5, font: regular, color: GRAY }
-  );
-
-  // ── Footer: inline after content, not pinned to absolute bottom ───
-  y -= 16;
-  need(38);
-  page.drawRectangle({ x: 0, y: y - 38, width: PAGE_W, height: 38, color: NAVY });
+  const footerTop = afterSig - 28;
+  page.drawRectangle({ x: 0, y: footerTop - 38, width: PAGE_W, height: 38, color: NAVY });
   const footerText = `NorthWake Marine  |  Jacksonville, FL  |  northwakemarine.com  |  Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`;
-  page.drawText(footerText, {
-    x: MARGIN,
-    y: y - 26,
-    size: 7,
-    font: regular,
-    color: rgb(0.6, 0.6, 0.75),
-  });
+  page.drawText(footerText, { x: MARGIN, y: footerTop - 26, size: 7, font: regular, color: rgb(0.6, 0.6, 0.75) });
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
