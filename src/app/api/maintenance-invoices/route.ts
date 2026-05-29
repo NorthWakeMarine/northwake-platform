@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   // 1. Fetch all auto-invoice links that have a price set
   const { data: links, error: linkErr } = await supabase
     .from("calendar_contact_links")
-    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, service_templates(description), contacts(qb_customer_id, name)")
+    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, service_template_id, contacts(qb_customer_id, name)")
     .eq("auto_invoice", true)
     .not("invoice_amount", "is", null)
     .gt("invoice_amount", 0);
@@ -46,6 +46,17 @@ export async function GET(req: NextRequest) {
   if (linkErr) return NextResponse.json({ error: linkErr.message }, { status: 500 });
   if (!links || links.length === 0) {
     return NextResponse.json({ invoiced: 0, skipped: 0, message: "No auto-invoice links configured." });
+  }
+
+  // Fetch template descriptions separately to avoid FK join failures
+  const templateIds = [...new Set(links.map(l => l.service_template_id).filter(Boolean))] as string[];
+  const templateDescMap = new Map<string, string | null>();
+  if (templateIds.length > 0) {
+    const { data: tpls } = await supabase
+      .from("service_templates")
+      .select("id, description")
+      .in("id", templateIds);
+    for (const t of tpls ?? []) templateDescMap.set(t.id, t.description ?? null);
   }
 
   type LinkInfo = {
@@ -60,15 +71,14 @@ export async function GET(req: NextRequest) {
 
   const linkBySeriesId = new Map<string, LinkInfo>();
   for (const l of links) {
-    const c  = l.contacts         as unknown as { qb_customer_id: string | null; name: string | null } | null;
-    const st = l.service_templates as unknown as { description: string | null } | null;
+    const c = l.contacts as unknown as { qb_customer_id: string | null; name: string | null } | null;
     if (!c?.qb_customer_id) continue;
     linkBySeriesId.set(l.gcal_event_id, {
       contactId:          l.contact_id,
       qbCustomerId:       c.qb_customer_id,
       contactName:        c.name ?? null,
       serviceLabel:       l.service_label ?? "Maintenance Service",
-      serviceDescription: st?.description ?? null,
+      serviceDescription: l.service_template_id ? (templateDescMap.get(l.service_template_id) ?? null) : null,
       invoiceAmount:      Number(l.invoice_amount),
       invoiceDiscount:    Number(l.invoice_discount ?? 0),
     });
@@ -153,11 +163,11 @@ export async function GET(req: NextRequest) {
       await supabase.from("timeline_events").insert({
         contact_id: w.link.contactId,
         event_type: "invoice",
-        title:      `Invoice #${docNumber}`,
+        title:      docNumber ? `Invoice #${docNumber}` : "Invoice (Draft)",
         body:       w.link.serviceLabel,
         metadata:   {
           qb_invoice_id:  `Invoice:${invoiceId}`,
-          doc_number:     docNumber,
+          doc_number:     docNumber || null,
           invoice_url:    invoiceUrl,
           gcal_event_id:  w.eventId,
           auto_generated: true,

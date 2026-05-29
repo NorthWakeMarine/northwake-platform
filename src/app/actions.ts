@@ -1242,9 +1242,9 @@ export async function createMaintenanceInvoice(
     await supabase.from("timeline_events").insert({
       contact_id,
       event_type: "invoice",
-      title:      `Invoice #${docNumber}`,
+      title:      docNumber ? `Invoice #${docNumber}` : "Invoice (Draft)",
       body:       `${service.service_name}${service.typical_price ? ` — $${service.typical_price.toFixed(2)}` : ""}`,
-      metadata:   { qb_invoice_id: `Invoice:${invoiceId}`, doc_number: docNumber, invoice_url: invoiceUrl, total: service.typical_price ?? 0, status: "Unpaid" },
+      metadata:   { qb_invoice_id: `Invoice:${invoiceId}`, doc_number: docNumber || null, invoice_url: invoiceUrl, total: service.typical_price ?? 0, status: "Unpaid" },
       created_by: "pro",
     });
 
@@ -1346,11 +1346,11 @@ export async function createInvoiceFromCalendarEvent(
     await supabase.from("timeline_events").insert({
       contact_id,
       event_type: "invoice",
-      title:      `Invoice #${docNumber}`,
+      title:      docNumber ? `Invoice #${docNumber}` : "Invoice (Draft)",
       body:       `${service_label}${amount ? ` — $${amount.toFixed(2)}` : ""}`,
       metadata:   {
         qb_invoice_id:   `Invoice:${invoiceId}`,
-        doc_number:      docNumber,
+        doc_number:      docNumber || null,
         invoice_url:     invoiceUrl,
         total:           isNaN(amount) ? 0 : amount,
         status:          "Unpaid",

@@ -221,7 +221,11 @@ function InvoiceItem({
       )
     : false;
 
-  const showScheduleButton = qbInvoiceId && !alreadyScheduled && !linkedToGcal;
+  const isPaid = meta?.status === "Paid";
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const isPast = new Date(ev.created_at) < startOfToday;
+
+  const showScheduleButton = qbInvoiceId && !alreadyScheduled && !linkedToGcal && !isPaid && !isPast;
 
   return (
     <li className="flex gap-4 relative group">

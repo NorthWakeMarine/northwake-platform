@@ -166,14 +166,16 @@ export async function findOrCreateQbCustomer(contact: {
   return qbId;
 }
 
-async function findQbItemByName(name: string): Promise<string | null> {
+async function findQbItem(name: string): Promise<{ id: string; description: string | null } | null> {
   try {
     const escaped = name.replace(/'/g, "\\'");
-    type Resp = { QueryResponse: { Item?: { Id: string }[] } };
+    type Resp = { QueryResponse: { Item?: { Id: string; Description?: string }[] } };
     const data = await qbRequest<Resp>(
-      `/query?query=${encodeURIComponent(`SELECT Id FROM Item WHERE Name = '${escaped}' AND Active = true MAXRESULTS 1`)}`
+      `/query?query=${encodeURIComponent(`SELECT Id, Description FROM Item WHERE Name = '${escaped}' AND Active = true MAXRESULTS 1`)}`
     );
-    return data.QueryResponse.Item?.[0]?.Id ?? null;
+    const item = data.QueryResponse.Item?.[0];
+    if (!item) return null;
+    return { id: item.Id, description: item.Description ?? null };
   } catch {
     return null;
   }
@@ -191,7 +193,10 @@ export async function createQbInvoiceDraft(opts: {
   const disc  = opts.discount ?? 0;
   const net   = Math.max(0, gross - disc);
 
-  const itemId = await findQbItemByName(opts.lineDescription) ?? "1";
+  const qbItem = await findQbItem(opts.lineDescription);
+  const itemId = qbItem?.id ?? "1";
+  // Use CRM description if provided, otherwise fall back to the QB item's description, then the service label
+  const lineDesc = opts.lineBody || qbItem?.description || opts.lineDescription;
 
   const body: Record<string, unknown> = {
     CustomerRef: { value: opts.qbCustomerId },
@@ -199,7 +204,7 @@ export async function createQbInvoiceDraft(opts: {
       {
         DetailType: "SalesItemLineDetail",
         Amount: net,
-        Description: opts.lineBody ?? opts.lineDescription,
+        Description: lineDesc,
         SalesItemLineDetail: { ItemRef: { value: itemId } },
       },
     ],
@@ -207,7 +212,7 @@ export async function createQbInvoiceDraft(opts: {
 
   if (opts.txnDate) body.TxnDate = opts.txnDate;
 
-  type InvoiceResponse = { Invoice: { Id: string; DocNumber: string } };
+  type InvoiceResponse = { Invoice: { Id: string; DocNumber?: string } };
   const data = await qbRequest<InvoiceResponse>("/invoice", {
     method: "POST",
     body: JSON.stringify(body),
@@ -215,7 +220,7 @@ export async function createQbInvoiceDraft(opts: {
 
   return {
     invoiceId: data.Invoice.Id,
-    docNumber: data.Invoice.DocNumber,
+    docNumber: data.Invoice.DocNumber ?? "",
   };
 }
 
