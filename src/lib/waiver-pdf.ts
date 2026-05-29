@@ -211,14 +211,14 @@ export async function generateWaiverPdf(data: WaiverData): Promise<Buffer> {
     { size: 7.5, font: regular, color: GRAY }
   );
 
-  // ── Footer bar on last page ───────────────────────────────────────
-  const allPages = pdfDoc.getPages();
-  const lastPage = allPages[allPages.length - 1];
-  lastPage.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: 38, color: NAVY });
+  // ── Footer: inline after content, not pinned to absolute bottom ───
+  y -= 16;
+  need(38);
+  page.drawRectangle({ x: 0, y: y - 38, width: PAGE_W, height: 38, color: NAVY });
   const footerText = `NorthWake Marine  |  Jacksonville, FL  |  northwakemarine.com  |  Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`;
-  lastPage.drawText(footerText, {
+  page.drawText(footerText, {
     x: MARGIN,
-    y: 14,
+    y: y - 26,
     size: 7,
     font: regular,
     color: rgb(0.6, 0.6, 0.75),
