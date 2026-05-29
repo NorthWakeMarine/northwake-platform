@@ -474,14 +474,15 @@ export async function submitWaiver(
   }
 
   if (id) {
-    await supabase
+    const { error: updateErr } = await supabase
       .from("contacts")
       .update({ waiver_signed: true, name, phone, email, address })
       .eq("id", id);
+    if (updateErr) console.error("Waiver contact update error:", updateErr.message);
   } else {
     const { data: newContact, error: createErr } = await supabase
       .from("contacts")
-      .insert({ name, email, phone, source: "waiver", status: "lead", waiver_signed: true })
+      .insert({ name, email, phone, address, source: "waiver", status: "lead", waiver_signed: true })
       .select("id")
       .single();
     if (createErr || !newContact) {
