@@ -2,6 +2,21 @@
 
 ## May 2026
 
+### May 28 | Recurring billing, vessel picker, QB invoice fixes | CRM
+
+- **Service Templates**: New `/pro/services` page for managing reusable service types. Each template has a name, QB line label, default price, and a per-foot toggle. When per-foot is on, invoice amount auto-calculates from the vessel's length when linking a billing config to a calendar event.
+- **Recurring billing on linked calendar events**: "Set Up / Edit" billing config added directly to already-linked events in the calendar modal. Picks a service template, selects a vessel (auto-fills per-foot amount), sets a discount, and toggles auto-invoice monthly. Net = gross − discount is what gets sent to QB.
+- **Discount field**: Billing form has Gross Amount and Discount ($) side-by-side. Net invoice amount shown in green. Both stored on `calendar_contact_links`; net is passed to QB.
+- **Vessel picker in billing**: Opening the billing form lazy-loads vessels for the linked contact. Picking a vessel with a per-foot template auto-calculates the gross amount.
+- **Recurring services in vessel modal**: Asset modal (Fleet) now shows a "Recurring Services" section between Service Schedule and Appointments. Lists active calendar billing links scoped to that specific vessel — service label, auto-invoice status, and net monthly amount. Hides if none configured.
+- **QB item lookup by name**: `createQbInvoiceDraft` now searches QB for an active item matching the service label name. Uses that item's description automatically — no need to duplicate descriptions in the CRM. Falls back to item ID "1" if no match found.
+- **QB invoice date from GCal event**: Cron and manual "Create Invoice" now pass `TxnDate` from the actual GCal event start date, so the invoice date matches when the service occurs rather than defaulting to today.
+- **QB invoice auto-numbering**: Before creating each invoice, queries QB for the highest existing numeric DocNumber and passes `max + 1`. Fixes blank invoice numbers when QB has "Custom transaction numbers" enabled.
+- **Fix: Invoice #undefined**: `DocNumber` from QB can be absent for certain invoice configurations. Timeline title now falls back to "Invoice (Draft)" and stores `null` instead of the string `"undefined"`.
+- **Fix: Cron FK join failure**: Replaced `service_templates(description)` Supabase FK join in the cron with a separate follow-up query by ID. Prevents cron from failing when the FK isn't recognized in Supabase's schema cache.
+- **Fix: Schedule Job button**: Now hidden on paid invoices (`status === "Paid"`) and invoices created before today. Previously showed on all historical invoices regardless of status or date.
+- **New DB migrations**: `20260528_service_templates.sql` (service_templates table + calendar_contact_links columns), `20260528_service_templates_per_foot.sql` (is_per_foot column), `20260528_service_template_description_discount.sql` (description on templates, invoice_discount on links).
+
 ### May 29 | Liability waiver saves as full PDF to Google Drive; phone normalization | CRM
 
 - **Waiver PDF**: Liability waiver submissions now save a branded 3-page PDF to the contact's Google Drive folder instead of a plain .txt file. PDF includes navy header, customer info box, all 14 legal sections, and a signature block with the customer's digital signature in italic navy type.
