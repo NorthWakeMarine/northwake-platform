@@ -235,7 +235,7 @@ function computeSegments(events: CalendarEvent[], weeks: Date[][]): EventSegment
 type InvoiceRecord = { id: string; title: string | null; body: string | null; metadata: Record<string, unknown> | null };
 
 function LinkedPanel({
-  event, link, suggestedService, inputCls,
+  event, link, linkKey, suggestedService, inputCls, serviceTemplates,
   showInvoice, setShowInvoice, invoiceState, invoiceAction, invoicing,
   unlinking, unlinkError, handleUnlink, onInvoiceCreated,
 }: {
@@ -244,6 +244,7 @@ function LinkedPanel({
   linkKey: string;
   suggestedService: string;
   inputCls: string;
+  serviceTemplates: ServiceTemplate[];
   showInvoice: boolean;
   setShowInvoice: (v: boolean) => void;
   invoiceState: CalendarInvoiceState;
@@ -256,6 +257,13 @@ function LinkedPanel({
 }) {
   const router = useRouter();
   const [showClaimInvoice,  setShowClaimInvoice]  = useState(false);
+  const [showBilling,       setShowBilling]        = useState(false);
+  const [billingTemplateId, setBillingTemplateId]  = useState("");
+  const [billingLabel,      setBillingLabel]       = useState(link.serviceLabel ?? suggestedService);
+  const [billingAmount,     setBillingAmount]      = useState(link.invoiceAmount != null ? String(link.invoiceAmount) : "");
+  const [billingAuto,       setBillingAuto]        = useState(link.autoInvoice);
+  const [savingBilling,     setSavingBilling]      = useState(false);
+  const [billingError,      setBillingError]       = useState("");
   const [invoices,          setInvoices]           = useState<InvoiceRecord[]>([]);
   const [loadingInvoices,   startLoadInvoices]     = useTransition();
   const [claimingId,        setClaimingId]          = useState<string | null>(null);
@@ -276,6 +284,28 @@ function LinkedPanel({
     const res = await claimGcalEventToInvoice(invoiceTimelineId, event.id);
     if (res.error) { setClaimError(res.error); setClaimingId(null); }
     else { setClaimedId(invoiceTimelineId); setClaimingId(null); router.refresh(); }
+  }
+
+  function handleBillingTemplateChange(id: string) {
+    setBillingTemplateId(id);
+    const tpl = serviceTemplates.find(t => t.id === id);
+    if (tpl) { setBillingLabel(tpl.service_label); if (!tpl.is_per_foot) setBillingAmount(String(tpl.default_amount)); }
+  }
+
+  async function saveBilling() {
+    setSavingBilling(true);
+    setBillingError("");
+    const fd = new FormData();
+    fd.set("gcal_event_id",       linkKey);
+    fd.set("contact_id",          link.contactId);
+    fd.set("vessel_id",           "");
+    fd.set("service_template_id", billingTemplateId);
+    fd.set("service_label",       billingLabel);
+    fd.set("invoice_amount",      billingAmount);
+    fd.set("auto_invoice",        String(billingAuto));
+    const res = await linkCalendarEvent({}, fd);
+    if (res.error) { setBillingError(res.error); setSavingBilling(false); }
+    else { setSavingBilling(false); setShowBilling(false); router.refresh(); }
   }
 
   return (
@@ -384,6 +414,81 @@ function LinkedPanel({
             );
           })}
           {claimError && <p className="text-red-600 text-[11px]">{claimError}</p>}
+        </div>
+      )}
+
+      {/* ── Recurring billing config ── */}
+      {!showInvoice && !showClaimInvoice && (
+        <div className="border-t border-slate-100 pt-3">
+          {!showBilling ? (
+            <div className="flex items-center justify-between">
+              <div>
+                {link.autoInvoice ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <p className="text-[10px] text-emerald-700 font-semibold">
+                      Auto-invoice ON{link.invoiceAmount ? ` — $${Number(link.invoiceAmount).toFixed(2)}/mo` : ""}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-slate-400">No auto-invoice configured</p>
+                )}
+                {link.serviceLabel && (
+                  <p className="text-[10px] text-slate-400 mt-0.5 truncate">{link.serviceLabel}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setShowBilling(true)}
+                className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0 ml-2"
+              >
+                {link.autoInvoice ? "Edit" : "Set Up"}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Recurring Billing</p>
+
+              {serviceTemplates.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Template</label>
+                  <select value={billingTemplateId} onChange={e => handleBillingTemplateChange(e.target.value)} className={inputCls}>
+                    <option value="">Select a template...</option>
+                    {serviceTemplates.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} ({t.is_per_foot ? `$${Number(t.default_amount).toFixed(2)}/ft` : `$${Number(t.default_amount).toFixed(2)}`})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">QB Line Description</label>
+                <input value={billingLabel} onChange={e => setBillingLabel(e.target.value)} className={inputCls} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Invoice Amount ($)</label>
+                <input type="number" step="0.01" min="0" value={billingAmount} onChange={e => setBillingAmount(e.target.value)} placeholder="0.00" className={inputCls} />
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+                <div onClick={() => setBillingAuto(v => !v)} className={`w-8 h-4 rounded-full relative transition-colors ${billingAuto ? "bg-emerald-500" : "bg-slate-200"}`}>
+                  <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${billingAuto ? "translate-x-4" : "translate-x-0.5"}`} />
+                </div>
+                <span className="text-xs text-slate-600 font-medium">Auto-invoice monthly</span>
+              </label>
+
+              {billingError && <p className="text-red-600 text-[11px]">{billingError}</p>}
+              <div className="flex gap-2">
+                <button onClick={saveBilling} disabled={savingBilling}
+                  className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
+                  {savingBilling ? "Saving..." : "Save Billing"}
+                </button>
+                <button onClick={() => setShowBilling(false)} className="px-3 text-[10px] text-slate-500 hover:text-slate-800 transition-colors">Cancel</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -517,6 +622,7 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
         linkKey={linkKey}
         suggestedService={link.serviceLabel ?? suggestedService}
         inputCls={inputCls}
+        serviceTemplates={serviceTemplates}
         showInvoice={showInvoice}
         setShowInvoice={setShowInvoice}
         invoiceState={invoiceState}
