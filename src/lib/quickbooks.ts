@@ -166,6 +166,23 @@ export async function findOrCreateQbCustomer(contact: {
   return qbId;
 }
 
+async function getNextInvoiceDocNumber(): Promise<string | undefined> {
+  try {
+    type Resp = { QueryResponse: { Invoice?: { DocNumber?: string }[] } };
+    const data = await qbRequest<Resp>(
+      `/query?query=${encodeURIComponent("SELECT DocNumber FROM Invoice MAXRESULTS 1000")}`
+    );
+    let max = 0;
+    for (const inv of data.QueryResponse.Invoice ?? []) {
+      const n = parseInt(inv.DocNumber ?? "", 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+    return max > 0 ? String(max + 1) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function findQbItem(name: string): Promise<{ id: string; description: string | null } | null> {
   try {
     const escaped = name.replace(/'/g, "\\'");
@@ -193,9 +210,11 @@ export async function createQbInvoiceDraft(opts: {
   const disc  = opts.discount ?? 0;
   const net   = Math.max(0, gross - disc);
 
-  const qbItem = await findQbItem(opts.lineDescription);
+  const [qbItem, nextDocNumber] = await Promise.all([
+    findQbItem(opts.lineDescription),
+    getNextInvoiceDocNumber(),
+  ]);
   const itemId = qbItem?.id ?? "1";
-  // Use CRM description if provided, otherwise fall back to the QB item's description, then the service label
   const lineDesc = opts.lineBody || qbItem?.description || opts.lineDescription;
 
   const body: Record<string, unknown> = {
@@ -209,6 +228,8 @@ export async function createQbInvoiceDraft(opts: {
       },
     ],
   };
+
+  if (nextDocNumber) body.DocNumber = nextDocNumber;
 
   if (opts.txnDate) body.TxnDate = opts.txnDate;
 
