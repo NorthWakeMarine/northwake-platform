@@ -465,12 +465,25 @@ export async function submitWaiver(
   }
 
   if (!id) {
+    // Try exact match first, then fall back to last-10-digits to handle un-normalized stored numbers
     const { data: byPhone } = await supabase
       .from("contacts")
       .select("id")
       .eq("phone", phone)
       .maybeSingle();
-    if (byPhone) id = byPhone.id;
+    if (byPhone) {
+      id = byPhone.id;
+    } else {
+      const digits = phone?.replace(/\D/g, "").slice(-10);
+      if (digits && digits.length === 10) {
+        const { data: rows } = await supabase
+          .from("contacts")
+          .select("id")
+          .ilike("phone", `%${digits}`)
+          .limit(1);
+        if (rows?.[0]) id = rows[0].id;
+      }
+    }
   }
 
   if (id) {
@@ -902,6 +915,29 @@ export async function deleteAsset(assetId: string, contactId: string): Promise<{
   if (error) return { error: error.message };
   revalidatePath(`/pro/contacts/${contactId}`);
   return {};
+}
+
+// ─── Update Lead Field ────────────────────────────────────────────────────────
+
+export type LeadFieldState = { error?: string; success?: boolean };
+
+export async function updateLeadField(
+  _prev: LeadFieldState,
+  formData: FormData
+): Promise<LeadFieldState> {
+  const lead_id = formData.get("lead_id") as string;
+  const field   = formData.get("field")   as string;
+  const value   = (formData.get("value")  as string)?.trim() || null;
+
+  const ALLOWED = ["name", "email", "phone", "vessel_type", "vessel_length", "service"];
+  if (!lead_id || !field || !ALLOWED.includes(field)) return { error: "Invalid request." };
+
+  const supabase = await svc();
+  const { error } = await supabase.from("leads").update({ [field]: value }).eq("id", lead_id);
+  if (error) return { error: error.message };
+  revalidatePath(`/pro/leads/${lead_id}`);
+  revalidatePath("/pro/leads");
+  return { success: true };
 }
 
 // ─── Update Contact Field ─────────────────────────────────────────────────────
