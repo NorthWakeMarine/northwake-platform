@@ -1456,6 +1456,31 @@ export async function getContactCalendarEvents(contactId: string): Promise<Conta
     .sort((a, b) => a.start.localeCompare(b.start));
 }
 
+export type VesselRecurringLink = {
+  gcal_event_id: string;
+  service_label: string | null;
+  invoice_amount: number | null;
+  invoice_discount: number | null;
+  auto_invoice: boolean;
+};
+
+export async function getVesselRecurringLinks(vesselId: string): Promise<VesselRecurringLink[]> {
+  if (!vesselId) return [];
+  const supabase = await svc();
+  const { data } = await supabase
+    .from("calendar_contact_links")
+    .select("gcal_event_id, service_label, invoice_amount, invoice_discount, auto_invoice")
+    .eq("vessel_id", vesselId)
+    .order("service_label");
+  return (data ?? []).map(r => ({
+    gcal_event_id:    r.gcal_event_id,
+    service_label:    r.service_label ?? null,
+    invoice_amount:   r.invoice_amount != null ? Number(r.invoice_amount) : null,
+    invoice_discount: r.invoice_discount != null ? Number(r.invoice_discount) : null,
+    auto_invoice:     r.auto_invoice ?? false,
+  }));
+}
+
 // ─── Linked Contacts ──────────────────────────────────────────────────────────
 
 export type LinkedContactState = { error?: string; success?: boolean };

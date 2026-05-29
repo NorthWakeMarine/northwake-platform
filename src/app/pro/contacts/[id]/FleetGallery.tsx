@@ -7,6 +7,7 @@ import {
   createMaintenanceInvoice, type MaintenanceInvoiceState,
   deleteAsset,
   getContactCalendarEvents, type ContactCalendarEvent,
+  getVesselRecurringLinks, type VesselRecurringLink,
 } from "@/app/actions";
 
 export type VesselService = {
@@ -499,6 +500,76 @@ function fmtEventDate(iso: string): string {
     " · " + dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
+function RecurringLinksSection({ vesselId }: { vesselId: string }) {
+  const [links, setLinks] = useState<VesselRecurringLink[] | null>(null);
+  const [loading, startLoad] = useTransition();
+
+  useEffect(() => {
+    startLoad(async () => {
+      const data = await getVesselRecurringLinks(vesselId);
+      setLinks(data);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vesselId]);
+
+  if (loading) return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Recurring Services</p>
+      <p className="text-slate-400 text-xs">Loading...</p>
+    </div>
+  );
+
+  if (!links || links.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Recurring Services</p>
+        <a
+          href="/pro/calendar"
+          className="text-[9px] tracking-widest uppercase text-[#000080] font-semibold hover:text-[#0000a0] transition-colors"
+        >
+          Manage in Calendar
+        </a>
+      </div>
+      <div className="flex flex-col gap-2">
+        {links.map(link => {
+          const gross = link.invoice_amount ?? 0;
+          const disc  = link.invoice_discount ?? 0;
+          const net   = Math.max(0, gross - disc);
+          return (
+            <div key={link.gcal_event_id} className="border border-slate-100 rounded-sm px-3 py-2.5 flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-slate-800 truncate">
+                  {link.service_label ?? "Recurring Service"}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  {link.auto_invoice ? (
+                    <span className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="text-[10px] text-emerald-700 font-medium">Auto-invoice</span>
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400">Manual billing</span>
+                  )}
+                </div>
+              </div>
+              {gross > 0 && (
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-bold text-slate-800">${net.toFixed(2)}/mo</p>
+                  {disc > 0 && (
+                    <p className="text-[9px] text-slate-400 line-through">${gross.toFixed(2)}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function CalendarEventsSection({ contactId }: { contactId: string }) {
   const [events, setEvents] = useState<ContactCalendarEvent[] | null>(null);
   const [loading, startLoad] = useTransition();
@@ -664,6 +735,8 @@ function AssetModal({ asset, contactId, services, onClose }: {
           )}
 
           <ServiceScheduleSection asset={asset} contactId={contactId} services={services} />
+
+          <RecurringLinksSection vesselId={asset.id} />
 
           <CalendarEventsSection contactId={contactId} />
 
