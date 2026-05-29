@@ -6,23 +6,29 @@ import HeroQuoteForm from "@/components/HeroQuoteForm";
 import HeroCarouselClient from "@/components/HeroCarouselClient";
 import ReviewsCarousel from "@/components/ReviewsCarousel";
 import Link from "next/link";
-import { createServerSupabase } from "@/lib/supabase/server";
 import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import type { CarouselSlideSource } from "@/components/HeroCarousel";
 import { getGoogleReviews } from "@/lib/google-places";
 import { clientConfig } from "@/config/client";
-import AntigravityBackground from "@/components/AntigravityBackground";
 
-async function getCMS(): Promise<Record<string, string>> {
-  try {
-    const supabase = await createServerSupabase();
-    const { data } = await supabase.from("site_content").select("key, value");
-    return Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
-  } catch {
-    return {};
-  }
-}
+
+const getCMS = unstable_cache(
+  async (): Promise<Record<string, string>> => {
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SECRET_KEY!
+      );
+      const { data } = await supabase.from("site_content").select("key, value");
+      return Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
+    } catch {
+      return {};
+    }
+  },
+  ["cms-content"],
+  { revalidate: 3600 }
+);
 
 
 const getCarouselImages = unstable_cache(
@@ -90,9 +96,6 @@ export default async function Home() {
               priority
             />
           </div>
-          {/* Antigravity particle layer — transparent canvas sits on top of water */}
-          <AntigravityBackground />
-
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
 
             {/* ── Left: logo + tagline ── */}
