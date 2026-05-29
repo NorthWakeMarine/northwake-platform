@@ -939,8 +939,8 @@ function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDelet
         return (
           <div
             key={wi}
-            className="relative overflow-hidden border-b border-slate-100 last:border-b-0"
-            style={{ minHeight: bandHeight }}
+            className="relative border-b border-slate-100 last:border-b-0"
+            style={{ minHeight: bandHeight, overflow: "clip" }}
           >
             {/* Date number cells */}
             <div className="grid grid-cols-7 h-full absolute inset-0 pointer-events-none">
@@ -1027,7 +1027,6 @@ function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDelet
                       borderRight: isMultiDay && !seg.isEnd   ? "none" : `1px solid ${color.border}`,
                       borderTop:    `1px solid ${color.border}`,
                       borderBottom: `1px solid ${color.border}`,
-                      zIndex: 10,
                     }}
                     onClick={(e) => { e.stopPropagation(); onEventClick(seg.event); }}
                   >
