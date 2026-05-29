@@ -1233,6 +1233,8 @@ export async function linkCalendarEvent(
   const service_label        = (formData.get("service_label") as string)?.trim() || null;
   const invoice_amount_raw   = (formData.get("invoice_amount") as string)?.trim();
   const invoice_amount       = invoice_amount_raw ? parseFloat(invoice_amount_raw) : null;
+  const invoice_discount_raw = (formData.get("invoice_discount") as string)?.trim();
+  const invoice_discount     = invoice_discount_raw ? parseFloat(invoice_discount_raw) : null;
   const auto_invoice         = formData.get("auto_invoice") === "true";
 
   if (!gcal_event_id || !contact_id) return { error: "Missing required fields." };
@@ -1241,7 +1243,7 @@ export async function linkCalendarEvent(
   const { error } = await supabase
     .from("calendar_contact_links")
     .upsert(
-      { gcal_event_id, contact_id, vessel_id, service_template_id, service_label, invoice_amount, auto_invoice },
+      { gcal_event_id, contact_id, vessel_id, service_template_id, service_label, invoice_amount, invoice_discount, auto_invoice },
       { onConflict: "gcal_event_id" }
     );
   if (error) return { error: error.message };
@@ -2926,6 +2928,7 @@ export type ServiceTemplate = {
   service_label: string;
   default_amount: number;
   is_per_foot: boolean;
+  description: string | null;
   created_at: string;
 };
 
@@ -2948,13 +2951,14 @@ export async function createServiceTemplate(
   const service_label  = (formData.get("service_label") as string)?.trim();
   const default_amount = parseFloat((formData.get("default_amount") as string) ?? "0");
   const is_per_foot    = formData.get("is_per_foot") === "true";
+  const description    = (formData.get("description") as string)?.trim() || null;
 
   if (!name || !service_label) return { error: "Name and service label are required." };
 
   const supabase = await svc();
   const { error } = await supabase
     .from("service_templates")
-    .insert({ name, service_label, default_amount, is_per_foot });
+    .insert({ name, service_label, default_amount, is_per_foot, description });
   if (error) return { error: error.message };
 
   revalidatePath("/pro/services");
@@ -2970,13 +2974,14 @@ export async function updateServiceTemplate(
   const service_label  = (formData.get("service_label") as string)?.trim();
   const default_amount = parseFloat((formData.get("default_amount") as string) ?? "0");
   const is_per_foot    = formData.get("is_per_foot") === "true";
+  const description    = (formData.get("description") as string)?.trim() || null;
 
   if (!id || !name || !service_label) return { error: "Missing required fields." };
 
   const supabase = await svc();
   const { error } = await supabase
     .from("service_templates")
-    .update({ name, service_label, default_amount, is_per_foot })
+    .update({ name, service_label, default_amount, is_per_foot, description })
     .eq("id", id);
   if (error) return { error: error.message };
 

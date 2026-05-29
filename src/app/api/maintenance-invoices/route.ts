@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   // 1. Fetch all auto-invoice links that have a price set
   const { data: links, error: linkErr } = await supabase
     .from("calendar_contact_links")
-    .select("gcal_event_id, contact_id, service_label, invoice_amount, contacts(qb_customer_id, name)")
+    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, contacts(qb_customer_id, name)")
     .eq("auto_invoice", true)
     .not("invoice_amount", "is", null)
     .gt("invoice_amount", 0);
@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
     contactName: string | null;
     serviceLabel: string;
     invoiceAmount: number;
+    invoiceDiscount: number;
   };
 
   const linkBySeriesId = new Map<string, LinkInfo>();
@@ -61,11 +62,12 @@ export async function GET(req: NextRequest) {
     const c = l.contacts as unknown as { qb_customer_id: string | null; name: string | null } | null;
     if (!c?.qb_customer_id) continue;
     linkBySeriesId.set(l.gcal_event_id, {
-      contactId:     l.contact_id,
-      qbCustomerId:  c.qb_customer_id,
-      contactName:   c.name ?? null,
-      serviceLabel:  l.service_label ?? "Maintenance Service",
-      invoiceAmount: Number(l.invoice_amount),
+      contactId:       l.contact_id,
+      qbCustomerId:    c.qb_customer_id,
+      contactName:     c.name ?? null,
+      serviceLabel:    l.service_label ?? "Maintenance Service",
+      invoiceAmount:   Number(l.invoice_amount),
+      invoiceDiscount: Number(l.invoice_discount ?? 0),
     });
   }
 
@@ -139,6 +141,7 @@ export async function GET(req: NextRequest) {
         qbCustomerId:    w.link.qbCustomerId!,
         lineDescription: w.link.serviceLabel,
         amount:          w.link.invoiceAmount,
+        discount:        w.link.invoiceDiscount,
       });
       const invoiceUrl = getQbInvoiceUrl(tokens.realm_id, invoiceId);
 

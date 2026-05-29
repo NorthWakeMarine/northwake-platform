@@ -170,17 +170,20 @@ export async function createQbInvoiceDraft(opts: {
   qbCustomerId: string;
   lineDescription: string;
   amount?: number;
+  discount?: number;
 }): Promise<{ invoiceId: string; docNumber: string }> {
+  const gross = opts.amount ?? 0;
+  const disc  = opts.discount ?? 0;
+  const net   = Math.max(0, gross - disc);
+
   const body = {
     CustomerRef: { value: opts.qbCustomerId },
     Line: [
       {
         DetailType: "SalesItemLineDetail",
-        Amount: opts.amount ?? 0,
+        Amount: net,
         Description: opts.lineDescription,
-        SalesItemLineDetail: {
-          ItemRef: { value: "1" },
-        },
+        SalesItemLineDetail: { ItemRef: { value: "1" } },
       },
     ],
   };

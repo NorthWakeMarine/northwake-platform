@@ -80,6 +80,20 @@ function TemplateForm({
         </p>
       )}
 
+      <div className="flex flex-col gap-1">
+        <label className={labelCls}>QB Line Description</label>
+        <textarea
+          name="description"
+          rows={3}
+          defaultValue={template?.description ?? ""}
+          placeholder={"Full exterior wash\nNon-skid deck cleaning\nStainless wipe down"}
+          className={`${inputCls} resize-none`}
+        />
+        <p className="text-[10px] text-slate-400">
+          Appears as the multi-line description under the product/service name on the QB invoice.
+        </p>
+      </div>
+
       {state.error && <p className="text-red-600 text-xs">{state.error}</p>}
 
       <div className="flex items-center gap-3">
@@ -171,6 +185,9 @@ export default function ServicesClient({ templates: initial }: { templates: Serv
                     <div className="min-w-0">
                       <p className="text-slate-800 text-sm font-semibold truncate">{t.name}</p>
                       <p className="text-slate-400 text-xs mt-0.5 truncate">{t.service_label}</p>
+                      {t.description && (
+                        <p className="text-slate-300 text-[10px] mt-0.5 line-clamp-2 whitespace-pre-line">{t.description}</p>
+                      )}
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-slate-800 text-sm font-bold">
