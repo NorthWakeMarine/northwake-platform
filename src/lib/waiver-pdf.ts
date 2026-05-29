@@ -187,9 +187,10 @@ export async function generateWaiverPdf(data: WaiverData): Promise<Buffer> {
     y -= 14;
   }
 
-  // ── Signature + closing + footer: one atomic block, never split across pages ──
-  // Total height: 18 (heading) + 104 (sig box) + 12 (gap) + 30 (closing text) + 16 (gap) + 38 (footer) = 218
-  need(218);
+  // ── Signature block + closing text ───────────────────────────────
+  // Only reserve space for heading + sig box + closing text (~162px).
+  // Footer is pinned to the absolute bottom of the last page separately.
+  need(162);
 
   page.drawText("ELECTRONIC SIGNATURE & ACKNOWLEDGMENT", { x: MARGIN, y: y - 6, size: 7, font: bold, color: GRAY });
 
@@ -201,15 +202,15 @@ export async function generateWaiverPdf(data: WaiverData): Promise<Buffer> {
   page.drawText("Date Signed", { x: MARGIN + 12, y: sigTop - 62, size: 7, font: bold, color: GRAY });
   page.drawText(data.date, { x: MARGIN + 12, y: sigTop - 76, size: 9, font: regular, color: BLACK });
 
-  const afterSig = sigTop - SIG_H - 12;
-  // Closing text — two lines, drawn directly to avoid any internal need() call
+  const afterSig = sigTop - SIG_H - 16;
   page.drawText("By submitting this form, the customer has read, understood, and agreed to all terms above.", { x: MARGIN, y: afterSig, size: 7.5, font: regular, color: GRAY });
   page.drawText("This agreement is governed by the laws of the State of Florida.", { x: MARGIN, y: afterSig - 12, size: 7.5, font: regular, color: GRAY });
 
-  const footerTop = afterSig - 28;
-  page.drawRectangle({ x: 0, y: footerTop - 38, width: PAGE_W, height: 38, color: NAVY });
+  // ── Footer: always pinned to the bottom of the last page ─────────
+  const lastPage = pdfDoc.getPages().at(-1)!;
   const footerText = `NorthWake Marine  |  Jacksonville, FL  |  northwakemarine.com  |  Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`;
-  page.drawText(footerText, { x: MARGIN, y: footerTop - 26, size: 7, font: regular, color: rgb(0.6, 0.6, 0.75) });
+  lastPage.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: 38, color: NAVY });
+  lastPage.drawText(footerText, { x: MARGIN, y: 14, size: 7, font: regular, color: rgb(0.6, 0.6, 0.75) });
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
