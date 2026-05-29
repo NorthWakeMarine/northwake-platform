@@ -1373,15 +1373,15 @@ export async function searchContactsByName(
 
 export async function getVesselsByContactId(
   contactId: string
-): Promise<{ id: string; name: string | null; make_model: string | null }[]> {
+): Promise<{ id: string; name: string | null; make_model: string | null; length_ft: string | null }[]> {
   if (!contactId) return [];
   const supabase = await svc();
   const { data } = await supabase
     .from("vessels")
-    .select("id, name, make_model")
+    .select("id, name, make_model, length_ft")
     .eq("owner_id", contactId)
     .order("created_at");
-  return (data ?? []) as { id: string; name: string | null; make_model: string | null }[];
+  return (data ?? []) as { id: string; name: string | null; make_model: string | null; length_ft: string | null }[];
 }
 
 export type ContactCalendarEvent = {
@@ -2925,6 +2925,7 @@ export type ServiceTemplate = {
   name: string;
   service_label: string;
   default_amount: number;
+  is_per_foot: boolean;
   created_at: string;
 };
 
@@ -2946,13 +2947,14 @@ export async function createServiceTemplate(
   const name           = (formData.get("name") as string)?.trim();
   const service_label  = (formData.get("service_label") as string)?.trim();
   const default_amount = parseFloat((formData.get("default_amount") as string) ?? "0");
+  const is_per_foot    = formData.get("is_per_foot") === "true";
 
   if (!name || !service_label) return { error: "Name and service label are required." };
 
   const supabase = await svc();
   const { error } = await supabase
     .from("service_templates")
-    .insert({ name, service_label, default_amount });
+    .insert({ name, service_label, default_amount, is_per_foot });
   if (error) return { error: error.message };
 
   revalidatePath("/pro/services");
@@ -2967,13 +2969,14 @@ export async function updateServiceTemplate(
   const name           = (formData.get("name") as string)?.trim();
   const service_label  = (formData.get("service_label") as string)?.trim();
   const default_amount = parseFloat((formData.get("default_amount") as string) ?? "0");
+  const is_per_foot    = formData.get("is_per_foot") === "true";
 
   if (!id || !name || !service_label) return { error: "Missing required fields." };
 
   const supabase = await svc();
   const { error } = await supabase
     .from("service_templates")
-    .update({ name, service_label, default_amount })
+    .update({ name, service_label, default_amount, is_per_foot })
     .eq("id", id);
   if (error) return { error: error.message };
 

@@ -22,10 +22,12 @@ function TemplateForm({
   const isEdit = !!template;
   const action = isEdit ? updateServiceTemplate : createServiceTemplate;
   const [state, formAction, busy] = useActionState<ServiceTemplateState, FormData>(action, {});
+  const [isPerFoot, setIsPerFoot] = useState(template?.is_per_foot ?? false);
 
   return (
     <form action={formAction} className="flex flex-col gap-4 bg-white border border-slate-200 rounded-sm p-5">
       {isEdit && <input type="hidden" name="id" value={template.id} />}
+      <input type="hidden" name="is_per_foot" value={String(isPerFoot)} />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="flex flex-col gap-1">
@@ -49,7 +51,7 @@ function TemplateForm({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>Default Price ($)</label>
+          <label className={labelCls}>{isPerFoot ? "Rate ($/ft)" : "Flat Price ($)"}</label>
           <input
             type="number"
             name="default_amount"
@@ -57,11 +59,26 @@ function TemplateForm({
             min="0"
             required
             defaultValue={template?.default_amount ?? ""}
-            placeholder="150.00"
+            placeholder={isPerFoot ? "5.00" : "150.00"}
             className={inputCls}
           />
         </div>
       </div>
+
+      <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+        <div
+          onClick={() => setIsPerFoot(v => !v)}
+          className={`w-8 h-4 rounded-full relative transition-colors ${isPerFoot ? "bg-[#000080]" : "bg-slate-200"}`}
+        >
+          <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${isPerFoot ? "translate-x-4" : "translate-x-0.5"}`} />
+        </div>
+        <span className="text-xs text-slate-600">Price per foot</span>
+      </label>
+      {isPerFoot && (
+        <p className="text-[10px] text-slate-400 -mt-2">
+          Invoice amount is calculated automatically from the vessel&apos;s length when linking a calendar event.
+        </p>
+      )}
 
       {state.error && <p className="text-red-600 text-xs">{state.error}</p>}
 
@@ -156,8 +173,12 @@ export default function ServicesClient({ templates: initial }: { templates: Serv
                       <p className="text-slate-400 text-xs mt-0.5 truncate">{t.service_label}</p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-slate-800 text-sm font-bold">${Number(t.default_amount).toFixed(2)}</p>
-                      <p className="text-slate-400 text-[10px] uppercase tracking-widest">Default</p>
+                      <p className="text-slate-800 text-sm font-bold">
+                        ${Number(t.default_amount).toFixed(2)}{t.is_per_foot ? "/ft" : ""}
+                      </p>
+                      <p className="text-slate-400 text-[10px] uppercase tracking-widest">
+                        {t.is_per_foot ? "Per Foot" : "Flat Rate"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">

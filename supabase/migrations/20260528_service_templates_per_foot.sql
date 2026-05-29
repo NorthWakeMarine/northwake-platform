@@ -1,0 +1,2 @@
+ALTER TABLE service_templates
+  ADD COLUMN IF NOT EXISTS is_per_foot BOOLEAN NOT NULL DEFAULT false;

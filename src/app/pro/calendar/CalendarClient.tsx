@@ -395,7 +395,7 @@ function LinkedPanel({
 // ── Event Link Panel ───────────────────────────────────────────────────────────
 
 type ContactResult = { id: string; name: string; email: string | null };
-type VesselOption  = { id: string; name: string | null; make_model: string | null };
+type VesselOption  = { id: string; name: string | null; make_model: string | null; length_ft: string | null };
 
 function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUnlinked, onInvoiceCreated }: {
   event: CalendarEvent;
@@ -474,10 +474,25 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
   function handleTemplateChange(id: string) {
     setTemplateId(id);
     const tpl = serviceTemplates.find(t => t.id === id);
-    if (tpl) {
-      setServiceLabel(tpl.service_label);
+    if (!tpl) return;
+    setServiceLabel(tpl.service_label);
+    if (tpl.is_per_foot) {
+      const vessel = vessels.find(v => v.id === vesselId);
+      const ft = vessel?.length_ft ? parseFloat(vessel.length_ft) : null;
+      setInvoiceAmount(ft ? String((tpl.default_amount * ft).toFixed(2)) : "");
+    } else {
       setInvoiceAmount(String(tpl.default_amount));
     }
+  }
+
+  // Recalculate per-foot price when vessel changes
+  function handleVesselChange(id: string) {
+    setVesselId(id);
+    const tpl = serviceTemplates.find(t => t.id === templateId);
+    if (!tpl?.is_per_foot) return;
+    const vessel = vessels.find(v => v.id === id);
+    const ft = vessel?.length_ft ? parseFloat(vessel.length_ft) : null;
+    setInvoiceAmount(ft ? String((tpl.default_amount * ft).toFixed(2)) : "");
   }
 
   async function handleUnlink() {
@@ -574,7 +589,7 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
       {picked && vessels.length > 0 && (
         <div className="flex flex-col gap-1">
           <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Vessel (optional)</label>
-          <select value={vesselId} onChange={e => setVesselId(e.target.value)} className={inputCls}>
+          <select value={vesselId} onChange={e => handleVesselChange(e.target.value)} className={inputCls}>
             <option value="">No vessel</option>
             {vessels.map(v => (
               <option key={v.id} value={v.id}>
@@ -618,7 +633,9 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
               >
                 <option value="">Select a template...</option>
                 {serviceTemplates.map(t => (
-                  <option key={t.id} value={t.id}>{t.name} (${Number(t.default_amount).toFixed(2)})</option>
+                  <option key={t.id} value={t.id}>
+                  {t.name} ({t.is_per_foot ? `$${Number(t.default_amount).toFixed(2)}/ft` : `$${Number(t.default_amount).toFixed(2)}`})
+                </option>
                 ))}
               </select>
             </div>
@@ -637,7 +654,9 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
 
           {/* Amount override */}
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Price for This Client ($)</label>
+            <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">
+              Price for This Client ($){serviceTemplates.find(t => t.id === templateId)?.is_per_foot && vesselId ? " — auto-calculated" : ""}
+            </label>
             <input
               type="number"
               step="0.01"
