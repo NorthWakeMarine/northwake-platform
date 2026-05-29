@@ -2,6 +2,11 @@
 
 ## May 2026
 
+### May 28 | Lead field editing and Quo name backfill | CRM
+
+- **Inline lead field editing**: Lead detail page fields (Name, Email, Phone, Vessel Type, Vessel Length, Service Requested) are now editable in place. Hover any field to reveal the pencil icon, click to open an inline input, Save or Escape to dismiss. Saves via new `updateLeadField` server action which revalidates both the detail page and the leads list.
+- **Quo contact name backfill**: When a name is added or updated for a contact in OpenPhone (Quo), the `contact.updated` webhook now also writes the name to any matching `leads` row that still has no name (matched by phone number). Previously the webhook only updated the `contacts` table, leaving quo-sourced leads showing only a phone number even after the caller was identified.
+
 ### May 28 | Performance: Three.js removed, CMS caching, bundle splits | Perf
 
 - **AntigravityBackground deleted**: Removed Three.js WebGL particle animation from the landing page hero. Three.js was ~150KB gzipped in the critical bundle and the primary cause of poor mobile FCP (3.12s) and LCP (3.82s). Hero section now shows the water background photo only.

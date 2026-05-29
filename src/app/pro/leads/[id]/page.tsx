@@ -8,6 +8,7 @@ import ConvertButton from "./ConvertButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteLeadButton from "../DeleteLeadButton";
 import PhoneNoteForm from "./PhoneNoteForm";
+import LeadFieldEditor from "./LeadFieldEditor";
 
 type TimelineEvent = {
   id: string;
@@ -258,10 +259,10 @@ export default async function LeadDetailPage({
               <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
                 <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Contact Information</p>
                 <dl className="grid sm:grid-cols-2 gap-4">
-                  <InfoRow label="Full Name"    value={lead.name} />
-                  <InfoRow label="Email"        value={lead.email} href={`mailto:${lead.email}`} />
-                  <InfoRow label="Phone"        value={lead.phone} href={lead.phone ? `tel:${lead.phone}` : undefined} />
-                  <InfoRow label="Submitted"    value={fmt(lead.created_at)} />
+                  <LeadFieldEditor leadId={lead.id} field="name"  label="Full Name" value={lead.name} />
+                  <LeadFieldEditor leadId={lead.id} field="email" label="Email"     value={lead.email} />
+                  <LeadFieldEditor leadId={lead.id} field="phone" label="Phone"     value={lead.phone} />
+                  <InfoRow label="Submitted" value={fmt(lead.created_at)} />
                 </dl>
               </div>
 
@@ -269,10 +270,10 @@ export default async function LeadDetailPage({
               <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
                 <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Vessel Information</p>
                 <dl className="grid sm:grid-cols-2 gap-4">
-                  <InfoRow label="Vessel Type"         value={lead.vessel_type} />
-                  <InfoRow label="Vessel Length"       value={lead.vessel_length ? `${lead.vessel_length} ft` : null} />
-                  <InfoRow label="Last Service Date"   value={lead.last_service_date ?? null} />
-                  <InfoRow label="Waiver Signed"       value={lead.waiver_signed ? "Yes" : "No"} />
+                  <LeadFieldEditor leadId={lead.id} field="vessel_type"   label="Vessel Type"   value={lead.vessel_type} />
+                  <LeadFieldEditor leadId={lead.id} field="vessel_length" label="Vessel Length" value={lead.vessel_length} />
+                  <InfoRow label="Last Service Date" value={lead.last_service_date ?? null} />
+                  <InfoRow label="Waiver Signed"     value={lead.waiver_signed ? "Yes" : "No"} />
                 </dl>
               </div>
 
@@ -280,8 +281,8 @@ export default async function LeadDetailPage({
               <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
                 <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Service Request</p>
                 <dl className="flex flex-col gap-4">
-                  <InfoRow label="Service Requested" value={lead.service} />
-                  <InfoRow label="Referral Source"   value={lead.referral_source} />
+                  <LeadFieldEditor leadId={lead.id} field="service" label="Service Requested" value={lead.service} />
+                  <InfoRow label="Referral Source" value={lead.referral_source} />
                   {(() => {
                     const cleaned = lead.message
                       ?.split("\n\n")
