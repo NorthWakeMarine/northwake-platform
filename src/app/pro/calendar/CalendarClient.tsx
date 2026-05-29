@@ -16,6 +16,7 @@ import {
   type CalendarEventState,
   type CalendarLinkState,
   type CalendarInvoiceState,
+  type ServiceTemplate,
 } from "@/app/actions";
 import type { CalendarEvent } from "@/lib/google-calendar";
 
@@ -24,6 +25,9 @@ export type EventLink = {
   contactName: string | null;
   vesselId: string | null;
   vesselLabel: string | null;
+  serviceLabel: string | null;
+  invoiceAmount: number | null;
+  autoInvoice: boolean;
 };
 
 // ── Google Calendar color map ──────────────────────────────────────────────────
@@ -393,10 +397,11 @@ function LinkedPanel({
 type ContactResult = { id: string; name: string; email: string | null };
 type VesselOption  = { id: string; name: string | null; make_model: string | null };
 
-function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceCreated }: {
+function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUnlinked, onInvoiceCreated }: {
   event: CalendarEvent;
   link: EventLink | undefined;
   linkKey: string;
+  serviceTemplates: ServiceTemplate[];
   onLinked: () => void;
   onUnlinked: () => void;
   onInvoiceCreated: (url: string, docNumber: string) => void;
@@ -406,16 +411,20 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
   const suggestedService = titleParts[titleParts.length - 1].trim();
 
   // ── Link form state ──
-  const [showLinkForm, setShowLinkForm] = useState(false);
-  const [query,        setQuery]        = useState(suggestedName);
-  const [results,      setResults]      = useState<ContactResult[]>([]);
-  const [picked,       setPicked]       = useState<ContactResult | null>(null);
-  const [vessels,      setVessels]      = useState<VesselOption[]>([]);
-  const [vesselId,     setVesselId]     = useState("");
-  const [isRecurring,  setIsRecurring]  = useState(!!event.recurringEventId);
-  const [searching,    startSearch]     = useTransition();
-  const [fetchingV,    startFetchV]     = useTransition();
-  const [linkState,    linkAction, linking] = useActionState<CalendarLinkState, FormData>(linkCalendarEvent, {});
+  const [showLinkForm,      setShowLinkForm]      = useState(false);
+  const [query,             setQuery]             = useState(suggestedName);
+  const [results,           setResults]           = useState<ContactResult[]>([]);
+  const [picked,            setPicked]            = useState<ContactResult | null>(null);
+  const [vessels,           setVessels]           = useState<VesselOption[]>([]);
+  const [vesselId,          setVesselId]          = useState("");
+  const [isRecurring,       setIsRecurring]       = useState(!!event.recurringEventId);
+  const [templateId,        setTemplateId]        = useState("");
+  const [serviceLabel,      setServiceLabel]      = useState(suggestedService);
+  const [invoiceAmount,     setInvoiceAmount]     = useState("");
+  const [autoInvoice,       setAutoInvoice]       = useState(false);
+  const [searching,         startSearch]          = useTransition();
+  const [fetchingV,         startFetchV]          = useTransition();
+  const [linkState,         linkAction, linking]  = useActionState<CalendarLinkState, FormData>(linkCalendarEvent, {});
 
   // ── Invoice form state ──
   const [showInvoice,   setShowInvoice]   = useState(false);
@@ -461,6 +470,16 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
     });
   }, [picked]);
 
+  // Auto-fill service fields when template is picked
+  function handleTemplateChange(id: string) {
+    setTemplateId(id);
+    const tpl = serviceTemplates.find(t => t.id === id);
+    if (tpl) {
+      setServiceLabel(tpl.service_label);
+      setInvoiceAmount(String(tpl.default_amount));
+    }
+  }
+
   async function handleUnlink() {
     setUnlinking(true);
     setUnlinkError("");
@@ -481,7 +500,7 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
         event={event}
         link={link}
         linkKey={linkKey}
-        suggestedService={suggestedService}
+        suggestedService={link.serviceLabel ?? suggestedService}
         inputCls={inputCls}
         showInvoice={showInvoice}
         setShowInvoice={setShowInvoice}
@@ -583,13 +602,82 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
         </p>
       )}
 
+      {/* ── Recurring invoice section ── */}
+      {isRecurring && (
+        <div className="border border-slate-100 rounded-sm bg-slate-50/60 px-3 py-3 flex flex-col gap-3">
+          <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Auto-Invoice Setup</p>
+
+          {/* Template picker */}
+          {serviceTemplates.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Template</label>
+              <select
+                value={templateId}
+                onChange={e => handleTemplateChange(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Select a template...</option>
+                {serviceTemplates.map(t => (
+                  <option key={t.id} value={t.id}>{t.name} (${Number(t.default_amount).toFixed(2)})</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Service label override */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">QB Line Description</label>
+            <input
+              value={serviceLabel}
+              onChange={e => setServiceLabel(e.target.value)}
+              placeholder="e.g. Bi-Weekly Wash"
+              className={inputCls}
+            />
+          </div>
+
+          {/* Amount override */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Price for This Client ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={invoiceAmount}
+              onChange={e => setInvoiceAmount(e.target.value)}
+              placeholder="0.00"
+              className={inputCls}
+            />
+          </div>
+
+          {/* Auto-invoice toggle */}
+          <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+            <div
+              onClick={() => setAutoInvoice(v => !v)}
+              className={`w-8 h-4 rounded-full relative transition-colors ${autoInvoice ? "bg-emerald-500" : "bg-slate-200"}`}
+            >
+              <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${autoInvoice ? "translate-x-4" : "translate-x-0.5"}`} />
+            </div>
+            <span className="text-xs text-slate-600 font-medium">Auto-invoice monthly</span>
+          </label>
+          {autoInvoice && (
+            <p className="text-[10px] text-emerald-600 -mt-1">
+              QB invoice will be generated on the 15th of each month for the following month.
+            </p>
+          )}
+        </div>
+      )}
+
       {linkState.error && <p className="text-red-600 text-[11px]">{linkState.error}</p>}
 
       {/* Submit */}
       <form action={linkAction} className="flex gap-2">
-        <input type="hidden" name="gcal_event_id" value={gcalIdToStore} />
-        <input type="hidden" name="contact_id"    value={picked?.id ?? ""} />
-        <input type="hidden" name="vessel_id"     value={vesselId} />
+        <input type="hidden" name="gcal_event_id"       value={gcalIdToStore} />
+        <input type="hidden" name="contact_id"          value={picked?.id ?? ""} />
+        <input type="hidden" name="vessel_id"           value={vesselId} />
+        <input type="hidden" name="service_template_id" value={templateId} />
+        <input type="hidden" name="service_label"       value={serviceLabel} />
+        <input type="hidden" name="invoice_amount"      value={invoiceAmount} />
+        <input type="hidden" name="auto_invoice"        value={String(autoInvoice)} />
         <button type="submit" disabled={!picked || linking}
           className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
           {linking ? "Saving..." : "Save Link"}
@@ -605,9 +693,10 @@ function EventLinkPanel({ event, link, linkKey, onLinked, onUnlinked, onInvoiceC
 
 // ── Event Detail Modal ─────────────────────────────────────────────────────────
 
-function EventDetailModal({ event, linkMap, onEdit, onDelete, onClose }: {
+function EventDetailModal({ event, linkMap, serviceTemplates, onEdit, onDelete, onClose }: {
   event: CalendarEvent;
   linkMap: Record<string, EventLink>;
+  serviceTemplates: ServiceTemplate[];
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -663,6 +752,7 @@ function EventDetailModal({ event, linkMap, onEdit, onDelete, onClose }: {
               event={event}
               link={link}
               linkKey={linkKey}
+              serviceTemplates={serviceTemplates}
               onLinked={onClose}
               onUnlinked={onClose}
               onInvoiceCreated={(url, docNumber) => setInvoiceSuccess({ url, docNumber })}
@@ -1151,7 +1241,7 @@ function WeekGrid({ weekStart, events, today, onDayClick, onEventClick, onDelete
 
 type ViewMode = "month" | "week";
 
-export default function CalendarClient({ events, linkMap }: { events: CalendarEvent[]; linkMap: Record<string, EventLink> }) {
+export default function CalendarClient({ events, linkMap, serviceTemplates }: { events: CalendarEvent[]; linkMap: Record<string, EventLink>; serviceTemplates: ServiceTemplate[] }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -1297,6 +1387,7 @@ export default function CalendarClient({ events, linkMap }: { events: CalendarEv
         <EventDetailModal
           event={selected}
           linkMap={linkMap}
+          serviceTemplates={serviceTemplates}
           onEdit={() => openEdit(selected)}
           onDelete={() => openDelete(selected)}
           onClose={closeModal}

@@ -2,6 +2,7 @@ import ProShell from "@/components/ProShell";
 import CalendarClient, { type EventLink } from "./CalendarClient";
 import type { CalendarEvent } from "@/lib/google-calendar";
 import { createClient } from "@supabase/supabase-js";
+import { getServiceTemplates } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -25,17 +26,20 @@ async function fetchLinkMap(): Promise<Record<string, EventLink>> {
     );
     const { data } = await supabase
       .from("calendar_contact_links")
-      .select("gcal_event_id, contact_id, vessel_id, contacts(name), vessels(name, make_model)");
+      .select("gcal_event_id, contact_id, vessel_id, service_label, invoice_amount, auto_invoice, contacts(name), vessels(name, make_model)");
 
     const map: Record<string, EventLink> = {};
     for (const row of data ?? []) {
       const c = row.contacts as unknown as { name: string | null } | null;
       const v = row.vessels  as unknown as { name: string | null; make_model: string | null } | null;
       map[row.gcal_event_id] = {
-        contactId:   row.contact_id,
-        contactName: c?.name ?? null,
-        vesselId:    row.vessel_id ?? null,
-        vesselLabel: v ? [v.name, v.make_model].filter(Boolean).join(" ") : null,
+        contactId:    row.contact_id,
+        contactName:  c?.name ?? null,
+        vesselId:     row.vessel_id ?? null,
+        vesselLabel:  v ? [v.name, v.make_model].filter(Boolean).join(" ") : null,
+        serviceLabel: row.service_label ?? null,
+        invoiceAmount: row.invoice_amount ?? null,
+        autoInvoice:  row.auto_invoice ?? false,
       };
     }
     return map;
@@ -45,11 +49,15 @@ async function fetchLinkMap(): Promise<Record<string, EventLink>> {
 }
 
 export default async function CalendarPage() {
-  const [events, linkMap] = await Promise.all([fetchEvents(), fetchLinkMap()]);
+  const [events, linkMap, serviceTemplates] = await Promise.all([
+    fetchEvents(),
+    fetchLinkMap(),
+    getServiceTemplates(),
+  ]);
   return (
     <ProShell>
       <div className="flex-1 flex flex-col min-h-0">
-        <CalendarClient events={events} linkMap={linkMap} />
+        <CalendarClient events={events} linkMap={linkMap} serviceTemplates={serviceTemplates} />
       </div>
     </ProShell>
   );

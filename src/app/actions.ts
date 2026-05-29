@@ -1226,16 +1226,24 @@ export async function linkCalendarEvent(
   _prev: CalendarLinkState,
   formData: FormData
 ): Promise<CalendarLinkState> {
-  const gcal_event_id  = formData.get("gcal_event_id")  as string;
-  const contact_id     = formData.get("contact_id")     as string;
-  const vessel_id      = (formData.get("vessel_id") as string)?.trim() || null;
+  const gcal_event_id        = formData.get("gcal_event_id")        as string;
+  const contact_id           = formData.get("contact_id")           as string;
+  const vessel_id            = (formData.get("vessel_id") as string)?.trim() || null;
+  const service_template_id  = (formData.get("service_template_id") as string)?.trim() || null;
+  const service_label        = (formData.get("service_label") as string)?.trim() || null;
+  const invoice_amount_raw   = (formData.get("invoice_amount") as string)?.trim();
+  const invoice_amount       = invoice_amount_raw ? parseFloat(invoice_amount_raw) : null;
+  const auto_invoice         = formData.get("auto_invoice") === "true";
 
   if (!gcal_event_id || !contact_id) return { error: "Missing required fields." };
 
   const supabase = await svc();
   const { error } = await supabase
     .from("calendar_contact_links")
-    .upsert({ gcal_event_id, contact_id, vessel_id }, { onConflict: "gcal_event_id" });
+    .upsert(
+      { gcal_event_id, contact_id, vessel_id, service_template_id, service_label, invoice_amount, auto_invoice },
+      { onConflict: "gcal_event_id" }
+    );
   if (error) return { error: error.message };
 
   revalidatePath("/pro/calendar");
@@ -2908,4 +2916,78 @@ export async function syncQuoForContact(
   } catch (err) {
     return { ok: false, imported: 0, skipped: 0, error: err instanceof Error ? err.message : "Sync failed." };
   }
+}
+
+// ── Service Templates ──────────────────────────────────────────────────────────
+
+export type ServiceTemplate = {
+  id: string;
+  name: string;
+  service_label: string;
+  default_amount: number;
+  created_at: string;
+};
+
+export type ServiceTemplateState = { error?: string; success?: boolean };
+
+export async function getServiceTemplates(): Promise<ServiceTemplate[]> {
+  const supabase = await svc();
+  const { data } = await supabase
+    .from("service_templates")
+    .select("*")
+    .order("name");
+  return (data ?? []) as ServiceTemplate[];
+}
+
+export async function createServiceTemplate(
+  _prev: ServiceTemplateState,
+  formData: FormData
+): Promise<ServiceTemplateState> {
+  const name           = (formData.get("name") as string)?.trim();
+  const service_label  = (formData.get("service_label") as string)?.trim();
+  const default_amount = parseFloat((formData.get("default_amount") as string) ?? "0");
+
+  if (!name || !service_label) return { error: "Name and service label are required." };
+
+  const supabase = await svc();
+  const { error } = await supabase
+    .from("service_templates")
+    .insert({ name, service_label, default_amount });
+  if (error) return { error: error.message };
+
+  revalidatePath("/pro/services");
+  return { success: true };
+}
+
+export async function updateServiceTemplate(
+  _prev: ServiceTemplateState,
+  formData: FormData
+): Promise<ServiceTemplateState> {
+  const id             = formData.get("id") as string;
+  const name           = (formData.get("name") as string)?.trim();
+  const service_label  = (formData.get("service_label") as string)?.trim();
+  const default_amount = parseFloat((formData.get("default_amount") as string) ?? "0");
+
+  if (!id || !name || !service_label) return { error: "Missing required fields." };
+
+  const supabase = await svc();
+  const { error } = await supabase
+    .from("service_templates")
+    .update({ name, service_label, default_amount })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/pro/services");
+  return { success: true };
+}
+
+export async function deleteServiceTemplate(id: string): Promise<{ error?: string }> {
+  const supabase = await svc();
+  const { error } = await supabase
+    .from("service_templates")
+    .delete()
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/pro/services");
+  return {};
 }
