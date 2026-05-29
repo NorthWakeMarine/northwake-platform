@@ -3,7 +3,7 @@ import { Readable } from "stream";
 
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
-function getAuth() {
+export function getAuth() {
   if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     return new google.auth.GoogleAuth({
       credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
