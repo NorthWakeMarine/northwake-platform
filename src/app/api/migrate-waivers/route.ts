@@ -86,12 +86,15 @@ export async function POST() {
         await uploadFileToFolder(folderId, pdfName, "application/pdf", pdfBuffer);
       }
 
-      const drive = google.drive({ version: "v3", auth: getAuth() });
-      for (const txt of txtWaivers) {
-        await drive.files.delete({ fileId: txt.id, supportsAllDrives: true });
-      }
+      // Attempt to delete old txt files; non-fatal if the service account lacks delete permission
+      try {
+        const drive = google.drive({ version: "v3", auth: getAuth() });
+        for (const txt of txtWaivers) {
+          await drive.files.delete({ fileId: txt.id, supportsAllDrives: true });
+        }
+      } catch { /* txt cleanup is best-effort; PDF already uploaded */ }
 
-      results.push({ contactId: contact.id, name: contact.name, status: alreadyExists ? "pdf-existed-txt-deleted" : "converted" });
+      results.push({ contactId: contact.id, name: contact.name, status: alreadyExists ? "pdf-existed" : "converted" });
     } catch (e) {
       results.push({ contactId: contact.id, name: contact.name, status: "error", detail: String(e) });
     }
