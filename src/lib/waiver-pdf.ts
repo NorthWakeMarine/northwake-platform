@@ -189,7 +189,8 @@ export async function generateWaiverPdf(data: WaiverData): Promise<Buffer> {
   }
 
   // ── Signature block ───────────────────────────────────────────────
-  need(130);
+  // 130 sig box + 30 closing text + 70 footer gap = keep it all together
+  need(230);
   y -= 6;
   page.drawText("ELECTRONIC SIGNATURE & ACKNOWLEDGMENT", { x: MARGIN, y, size: 7, font: bold, color: GRAY });
   y -= 12;

@@ -81,10 +81,17 @@ export async function POST() {
       });
 
       const pdfName = txtWaivers[0].name.replace(/\.txt$/, ".pdf");
-      const alreadyExists = files.some((f) => f.name === pdfName);
-      if (!alreadyExists) {
-        await uploadFileToFolder(folderId, pdfName, "application/pdf", pdfBuffer);
+
+      // Delete existing PDF if present so we always upload a fresh copy
+      const existingPdf = files.find((f) => f.name === pdfName);
+      if (existingPdf) {
+        try {
+          const drive = google.drive({ version: "v3", auth: getAuth() });
+          await drive.files.delete({ fileId: existingPdf.id, supportsAllDrives: true });
+        } catch { /* non-fatal */ }
       }
+
+      await uploadFileToFolder(folderId, pdfName, "application/pdf", pdfBuffer);
 
       // Attempt to delete old txt files; non-fatal if the service account lacks delete permission
       try {
@@ -94,7 +101,7 @@ export async function POST() {
         }
       } catch { /* txt cleanup is best-effort; PDF already uploaded */ }
 
-      results.push({ contactId: contact.id, name: contact.name, status: alreadyExists ? "pdf-existed" : "converted" });
+      results.push({ contactId: contact.id, name: contact.name, status: "converted" });
     } catch (e) {
       results.push({ contactId: contact.id, name: contact.name, status: "error", detail: String(e) });
     }
