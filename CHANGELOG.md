@@ -2,6 +2,16 @@
 
 ## May 2026
 
+### May 29 | Liability waiver saves as full PDF to Google Drive; phone normalization | CRM
+
+- **Waiver PDF**: Liability waiver submissions now save a branded 3-page PDF to the contact's Google Drive folder instead of a plain .txt file. PDF includes navy header, customer info box, all 14 legal sections, and a signature block with the customer's digital signature in italic navy type.
+- **PDF library**: Uses `pdf-lib` with embedded standard fonts — no filesystem font dependencies, works in Vercel serverless.
+- **Waiver sections shared**: Extracted waiver `SECTIONS` data to `src/lib/waiver-sections.ts` so both the form and the PDF generator stay in sync from one source.
+- **Migration route**: `POST /api/migrate-waivers` retroactively converts existing `.txt` waiver files in Google Drive to PDFs using metadata stored in the timeline events. Run from the browser console while logged into the CRM.
+- **Waiver contact update fix**: New contacts created from a waiver now correctly save `address`. Update errors are now logged. Fuzzy phone matching (last 10 digits) added so contacts with un-normalized stored phone numbers are found and updated instead of creating duplicates.
+- **Phone normalization on save**: `createContact` and `updateContactFields` now run `normalizePhone()` before writing, converting any input format to E.164 (`+1XXXXXXXXXX`). Falls back to raw value if unparseable.
+- **Bug fix**: `maintenance-invoices` cron route was using `SUPABASE_SERVICE_ROLE_KEY` (undefined) instead of `SUPABASE_SECRET_KEY` — fixed.
+
 ### May 28 | Lead field editing and Quo name backfill | CRM
 
 - **Inline lead field editing**: Lead detail page fields (Name, Email, Phone, Vessel Type, Vessel Length, Service Requested) are now editable in place. Hover any field to reveal the pencil icon, click to open an inline input, Save or Escape to dismiss. Saves via new `updateLeadField` server action which revalidates both the detail page and the leads list.
