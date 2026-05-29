@@ -2,6 +2,12 @@
 
 ## May 2026
 
+### May 28 | Performance: Three.js removed, CMS caching, bundle splits | Perf
+
+- **AntigravityBackground deleted**: Removed Three.js WebGL particle animation from the landing page hero. Three.js was ~150KB gzipped in the critical bundle and the primary cause of poor mobile FCP (3.12s) and LCP (3.82s). Hero section now shows the water background photo only.
+- **getCMS() cached**: Home page CMS query now wrapped in `unstable_cache` with 1h revalidation, matching the existing carousel image cache. Eliminates one uncached Supabase round-trip per render.
+- **PipelineBoard code-split**: Confirmed Next.js App Router already splits client components at the server/client boundary; `@dnd-kit` is in a separate chunk, not the critical path.
+
 ### May 28 | Waiver completion automation, calendar link fix, Kanban updates, QB paid status fix, vessel appointments | CRM
 
 - **Waiver completion email**: When a customer submits the liability waiver, `crm@northwakemarine.com` sends a notification to `admin@northwakemarine.com` with subject "Waiver Signed: [Name]" containing name, email, phone, address, and vessel. Email goes only to admin, never to the customer.
