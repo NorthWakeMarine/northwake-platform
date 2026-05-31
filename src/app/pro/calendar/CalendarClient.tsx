@@ -277,6 +277,21 @@ function LinkedPanel({
   const [claimingId,        setClaimingId]          = useState<string | null>(null);
   const [claimError,        setClaimError]          = useState("");
   const [claimedId,         setClaimedId]           = useState<string | null>(null);
+  const [linkedInvoice,     setLinkedInvoice]       = useState<{ title: string; url: string | null } | null>(null);
+  const [checkingLinked,    setCheckingLinked]      = useState(true);
+
+  useEffect(() => {
+    getContactInvoices(link.contactId).then(list => {
+      const match = list.find(inv => (inv.metadata?.gcal_event_id as string | undefined) === event.id);
+      if (match) {
+        setLinkedInvoice({
+          title: match.title ?? "Invoice",
+          url: (match.metadata?.invoice_url as string | null) ?? null,
+        });
+      }
+      setCheckingLinked(false);
+    });
+  }, [event.id, link.contactId]);
 
   function openClaimInvoice() {
     setShowClaimInvoice(true);
@@ -386,27 +401,55 @@ function LinkedPanel({
       </div>
 
       {!showInvoice && !showClaimInvoice && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setShowInvoice(true)}
-            className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors"
-          >
-            Create Invoice
-          </button>
-          <button
-            onClick={openClaimInvoice}
-            className="flex-1 border border-slate-200 text-slate-600 text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:border-slate-300 hover:text-slate-800 transition-colors"
-          >
-            Claim to Invoice
-          </button>
-          <button
-            onClick={handleUnlink}
-            disabled={unlinking}
-            className="w-full text-[10px] tracking-widest uppercase font-semibold text-red-400 hover:text-red-600 transition-colors disabled:opacity-50 py-1"
-          >
-            {unlinking ? "..." : "Unlink"}
-          </button>
-        </div>
+        checkingLinked ? null : linkedInvoice ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2 bg-emerald-50 border border-emerald-100 rounded-sm px-3 py-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <p className="text-xs font-semibold text-emerald-800 truncate">{linkedInvoice.title}</p>
+              </div>
+              {linkedInvoice.url && (
+                <a
+                  href={linkedInvoice.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0"
+                >
+                  View in QB
+                </a>
+              )}
+            </div>
+            <button
+              onClick={handleUnlink}
+              disabled={unlinking}
+              className="w-full text-[10px] tracking-widest uppercase font-semibold text-red-400 hover:text-red-600 transition-colors disabled:opacity-50 py-1"
+            >
+              {unlinking ? "..." : "Unlink"}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowInvoice(true)}
+              className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors"
+            >
+              Create Invoice
+            </button>
+            <button
+              onClick={openClaimInvoice}
+              className="flex-1 border border-slate-200 text-slate-600 text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:border-slate-300 hover:text-slate-800 transition-colors"
+            >
+              Claim to Invoice
+            </button>
+            <button
+              onClick={handleUnlink}
+              disabled={unlinking}
+              className="w-full text-[10px] tracking-widest uppercase font-semibold text-red-400 hover:text-red-600 transition-colors disabled:opacity-50 py-1"
+            >
+              {unlinking ? "..." : "Unlink"}
+            </button>
+          </div>
+        )
       )}
 
       {showInvoice && (
@@ -483,7 +526,13 @@ function LinkedPanel({
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                     <p className="text-[10px] text-emerald-700 font-semibold">
-                      Auto-invoice ON{link.invoiceRate != null ? ` — $${Number(link.invoiceRate).toFixed(2)}/ea` : link.invoiceAmount ? ` — $${Number(link.invoiceAmount).toFixed(2)}` : ""}
+                      {(() => {
+                        const gross = link.invoiceRate != null
+                          ? Number(link.invoiceRate) * Number(link.invoiceQty ?? 1)
+                          : Number(link.invoiceAmount ?? 0);
+                        const net = gross - Number(link.invoiceDiscount ?? 0);
+                        return `Auto-invoice ON — $${net.toFixed(2)}`;
+                      })()}
                     </p>
                   </div>
                 ) : (
