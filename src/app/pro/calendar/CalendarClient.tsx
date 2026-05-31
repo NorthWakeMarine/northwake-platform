@@ -13,6 +13,7 @@ import {
   getVesselsByContactId,
   getContactInvoices,
   claimGcalEventToInvoice,
+  removeGcalFromInvoice,
   type CalendarEventState,
   type CalendarLinkState,
   type CalendarInvoiceState,
@@ -408,16 +409,27 @@ function LinkedPanel({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                 <p className="text-xs font-semibold text-emerald-800 truncate">{linkedInvoice.title}</p>
               </div>
-              {linkedInvoice.url && (
-                <a
-                  href={linkedInvoice.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0"
+              <div className="flex items-center gap-3 shrink-0">
+                {linkedInvoice.url && (
+                  <a
+                    href={linkedInvoice.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline"
+                  >
+                    View in QB
+                  </a>
+                )}
+                <button
+                  onClick={async () => {
+                    await removeGcalFromInvoice(event.id, link.contactId);
+                    setLinkedInvoice(null);
+                  }}
+                  className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 hover:text-red-500 transition-colors"
                 >
-                  View in QB
-                </a>
-              )}
+                  Remove
+                </button>
+              </div>
             </div>
             <button
               onClick={handleUnlink}

@@ -1079,17 +1079,45 @@ export async function pushCrmFieldToQb(
       .single();
     if (!contact?.qb_customer_id) return { ok: false, error: "Contact not linked to QB." };
 
-    const { getQbTokens, findOrCreateQbCustomer } = await import("@/lib/quickbooks");
-    const tokens = await getQbTokens();
-    if (!tokens) return { ok: false, error: "QuickBooks not connected." };
+    const { getQbCustomer, getValidTokens } = await import("@/lib/quickbooks");
 
-    await findOrCreateQbCustomer({
-      id: contact.id,
-      name: contact.name,
-      company_name: contact.company_name,
-      email: contact.email,
-      phone: contact.phone,
+    // Fetch current QB customer to get SyncToken (required for updates)
+    const qbCustomer = await getQbCustomer(contact.qb_customer_id);
+    const syncToken = qbCustomer.SyncToken ?? "0";
+
+    const tokens = await getValidTokens();
+
+    // Build sparse update payload for just the changed field
+    const patch: Record<string, unknown> = {
+      Id: contact.qb_customer_id,
+      SyncToken: syncToken,
+      sparse: true,
+    };
+    if (field === "email") {
+      patch.PrimaryEmailAddr = contact.email ? { Address: contact.email } : null;
+    } else if (field === "phone") {
+      patch.PrimaryPhone = contact.phone ? { FreeFormNumber: contact.phone } : null;
+    } else if (field === "name") {
+      const displayName = contact.name?.trim() || contact.company_name?.trim() || contact.email || "Unknown";
+      patch.DisplayName = displayName;
+      if (contact.company_name?.trim()) patch.CompanyName = contact.company_name.trim();
+    }
+
+    const url = `https://quickbooks.api.intuit.com/v3/company/${tokens.realm_id}/customer?minorversion=70`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${tokens.access_token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(patch),
     });
+    if (!res.ok) {
+      const body = await res.text();
+      return { ok: false, error: `QB update failed: ${body}` };
+    }
+
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Failed to push to QB." };
@@ -1409,6 +1437,31 @@ export async function claimGcalEventToInvoice(
   if (error) return { error: error.message };
 
   revalidatePath(`/pro/contacts/${ev.contact_id}`);
+  return {};
+}
+
+export async function removeGcalFromInvoice(
+  gcalEventId: string,
+  contactId: string
+): Promise<{ error?: string }> {
+  const supabase = await svc();
+  const { data: events } = await supabase
+    .from("timeline_events")
+    .select("id, metadata")
+    .eq("contact_id", contactId)
+    .eq("event_type", "invoice");
+
+  const match = (events ?? []).find(
+    e => (e.metadata as { gcal_event_id?: string } | null)?.gcal_event_id === gcalEventId
+  );
+  if (!match) return {};
+
+  const newMeta = { ...(match.metadata as Record<string, unknown>), gcal_event_id: null };
+  const { error } = await supabase
+    .from("timeline_events")
+    .update({ metadata: newMeta })
+    .eq("id", match.id);
+  if (error) return { error: error.message };
   return {};
 }
 
