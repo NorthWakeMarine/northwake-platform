@@ -1276,8 +1276,7 @@ export async function linkCalendarEvent(
   const invoice_qty          = invoice_qty_raw ? parseFloat(invoice_qty_raw) : 1;
   const invoice_rate_raw     = (formData.get("invoice_rate") as string)?.trim();
   const invoice_rate         = invoice_rate_raw ? parseFloat(invoice_rate_raw) : null;
-  const billing_frequency    = (formData.get("billing_frequency") as string) || "off";
-  const auto_invoice         = billing_frequency !== "off";
+  const auto_invoice         = formData.get("auto_invoice") === "true";
 
   if (!gcal_event_id || !contact_id) return { error: "Missing required fields." };
 
@@ -1287,8 +1286,7 @@ export async function linkCalendarEvent(
     .upsert(
       {
         gcal_event_id, contact_id, vessel_id, service_template_id, service_label,
-        invoice_amount, invoice_discount, invoice_qty, invoice_rate,
-        billing_frequency, auto_invoice,
+        invoice_amount, invoice_discount, invoice_qty, invoice_rate, auto_invoice,
       },
       { onConflict: "gcal_event_id" }
     );

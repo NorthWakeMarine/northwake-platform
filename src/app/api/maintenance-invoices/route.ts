@@ -21,10 +21,6 @@ async function pMap<T, R>(items: T[], fn: (item: T) => Promise<R>, concurrency: 
   return results;
 }
 
-function toDateStr(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
@@ -38,12 +34,11 @@ export async function GET(req: NextRequest) {
   const now = new Date();
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const nextMonthEnd   = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-  const yearMonth      = nextMonthStart.toISOString().slice(0, 7); // e.g. "2026-06"
 
   // 1. Fetch all auto-invoice links that have a price set
   const { data: links, error: linkErr } = await supabase
     .from("calendar_contact_links")
-    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, billing_frequency, service_template_id, contacts(qb_customer_id, name)")
+    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, service_template_id, contacts(qb_customer_id, name)")
     .eq("auto_invoice", true)
     .not("invoice_amount", "is", null)
     .gt("invoice_amount", 0);
@@ -74,7 +69,6 @@ export async function GET(req: NextRequest) {
     invoiceDiscount: number;
     invoiceQty: number;
     invoiceRate: number;
-    billingFrequency: string;
   };
 
   const linkBySeriesId = new Map<string, LinkInfo>();
@@ -84,8 +78,6 @@ export async function GET(req: NextRequest) {
     const invoiceAmount = Number(l.invoice_amount);
     const invoiceRate   = l.invoice_rate ? Number(l.invoice_rate) : invoiceAmount;
     const invoiceQty    = l.invoice_qty  ? Number(l.invoice_qty)  : 1;
-    const billingFrequency = l.billing_frequency ?? "monthly";
-    if (billingFrequency === "off") continue;
     linkBySeriesId.set(l.gcal_event_id, {
       contactId:          l.contact_id,
       qbCustomerId:       c.qb_customer_id,
@@ -96,7 +88,6 @@ export async function GET(req: NextRequest) {
       invoiceDiscount:    Number(l.invoice_discount ?? 0),
       invoiceQty,
       invoiceRate,
-      billingFrequency,
     });
   }
 
@@ -104,25 +95,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ invoiced: 0, skipped: 0, message: "No links with QB customers found." });
   }
 
-  // 2. Fetch next month's GCal events, group by series ID
+  // 2. Fetch next month's GCal events
   let gcalEvents: { id: string; title: string; start: string; recurringEventId?: string }[] = [];
   try {
     const { listEvents } = await import("@/lib/google-calendar");
     gcalEvents = await listEvents(nextMonthStart, nextMonthEnd);
   } catch {
     return NextResponse.json({ error: "Failed to fetch Google Calendar events." }, { status: 500 });
-  }
-
-  // Group GCal event instances by their series base ID
-  const eventsBySeriesId = new Map<string, typeof gcalEvents>();
-  for (const ev of gcalEvents) {
-    const seriesId = ev.recurringEventId ?? ev.id;
-    if (!eventsBySeriesId.has(seriesId)) eventsBySeriesId.set(seriesId, []);
-    eventsBySeriesId.get(seriesId)!.push(ev);
-  }
-  // Sort each group by start date ascending
-  for (const evs of eventsBySeriesId.values()) {
-    evs.sort((a, b) => a.start.localeCompare(b.start));
   }
 
   // 3. Load QB helpers
@@ -140,85 +119,37 @@ export async function GET(req: NextRequest) {
 
   const tokens = await getValidTokens();
 
-  // 4. Build work items based on billing_frequency
+  // 4. Match each GCal instance to a link via series base ID
   type WorkItem = {
-    seriesId: string;
+    eventId: string;
     txnDate: string;
-    billingPeriodKey: string;
     link: LinkInfo;
   };
 
   const workItems: WorkItem[] = [];
-
-  for (const [seriesId, link] of linkBySeriesId.entries()) {
-    const seriesEvents = eventsBySeriesId.get(seriesId) ?? [];
-
-    function eventDate(ev: { start: string }): string {
-      return ev.start.includes("T") ? new Date(ev.start).toISOString().slice(0, 10) : ev.start;
-    }
-
-    if (link.billingFrequency === "monthly" || link.billingFrequency === "every_6_weeks") {
-      // One invoice per month, dated at the first GCal occurrence or day 1
-      const date = seriesEvents.length > 0 ? eventDate(seriesEvents[0]) : toDateStr(nextMonthStart);
-      workItems.push({
-        seriesId,
-        txnDate: date,
-        billingPeriodKey: `${seriesId}_${yearMonth}`,
-        link,
-      });
-    } else if (link.billingFrequency === "twice_monthly") {
-      // Two invoices per month
-      const date1 = seriesEvents.length > 0 ? eventDate(seriesEvents[0]) : toDateStr(nextMonthStart);
-      const date2 = seriesEvents.length > 1
-        ? eventDate(seriesEvents[1])
-        : toDateStr(new Date(nextMonthStart.getFullYear(), nextMonthStart.getMonth(), 15));
-      workItems.push({
-        seriesId,
-        txnDate: date1,
-        billingPeriodKey: `${seriesId}_${yearMonth}-1`,
-        link,
-      });
-      workItems.push({
-        seriesId,
-        txnDate: date2,
-        billingPeriodKey: `${seriesId}_${yearMonth}-2`,
-        link,
-      });
-    }
+  for (const ev of gcalEvents) {
+    const link = linkBySeriesId.get(ev.id) ?? (ev.recurringEventId ? linkBySeriesId.get(ev.recurringEventId) : undefined);
+    if (!link) continue;
+    const txnDate = ev.start.includes("T")
+      ? new Date(ev.start).toISOString().slice(0, 10)
+      : ev.start;
+    workItems.push({ eventId: ev.id, txnDate, link });
   }
 
-  // 5. Dedup: skip billing periods already invoiced
-  const allContactIds = [...new Set(workItems.map(w => w.link.contactId))];
+  // 5. Dedup: skip GCal event instances already invoiced
   const existingCheck = await supabase
     .from("timeline_events")
     .select("metadata")
     .eq("event_type", "invoice")
-    .in("contact_id", allContactIds);
+    .in("contact_id", [...new Set(workItems.map(w => w.link.contactId))]);
 
-  const existingPeriodKeys = new Set<string>(
-    (existingCheck.data ?? [])
-      .map(e => (e.metadata as { billing_period_key?: string } | null)?.billing_period_key)
-      .filter(Boolean) as string[]
-  );
-  // Also check old-style gcal_event_id dedup for backwards compat
-  const existingGcalEventIds = new Set<string>(
+  const existingGcalIds = new Set<string>(
     (existingCheck.data ?? [])
       .map(e => (e.metadata as { gcal_event_id?: string } | null)?.gcal_event_id)
       .filter(Boolean) as string[]
   );
 
-  // Build a set of gcal instance IDs for this month's events (for old-style dedup)
-  const thisMonthInstanceIds = new Set<string>(gcalEvents.map(e => e.id));
-
-  const toProcess = workItems.filter(w => {
-    if (existingPeriodKeys.has(w.billingPeriodKey)) return false;
-    // Old-style: if any of this series's instances from next month are already logged, skip
-    const seriesEvents = eventsBySeriesId.get(w.seriesId) ?? [];
-    for (const ev of seriesEvents) {
-      if (existingGcalEventIds.has(ev.id) && thisMonthInstanceIds.has(ev.id)) return false;
-    }
-    return true;
-  });
+  const toProcess = workItems.filter(w => !existingGcalIds.has(w.eventId));
 
   // 6. Create invoices
   const failed: string[] = [];
@@ -244,11 +175,11 @@ export async function GET(req: NextRequest) {
         title:      docNumber ? `Invoice #${docNumber}` : "Invoice (Draft)",
         body:       w.link.serviceLabel,
         metadata:   {
-          qb_invoice_id:     `Invoice:${invoiceId}`,
-          doc_number:        docNumber || null,
-          invoice_url:       invoiceUrl,
-          billing_period_key: w.billingPeriodKey,
-          auto_generated:    true,
+          qb_invoice_id:  `Invoice:${invoiceId}`,
+          doc_number:     docNumber || null,
+          invoice_url:    invoiceUrl,
+          gcal_event_id:  w.eventId,
+          auto_generated: true,
         },
         created_by: "cron",
       });
@@ -261,7 +192,7 @@ export async function GET(req: NextRequest) {
   // 7. Log summary
   const month = nextMonthStart.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   await supabase.from("system_flags").upsert({
-    key:        `maintenance_invoices_${yearMonth}`,
+    key:        `maintenance_invoices_${nextMonthStart.toISOString().slice(0, 7)}`,
     value:      { invoiced, skipped: toProcess.length - invoiced - failed.length, failed, month },
     updated_at: new Date().toISOString(),
   }, { onConflict: "key" });

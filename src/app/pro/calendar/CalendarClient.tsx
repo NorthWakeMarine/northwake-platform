@@ -30,7 +30,6 @@ export type EventLink = {
   invoiceDiscount: number | null;
   invoiceQty: number | null;
   invoiceRate: number | null;
-  billingFrequency: string | null;
   autoInvoice: boolean;
 };
 
@@ -267,7 +266,7 @@ function LinkedPanel({
   const [billingQty,         setBillingQty]         = useState(link.invoiceQty != null ? String(link.invoiceQty) : "1");
   const [billingRate,        setBillingRate]        = useState(link.invoiceRate != null ? String(link.invoiceRate) : "");
   const [billingDiscount,    setBillingDiscount]    = useState(link.invoiceDiscount != null ? String(link.invoiceDiscount) : "");
-  const [billingFrequency,   setBillingFrequency]   = useState<string>(link.billingFrequency ?? (link.autoInvoice ? "monthly" : "off"));
+  const [billingAuto,        setBillingAuto]        = useState(link.autoInvoice);
   const [billingVesselId,    setBillingVesselId]    = useState(link.vesselId ?? "");
   const [billingVessels,     setBillingVessels]     = useState<VesselOption[]>([]);
   const [savingBilling,     setSavingBilling]      = useState(false);
@@ -358,7 +357,7 @@ function LinkedPanel({
     fd.set("invoice_rate",        billingRate);
     fd.set("invoice_amount",      String(gross));
     fd.set("invoice_discount",    billingDiscount);
-    fd.set("billing_frequency",   billingFrequency);
+    fd.set("auto_invoice",        String(billingAuto));
     const res = await linkCalendarEvent({}, fd);
     if (res.error) { setBillingError(res.error); setSavingBilling(false); }
     else { setSavingBilling(false); setShowBilling(false); router.refresh(); }
@@ -480,21 +479,11 @@ function LinkedPanel({
           {!showBilling ? (
             <div className="flex items-center justify-between">
               <div>
-                {link.billingFrequency && link.billingFrequency !== "off" ? (
+                {link.autoInvoice ? (
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                     <p className="text-[10px] text-emerald-700 font-semibold">
-                      {link.billingFrequency === "monthly" && "Monthly"}
-                      {link.billingFrequency === "twice_monthly" && "Twice Monthly"}
-                      {link.billingFrequency === "every_6_weeks" && "Every 6 Weeks"}
-                      {link.invoiceRate != null ? ` — $${Number(link.invoiceRate).toFixed(2)}/ea` : link.invoiceAmount ? ` — $${Number(link.invoiceAmount).toFixed(2)}` : ""}
-                    </p>
-                  </div>
-                ) : link.autoInvoice ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    <p className="text-[10px] text-emerald-700 font-semibold">
-                      Monthly{link.invoiceAmount ? ` — $${Number(link.invoiceAmount).toFixed(2)}` : ""}
+                      Auto-invoice ON{link.invoiceRate != null ? ` — $${Number(link.invoiceRate).toFixed(2)}/ea` : link.invoiceAmount ? ` — $${Number(link.invoiceAmount).toFixed(2)}` : ""}
                     </p>
                   </div>
                 ) : (
@@ -508,7 +497,7 @@ function LinkedPanel({
                 onClick={openBilling}
                 className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0 ml-2"
               >
-                {(link.autoInvoice || (link.billingFrequency && link.billingFrequency !== "off")) ? "Edit" : "Set Up"}
+                {link.autoInvoice ? "Edit" : "Set Up"}
               </button>
             </div>
           ) : (
@@ -574,15 +563,12 @@ function LinkedPanel({
                 </p>
               )}
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Billing Frequency</label>
-                <select value={billingFrequency} onChange={e => setBillingFrequency(e.target.value)} className={inputCls}>
-                  <option value="off">Off</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="twice_monthly">Twice Monthly</option>
-                  <option value="every_6_weeks">Every 6 Weeks</option>
-                </select>
-              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+                <div onClick={() => setBillingAuto(v => !v)} className={`w-8 h-4 rounded-full relative transition-colors ${billingAuto ? "bg-emerald-500" : "bg-slate-200"}`}>
+                  <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${billingAuto ? "translate-x-4" : "translate-x-0.5"}`} />
+                </div>
+                <span className="text-xs text-slate-600 font-medium">Auto-invoice each occurrence</span>
+              </label>
 
               {billingError && <p className="text-red-600 text-[11px]">{billingError}</p>}
               <div className="flex gap-2">
