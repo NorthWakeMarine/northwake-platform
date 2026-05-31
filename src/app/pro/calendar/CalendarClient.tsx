@@ -28,6 +28,9 @@ export type EventLink = {
   serviceLabel: string | null;
   invoiceAmount: number | null;
   invoiceDiscount: number | null;
+  invoiceQty: number | null;
+  invoiceRate: number | null;
+  billingFrequency: string | null;
   autoInvoice: boolean;
 };
 
@@ -259,13 +262,14 @@ function LinkedPanel({
   const router = useRouter();
   const [showClaimInvoice,  setShowClaimInvoice]  = useState(false);
   const [showBilling,       setShowBilling]        = useState(false);
-  const [billingTemplateId, setBillingTemplateId]  = useState("");
-  const [billingLabel,      setBillingLabel]       = useState(link.serviceLabel ?? suggestedService);
-  const [billingAmount,     setBillingAmount]      = useState(link.invoiceAmount != null ? String(link.invoiceAmount) : "");
-  const [billingDiscount,   setBillingDiscount]    = useState(link.invoiceDiscount != null ? String(link.invoiceDiscount) : "");
-  const [billingVesselId,   setBillingVesselId]    = useState(link.vesselId ?? "");
-  const [billingVessels,    setBillingVessels]     = useState<VesselOption[]>([]);
-  const [billingAuto,       setBillingAuto]        = useState(link.autoInvoice);
+  const [billingTemplateId,  setBillingTemplateId]  = useState("");
+  const [billingLabel,       setBillingLabel]       = useState(link.serviceLabel ?? suggestedService);
+  const [billingQty,         setBillingQty]         = useState(link.invoiceQty != null ? String(link.invoiceQty) : "1");
+  const [billingRate,        setBillingRate]        = useState(link.invoiceRate != null ? String(link.invoiceRate) : "");
+  const [billingDiscount,    setBillingDiscount]    = useState(link.invoiceDiscount != null ? String(link.invoiceDiscount) : "");
+  const [billingFrequency,   setBillingFrequency]   = useState<string>(link.billingFrequency ?? (link.autoInvoice ? "monthly" : "off"));
+  const [billingVesselId,    setBillingVesselId]    = useState(link.vesselId ?? "");
+  const [billingVessels,     setBillingVessels]     = useState<VesselOption[]>([]);
   const [savingBilling,     setSavingBilling]      = useState(false);
   const [billingError,      setBillingError]       = useState("");
   const [invoices,          setInvoices]           = useState<InvoiceRecord[]>([]);
@@ -301,26 +305,19 @@ function LinkedPanel({
     }
   }
 
-  function calcPerFootAmount(templateId: string, vesselId: string): string {
-    const tpl = serviceTemplates.find(t => t.id === templateId);
-    if (!tpl?.is_per_foot) return billingAmount;
-    const vessel = billingVessels.find(v => v.id === vesselId);
-    const lengthFt = vessel?.length_ft ? parseFloat(vessel.length_ft) : null;
-    if (!lengthFt || isNaN(lengthFt)) return billingAmount;
-    return (tpl.default_amount * lengthFt).toFixed(2);
-  }
-
   function handleBillingTemplateChange(id: string) {
     setBillingTemplateId(id);
     const tpl = serviceTemplates.find(t => t.id === id);
     if (!tpl) return;
-    setBillingLabel(tpl.service_label);
+    setBillingLabel(tpl.name);
+    setBillingRate(String(tpl.default_amount));
     if (tpl.is_per_foot) {
       const vessel = billingVessels.find(v => v.id === billingVesselId);
       const lengthFt = vessel?.length_ft ? parseFloat(vessel.length_ft) : null;
-      if (lengthFt && !isNaN(lengthFt)) setBillingAmount((tpl.default_amount * lengthFt).toFixed(2));
+      if (lengthFt && !isNaN(lengthFt)) setBillingQty(String(lengthFt));
+      else setBillingQty("1");
     } else {
-      setBillingAmount(String(tpl.default_amount));
+      setBillingQty("1");
     }
   }
 
@@ -331,28 +328,37 @@ function LinkedPanel({
     if (!tpl?.is_per_foot) return;
     const vessel = billingVessels.find(v => v.id === id);
     const lengthFt = vessel?.length_ft ? parseFloat(vessel.length_ft) : null;
-    if (lengthFt && !isNaN(lengthFt)) setBillingAmount((tpl.default_amount * lengthFt).toFixed(2));
+    if (lengthFt && !isNaN(lengthFt)) setBillingQty(String(lengthFt));
   }
 
+  const billingGross = (() => {
+    const qty = parseFloat(billingQty);
+    const rate = parseFloat(billingRate);
+    if (isNaN(qty) || isNaN(rate)) return null;
+    return qty * rate;
+  })();
+
   const billingNet = (() => {
-    const gross = parseFloat(billingAmount);
+    if (billingGross === null) return null;
     const disc = parseFloat(billingDiscount);
-    if (isNaN(gross)) return null;
-    return gross - (isNaN(disc) ? 0 : disc);
+    return billingGross - (isNaN(disc) ? 0 : disc);
   })();
 
   async function saveBilling() {
     setSavingBilling(true);
     setBillingError("");
+    const gross = billingGross ?? 0;
     const fd = new FormData();
     fd.set("gcal_event_id",       linkKey);
     fd.set("contact_id",          link.contactId);
     fd.set("vessel_id",           billingVesselId);
     fd.set("service_template_id", billingTemplateId);
     fd.set("service_label",       billingLabel);
-    fd.set("invoice_amount",      billingAmount);
+    fd.set("invoice_qty",         billingQty || "1");
+    fd.set("invoice_rate",        billingRate);
+    fd.set("invoice_amount",      String(gross));
     fd.set("invoice_discount",    billingDiscount);
-    fd.set("auto_invoice",        String(billingAuto));
+    fd.set("billing_frequency",   billingFrequency);
     const res = await linkCalendarEvent({}, fd);
     if (res.error) { setBillingError(res.error); setSavingBilling(false); }
     else { setSavingBilling(false); setShowBilling(false); router.refresh(); }
@@ -474,15 +480,25 @@ function LinkedPanel({
           {!showBilling ? (
             <div className="flex items-center justify-between">
               <div>
-                {link.autoInvoice ? (
+                {link.billingFrequency && link.billingFrequency !== "off" ? (
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                     <p className="text-[10px] text-emerald-700 font-semibold">
-                      Auto-invoice ON{link.invoiceAmount ? ` — $${Number(link.invoiceAmount).toFixed(2)}/mo` : ""}
+                      {link.billingFrequency === "monthly" && "Monthly"}
+                      {link.billingFrequency === "twice_monthly" && "Twice Monthly"}
+                      {link.billingFrequency === "every_6_weeks" && "Every 6 Weeks"}
+                      {link.invoiceRate != null ? ` — $${Number(link.invoiceRate).toFixed(2)}/ea` : link.invoiceAmount ? ` — $${Number(link.invoiceAmount).toFixed(2)}` : ""}
+                    </p>
+                  </div>
+                ) : link.autoInvoice ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <p className="text-[10px] text-emerald-700 font-semibold">
+                      Monthly{link.invoiceAmount ? ` — $${Number(link.invoiceAmount).toFixed(2)}` : ""}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-[10px] text-slate-400">No auto-invoice configured</p>
+                  <p className="text-[10px] text-slate-400">No billing configured</p>
                 )}
                 {link.serviceLabel && (
                   <p className="text-[10px] text-slate-400 mt-0.5 truncate">{link.serviceLabel}</p>
@@ -492,7 +508,7 @@ function LinkedPanel({
                 onClick={openBilling}
                 className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0 ml-2"
               >
-                {link.autoInvoice ? "Edit" : "Set Up"}
+                {(link.autoInvoice || (link.billingFrequency && link.billingFrequency !== "off")) ? "Edit" : "Set Up"}
               </button>
             </div>
           ) : (
@@ -530,16 +546,18 @@ function LinkedPanel({
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">QB Line Description</label>
-                <input value={billingLabel} onChange={e => setBillingLabel(e.target.value)} className={inputCls} />
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">QB Item Name</label>
+                <input value={billingLabel} onChange={e => setBillingLabel(e.target.value)} className={inputCls} placeholder="Must match QB item name exactly" />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">
-                    {serviceTemplates.find(t => t.id === billingTemplateId)?.is_per_foot ? "Gross Amount ($)" : "Invoice Amount ($)"}
-                  </label>
-                  <input type="number" step="0.01" min="0" value={billingAmount} onChange={e => setBillingAmount(e.target.value)} placeholder="0.00" className={inputCls} />
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Qty</label>
+                  <input type="number" step="0.01" min="0" value={billingQty} onChange={e => setBillingQty(e.target.value)} placeholder="1" className={inputCls} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Rate ($)</label>
+                  <input type="number" step="0.01" min="0" value={billingRate} onChange={e => setBillingRate(e.target.value)} placeholder="0.00" className={inputCls} />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Discount ($)</label>
@@ -547,18 +565,24 @@ function LinkedPanel({
                 </div>
               </div>
 
-              {billingNet !== null && parseFloat(billingDiscount) > 0 && (
-                <p className="text-[10px] text-emerald-700 font-semibold -mt-1">
-                  Net invoice: ${billingNet.toFixed(2)}
+              {billingGross !== null && (
+                <p className="text-[10px] text-slate-500 -mt-1">
+                  Gross: ${billingGross.toFixed(2)}
+                  {billingNet !== null && parseFloat(billingDiscount) > 0 && (
+                    <span className="text-emerald-700 font-semibold ml-2">Net: ${billingNet.toFixed(2)}</span>
+                  )}
                 </p>
               )}
 
-              <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
-                <div onClick={() => setBillingAuto(v => !v)} className={`w-8 h-4 rounded-full relative transition-colors ${billingAuto ? "bg-emerald-500" : "bg-slate-200"}`}>
-                  <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${billingAuto ? "translate-x-4" : "translate-x-0.5"}`} />
-                </div>
-                <span className="text-xs text-slate-600 font-medium">Auto-invoice monthly</span>
-              </label>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Billing Frequency</label>
+                <select value={billingFrequency} onChange={e => setBillingFrequency(e.target.value)} className={inputCls}>
+                  <option value="off">Off</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="twice_monthly">Twice Monthly</option>
+                  <option value="every_6_weeks">Every 6 Weeks</option>
+                </select>
+              </div>
 
               {billingError && <p className="text-red-600 text-[11px]">{billingError}</p>}
               <div className="flex gap-2">

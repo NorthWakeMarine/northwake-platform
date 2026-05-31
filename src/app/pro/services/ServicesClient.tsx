@@ -29,7 +29,7 @@ function TemplateForm({
       {isEdit && <input type="hidden" name="id" value={template.id} />}
       <input type="hidden" name="is_per_foot" value={String(isPerFoot)} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
           <label className={labelCls}>Service Name</label>
           <input
@@ -39,16 +39,7 @@ function TemplateForm({
             placeholder="Bi-Weekly Wash"
             className={inputCls}
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>QB Line Description</label>
-          <input
-            name="service_label"
-            required
-            defaultValue={template?.service_label ?? ""}
-            placeholder="Boat Washing Service"
-            className={inputCls}
-          />
+          <p className="text-[10px] text-slate-400">Must match the item name in QuickBooks exactly.</p>
         </div>
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{isPerFoot ? "Rate ($/ft)" : "Flat Price ($)"}</label>
@@ -171,7 +162,6 @@ export default function ServicesClient({ templates: initial }: { templates: Serv
                   <div className="flex items-center gap-6 min-w-0">
                     <div className="min-w-0">
                       <p className="text-slate-800 text-sm font-semibold truncate">{t.name}</p>
-                      <p className="text-slate-400 text-xs mt-0.5 truncate">{t.service_label}</p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-slate-800 text-sm font-bold">
@@ -211,9 +201,9 @@ export default function ServicesClient({ templates: initial }: { templates: Serv
         <p className="text-[#000080] text-xs font-semibold mb-1">How auto-invoicing works</p>
         <ul className="text-slate-600 text-xs space-y-1 list-disc pl-4">
           <li>Go to the Calendar and click a linked recurring event.</li>
-          <li>In the link panel, pick a service template and set the client-specific price.</li>
-          <li>Toggle on &quot;Auto-invoice monthly&quot; for that event series.</li>
-          <li>On the 15th of each month, the cron generates QB invoices for all auto-invoice events in the following month.</li>
+          <li>In the link panel, pick a service template and set the client-specific qty, rate, and discount.</li>
+          <li>Set billing frequency: Monthly, Twice Monthly, or Every 6 Weeks.</li>
+          <li>On the 15th of each month, the cron generates QB invoices for the following month.</li>
           <li>Each invoice is logged to the client&apos;s activity timeline automatically.</li>
         </ul>
       </div>

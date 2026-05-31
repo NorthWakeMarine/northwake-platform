@@ -2,6 +2,18 @@
 
 ## May 2026
 
+### May 31 | Billing frequency, qty/rate, QB item matching | CRM
+
+- **Billing frequency per event**: Calendar event billing config now has a frequency selector instead of a monthly-only toggle. Options: Off, Monthly, Twice Monthly, Every 6 Weeks. Each series stores its own frequency independently of how the Google Calendar recurrence is configured.
+- **Twice-monthly invoicing**: Cron generates 2 invoices per month for "Twice Monthly" links, dated at the first two GCal occurrences (or day 1 and day 15 if fewer than 2 occurrences exist in the window).
+- **Qty and Rate fields**: Calendar event billing form now shows Qty, Rate, and Discount side-by-side. Gross = Qty x Rate, Net = Gross - Discount. For per-foot templates, Qty auto-fills from vessel length and Rate from the template rate per foot.
+- **QB qty/rate on invoices**: Invoices created by the cron and manually now include `Qty` and `UnitPrice` in the QB line item, so QB displays the breakdown correctly instead of just a lump amount.
+- **QB item name matching**: Service template name is now used as the QB item lookup key. The "QB Line Description" field has been removed from the services form. Template name must match the QB item name exactly for the line item to link correctly.
+- **Dedup by billing period**: Cron now deduplicates by `billing_period_key` (e.g., `{series_id}_2026-06-1`) rather than per GCal event instance. This is what enables twice-monthly invoicing even when GCal has only one event per month for the series.
+- **DB migration**: `20260531_billing_frequency.sql` adds `billing_frequency TEXT`, `invoice_qty NUMERIC`, `invoice_rate NUMERIC` to `calendar_contact_links`.
+
+
+
 ### May 28 | Recurring billing, vessel picker, QB invoice fixes | CRM
 
 - **Service Templates**: New `/pro/services` page for managing reusable service types. Each template has a name, QB line label, default price, and a per-foot toggle. When per-foot is on, invoice amount auto-calculates from the vessel's length when linking a billing config to a calendar event.
