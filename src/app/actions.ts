@@ -333,7 +333,7 @@ export async function savePhoneNote(
   const note  = (formData.get("note")  as string ?? "").trim();
   if (!phone) return { error: "Missing phone number." };
 
-  const supabase = await createServerSupabase();
+  const supabase = await svc();
   const { error } = await supabase
     .from("phone_notes")
     .upsert({ phone, note, updated_at: new Date().toISOString() }, { onConflict: "phone" });
