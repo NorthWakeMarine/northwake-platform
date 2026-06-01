@@ -2106,7 +2106,8 @@ export async function updatePipelineStage(
   if (contact.pipeline_stage === "needs_attention") {
     updatePayload.health_flags = [];
   }
-  await supabase.from("contacts").update(updatePayload).eq("id", id);
+  const { error: updateErr } = await supabase.from("contacts").update(updatePayload).eq("id", id);
+  if (updateErr) return { ok: false, error: updateErr.message };
 
   const { data: vessel } = await supabase
     .from("vessels")

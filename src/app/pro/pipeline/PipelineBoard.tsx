@@ -22,8 +22,10 @@ import MobileBoard from "./MobileBoard";
 function groupByStage(cards: PipelineCard[]): Record<PipelineStage, PipelineCard[]> {
   const result = Object.fromEntries(STAGES.map((s) => [s, [] as PipelineCard[]])) as Record<PipelineStage, PipelineCard[]>;
   for (const card of cards) {
-    const bucket = result[card.stage] ?? result["new_leads"];
-    bucket.push(card);
+    // Stages not in STAGES (e.g. needs_attention) fall into new_leads for display.
+    // Remap the card's stage so drag-and-drop operates on the correct bucket key.
+    const displayStage: PipelineStage = result[card.stage] !== undefined ? card.stage : "new_leads";
+    result[displayStage].push(displayStage !== card.stage ? { ...card, stage: displayStage } : card);
   }
   return result;
 }
