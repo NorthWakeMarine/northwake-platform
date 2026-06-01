@@ -35,6 +35,7 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
     groupByStage(initialCards)
   );
   const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
   const [userName, setUserName] = useState(
     () => (typeof window !== "undefined" && localStorage.getItem("pro-user-name")) || ""
   );
@@ -92,6 +93,8 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
 
         if (!result.ok) {
           setColumns(prevColumns);
+          setMoveError(result.error ?? "Failed to move card. Please try again.");
+          setTimeout(() => setMoveError(null), 4000);
           return;
         }
 
@@ -155,6 +158,11 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
+      {moveError && (
+        <div className="shrink-0 bg-red-50 border-b border-red-200 px-6 py-2 text-red-700 text-xs font-medium">
+          {moveError}
+        </div>
+      )}
       <div className="bg-[#eceef1] border-b border-[#dcdee3] px-6 py-4 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">

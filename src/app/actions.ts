@@ -1415,7 +1415,38 @@ export async function getContactInvoices(
     .eq("contact_id", contactId)
     .eq("event_type", "invoice")
     .order("created_at", { ascending: false });
-  return (data ?? []) as { id: string; title: string | null; body: string | null; metadata: Record<string, unknown> | null }[];
+
+  const rows = (data ?? []) as { id: string; title: string | null; body: string | null; metadata: Record<string, unknown> | null }[];
+
+  // Deduplicate by doc_number: keep the entry with invoice_url (cron-created) over one without.
+  // Drop entries that have neither a doc_number nor an invoice_url (stale import artifacts).
+  const seen = new Map<string, typeof rows[0]>();
+  const out: typeof rows = [];
+  for (const row of rows) {
+    const meta = row.metadata ?? {};
+    const docNum = meta.doc_number as string | null | undefined;
+    const hasUrl = Boolean(meta.invoice_url);
+
+    if (!docNum && !hasUrl) continue; // stale artifact with no useful data
+
+    if (docNum) {
+      const existing = seen.get(docNum);
+      if (!existing) {
+        seen.set(docNum, row);
+        out.push(row);
+      } else if (hasUrl && !existing.metadata?.invoice_url) {
+        // Replace with the richer entry (has URL)
+        const idx = out.indexOf(existing);
+        out[idx] = row;
+        seen.set(docNum, row);
+      }
+      // else: duplicate with same or less data — skip
+    } else {
+      // No doc_number but has invoice_url: keep (manually linked invoice)
+      out.push(row);
+    }
+  }
+  return out;
 }
 
 export async function claimGcalEventToInvoice(
@@ -2089,7 +2120,6 @@ export async function updatePipelineStage(
       .limit(1)
       .maybeSingle();
 
-    revalidatePath("/pro/pipeline");
     revalidatePath("/pro/leads");
     return { ok: true, contactId: contactId!, contactName: lead.name ?? "Unknown", vesselName: vessel?.name ?? null };
   }
@@ -2117,7 +2147,6 @@ export async function updatePipelineStage(
     .limit(1)
     .maybeSingle();
 
-  revalidatePath("/pro/pipeline");
   return { ok: true, contactId: id, contactName: contact.name ?? "Unknown", vesselName: vessel?.name ?? null };
 }
 
