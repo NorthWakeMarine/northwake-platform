@@ -1,16 +1,27 @@
 # NorthWake Platform Changelog
 
+## June 2026
+
+### June 1 | Kanban card revert fix, invoice picker deduplication | CRM
+
+- **Kanban cards no longer revert on drop**: Moving cards between pipeline stages was snapping back to the original column on success. Root cause: `updatePipelineStage` called `revalidatePath("/pro/pipeline")` which triggered a Next.js router refresh; if that refresh read from the DB before the write fully committed (race condition), the board re-rendered with stale data. Removed the `revalidatePath` from `updatePipelineStage` — the board is fully optimistic and does not need a server-side refresh after a drag.
+- **Move error banner**: If a pipeline stage update fails on the server, a red banner now appears at the top of the board for 4 seconds with the error message instead of silently reverting.
+- **Invoice picker deduplication**: "Pick an existing invoice" on customer cards was showing duplicate entries (e.g., Invoice #379 twice) and stale entries for deleted QB invoices (e.g., Invoice #378). `getContactInvoices` now deduplicates by `doc_number` — keeping the entry with a QB URL (cron-created) over a bare import — and drops stale entries that have neither a `doc_number` nor an `invoice_url`.
+
 ## May 2026
 
-### May 31 | Billing frequency, qty/rate, QB item matching | CRM
+### May 31 | Per-instance billing, qty/rate, QB item matching, CRM bug fixes | CRM
 
-- **Billing frequency per event**: Calendar event billing config now has a frequency selector instead of a monthly-only toggle. Options: Off, Monthly, Twice Monthly, Every 6 Weeks. Each series stores its own frequency independently of how the Google Calendar recurrence is configured.
-- **Twice-monthly invoicing**: Cron generates 2 invoices per month for "Twice Monthly" links, dated at the first two GCal occurrences (or day 1 and day 15 if fewer than 2 occurrences exist in the window).
-- **Qty and Rate fields**: Calendar event billing form now shows Qty, Rate, and Discount side-by-side. Gross = Qty x Rate, Net = Gross - Discount. For per-foot templates, Qty auto-fills from vessel length and Rate from the template rate per foot.
-- **QB qty/rate on invoices**: Invoices created by the cron and manually now include `Qty` and `UnitPrice` in the QB line item, so QB displays the breakdown correctly instead of just a lump amount.
+- **Per-GCal-instance invoicing**: Cron fires one invoice per GCal event occurrence in the next month window. Invoice frequency is controlled entirely by the Google Calendar recurrence (monthly, twice-monthly, every 6 weeks) — no extra field needed. Deduplicates by `gcal_event_id` in timeline metadata so re-runs are idempotent.
+- **Billing frequency column**: `billing_frequency` column added to `calendar_contact_links` by `20260531_billing_frequency.sql` (with `invoice_qty` and `invoice_rate`). Column is present in DB but not exposed in UI — frequency is managed via GCal recurrence.
+- **Qty and Rate fields**: Calendar event billing form shows Qty, Rate, and Discount side-by-side. Gross = Qty x Rate, Net = Gross - Discount. Net is the amount sent to QB. For per-foot templates, Qty auto-fills from vessel length and Rate from the template rate per foot.
+- **Billing status net total**: Dollar amount shown next to the series label in the calendar event panel now shows the net total (qty x rate - discount) instead of the per-unit rate.
+- **QB qty/rate on invoices**: Invoices now include `Qty` and `UnitPrice` in the QB line item so QB displays the breakdown correctly instead of a lump amount.
 - **QB item name matching**: Service template name is now used as the QB item lookup key. The "QB Line Description" field has been removed from the services form. Template name must match the QB item name exactly for the line item to link correctly.
-- **Dedup by billing period**: Cron now deduplicates by `billing_period_key` (e.g., `{series_id}_2026-06-1`) rather than per GCal event instance. This is what enables twice-monthly invoicing even when GCal has only one event per month for the series.
-- **DB migration**: `20260531_billing_frequency.sql` adds `billing_frequency TEXT`, `invoice_qty NUMERIC`, `invoice_rate NUMERIC` to `calendar_contact_links`.
+- **Hide Create/Claim buttons when invoice already linked**: Calendar event panel no longer shows "Create Invoice" or "Claim to Invoice" buttons if a linked invoice is already found. Shows the linked invoice chip and a "View in QB" button instead. `getLinkedInvoiceForEvent` verifies the QB invoice still exists and auto-clears the timeline link if QB returns 404/400.
+- **Phone notes RLS fix**: `savePhoneNote` was blocked by RLS on `phone_notes`. Switched to service role client.
+- **"Use CRM" sync fix**: `pushCrmFieldToQb` was calling `findOrCreateQbCustomer` which short-circuits for existing customers. Rewrote to do a proper sparse QB customer update (fetches `SyncToken`, patches only the changed field).
+- **Kanban `needs_attention` cards**: Cards stored in `needs_attention` pipeline stage (not in the STAGES display array) were crashing the drag handler because `prev["needs_attention"]` was undefined. `groupByStage` now remaps those cards to `new_leads` including updating `card.stage` so all drag operations reference a valid column key.
 
 
 
