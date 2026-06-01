@@ -1440,6 +1440,49 @@ export async function claimGcalEventToInvoice(
   return {};
 }
 
+export async function getLinkedInvoiceForEvent(
+  gcalEventId: string,
+  contactId: string
+): Promise<{ title: string; url: string | null } | null> {
+  const supabase = await svc();
+  const { data: events } = await supabase
+    .from("timeline_events")
+    .select("id, title, metadata")
+    .eq("contact_id", contactId)
+    .eq("event_type", "invoice");
+
+  const match = (events ?? []).find(
+    e => (e.metadata as { gcal_event_id?: string } | null)?.gcal_event_id === gcalEventId
+  );
+  if (!match) return null;
+
+  const meta = match.metadata as { invoice_url?: string; qb_invoice_id?: string } | null;
+  const invoiceUrl = meta?.invoice_url ?? null;
+
+  // Verify the QB invoice still exists; auto-clear if deleted
+  const qbInvoiceId = meta?.qb_invoice_id?.replace("Invoice:", "");
+  if (qbInvoiceId) {
+    try {
+      const { getValidTokens } = await import("@/lib/quickbooks");
+      const tokens = await getValidTokens();
+      const res = await fetch(
+        `https://quickbooks.api.intuit.com/v3/company/${tokens.realm_id}/invoice/${qbInvoiceId}?minorversion=70`,
+        { headers: { Authorization: `Bearer ${tokens.access_token}`, Accept: "application/json" } }
+      );
+      if (res.status === 400 || res.status === 404) {
+        // Invoice deleted in QB — clear the link automatically
+        const newMeta = { ...(match.metadata as Record<string, unknown>), gcal_event_id: null };
+        await supabase.from("timeline_events").update({ metadata: newMeta }).eq("id", match.id);
+        return null;
+      }
+    } catch {
+      // QB check failed (network, token, etc.) — show the invoice anyway
+    }
+  }
+
+  return { title: match.title ?? "Invoice", url: invoiceUrl };
+}
+
 export async function removeGcalFromInvoice(
   gcalEventId: string,
   contactId: string

@@ -13,7 +13,7 @@ import {
   getVesselsByContactId,
   getContactInvoices,
   claimGcalEventToInvoice,
-  removeGcalFromInvoice,
+  getLinkedInvoiceForEvent,
   type CalendarEventState,
   type CalendarLinkState,
   type CalendarInvoiceState,
@@ -282,14 +282,8 @@ function LinkedPanel({
   const [checkingLinked,    setCheckingLinked]      = useState(true);
 
   useEffect(() => {
-    getContactInvoices(link.contactId).then(list => {
-      const match = list.find(inv => (inv.metadata?.gcal_event_id as string | undefined) === event.id);
-      if (match) {
-        setLinkedInvoice({
-          title: match.title ?? "Invoice",
-          url: (match.metadata?.invoice_url as string | null) ?? null,
-        });
-      }
+    getLinkedInvoiceForEvent(event.id, link.contactId).then(result => {
+      setLinkedInvoice(result);
       setCheckingLinked(false);
     });
   }, [event.id, link.contactId]);
@@ -409,27 +403,16 @@ function LinkedPanel({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                 <p className="text-xs font-semibold text-emerald-800 truncate">{linkedInvoice.title}</p>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                {linkedInvoice.url && (
-                  <a
-                    href={linkedInvoice.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline"
-                  >
-                    View in QB
-                  </a>
-                )}
-                <button
-                  onClick={async () => {
-                    await removeGcalFromInvoice(event.id, link.contactId);
-                    setLinkedInvoice(null);
-                  }}
-                  className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 hover:text-red-500 transition-colors"
+              {linkedInvoice.url && (
+                <a
+                  href={linkedInvoice.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0"
                 >
-                  Remove
-                </button>
-              </div>
+                  View in QB
+                </a>
+              )}
             </div>
             <button
               onClick={handleUnlink}
