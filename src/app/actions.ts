@@ -2623,18 +2623,19 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
 
     if (!contacts?.length) return { imported: 0, skipped: 0 };
 
-    // Deduplicate by qb_txn_id (new format) or qb_invoice_id (legacy format)
+    // Deduplicate per-contact: key is "contactId:txnId" so an invoice on the wrong
+    // contact doesn't permanently block it from being imported under the correct one.
     const { data: existing } = await supabase
       .from("timeline_events")
-      .select("metadata")
+      .select("contact_id, metadata")
       .in("event_type", ["invoice", "payment", "sales_receipt", "credit_memo"]);
 
     const importedIds = new Set<string>();
     for (const e of existing ?? []) {
       const meta = e.metadata as { qb_txn_id?: string; qb_invoice_id?: string };
-      if (meta?.qb_txn_id) importedIds.add(meta.qb_txn_id);
-      // Normalize legacy invoice IDs so we don't reimport them under the new key
-      if (meta?.qb_invoice_id) importedIds.add(`Invoice:${meta.qb_invoice_id}`);
+      const cid = e.contact_id as string;
+      if (meta?.qb_txn_id) importedIds.add(`${cid}:${meta.qb_txn_id}`);
+      if (meta?.qb_invoice_id) importedIds.add(`${cid}:Invoice:${meta.qb_invoice_id}`);
     }
 
     const typeLabels: Record<string, string> = {
@@ -2663,8 +2664,9 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
     for (const { contact, txns } of contactTxns) {
       for (const txn of txns) {
         const key = `${txn.txnType}:${txn.id}`;
-        if (importedIds.has(key)) { skipped++; continue; }
-        importedIds.add(key);
+        const contactKey = `${contact.id}:${key}`;
+        if (importedIds.has(contactKey)) { skipped++; continue; }
+        importedIds.add(contactKey);
 
         const label = typeLabels[txn.txnType] ?? txn.txnType;
         const docPart = txn.docNumber ? ` #${txn.docNumber}` : "";
