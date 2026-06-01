@@ -31,7 +31,7 @@ const PipelineColumn = memo(function PipelineColumn({
   const cardIds = cards.map((c) => c.id);
 
   return (
-    <div className="flex-1 min-w-56 flex flex-col gap-2 min-h-0">
+    <div className="flex-1 min-w-72 flex flex-col gap-2 min-h-0">
       <div className={`flex items-center justify-between px-3 py-2 rounded-md bg-[#F1F2F5] neu-col ${ACCENT[stage]}`}>
         <span className="text-[#1E2938]/60 text-[11px] font-semibold tracking-widest uppercase">
           {STAGE_LABELS[stage]}
