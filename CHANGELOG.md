@@ -2,6 +2,15 @@
 
 ## June 2026
 
+### June 3 | Kanban paid column fix, column widths, QB invoice cross-contact bug | CRM
+
+- **Kanban "Paid" column was reverting on drop**: Moving cards to the Paid column triggered a DB check constraint violation (`contacts_pipeline_stage_check` was missing `"paid"` as a valid value). The server action returned `ok: false`, the optimistic update reverted, and no error was surfaced to the user. Migration `20260601_fix_pipeline_stage_constraint.sql` drops and re-adds the constraint with all 8 stages including `"paid"`. Run in Supabase SQL editor to activate.
+- **Kanban column widths**: Columns widened from `min-w-48` to `min-w-72` (288px) so full customer names are readable without truncation. Card name text now wraps (`break-words`) instead of clipping with ellipsis.
+- **QB invoices appearing on wrong customer timelines**: `importQbInvoices` used a global dedup set keyed only by invoice ID. Once an invoice was imported under any contact, the dedup blocked it from being re-imported under the correct contact even if the first import was wrong. Dedup set is now keyed as `contactId:txnId` so each contact has an independent seen-set. To clean existing bad data: delete the misattributed timeline_events rows in Supabase, then re-run Sync All.
+- **Removed "Clear QB Notes" button**: Removed from the Integrations sync panel as it is no longer needed. Handler, state, and result display all removed.
+- **Supabase credentials wired up locally**: `NEXT_PUBLIC_SUPABASE_ANON_KEY` populated in `.env.local` with the publishable key. Auth and DB queries now work in local dev.
+- **Deploy rule hardened**: Added `git push` only deploy rule to `CLAUDE.md` to prevent the AI from running `vercel --prod` directly.
+
 ### June 1 | Kanban card revert fix, invoice picker deduplication | CRM
 
 - **Kanban cards no longer revert on drop**: Moving cards between pipeline stages was snapping back to the original column on success. Root cause: `updatePipelineStage` called `revalidatePath("/pro/pipeline")` which triggered a Next.js router refresh; if that refresh read from the DB before the write fully committed (race condition), the board re-rendered with stale data. Removed the `revalidatePath` from `updatePipelineStage` — the board is fully optimistic and does not need a server-side refresh after a drag.
