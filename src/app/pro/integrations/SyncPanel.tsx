@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, runIntegrityCheck, createContactFromQb, createContactFromQuo, pushCrmToQuickBooks, pushCrmToQuo, importQuoContacts, syncVesselsToQbNotes, updateContactFields, pushCrmFieldToQb, importQbInvoices, purgeGhostVessels } from "@/app/actions";
+import { importQbCustomers, runIntegrityCheck, createContactFromQb, createContactFromQuo, pushCrmToQuickBooks, pushCrmToQuo, importQuoContacts, syncVesselsToQbNotes, updateContactFields, pushCrmFieldToQb, importQbInvoices, reconcileQbInvoices, purgeGhostVessels } from "@/app/actions";
 import type { FieldMismatch, OpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
@@ -12,6 +12,7 @@ type SyncResult = {
   quoPush?: { updated: number; created: number; error?: string };
   integrity?: { checked: number; flagged: number; error?: string };
   qbInvoices?: { imported: number; skipped: number; error?: string };
+  qbReconcile?: { removed: number; updated: number; error?: string };
   qbPush?: { upserted: number; skipped: string[]; error?: string };
   qbNotes?: { synced: number; error?: string };
   ghostPurge?: { deleted: number; error?: string };
@@ -32,9 +33,10 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
       // QB sync + integrity check run in parallel
       // Quo contact sync removed — handled in real-time by Quo webhooks
       // Integrity check fires async so it doesn't hold up the response
-      const [qb, qbInvoices, qbPush, qbNotes] = await Promise.all([
+      const [qb, qbInvoices, qbReconcile, qbPush, qbNotes] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
         qbConnected ? importQbInvoices() : Promise.resolve(undefined),
+        qbConnected ? reconcileQbInvoices() : Promise.resolve(undefined),
         qbConnected ? pushCrmToQuickBooks() : Promise.resolve(undefined),
         qbConnected ? syncVesselsToQbNotes() : Promise.resolve(undefined),
       ]);
@@ -45,6 +47,7 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
       setResult({
         qb: qb ?? undefined,
         qbInvoices: qbInvoices ?? undefined,
+        qbReconcile: qbReconcile ?? undefined,
         qbPush: qbPush ?? undefined,
         qbNotes: qbNotes ?? undefined,
         ghostPurge,
@@ -238,6 +241,27 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
             </div>
           )}
 
+
+          {/* Invoice reconcile results */}
+          {result.qbReconcile && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">QB Invoice Reconcile</p>
+              {result.qbReconcile.error ? (
+                <p className="text-red-500 text-xs">{result.qbReconcile.error}</p>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-400" />
+                    <span className="text-slate-700 text-xs">{result.qbReconcile.removed} stale entries removed</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-400" />
+                    <span className="text-slate-700 text-xs">{result.qbReconcile.updated} statuses updated</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Push to QB results */}
           {result.qbPush && (

@@ -2706,6 +2706,97 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
   }
 }
 
+// ── QB Invoice Reconcile: remove stale CRM timeline entries, update statuses ──
+
+export async function reconcileQbInvoices(): Promise<{ removed: number; updated: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { listQbTransactionsForCustomer, getQbTokens } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { removed: 0, updated: 0, error: "QuickBooks not connected." };
+
+    const { data: contacts } = await supabase
+      .from("contacts")
+      .select("id, qb_customer_id")
+      .not("qb_customer_id", "is", null);
+
+    if (!contacts?.length) return { removed: 0, updated: 0 };
+
+    const { data: existing } = await supabase
+      .from("timeline_events")
+      .select("id, contact_id, title, metadata")
+      .in("event_type", ["invoice", "payment", "sales_receipt", "credit_memo"])
+      .not("metadata->qb_txn_id", "is", null);
+
+    if (!existing?.length) return { removed: 0, updated: 0 };
+
+    // Group existing CRM events by contact_id
+    const byContact = new Map<string, typeof existing>();
+    for (const e of existing) {
+      const cid = e.contact_id as string;
+      if (!byContact.has(cid)) byContact.set(cid, []);
+      byContact.get(cid)!.push(e);
+    }
+
+    const contactsWithEvents = contacts.filter((c) => byContact.has(c.id));
+
+    // Fetch current QB transactions for all relevant contacts
+    const contactTxns = await pMap(contactsWithEvents, async (contact) => {
+      const txns = await listQbTransactionsForCustomer(contact.qb_customer_id!);
+      return { contactId: contact.id, txns };
+    }, 5);
+
+    const typeLabels: Record<string, string> = {
+      Invoice: "Invoice", Payment: "Payment", SalesReceipt: "Sales Receipt", CreditMemo: "Credit Memo",
+    };
+
+    const toDelete: string[] = [];
+    const toUpdate: { id: string; title: string; metadata: Record<string, unknown> }[] = [];
+
+    for (const { contactId, txns } of contactTxns) {
+      const events = byContact.get(contactId) ?? [];
+      const liveKeys = new Map(txns.map((t) => [`${t.txnType}:${t.id}`, t]));
+
+      for (const ev of events) {
+        const meta = ev.metadata as { qb_txn_id?: string; status?: string; total?: number; doc_number?: string; invoice_url?: string; txn_date?: string; txn_type?: string } | null;
+        const txnKey = meta?.qb_txn_id;
+        if (!txnKey) continue;
+
+        const live = liveKeys.get(txnKey);
+        if (!live) {
+          // No longer in QB — deleted or voided
+          toDelete.push(ev.id as string);
+        } else {
+          // Check if status or amount changed
+          const newStatus = live.status ?? null;
+          const newTotal = live.totalAmt;
+          if (newStatus !== (meta?.status ?? null) || newTotal !== (meta?.total ?? null)) {
+            const label = typeLabels[live.txnType] ?? live.txnType;
+            const docPart = live.docNumber ? ` #${live.docNumber}` : "";
+            toUpdate.push({
+              id: ev.id as string,
+              title: `${label}${docPart} — $${Math.abs(newTotal).toFixed(2)}${newStatus ? ` (${newStatus})` : ""}`,
+              metadata: { ...meta, status: newStatus, total: newTotal },
+            });
+          }
+        }
+      }
+    }
+
+    if (toDelete.length) {
+      await supabase.from("timeline_events").delete().in("id", toDelete);
+    }
+    for (const u of toUpdate) {
+      await supabase.from("timeline_events").update({ title: u.title, metadata: u.metadata }).eq("id", u.id);
+    }
+
+    revalidatePath("/pro/contacts");
+    return { removed: toDelete.length, updated: toUpdate.length };
+  } catch (err) {
+    return { removed: 0, updated: 0, error: err instanceof Error ? err.message : "Reconcile failed." };
+  }
+}
+
 // ── QB Vessel Sync: QB → CRM ──────────────────────────────────────────────────
 
 

@@ -27,7 +27,7 @@ function mapAssetType(raw: string | null): PipelineCard["assetType"] {
 export async function getPipelineBoard(): Promise<PipelineCard[]> {
   const supabase = svc();
 
-  const [contactsRes, leadsRes] = await Promise.all([
+  const [contactsRes, leadsRes, allContactsRes] = await Promise.all([
     supabase
       .from("contacts")
       .select("id, name, email, phone, status, pipeline_stage, last_contact_at, stage_entered_at, created_at, contact_type, health_flags, vessels ( id, name, make_model, year, length_ft, asset_type, last_service_date, service_interval_days )")
@@ -39,6 +39,9 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
       .select("id, name, email, phone, vessel_type, created_at")
       .or("status.is.null,status.neq.converted")
       .order("created_at", { ascending: false }),
+    supabase
+      .from("contacts")
+      .select("email, phone"),
   ]);
 
   const openLeadEmails = new Set((leadsRes.data ?? []).map((l: { email: string | null }) => l.email).filter(Boolean));
@@ -82,11 +85,13 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
     };
   });
 
-  // Deduplicate: skip lead-only cards whose email already has a contact card
-  const contactEmails = new Set(contactsRes.data?.map((c) => c.email).filter(Boolean));
+  // Deduplicate: skip lead-only cards for anyone already in contacts (any type), matched by email or phone
+  const allContacts = allContactsRes.data ?? [];
+  const contactEmails = new Set(allContacts.map((c) => c.email).filter(Boolean));
+  const contactPhones = new Set(allContacts.map((c) => c.phone).filter(Boolean));
 
   const leadCards: PipelineCard[] = (leadsRes.data ?? [])
-    .filter((l) => !contactEmails.has(l.email))
+    .filter((l) => !contactEmails.has(l.email) && !contactPhones.has(l.phone))
     .map((l) => ({
       id: `lead_${l.id}`,
       sourceType: "lead" as const,
