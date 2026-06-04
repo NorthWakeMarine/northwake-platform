@@ -233,7 +233,7 @@ export default async function ContactProfilePage({
           isVendor={contact.contact_type === "vendor"}
         />
 
-        <div className="flex-1 px-4 md:px-8 py-6 flex flex-col gap-5 pb-36 md:pb-6">
+        <div className="flex-1 px-4 md:px-8 py-6 flex flex-col gap-5 pb-48 md:pb-6">
 
           {/* Vendor descriptor */}
           {contact.contact_type === "vendor" && (

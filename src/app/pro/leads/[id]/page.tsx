@@ -207,7 +207,7 @@ export default async function LeadDetailPage({
         </div>
 
         {/* Mobile action strip */}
-        <div className="fixed bottom-16 inset-x-0 z-40 md:hidden bg-white border-t border-slate-200">
+        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] inset-x-0 z-40 md:hidden bg-white border-t border-slate-200">
           <div className="flex gap-2 px-4 py-3 overflow-x-auto">
             {lead.phone && (
               <a
@@ -249,7 +249,7 @@ export default async function LeadDetailPage({
           </div>
         </div>
 
-        <div className="flex-1 px-4 md:px-8 py-6 pb-36 md:pb-6">
+        <div className="flex-1 px-4 md:px-8 py-6 pb-48 md:pb-6">
           <div className="grid lg:grid-cols-3 gap-5">
 
             {/* Left: lead data */}
