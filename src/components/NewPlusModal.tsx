@@ -123,8 +123,8 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
   // ── Contact search ──
   useEffect(() => {
     if (step !== "customer" || picked) return;
-    if (query.length < 2) { setResults([]); return; }
     const t = setTimeout(() => {
+      if (query.length < 2) { setResults([]); return; }
       startSearch(async () => {
         const r = await searchContactsByName(query);
         setResults(r);
