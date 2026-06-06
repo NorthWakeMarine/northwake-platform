@@ -18,6 +18,7 @@ import DeleteContactButton from "../DeleteContactButton";
 import MobileContactActionsSheet from "./MobileContactActionsSheet";
 import VendorDescriptor from "./VendorDescriptor";
 import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
+import NewPlusButton from "./NewPlusButton";
 import type { PipelineStage } from "@/types/pipeline";
 import type { DriveFile } from "@/lib/google-drive";
 
@@ -183,6 +184,13 @@ export default async function ContactProfilePage({
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
             {contact.contact_type !== "vendor" && (
+              <NewPlusButton
+                contactId={contact.id}
+                contactName={contact.name ?? ""}
+                vessels={assets.map(a => ({ id: a.id, name: a.name ?? null, make_model: a.make_model ?? null, length_ft: a.length_ft ?? null }))}
+              />
+            )}
+            {contact.contact_type !== "vendor" && (
               <>
                 {contact.qb_customer_id ? (
                   <a
@@ -228,6 +236,8 @@ export default async function ContactProfilePage({
         {/* Mobile action sheet */}
         <MobileContactActionsSheet
           contactId={contact.id}
+          contactName={contact.name ?? ""}
+          vessels={assets.map(a => ({ id: a.id, name: a.name ?? null, make_model: a.make_model ?? null, length_ft: a.length_ft ?? null }))}
           qbCustomerId={contact.qb_customer_id}
           pipelineStage={contact.pipeline_stage}
           isVendor={contact.contact_type === "vendor"}

@@ -6,6 +6,8 @@ import {
   createStandaloneEvent,
   updateStandaloneEvent,
   deleteStandaloneEvent,
+  updateCalendarEventInstance,
+  deleteCalendarEventSeries,
   linkCalendarEvent,
   unlinkCalendarEvent,
   createInvoiceFromCalendarEvent,
@@ -261,20 +263,8 @@ function LinkedPanel({
 }) {
   const router = useRouter();
   const [showClaimInvoice,  setShowClaimInvoice]  = useState(false);
-  const [showBilling,       setShowBilling]        = useState(false);
-  const [billingTemplateId,  setBillingTemplateId]  = useState("");
-  const [billingLabel,       setBillingLabel]       = useState(link.serviceLabel ?? suggestedService);
-  const [billingQty,         setBillingQty]         = useState(link.invoiceQty != null ? String(link.invoiceQty) : "1");
-  const [billingRate,        setBillingRate]        = useState(link.invoiceRate != null ? String(link.invoiceRate) : "");
-  const [billingDiscount,    setBillingDiscount]    = useState(link.invoiceDiscount != null ? String(link.invoiceDiscount) : "");
-  const [billingAuto,        setBillingAuto]        = useState(link.autoInvoice);
-  const [billingVesselId,    setBillingVesselId]    = useState(link.vesselId ?? "");
-  const [billingVessels,     setBillingVessels]     = useState<VesselOption[]>([]);
-  const [savingBilling,     setSavingBilling]      = useState(false);
-  const [billingError,      setBillingError]       = useState("");
   const [invoices,          setInvoices]           = useState<InvoiceRecord[]>([]);
   const [loadingInvoices,   startLoadInvoices]     = useTransition();
-  const [loadingVessels,    startLoadVessels]      = useTransition();
   const [claimingId,        setClaimingId]          = useState<string | null>(null);
   const [claimError,        setClaimError]          = useState("");
   const [claimedId,         setClaimedId]           = useState<string | null>(null);
@@ -302,75 +292,6 @@ function LinkedPanel({
     const res = await claimGcalEventToInvoice(invoiceTimelineId, event.id);
     if (res.error) { setClaimError(res.error); setClaimingId(null); }
     else { setClaimedId(invoiceTimelineId); setClaimingId(null); router.refresh(); }
-  }
-
-  function openBilling() {
-    setShowBilling(true);
-    if (billingVessels.length === 0) {
-      startLoadVessels(async () => {
-        const vs = await getVesselsByContactId(link.contactId);
-        setBillingVessels(vs);
-      });
-    }
-  }
-
-  function handleBillingTemplateChange(id: string) {
-    setBillingTemplateId(id);
-    const tpl = serviceTemplates.find(t => t.id === id);
-    if (!tpl) return;
-    setBillingLabel(tpl.name);
-    setBillingRate(String(tpl.default_amount));
-    if (tpl.is_per_foot) {
-      const vessel = billingVessels.find(v => v.id === billingVesselId);
-      const lengthFt = vessel?.length_ft ? parseFloat(vessel.length_ft) : null;
-      if (lengthFt && !isNaN(lengthFt)) setBillingQty(String(lengthFt));
-      else setBillingQty("1");
-    } else {
-      setBillingQty("1");
-    }
-  }
-
-  function handleBillingVesselChange(id: string) {
-    setBillingVesselId(id);
-    if (!billingTemplateId) return;
-    const tpl = serviceTemplates.find(t => t.id === billingTemplateId);
-    if (!tpl?.is_per_foot) return;
-    const vessel = billingVessels.find(v => v.id === id);
-    const lengthFt = vessel?.length_ft ? parseFloat(vessel.length_ft) : null;
-    if (lengthFt && !isNaN(lengthFt)) setBillingQty(String(lengthFt));
-  }
-
-  const billingGross = (() => {
-    const qty = parseFloat(billingQty);
-    const rate = parseFloat(billingRate);
-    if (isNaN(qty) || isNaN(rate)) return null;
-    return qty * rate;
-  })();
-
-  const billingNet = (() => {
-    if (billingGross === null) return null;
-    const disc = parseFloat(billingDiscount);
-    return billingGross - (isNaN(disc) ? 0 : disc);
-  })();
-
-  async function saveBilling() {
-    setSavingBilling(true);
-    setBillingError("");
-    const gross = billingGross ?? 0;
-    const fd = new FormData();
-    fd.set("gcal_event_id",       linkKey);
-    fd.set("contact_id",          link.contactId);
-    fd.set("vessel_id",           billingVesselId);
-    fd.set("service_template_id", billingTemplateId);
-    fd.set("service_label",       billingLabel);
-    fd.set("invoice_qty",         billingQty || "1");
-    fd.set("invoice_rate",        billingRate);
-    fd.set("invoice_amount",      String(gross));
-    fd.set("invoice_discount",    billingDiscount);
-    fd.set("auto_invoice",        String(billingAuto));
-    const res = await linkCalendarEvent({}, fd);
-    if (res.error) { setBillingError(res.error); setSavingBilling(false); }
-    else { setSavingBilling(false); setShowBilling(false); router.refresh(); }
   }
 
   return (
@@ -511,118 +432,21 @@ function LinkedPanel({
         </div>
       )}
 
-      {/* ── Recurring billing config ── */}
-      {!showInvoice && !showClaimInvoice && (
-        <div className="border-t border-slate-100 pt-3">
-          {!showBilling ? (
-            <div className="flex items-center justify-between">
-              <div>
-                {link.autoInvoice ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    <p className="text-[10px] text-emerald-700 font-semibold">
-                      {(() => {
-                        const gross = link.invoiceRate != null
-                          ? Number(link.invoiceRate) * Number(link.invoiceQty ?? 1)
-                          : Number(link.invoiceAmount ?? 0);
-                        const net = gross - Number(link.invoiceDiscount ?? 0);
-                        return `Auto-invoice ON — $${net.toFixed(2)}`;
-                      })()}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-[10px] text-slate-400">No billing configured</p>
-                )}
-                {link.serviceLabel && (
-                  <p className="text-[10px] text-slate-400 mt-0.5 truncate">{link.serviceLabel}</p>
-                )}
-              </div>
-              <button
-                onClick={openBilling}
-                className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0 ml-2"
-              >
-                {link.autoInvoice ? "Edit" : "Set Up"}
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Recurring Billing</p>
-
-              {serviceTemplates.length > 0 && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Template</label>
-                  <select value={billingTemplateId} onChange={e => handleBillingTemplateChange(e.target.value)} className={inputCls}>
-                    <option value="">Select a template...</option>
-                    {serviceTemplates.map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.name} ({t.is_per_foot ? `$${Number(t.default_amount).toFixed(2)}/ft` : `$${Number(t.default_amount).toFixed(2)}`})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Vessel</label>
-                {loadingVessels ? (
-                  <p className="text-[11px] text-slate-400">Loading vessels...</p>
-                ) : (
-                  <select value={billingVesselId} onChange={e => handleBillingVesselChange(e.target.value)} className={inputCls}>
-                    <option value="">No vessel selected</option>
-                    {billingVessels.map(v => (
-                      <option key={v.id} value={v.id}>
-                        {v.name ?? v.make_model ?? "Vessel"}{v.length_ft ? ` (${v.length_ft} ft)` : ""}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">QB Item Name</label>
-                <input value={billingLabel} onChange={e => setBillingLabel(e.target.value)} className={inputCls} placeholder="Must match QB item name exactly" />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Qty</label>
-                  <input type="number" step="0.01" min="0" value={billingQty} onChange={e => setBillingQty(e.target.value)} placeholder="1" className={inputCls} />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Rate ($)</label>
-                  <input type="number" step="0.01" min="0" value={billingRate} onChange={e => setBillingRate(e.target.value)} placeholder="0.00" className={inputCls} />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Discount ($)</label>
-                  <input type="number" step="0.01" min="0" value={billingDiscount} onChange={e => setBillingDiscount(e.target.value)} placeholder="0.00" className={inputCls} />
-                </div>
-              </div>
-
-              {billingGross !== null && (
-                <p className="text-[10px] text-slate-500 -mt-1">
-                  Gross: ${billingGross.toFixed(2)}
-                  {billingNet !== null && parseFloat(billingDiscount) > 0 && (
-                    <span className="text-emerald-700 font-semibold ml-2">Net: ${billingNet.toFixed(2)}</span>
-                  )}
-                </p>
-              )}
-
-              <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
-                <div onClick={() => setBillingAuto(v => !v)} className={`w-8 h-4 rounded-full relative transition-colors ${billingAuto ? "bg-emerald-500" : "bg-slate-200"}`}>
-                  <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${billingAuto ? "translate-x-4" : "translate-x-0.5"}`} />
-                </div>
-                <span className="text-xs text-slate-600 font-medium">Auto-invoice each occurrence</span>
-              </label>
-
-              {billingError && <p className="text-red-600 text-[11px]">{billingError}</p>}
-              <div className="flex gap-2">
-                <button onClick={saveBilling} disabled={savingBilling}
-                  className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
-                  {savingBilling ? "Saving..." : "Save Billing"}
-                </button>
-                <button onClick={() => setShowBilling(false)} className="px-3 text-[10px] text-slate-500 hover:text-slate-800 transition-colors">Cancel</button>
-              </div>
-            </div>
+      {/* Auto-invoice status badge (read-only) */}
+      {!showInvoice && !showClaimInvoice && link.autoInvoice && (
+        <div className="border-t border-slate-100 pt-3 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+          <p className="text-[10px] text-emerald-700 font-semibold">
+            {(() => {
+              const gross = link.invoiceRate != null
+                ? Number(link.invoiceRate) * Number(link.invoiceQty ?? 1)
+                : Number(link.invoiceAmount ?? 0);
+              const net = gross - Number(link.invoiceDiscount ?? 0);
+              return `Auto-invoice ON — $${net.toFixed(2)}`;
+            })()}
+          </p>
+          {link.serviceLabel && (
+            <p className="text-[10px] text-slate-400 truncate ml-1">{link.serviceLabel}</p>
           )}
         </div>
       )}
@@ -657,11 +481,6 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
   const [picked,            setPicked]            = useState<ContactResult | null>(null);
   const [vessels,           setVessels]           = useState<VesselOption[]>([]);
   const [vesselId,          setVesselId]          = useState("");
-  const [isRecurring,       setIsRecurring]       = useState(!!event.recurringEventId);
-  const [templateId,        setTemplateId]        = useState("");
-  const [serviceLabel,      setServiceLabel]      = useState(suggestedService);
-  const [invoiceAmount,     setInvoiceAmount]     = useState("");
-  const [autoInvoice,       setAutoInvoice]       = useState(false);
   const [searching,         startSearch]          = useTransition();
   const [fetchingV,         startFetchV]          = useTransition();
   const [linkState,         linkAction, linking]  = useActionState<CalendarLinkState, FormData>(linkCalendarEvent, {});
@@ -710,31 +529,6 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
     });
   }, [picked]);
 
-  // Auto-fill service fields when template is picked
-  function handleTemplateChange(id: string) {
-    setTemplateId(id);
-    const tpl = serviceTemplates.find(t => t.id === id);
-    if (!tpl) return;
-    setServiceLabel(tpl.service_label);
-    if (tpl.is_per_foot) {
-      const vessel = vessels.find(v => v.id === vesselId);
-      const ft = vessel?.length_ft ? parseFloat(vessel.length_ft) : null;
-      setInvoiceAmount(ft ? String((tpl.default_amount * ft).toFixed(2)) : "");
-    } else {
-      setInvoiceAmount(String(tpl.default_amount));
-    }
-  }
-
-  // Recalculate per-foot price when vessel changes
-  function handleVesselChange(id: string) {
-    setVesselId(id);
-    const tpl = serviceTemplates.find(t => t.id === templateId);
-    if (!tpl?.is_per_foot) return;
-    const vessel = vessels.find(v => v.id === id);
-    const ft = vessel?.length_ft ? parseFloat(vessel.length_ft) : null;
-    setInvoiceAmount(ft ? String((tpl.default_amount * ft).toFixed(2)) : "");
-  }
-
   async function handleUnlink() {
     setUnlinking(true);
     setUnlinkError("");
@@ -744,9 +538,6 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
   }
 
   const inputCls = "border border-slate-200 rounded-sm px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#000080] w-full bg-white";
-
-  // gcal_event_id to store: prefer series base ID when recurring
-  const gcalIdToStore = isRecurring && event.recurringEventId ? event.recurringEventId : event.id;
 
   // ── LINKED STATE ──
   if (link) {
@@ -830,7 +621,7 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
       {picked && vessels.length > 0 && (
         <div className="flex flex-col gap-1">
           <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Vessel (optional)</label>
-          <select value={vesselId} onChange={e => handleVesselChange(e.target.value)} className={inputCls}>
+          <select value={vesselId} onChange={e => setVesselId(e.target.value)} className={inputCls}>
             <option value="">No vessel</option>
             {vessels.map(v => (
               <option key={v.id} value={v.id}>
@@ -842,102 +633,14 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
       )}
       {fetchingV && <p className="text-[10px] text-slate-400">Loading vessels...</p>}
 
-      {/* Recurring toggle */}
-      <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
-        <div
-          onClick={() => setIsRecurring(v => !v)}
-          className={`w-8 h-4 rounded-full relative transition-colors ${isRecurring ? "bg-[#000080]" : "bg-slate-200"}`}
-        >
-          <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${isRecurring ? "translate-x-4" : "translate-x-0.5"}`} />
-        </div>
-        <span className="text-xs text-slate-500">Link entire recurring series</span>
-      </label>
-      {isRecurring && (
-        <p className="text-[10px] text-slate-400 -mt-1">
-          All future occurrences will show as linked automatically.
-        </p>
-      )}
-
-      {/* ── Recurring invoice section ── */}
-      {isRecurring && (
-        <div className="border border-slate-100 rounded-sm bg-slate-50/60 px-3 py-3 flex flex-col gap-3">
-          <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Auto-Invoice Setup</p>
-
-          {/* Template picker */}
-          {serviceTemplates.length > 0 && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Template</label>
-              <select
-                value={templateId}
-                onChange={e => handleTemplateChange(e.target.value)}
-                className={inputCls}
-              >
-                <option value="">Select a template...</option>
-                {serviceTemplates.map(t => (
-                  <option key={t.id} value={t.id}>
-                  {t.name} ({t.is_per_foot ? `$${Number(t.default_amount).toFixed(2)}/ft` : `$${Number(t.default_amount).toFixed(2)}`})
-                </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Service label override */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">QB Line Description</label>
-            <input
-              value={serviceLabel}
-              onChange={e => setServiceLabel(e.target.value)}
-              placeholder="e.g. Bi-Weekly Wash"
-              className={inputCls}
-            />
-          </div>
-
-          {/* Amount override */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">
-              Price for This Client ($){serviceTemplates.find(t => t.id === templateId)?.is_per_foot && vesselId ? " — auto-calculated" : ""}
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={invoiceAmount}
-              onChange={e => setInvoiceAmount(e.target.value)}
-              placeholder="0.00"
-              className={inputCls}
-            />
-          </div>
-
-          {/* Auto-invoice toggle */}
-          <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
-            <div
-              onClick={() => setAutoInvoice(v => !v)}
-              className={`w-8 h-4 rounded-full relative transition-colors ${autoInvoice ? "bg-emerald-500" : "bg-slate-200"}`}
-            >
-              <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${autoInvoice ? "translate-x-4" : "translate-x-0.5"}`} />
-            </div>
-            <span className="text-xs text-slate-600 font-medium">Auto-invoice monthly</span>
-          </label>
-          {autoInvoice && (
-            <p className="text-[10px] text-emerald-600 -mt-1">
-              QB invoice will be generated on the 15th of each month for the following month.
-            </p>
-          )}
-        </div>
-      )}
-
       {linkState.error && <p className="text-red-600 text-[11px]">{linkState.error}</p>}
 
       {/* Submit */}
       <form action={linkAction} className="flex gap-2">
-        <input type="hidden" name="gcal_event_id"       value={gcalIdToStore} />
-        <input type="hidden" name="contact_id"          value={picked?.id ?? ""} />
-        <input type="hidden" name="vessel_id"           value={vesselId} />
-        <input type="hidden" name="service_template_id" value={templateId} />
-        <input type="hidden" name="service_label"       value={serviceLabel} />
-        <input type="hidden" name="invoice_amount"      value={invoiceAmount} />
-        <input type="hidden" name="auto_invoice"        value={String(autoInvoice)} />
+        <input type="hidden" name="gcal_event_id" value={event.id} />
+        <input type="hidden" name="contact_id"    value={picked?.id ?? ""} />
+        <input type="hidden" name="vessel_id"     value={vesselId} />
+        <input type="hidden" name="auto_invoice"  value="false" />
         <button type="submit" disabled={!picked || linking}
           className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
           {linking ? "Saving..." : "Save Link"}
@@ -1045,21 +748,41 @@ function EventDetailModal({ event, linkMap, serviceTemplates, onEdit, onDelete, 
   );
 }
 
+// ── Color swatches for EventModal ─────────────────────────────────────────────
+
+const COLOR_SWATCHES = [
+  { id: "1",  border: "#7986CB" }, { id: "2",  border: "#33B679" },
+  { id: "3",  border: "#8E24AA" }, { id: "4",  border: "#E67C73" },
+  { id: "5",  border: "#F6BF26" }, { id: "6",  border: "#F4511E" },
+  { id: "7",  border: "#039BE5" }, { id: "8",  border: "#616161" },
+  { id: "9",  border: "#3F51B5" }, { id: "10", border: "#0B8043" },
+  { id: "11", border: "#D50000" },
+];
+
 // ── Event Modal ────────────────────────────────────────────────────────────────
 
-function EventModal({ event, defaultDate, onClose }: {
+function EventModal({ event, editScope, defaultDate, onClose }: {
   event: CalendarEvent | null;
+  editScope?: "instance" | "series"; // if "series", use recurringEventId for the edit
   defaultDate?: string;
   onClose: () => void;
 }) {
   const isEdit = !!event;
-  const [isAllDay, setIsAllDay] = useState(event ? !event.start.includes("T") : false);
-  const [createState, createAction, creating] = useActionState<CalendarEventState, FormData>(createStandaloneEvent, {});
-  const [updateState, updateAction, updating] = useActionState<CalendarEventState, FormData>(updateStandaloneEvent, {});
+  const [isAllDay,  setIsAllDay]  = useState(event ? !event.start.includes("T") : false);
+  const [colorId,   setColorId]   = useState(event?.colorId ?? "");
+  const [createState, createAction, creating]   = useActionState<CalendarEventState, FormData>(createStandaloneEvent, {});
+  const [updateState, updateAction, updating]   = useActionState<CalendarEventState, FormData>(updateStandaloneEvent, {});
+  const [instanceState, instanceAction, instUpd] = useActionState<CalendarEventState, FormData>(updateCalendarEventInstance, {});
 
-  const state  = isEdit ? updateState : createState;
-  const action = isEdit ? updateAction : createAction;
-  const busy   = isEdit ? updating    : creating;
+  // When editing "just this event" use instanceAction, "all events" use updateAction
+  const action = !isEdit ? createAction : (editScope === "instance" ? instanceAction : updateAction);
+  const state  = !isEdit ? createState  : (editScope === "instance" ? instanceState  : updateState);
+  const busy   = !isEdit ? creating     : (editScope === "instance" ? instUpd        : updating);
+
+  // The event ID to edit: for "all events in series" use the master ID
+  const editEventId = isEdit
+    ? (editScope === "series" && event.recurringEventId ? event.recurringEventId : event.id)
+    : undefined;
 
   useEffect(() => { if (state.success) onClose(); }, [state.success, onClose]);
 
@@ -1076,12 +799,21 @@ function EventModal({ event, defaultDate, onClose }: {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4">
       <div className="bg-white rounded-t-xl sm:rounded-sm shadow-2xl w-full sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-slate-800 text-sm font-semibold">{isEdit ? "Edit Event" : "New Event"}</h2>
+          <div>
+            <h2 className="text-slate-800 text-sm font-semibold">{isEdit ? "Edit Event" : "New Event"}</h2>
+            {isEdit && editScope === "instance" && (
+              <p className="text-[10px] text-slate-400 mt-0.5">Editing just this occurrence</p>
+            )}
+            {isEdit && editScope === "series" && (
+              <p className="text-[10px] text-slate-400 mt-0.5">Editing all events in series</p>
+            )}
+          </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
         </div>
         <form action={action} className="px-6 py-5 flex flex-col gap-4">
-          {isEdit && <input type="hidden" name="event_id" value={event.id} />}
+          {isEdit && <input type="hidden" name="event_id" value={editEventId} />}
           <input type="hidden" name="is_all_day" value={isAllDay ? "true" : "false"} />
+          <input type="hidden" name="color_id" value={colorId} />
 
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Title</label>
@@ -1128,6 +860,34 @@ function EventModal({ event, defaultDate, onClose }: {
             </div>
           )}
 
+          {/* Color picker */}
+          <div className="flex flex-col gap-2">
+            <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Color</label>
+            <div className="flex flex-wrap gap-2 items-center">
+              <button
+                type="button"
+                onClick={() => setColorId("")}
+                title="Default"
+                className="w-6 h-6 rounded-full border-2 bg-[#000080] transition-all"
+                style={{ borderColor: colorId === "" ? "#000080" : "transparent", outline: colorId === "" ? "2px solid #000080" : "none", outlineOffset: "2px" }}
+              />
+              {COLOR_SWATCHES.map(c => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setColorId(prev => prev === c.id ? "" : c.id)}
+                  className="w-6 h-6 rounded-full border-2 transition-all"
+                  style={{
+                    backgroundColor: c.border,
+                    borderColor:     colorId === c.id ? "#000080" : "transparent",
+                    outline:         colorId === c.id ? "2px solid #000080" : "none",
+                    outlineOffset:   "2px",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Location</label>
             <input name="location" defaultValue={event?.location ?? ""}
@@ -1160,12 +920,20 @@ function EventModal({ event, defaultDate, onClose }: {
 // ── Delete Confirm ─────────────────────────────────────────────────────────────
 
 function DeleteConfirm({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
-  const [busy, setBusy] = useState(false);
+  const [busy,  setBusy]  = useState(false);
   const [error, setError] = useState("");
+  const isRecurring = !!event.recurringEventId;
 
-  async function handleDelete() {
+  async function handleDeleteInstance() {
     setBusy(true);
     const res = await deleteStandaloneEvent(event.id);
+    if (res.error) { setError(res.error); setBusy(false); }
+    else onClose();
+  }
+
+  async function handleDeleteSeries() {
+    setBusy(true);
+    const res = await deleteCalendarEventSeries(event.recurringEventId!);
     if (res.error) { setError(res.error); setBusy(false); }
     else onClose();
   }
@@ -1175,19 +943,34 @@ function DeleteConfirm({ event, onClose }: { event: CalendarEvent; onClose: () =
       <div className="bg-white rounded-t-xl sm:rounded-sm shadow-2xl w-full sm:max-w-sm p-6 flex flex-col gap-4">
         <h2 className="text-slate-800 text-sm font-semibold">Delete Event?</h2>
         <p className="text-slate-500 text-xs leading-relaxed">
-          This will permanently delete <span className="font-semibold text-slate-700">{event.title}</span> from Google Calendar.
+          <span className="font-semibold text-slate-700">{event.title}</span> will be permanently removed from Google Calendar.
         </p>
-        {error && <p className="text-red-600 text-xs">{error}</p>}
-        <div className="flex gap-3">
-          <button onClick={handleDelete} disabled={busy}
-            className="flex-1 bg-red-600 text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-red-700 transition-colors disabled:opacity-50">
+        {isRecurring && (
+          <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 flex flex-col gap-2">
+            <p className="text-[11px] text-slate-500 font-medium">This is a recurring event. Delete:</p>
+            <div className="flex flex-col gap-2">
+              <button onClick={handleDeleteInstance} disabled={busy}
+                className="w-full bg-red-600 text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-red-700 transition-colors disabled:opacity-50 text-left px-3">
+                {busy ? "Deleting..." : "Just this event"}
+              </button>
+              <button onClick={handleDeleteSeries} disabled={busy}
+                className="w-full border border-red-300 text-red-600 text-xs font-semibold py-2.5 rounded-sm hover:bg-red-50 transition-colors disabled:opacity-50 text-left px-3">
+                {busy ? "Deleting..." : "All events in this series"}
+              </button>
+            </div>
+          </div>
+        )}
+        {!isRecurring && (
+          <button onClick={handleDeleteInstance} disabled={busy}
+            className="w-full bg-red-600 text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-red-700 transition-colors disabled:opacity-50">
             {busy ? "Deleting..." : "Delete"}
           </button>
-          <button onClick={onClose}
-            className="px-4 text-slate-500 text-xs font-medium hover:text-slate-800 transition-colors">
-            Cancel
-          </button>
-        </div>
+        )}
+        {error && <p className="text-red-600 text-xs">{error}</p>}
+        <button onClick={onClose}
+          className="w-full px-4 text-slate-500 text-xs font-medium hover:text-slate-800 transition-colors py-1.5">
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -1510,9 +1293,11 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
   const [weekStart,  setWeekStart]  = useState(() => startOfWeek(today));
   const [modal,      setModal]      = useState<"create" | "detail" | "edit" | "delete" | null>(null);
   const [selected,   setSelected]   = useState<CalendarEvent | null>(null);
+  const [editScope,  setEditScope]  = useState<"instance" | "series" | undefined>();
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
   const [overflowDay, setOverflowDay] = useState<Date | null>(null);
   const [overflowDayEvents, setOverflowDayEvents] = useState<CalendarEvent[]>([]);
+  const [recurringEditChoice, setRecurringEditChoice] = useState<CalendarEvent | null>(null);
 
   function prevPeriod() {
     if (viewMode === "month") setMonthDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
@@ -1529,9 +1314,17 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
 
   function openCreate(iso?: string) { setDefaultDate(iso); setSelected(null); setModal("create"); }
   function openDetail(ev: CalendarEvent) { setSelected(ev); setModal("detail"); }
-  function openEdit(ev: CalendarEvent)   { setSelected(ev); setModal("edit"); }
+  function openEdit(ev: CalendarEvent) {
+    if (ev.recurringEventId) {
+      setRecurringEditChoice(ev);
+    } else {
+      setSelected(ev);
+      setEditScope(undefined);
+      setModal("edit");
+    }
+  }
   function openDelete(ev: CalendarEvent) { setSelected(ev); setModal("delete"); }
-  function closeModal() { setModal(null); setSelected(null); setDefaultDate(undefined); }
+  function closeModal() { setModal(null); setSelected(null); setDefaultDate(undefined); setEditScope(undefined); }
   function openOverflow(day: Date, dayEvs: CalendarEvent[]) { setOverflowDay(day); setOverflowDayEvents(dayEvs); }
   function closeOverflow() { setOverflowDay(null); setOverflowDayEvents([]); }
 
@@ -1656,12 +1449,69 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
       {(modal === "create" || modal === "edit") && (
         <EventModal
           event={modal === "edit" ? selected : null}
+          editScope={editScope}
           defaultDate={defaultDate}
           onClose={closeModal}
         />
       )}
       {modal === "delete" && selected && (
         <DeleteConfirm event={selected} onClose={closeModal} />
+      )}
+      {recurringEditChoice && (
+        <div className="fixed inset-0 bg-black/50 z-[80] flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-2xl sm:rounded-xl w-full max-w-sm p-6 flex flex-col gap-4">
+            <div>
+              <h2 className="text-slate-800 text-base font-semibold">Edit Recurring Event</h2>
+              <p className="text-slate-500 text-sm mt-1">This event is part of a series. What do you want to edit?</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setSelected(recurringEditChoice);
+                  setEditScope("instance");
+                  setRecurringEditChoice(null);
+                  setModal("edit");
+                }}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-slate-200 text-left hover:bg-slate-50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#000080]/10 flex items-center justify-center shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000080" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-medium">Just this event</p>
+                  <p className="text-slate-400 text-xs">Only this occurrence will be changed.</p>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setSelected(recurringEditChoice);
+                  setEditScope("series");
+                  setRecurringEditChoice(null);
+                  setModal("edit");
+                }}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-slate-200 text-left hover:bg-slate-50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#000080]/10 flex items-center justify-center shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000080" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-medium">All events in this series</p>
+                  <p className="text-slate-400 text-xs">All occurrences will be updated.</p>
+                </div>
+              </button>
+            </div>
+            <button
+              onClick={() => setRecurringEditChoice(null)}
+              className="text-slate-400 text-sm hover:text-slate-600 transition-colors text-center"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
       {overflowDay && (
         <DayEventsModal

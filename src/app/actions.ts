@@ -1841,6 +1841,7 @@ export async function createStandaloneEvent(
   const description = formData.get("description") as string | null;
   const location    = formData.get("location")    as string | null;
   const is_all_day  = formData.get("is_all_day")  === "true";
+  const color_id    = formData.get("color_id")    as string | null;
 
   if (!title || !start_time || !end_time) return { error: "Title, start, and end time are required." };
 
@@ -1861,6 +1862,7 @@ export async function createStandaloneEvent(
       startTime:   start_time,
       endTime:     is_all_day ? nextDay(end_time) : end_time,
       isAllDay:    is_all_day,
+      colorId:     color_id ?? undefined,
     });
     revalidatePath("/pro/calendar");
     revalidatePath("/pro/pipeline");
@@ -1881,6 +1883,7 @@ export async function updateStandaloneEvent(
   const description = formData.get("description") as string | null;
   const location    = formData.get("location")    as string | null;
   const is_all_day  = formData.get("is_all_day")  === "true";
+  const color_id    = formData.get("color_id")    as string | null;
 
   if (!event_id || !title || !start_time || !end_time) return { error: "Missing required fields." };
 
@@ -1900,6 +1903,7 @@ export async function updateStandaloneEvent(
       startTime:   start_time,
       endTime:     is_all_day ? nextDay(end_time) : end_time,
       isAllDay:    is_all_day,
+      colorId:     color_id ?? undefined,
     });
     revalidatePath("/pro/calendar");
     revalidatePath("/pro/pipeline");
@@ -1918,6 +1922,261 @@ export async function deleteStandaloneEvent(eventId: string): Promise<{ error?: 
     return {};
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to delete event." };
+  }
+}
+
+// ─── New+ Service Event Actions ───────────────────────────────────────────────
+
+export type NewEventState = { error?: string; success?: boolean; eventId?: string };
+
+// Frequency label → RRULE mapping
+const FREQ_TO_RRULE: Record<string, string> = {
+  "1":  "RRULE:FREQ=WEEKLY;INTERVAL=1",
+  "2":  "RRULE:FREQ=WEEKLY;INTERVAL=2",
+  "4":  "RRULE:FREQ=WEEKLY;INTERVAL=4",
+  "6":  "RRULE:FREQ=WEEKLY;INTERVAL=6",
+};
+
+const FREQ_TO_BILLING: Record<string, string> = {
+  "1":  "monthly",        // weekly — closest billing bucket
+  "2":  "twice_monthly",
+  "4":  "monthly",
+  "6":  "every_6_weeks",
+};
+
+export async function createServiceEvent(
+  _prev: NewEventState,
+  formData: FormData
+): Promise<NewEventState> {
+  const contact_id     = formData.get("contact_id")      as string;
+  const contact_name   = formData.get("contact_name")    as string;
+  const vessel_id      = formData.get("vessel_id")       as string | null;
+  const vessel_name    = formData.get("vessel_name")     as string | null;
+  const template_id    = formData.get("template_id")     as string | null;
+  const service_label  = formData.get("service_label")   as string;
+  const qty_raw        = formData.get("qty")             as string;
+  const rate_raw       = formData.get("rate")            as string;
+  const discount_raw   = formData.get("discount")        as string;
+  const start_time     = formData.get("start_time")      as string;
+  const end_time       = formData.get("end_time")        as string;
+  const frequency      = formData.get("frequency")       as string | null; // "1","2","4","6" or null = one-time
+  const description    = formData.get("description")     as string | null;
+
+  if (!contact_id || !service_label || !start_time || !end_time) {
+    return { error: "Contact, service, and date/time are required." };
+  }
+
+  const qty      = Math.max(0.01, parseFloat(qty_raw  || "1"));
+  const rate     = Math.max(0,    parseFloat(rate_raw  || "0"));
+  const discount = Math.max(0,    parseFloat(discount_raw || "0"));
+  const amount   = Math.max(0, qty * rate - discount);
+
+  const nameParts = [contact_name.trim(), vessel_name?.trim(), service_label.trim()].filter(Boolean);
+  const title = nameParts.join(" - ");
+
+  const recurrenceRule = frequency ? FREQ_TO_RRULE[frequency] : undefined;
+  const billingFreq    = frequency ? FREQ_TO_BILLING[frequency] : "monthly";
+
+  try {
+    const { createCalendarEvent, WORK_EVENT_COLOR_ID } = await import("@/lib/google-calendar");
+    const eventId = await createCalendarEvent({
+      title,
+      description: description ?? undefined,
+      startTime:   start_time,
+      endTime:     end_time,
+      colorId:     WORK_EVENT_COLOR_ID,
+      recurrenceRule,
+    });
+
+    const supabase = await svc();
+    await supabase.from("calendar_contact_links").insert({
+      gcal_event_id:       eventId,
+      contact_id,
+      vessel_id:           vessel_id || null,
+      service_template_id: template_id || null,
+      service_label,
+      invoice_qty:         qty,
+      invoice_rate:        rate,
+      invoice_discount:    discount,
+      invoice_amount:      amount,
+      auto_invoice:        true,
+      billing_frequency:   billingFreq,
+      event_type:          "work",
+      color_id:            WORK_EVENT_COLOR_ID,
+      recurrence_rule:     recurrenceRule ?? null,
+    });
+
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/pipeline");
+    return { success: true, eventId };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to create service event." };
+  }
+}
+
+export async function createSalesMeetingEvent(
+  _prev: NewEventState,
+  formData: FormData
+): Promise<NewEventState> {
+  const contact_id   = formData.get("contact_id")    as string;
+  const contact_name = formData.get("contact_name")  as string;
+  const vessel_name  = formData.get("vessel_name")   as string | null;
+  const vessel_id    = formData.get("vessel_id")     as string | null;
+  const start_time   = formData.get("start_time")    as string;
+  const end_time     = formData.get("end_time")      as string;
+  const description  = formData.get("description")   as string | null;
+
+  if (!contact_id || !start_time || !end_time) {
+    return { error: "Contact and date/time are required." };
+  }
+
+  const nameParts = [contact_name.trim(), vessel_name?.trim(), "Sales Meeting"].filter(Boolean);
+  const title = nameParts.join(" - ");
+
+  try {
+    const { createCalendarEvent, SALES_EVENT_COLOR_ID } = await import("@/lib/google-calendar");
+    const eventId = await createCalendarEvent({
+      title,
+      description: description ?? undefined,
+      startTime:   start_time,
+      endTime:     end_time,
+      colorId:     SALES_EVENT_COLOR_ID,
+    });
+
+    const supabase = await svc();
+    await supabase.from("calendar_contact_links").insert({
+      gcal_event_id: eventId,
+      contact_id,
+      vessel_id:     vessel_id || null,
+      auto_invoice:  false,
+      event_type:    "sales_meeting",
+      color_id:      SALES_EVENT_COLOR_ID,
+    });
+
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/pipeline");
+    return { success: true, eventId };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to create sales meeting." };
+  }
+}
+
+export async function createBlankCalendarEvent(
+  _prev: NewEventState,
+  formData: FormData
+): Promise<NewEventState> {
+  const contact_id  = formData.get("contact_id")  as string | null;
+  const title       = formData.get("title")        as string;
+  const start_time  = formData.get("start_time")   as string;
+  const end_time    = formData.get("end_time")     as string;
+  const is_all_day  = formData.get("is_all_day")   === "true";
+  const color_id    = formData.get("color_id")     as string | null;
+  const description = formData.get("description")  as string | null;
+  const location    = formData.get("location")     as string | null;
+
+  if (!title || !start_time || !end_time) {
+    return { error: "Title and date/time are required." };
+  }
+
+  function nextDay(dateStr: string): string {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${next.getFullYear()}-${p(next.getMonth() + 1)}-${p(next.getDate())}`;
+  }
+
+  try {
+    const { createCalendarEvent } = await import("@/lib/google-calendar");
+    const eventId = await createCalendarEvent({
+      title,
+      description: description ?? undefined,
+      location:    location    ?? undefined,
+      startTime:   start_time,
+      endTime:     is_all_day ? nextDay(end_time) : end_time,
+      isAllDay:    is_all_day,
+      colorId:     color_id ?? undefined,
+    });
+
+    if (contact_id) {
+      const supabase = await svc();
+      await supabase.from("calendar_contact_links").insert({
+        gcal_event_id: eventId,
+        contact_id,
+        auto_invoice:  false,
+        event_type:    "generic",
+        color_id:      color_id ?? null,
+      });
+    }
+
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/pipeline");
+    return { success: true, eventId };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to create calendar event." };
+  }
+}
+
+// Delete a single occurrence of a recurring event series (leaves master intact)
+export async function deleteCalendarEventInstance(instanceId: string): Promise<{ error?: string }> {
+  try {
+    const { deleteCalendarEvent } = await import("@/lib/google-calendar");
+    await deleteCalendarEvent(instanceId);
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/pipeline");
+    return {};
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to delete event instance." };
+  }
+}
+
+// Delete an entire recurring series by master event ID
+export async function deleteCalendarEventSeries(masterEventId: string): Promise<{ error?: string }> {
+  try {
+    const { deleteCalendarEvent } = await import("@/lib/google-calendar");
+    await deleteCalendarEvent(masterEventId);
+    // Also clean up the calendar_contact_links row
+    const supabase = await svc();
+    await supabase.from("calendar_contact_links").delete().eq("gcal_event_id", masterEventId);
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/pipeline");
+    return {};
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to delete event series." };
+  }
+}
+
+// Update a single occurrence of a recurring event series (creates exception in GCal)
+export async function updateCalendarEventInstance(
+  _prev: CalendarEventState,
+  formData: FormData
+): Promise<CalendarEventState> {
+  const event_id    = formData.get("event_id")    as string;
+  const title       = formData.get("title")       as string;
+  const start_time  = formData.get("start_time")  as string;
+  const end_time    = formData.get("end_time")     as string;
+  const description = formData.get("description") as string | null;
+  const location    = formData.get("location")    as string | null;
+  const is_all_day  = formData.get("is_all_day")  === "true";
+  const color_id    = formData.get("color_id")    as string | null;
+
+  if (!event_id || !title || !start_time || !end_time) return { error: "Missing required fields." };
+
+  try {
+    const { updateCalendarEventInstance: updateInstance } = await import("@/lib/google-calendar");
+    await updateInstance(event_id, {
+      title,
+      description: description ?? undefined,
+      location:    location    ?? undefined,
+      startTime:   start_time,
+      endTime:     end_time,
+      isAllDay:    is_all_day,
+      colorId:     color_id ?? undefined,
+    });
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/pipeline");
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to update event instance." };
   }
 }
 

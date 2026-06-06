@@ -18,6 +18,7 @@ import { updatePipelineStage } from "@/app/actions";
 import PipelineColumn from "./PipelineColumn";
 import PipelineCardComponent from "./PipelineCard";
 import MobileBoard from "./MobileBoard";
+import NewPlusModal from "@/components/NewPlusModal";
 
 function groupByStage(cards: PipelineCard[]): Record<PipelineStage, PipelineCard[]> {
   const result = Object.fromEntries(STAGES.map((s) => [s, [] as PipelineCard[]])) as Record<PipelineStage, PipelineCard[]>;
@@ -34,8 +35,9 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
   const [columns, setColumns] = useState<Record<PipelineStage, PipelineCard[]>>(() =>
     groupByStage(initialCards)
   );
-  const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
-  const [moveError, setMoveError] = useState<string | null>(null);
+  const [activeCard,   setActiveCard]   = useState<PipelineCard | null>(null);
+  const [moveError,    setMoveError]    = useState<string | null>(null);
+  const [showNewPlus,  setShowNewPlus]  = useState(false);
   const [userName, setUserName] = useState(
     () => (typeof window !== "undefined" && localStorage.getItem("pro-user-name")) || ""
   );
@@ -171,7 +173,18 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
           <p className="text-[#1E2938]/50 text-sm mt-0.5 hidden md:block">Drag leads through your service workflow.</p>
           <p className="text-[#1E2938]/50 text-sm mt-0.5 md:hidden">Tap a stage to view and move cards.</p>
         </div>
+        <button
+          onClick={() => setShowNewPlus(true)}
+          className="flex items-center gap-1.5 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm hover:bg-blue-900 transition-colors shrink-0"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New+
+        </button>
       </div>
+
+      {showNewPlus && <NewPlusModal onClose={() => setShowNewPlus(false)} />}
 
       <MobileBoard
         columns={columns}

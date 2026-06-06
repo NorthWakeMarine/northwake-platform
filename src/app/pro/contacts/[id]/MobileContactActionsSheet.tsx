@@ -9,9 +9,14 @@ import {
   deleteContact,
 } from "@/app/actions";
 import { STAGE_LABELS, STAGES, type PipelineStage } from "@/types/pipeline";
+import NewPlusModal from "@/components/NewPlusModal";
+
+type VesselOption = { id: string; name: string | null; make_model: string | null; length_ft: string | null };
 
 interface Props {
   contactId: string;
+  contactName: string;
+  vessels: VesselOption[];
   qbCustomerId: string | null;
   pipelineStage: PipelineStage | null;
   isVendor: boolean;
@@ -21,12 +26,15 @@ type ActiveSheet = "pipeline" | "more" | null;
 
 export default function MobileContactActionsSheet({
   contactId,
+  contactName,
+  vessels,
   qbCustomerId,
   pipelineStage,
   isVendor,
 }: Props) {
   const router = useRouter();
-  const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
+  const [activeSheet,  setActiveSheet]  = useState<ActiveSheet>(null);
+  const [showNewPlus,  setShowNewPlus]  = useState(false);
 
   // Pipeline
   const [stage, setStage] = useState<PipelineStage | null>(pipelineStage);
@@ -87,6 +95,17 @@ export default function MobileContactActionsSheet({
     <>
       {/* Fixed bottom bar */}
       <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] inset-x-0 z-40 md:hidden bg-white border-t border-slate-200 px-4 pt-3 pb-2">
+        {!isVendor && (
+          <button
+            onClick={() => setShowNewPlus(true)}
+            className="w-full flex items-center justify-center gap-2 bg-[#000080] text-white text-sm font-semibold rounded-xl h-12 mb-2"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New+
+          </button>
+        )}
         <div className={`grid gap-2 ${isVendor ? "grid-cols-1" : "grid-cols-2"}`}>
           {!isVendor && (
             <button
@@ -234,6 +253,14 @@ export default function MobileContactActionsSheet({
             )}
           </div>
         </div>
+      )}
+      {showNewPlus && (
+        <NewPlusModal
+          onClose={() => setShowNewPlus(false)}
+          preContactId={contactId}
+          preContactName={contactName}
+          preVessels={vessels}
+        />
       )}
     </>
   );

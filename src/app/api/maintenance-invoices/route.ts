@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   // 1. Fetch all auto-invoice links that have a price set
   const { data: links, error: linkErr } = await supabase
     .from("calendar_contact_links")
-    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, service_template_id, contacts(qb_customer_id, name)")
+    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, service_template_id, vessel_id, contacts(qb_customer_id, name), vessels(name)")
     .eq("auto_invoice", true)
     .not("invoice_amount", "is", null)
     .gt("invoice_amount", 0);
@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
     contactId: string;
     qbCustomerId: string | null;
     contactName: string | null;
+    vesselName: string | null;
     serviceLabel: string;
     serviceDescription: string | null;
     invoiceAmount: number;
@@ -75,13 +76,17 @@ export async function GET(req: NextRequest) {
   for (const l of links) {
     const c = l.contacts as unknown as { qb_customer_id: string | null; name: string | null } | null;
     if (!c?.qb_customer_id) continue;
+    const v = l.vessels as unknown as { name: string | null } | null;
     const invoiceAmount = Number(l.invoice_amount);
-    const invoiceRate   = l.invoice_rate ? Number(l.invoice_rate) : invoiceAmount;
-    const invoiceQty    = l.invoice_qty  ? Number(l.invoice_qty)  : 1;
+    const invoiceQty    = l.invoice_qty && Number(l.invoice_qty) > 0 ? Number(l.invoice_qty) : 1;
+    const invoiceRate   = l.invoice_rate && Number(l.invoice_rate) > 0
+      ? Number(l.invoice_rate)
+      : invoiceAmount / invoiceQty;
     linkBySeriesId.set(l.gcal_event_id, {
       contactId:          l.contact_id,
       qbCustomerId:       c.qb_customer_id,
       contactName:        c.name ?? null,
+      vesselName:         v?.name ?? null,
       serviceLabel:       l.service_label ?? "Maintenance Service",
       serviceDescription: l.service_template_id ? (templateDescMap.get(l.service_template_id) ?? null) : null,
       invoiceAmount,
@@ -157,9 +162,17 @@ export async function GET(req: NextRequest) {
 
   await pMap(toProcess, async (w) => {
     try {
+      const eventDateLabel = new Date(w.txnDate + "T12:00:00").toLocaleDateString("en-US", {
+        month: "long", day: "numeric", year: "numeric",
+      });
+      const lineParts = [w.link.serviceLabel];
+      if (w.link.vesselName) lineParts.push(w.link.vesselName);
+      lineParts.push(eventDateLabel);
+      const lineDescription = lineParts.join(" - ");
+
       const { invoiceId, docNumber } = await createQbInvoiceDraft({
         qbCustomerId:    w.link.qbCustomerId!,
-        lineDescription: w.link.serviceLabel,
+        lineDescription,
         lineBody:        w.link.serviceDescription,
         amount:          w.link.invoiceAmount,
         discount:        w.link.invoiceDiscount,

@@ -39,6 +39,10 @@ function getAuth() {
   return oauth2;
 }
 
+// Google Calendar colorId constants
+export const WORK_EVENT_COLOR_ID   = "10"; // Basil (deep green)
+export const SALES_EVENT_COLOR_ID  = "9";  // Blueberry
+
 export type CalendarEventInput = {
   title: string;
   description?: string;
@@ -47,7 +51,9 @@ export type CalendarEventInput = {
   endTime: string;    // ISO 8601 datetime or YYYY-MM-DD for all-day
   isAllDay?: boolean;
   googleEventId?: string;
-  qbInvoiceId?: string; // links GCal event to a QuickBooks invoice
+  qbInvoiceId?: string;    // links GCal event to a QuickBooks invoice
+  colorId?: string;        // Google Calendar colorId "1"–"11"
+  recurrenceRule?: string; // e.g. "RRULE:FREQ=WEEKLY;INTERVAL=4"
 };
 
 function gcalTime(iso: string, allDay: boolean) {
@@ -69,7 +75,9 @@ export async function createCalendarEvent(event: CalendarEventInput): Promise<st
       location:    event.location,
       start: gcalTime(event.startTime, allDay),
       end:   gcalTime(event.endTime,   allDay),
-      ...(event.qbInvoiceId ? { extendedProperties: { private: { qb_invoice_id: event.qbInvoiceId } } } : {}),
+      ...(event.colorId        ? { colorId:    event.colorId }           : {}),
+      ...(event.recurrenceRule ? { recurrence: [event.recurrenceRule] }  : {}),
+      ...(event.qbInvoiceId    ? { extendedProperties: { private: { qb_invoice_id: event.qbInvoiceId } } } : {}),
     },
   });
 
@@ -95,8 +103,17 @@ export async function updateCalendarEvent(
       ...(patch.location    !== undefined ? { location:    patch.location }    : {}),
       ...(patch.startTime   ? { start: gcalTime(patch.startTime, allDay) } : {}),
       ...(patch.endTime     ? { end:   gcalTime(patch.endTime,   allDay) } : {}),
+      ...(patch.colorId     !== undefined ? { colorId:     patch.colorId }     : {}),
     },
   });
+}
+
+// Update a single instance of a recurring event series (creates a series exception in GCal)
+export async function updateCalendarEventInstance(
+  instanceId: string,
+  patch: Partial<CalendarEventInput>
+): Promise<void> {
+  return updateCalendarEvent(instanceId, patch);
 }
 
 export async function deleteCalendarEvent(googleEventId: string): Promise<void> {
