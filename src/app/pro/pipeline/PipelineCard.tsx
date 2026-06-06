@@ -9,22 +9,22 @@ import { removeFromPipeline, deleteLead } from "@/app/actions";
 
 function AssetIcon({ type }: { type: PipelineCardType["assetType"] }) {
   return (
-    <div className="w-7 h-7 rounded-md bg-white/60 flex items-center justify-center shrink-0 text-[#000080]">
+    <div className="w-6 h-6 rounded-md bg-white/60 flex items-center justify-center shrink-0 text-[#000080]">
       {type === "car" ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-2" />
           <circle cx="9" cy="17" r="2" /><circle cx="17" cy="17" r="2" />
         </svg>
       ) : type === "plane" ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 4c-1 0-1.5.5-2.5 1.5L13 9 4.8 6.2c-.5-.1-1 .1-1.3.5l-.2.3 4 3.8-1.2 1.5-2.5-.4-.2.2 2.5 2.5 2.5 2.5.2-.2-.4-2.5 1.5-1.2 3.8 4 .3-.2c.4-.3.6-.8.5-1.3z"/>
         </svg>
       ) : type === "other" ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
         </svg>
       ) : (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 17l2-7 4-2 6 0 4 2 2 7H3z"/>
           <path d="M3 17v2h18v-2"/>
           <path d="M8 17v-3"/><path d="M16 17v-3"/>
@@ -120,13 +120,13 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
       {...attributes}
       {...listeners}
       onClick={handleClick}
-      className={`bg-[#F1F2F5] neu-card rounded-md px-3.5 py-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing select-none transition-opacity ${
+      className={`bg-[#F1F2F5] neu-card rounded-md px-2.5 py-2 flex flex-col gap-1.5 cursor-grab active:cursor-grabbing select-none transition-opacity ${
         isDragging || isPending ? "opacity-40" : "opacity-100"
       }`}
     >
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
         <AssetIcon type={card.assetType} />
-        <span className="flex-1 text-[#1E2938] text-sm font-semibold leading-snug break-words min-w-0">
+        <span className="flex-1 text-[#1E2938] text-xs font-semibold leading-snug break-words min-w-0">
           {card.name || card.phone || card.email || <span className="text-slate-400 italic font-normal">Unknown</span>}
         </span>
         <HealthWarningIcon flags={card.healthFlags} />
@@ -163,12 +163,12 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
       </div>
 
       {(card.vesselName || card.isReturningClient) && (
-        <div className="flex items-center justify-between gap-2 pl-9">
+        <div className="flex items-center justify-between gap-2 pl-8">
           {card.vesselName && (
-            <span className="text-slate-400 text-xs truncate">{card.vesselName}</span>
+            <span className="text-slate-400 text-[10px] truncate">{card.vesselName}</span>
           )}
           {card.isReturningClient && (
-            <span className="bg-[#000080]/10 text-[#000080] text-[9px] tracking-widest uppercase font-semibold rounded-sm px-2 py-0.5 shrink-0 whitespace-nowrap">
+            <span className="bg-[#000080]/10 text-[#000080] text-[9px] tracking-widest uppercase font-semibold rounded-sm px-1.5 py-0.5 shrink-0 whitespace-nowrap">
               {card.returningReason === "overdue_service" ? "Returning · Overdue" : "Returning"}
             </span>
           )}
@@ -176,7 +176,7 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
       )}
 
       {card.sourceType === "lead" && (
-        <div className="pl-9">
+        <div className="pl-8">
           <span className="text-slate-400 text-[9px] tracking-widest uppercase">New lead</span>
         </div>
       )}

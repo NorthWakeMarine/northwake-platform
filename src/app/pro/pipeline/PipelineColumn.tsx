@@ -31,8 +31,8 @@ const PipelineColumn = memo(function PipelineColumn({
   const cardIds = cards.map((c) => c.id);
 
   return (
-    <div className="flex-1 min-w-72 flex flex-col gap-2 min-h-0">
-      <div className={`flex items-center justify-between px-3 py-2 rounded-md bg-[#F1F2F5] neu-col ${ACCENT[stage]}`}>
+    <div className="flex-1 min-w-36 flex flex-col gap-1.5 min-h-0">
+      <div className={`flex items-center justify-between px-2 py-1.5 rounded-md bg-[#F1F2F5] neu-col ${ACCENT[stage]}`}>
         <span className="text-[#1E2938]/60 text-[11px] font-semibold tracking-widest uppercase">
           {STAGE_LABELS[stage]}
         </span>
@@ -44,7 +44,7 @@ const PipelineColumn = memo(function PipelineColumn({
       <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
         <div
           ref={setNodeRef}
-          className={`flex flex-col gap-2 flex-1 rounded-md p-3 transition-all ${
+          className={`flex flex-col gap-1.5 flex-1 rounded-md p-2 transition-all ${
             isOver ? "bg-[#eceef1] neu-inset" : "bg-[#eceef1]"
           }`}
         >
