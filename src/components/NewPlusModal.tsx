@@ -405,16 +405,10 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 </p>
               )}
 
-              {/* Date/time */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className={labelCls}>Start <span className="text-red-500">*</span></label>
-                  <input type="datetime-local" value={startTime} onChange={e => { setStartTime(e.target.value); setEndTime(addHours(e.target.value, 2)); }} className={inputCls} />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className={labelCls}>End <span className="text-red-500">*</span></label>
-                  <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)} className={inputCls} />
-                </div>
+              {/* Date — all-day events, just pick the date */}
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>Date <span className="text-red-500">*</span></label>
+                <input type="date" value={startTime.split("T")[0]} onChange={e => { setStartTime(e.target.value); setEndTime(e.target.value); }} className={inputCls} />
               </div>
 
               {/* Frequency (recurring only) */}
@@ -459,6 +453,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 <input type="hidden" name="discount"      value={discount} />
                 <input type="hidden" name="start_time"    value={startTime} />
                 <input type="hidden" name="end_time"      value={endTime} />
+                <input type="hidden" name="is_all_day"    value="true" />
                 <input type="hidden" name="frequency"     value={eventType === "recurring" ? frequency : ""} />
                 <input type="hidden" name="description"   value={notes} />
                 <div className="flex gap-2 pt-1">
@@ -494,17 +489,35 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 </div>
               )}
 
+              {/* All-day toggle */}
+              <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+                <div
+                  onClick={() => setCalIsAllDay(v => !v)}
+                  className={`w-8 h-4 rounded-full relative transition-colors ${calIsAllDay ? "bg-[#000080]" : "bg-slate-200"}`}
+                >
+                  <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${calIsAllDay ? "translate-x-4" : "translate-x-0.5"}`} />
+                </div>
+                <span className="text-xs text-slate-600">All-day event</span>
+              </label>
+
               {/* Date/time */}
-              <div className="grid grid-cols-2 gap-2">
+              {calIsAllDay ? (
                 <div className="flex flex-col gap-1">
-                  <label className={labelCls}>Start <span className="text-red-500">*</span></label>
-                  <input type="datetime-local" value={startTime} onChange={e => { setStartTime(e.target.value); setEndTime(addHours(e.target.value, 1)); }} className={inputCls} />
+                  <label className={labelCls}>Date <span className="text-red-500">*</span></label>
+                  <input type="date" value={startTime.split("T")[0]} onChange={e => { setStartTime(e.target.value); setEndTime(e.target.value); }} className={inputCls} />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className={labelCls}>End <span className="text-red-500">*</span></label>
-                  <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)} className={inputCls} />
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className={labelCls}>Start <span className="text-red-500">*</span></label>
+                    <input type="datetime-local" value={startTime} onChange={e => { setStartTime(e.target.value); setEndTime(addHours(e.target.value, 1)); }} className={inputCls} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className={labelCls}>End <span className="text-red-500">*</span></label>
+                    <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)} className={inputCls} />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Notes */}
               <div className="flex flex-col gap-1">
@@ -531,6 +544,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 <input type="hidden" name="vessel_name"  value={vesselLabel} />
                 <input type="hidden" name="start_time"   value={startTime} />
                 <input type="hidden" name="end_time"     value={endTime} />
+                <input type="hidden" name="is_all_day"   value={calIsAllDay ? "true" : "false"} />
                 <input type="hidden" name="description"  value={notes} />
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={salesPending || !picked}

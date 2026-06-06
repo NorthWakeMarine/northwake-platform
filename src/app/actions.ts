@@ -1962,8 +1962,8 @@ export async function createServiceEvent(
   const frequency      = formData.get("frequency")       as string | null; // "1","2","4","6" or null = one-time
   const description    = formData.get("description")     as string | null;
 
-  if (!contact_id || !service_label || !start_time || !end_time) {
-    return { error: "Contact, service, and date/time are required." };
+  if (!contact_id || !service_label || !start_time) {
+    return { error: "Contact, service, and date are required." };
   }
 
   const qty      = Math.max(0.01, parseFloat(qty_raw  || "1"));
@@ -1977,13 +1977,20 @@ export async function createServiceEvent(
   const recurrenceRule = frequency ? FREQ_TO_RRULE[frequency] : undefined;
   const billingFreq    = frequency ? FREQ_TO_BILLING[frequency] : "monthly";
 
+  // All-day: end date must be the next calendar day for GCal
+  const dateOnly = start_time.split("T")[0];
+  const nextDate = new Date(dateOnly + "T12:00:00");
+  nextDate.setDate(nextDate.getDate() + 1);
+  const nextDateStr = nextDate.toISOString().split("T")[0];
+
   try {
     const { createCalendarEvent, WORK_EVENT_COLOR_ID } = await import("@/lib/google-calendar");
     const eventId = await createCalendarEvent({
       title,
       description: description ?? undefined,
-      startTime:   start_time,
-      endTime:     end_time,
+      startTime:   dateOnly,
+      endTime:     nextDateStr,
+      isAllDay:    true,
       colorId:     WORK_EVENT_COLOR_ID,
       recurrenceRule,
     });
@@ -2024,14 +2031,22 @@ export async function createSalesMeetingEvent(
   const vessel_id    = formData.get("vessel_id")     as string | null;
   const start_time   = formData.get("start_time")    as string;
   const end_time     = formData.get("end_time")      as string;
+  const is_all_day   = formData.get("is_all_day")    === "true";
   const description  = formData.get("description")   as string | null;
 
-  if (!contact_id || !start_time || !end_time) {
-    return { error: "Contact and date/time are required." };
+  if (!contact_id || !start_time) {
+    return { error: "Contact and date are required." };
   }
 
   const nameParts = [contact_name.trim(), vessel_name?.trim(), "Sales Meeting"].filter(Boolean);
   const title = nameParts.join(" - ");
+
+  function nextDay(dateStr: string): string {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${next.getFullYear()}-${p(next.getMonth() + 1)}-${p(next.getDate())}`;
+  }
 
   try {
     const { createCalendarEvent, SALES_EVENT_COLOR_ID } = await import("@/lib/google-calendar");
@@ -2039,7 +2054,8 @@ export async function createSalesMeetingEvent(
       title,
       description: description ?? undefined,
       startTime:   start_time,
-      endTime:     end_time,
+      endTime:     is_all_day ? nextDay(start_time.split("T")[0]) : end_time,
+      isAllDay:    is_all_day,
       colorId:     SALES_EVENT_COLOR_ID,
     });
 
