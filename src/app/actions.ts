@@ -1946,7 +1946,8 @@ export async function createServiceEvent(
   const discount_raw    = formData.get("discount")         as string;
   const start_time      = formData.get("start_time")       as string;
   const end_time        = formData.get("end_time")         as string;
-  const frequency       = formData.get("frequency")        as string | null; // "1","2","4","6" or null = one-time
+  const frequency       = formData.get("frequency")        as string | null;
+  const freq_unit       = (formData.get("freq_unit") as string | null) || "weeks";
   const description     = formData.get("description")      as string | null;
 
   if (!contact_id || !service_label || !start_time) {
@@ -1961,13 +1962,10 @@ export async function createServiceEvent(
   const nameParts = [contact_name.trim(), vessel_name?.trim(), service_label.trim()].filter(Boolean);
   const title = nameParts.join(" - ");
 
-  const freqWeeks      = frequency ? Math.max(1, parseInt(frequency, 10)) : null;
-  const recurrenceRule = freqWeeks ? `RRULE:FREQ=WEEKLY;INTERVAL=${freqWeeks}` : undefined;
-  const billingFreq    = freqWeeks === 1 ? "weekly"
-    : freqWeeks === 2 ? "twice_monthly"
-    : freqWeeks === 4 ? "monthly"
-    : freqWeeks ? `every_${freqWeeks}_weeks`
-    : "monthly";
+  const freqN          = frequency ? Math.max(1, parseInt(frequency, 10)) : null;
+  const rruleUnit      = freq_unit === "days" ? "DAILY" : freq_unit === "months" ? "MONTHLY" : "WEEKLY";
+  const recurrenceRule = freqN ? `RRULE:FREQ=${rruleUnit};INTERVAL=${freqN}` : undefined;
+  const billingFreq    = recurrenceRule ?? "monthly";
 
   // All-day: end date must be the next calendar day for GCal
   const dateOnly = start_time.split("T")[0];

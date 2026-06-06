@@ -92,7 +92,8 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
   const [discount,    setDiscount]    = useState("0");
   const [startTime,   setStartTime]   = useState(() => toLocalIso(new Date()));
   const [endTime,     setEndTime]     = useState(() => addHours(toLocalIso(new Date()), 2));
-  const [frequency,   setFrequency]   = useState<string>("4"); // default every 4 weeks
+  const [frequency,   setFrequency]   = useState<string>("4");
+  const [freqUnit,    setFreqUnit]    = useState<"days" | "weeks" | "months">("weeks");
   const [notes,       setNotes]       = useState("");
 
   // ── Calendar event fields ──
@@ -409,18 +410,34 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
               {/* Frequency (recurring only) */}
               {eventType === "recurring" && (
                 <div className="flex flex-col gap-1">
-                  <label className={labelCls}>Every how many weeks?</label>
+                  <label className={labelCls}>Frequency</label>
                   <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-500 shrink-0">Every</span>
                     <input
                       type="number"
                       min="1"
-                      max="52"
+                      max="365"
                       step="1"
                       value={frequency}
                       onChange={e => setFrequency(e.target.value)}
-                      className={`${inputCls} w-24`}
+                      className={`${inputCls} w-20`}
                     />
-                    <span className="text-sm text-slate-500">week{parseInt(frequency) !== 1 ? "s" : ""}</span>
+                    <div className="flex rounded-sm border border-gray-500 overflow-hidden shrink-0">
+                      {(["days", "weeks", "months"] as const).map(u => (
+                        <button
+                          key={u}
+                          type="button"
+                          onClick={() => setFreqUnit(u)}
+                          className={`px-3 py-2 text-xs font-medium transition-colors ${
+                            freqUnit === u
+                              ? "bg-[#000080] text-white"
+                              : "bg-white text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          {u}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -457,7 +474,8 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 <input type="hidden" name="start_time"      value={startTime} />
                 <input type="hidden" name="end_time"        value={endTime} />
                 <input type="hidden" name="is_all_day"      value="true" />
-                <input type="hidden" name="frequency"       value={eventType === "recurring" ? frequency : ""} />
+                <input type="hidden" name="frequency"        value={eventType === "recurring" ? frequency : ""} />
+                <input type="hidden" name="freq_unit"        value={eventType === "recurring" ? freqUnit : ""} />
                 <input type="hidden" name="description"     value={notes} />
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={servicePending || !picked || !serviceLabel || !rate}
