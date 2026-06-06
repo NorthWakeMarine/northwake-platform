@@ -33,12 +33,6 @@ type EventType = "recurring" | "one_time" | "sales_meeting" | "calendar_event";
 type ContactResult = { id: string; name: string; email: string | null; address: string | null };
 type VesselOption  = { id: string; name: string | null; make_model: string | null; length_ft: string | null };
 
-const FREQUENCY_OPTIONS = [
-  { value: "1",  label: "Every week" },
-  { value: "2",  label: "Every 2 weeks" },
-  { value: "4",  label: "Every 4 weeks" },
-  { value: "6",  label: "Every 6 weeks" },
-];
 
 const inputCls = "border border-gray-500 rounded-sm px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-navy w-full bg-white";
 const labelCls = "text-[10px] font-medium text-gray-700 tracking-widest uppercase";
@@ -415,12 +409,19 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
               {/* Frequency (recurring only) */}
               {eventType === "recurring" && (
                 <div className="flex flex-col gap-1">
-                  <label className={labelCls}>Frequency</label>
-                  <select value={frequency} onChange={e => setFrequency(e.target.value)} className={inputCls}>
-                    {FREQUENCY_OPTIONS.map(o => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
+                  <label className={labelCls}>Every how many weeks?</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="52"
+                      step="1"
+                      value={frequency}
+                      onChange={e => setFrequency(e.target.value)}
+                      className={`${inputCls} w-24`}
+                    />
+                    <span className="text-sm text-slate-500">week{parseInt(frequency) !== 1 ? "s" : ""}</span>
+                  </div>
                 </div>
               )}
 

@@ -1930,20 +1930,6 @@ export async function deleteStandaloneEvent(eventId: string): Promise<{ error?: 
 export type NewEventState = { error?: string; success?: boolean; eventId?: string };
 
 // Frequency label → RRULE mapping
-const FREQ_TO_RRULE: Record<string, string> = {
-  "1":  "RRULE:FREQ=WEEKLY;INTERVAL=1",
-  "2":  "RRULE:FREQ=WEEKLY;INTERVAL=2",
-  "4":  "RRULE:FREQ=WEEKLY;INTERVAL=4",
-  "6":  "RRULE:FREQ=WEEKLY;INTERVAL=6",
-};
-
-const FREQ_TO_BILLING: Record<string, string> = {
-  "1":  "monthly",        // weekly — closest billing bucket
-  "2":  "twice_monthly",
-  "4":  "monthly",
-  "6":  "every_6_weeks",
-};
-
 export async function createServiceEvent(
   _prev: NewEventState,
   formData: FormData
@@ -1975,8 +1961,13 @@ export async function createServiceEvent(
   const nameParts = [contact_name.trim(), vessel_name?.trim(), service_label.trim()].filter(Boolean);
   const title = nameParts.join(" - ");
 
-  const recurrenceRule = frequency ? FREQ_TO_RRULE[frequency] : undefined;
-  const billingFreq    = frequency ? FREQ_TO_BILLING[frequency] : "monthly";
+  const freqWeeks      = frequency ? Math.max(1, parseInt(frequency, 10)) : null;
+  const recurrenceRule = freqWeeks ? `RRULE:FREQ=WEEKLY;INTERVAL=${freqWeeks}` : undefined;
+  const billingFreq    = freqWeeks === 1 ? "weekly"
+    : freqWeeks === 2 ? "twice_monthly"
+    : freqWeeks === 4 ? "monthly"
+    : freqWeeks ? `every_${freqWeeks}_weeks`
+    : "monthly";
 
   // All-day: end date must be the next calendar day for GCal
   const dateOnly = start_time.split("T")[0];
