@@ -187,6 +187,7 @@ export default async function ContactProfilePage({
               <NewPlusButton
                 contactId={contact.id}
                 contactName={contact.name ?? ""}
+                contactAddress={contact.address}
                 vessels={assets.map(a => ({ id: a.id, name: a.name ?? null, make_model: a.make_model ?? null, length_ft: a.length_ft ?? null }))}
               />
             )}
@@ -237,6 +238,7 @@ export default async function ContactProfilePage({
         <MobileContactActionsSheet
           contactId={contact.id}
           contactName={contact.name ?? ""}
+          contactAddress={contact.address}
           vessels={assets.map(a => ({ id: a.id, name: a.name ?? null, make_model: a.make_model ?? null, length_ft: a.length_ft ?? null }))}
           qbCustomerId={contact.qb_customer_id}
           pipelineStage={contact.pipeline_stage}

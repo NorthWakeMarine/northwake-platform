@@ -1543,16 +1543,16 @@ export async function removeGcalFromInvoice(
 
 export async function searchContactsByName(
   query: string
-): Promise<{ id: string; name: string; email: string | null }[]> {
+): Promise<{ id: string; name: string; email: string | null; address: string | null }[]> {
   if (!query || query.trim().length < 2) return [];
   const supabase = await svc();
   const { data } = await supabase
     .from("contacts")
-    .select("id, name, email")
+    .select("id, name, email, address")
     .ilike("name", `%${query.trim()}%`)
     .limit(6)
     .order("name");
-  return (data ?? []) as { id: string; name: string; email: string | null }[];
+  return (data ?? []) as { id: string; name: string; email: string | null; address: string | null }[];
 }
 
 export async function getVesselsByContactId(
@@ -1948,19 +1948,20 @@ export async function createServiceEvent(
   _prev: NewEventState,
   formData: FormData
 ): Promise<NewEventState> {
-  const contact_id     = formData.get("contact_id")      as string;
-  const contact_name   = formData.get("contact_name")    as string;
-  const vessel_id      = formData.get("vessel_id")       as string | null;
-  const vessel_name    = formData.get("vessel_name")     as string | null;
-  const template_id    = formData.get("template_id")     as string | null;
-  const service_label  = formData.get("service_label")   as string;
-  const qty_raw        = formData.get("qty")             as string;
-  const rate_raw       = formData.get("rate")            as string;
-  const discount_raw   = formData.get("discount")        as string;
-  const start_time     = formData.get("start_time")      as string;
-  const end_time       = formData.get("end_time")        as string;
-  const frequency      = formData.get("frequency")       as string | null; // "1","2","4","6" or null = one-time
-  const description    = formData.get("description")     as string | null;
+  const contact_id      = formData.get("contact_id")       as string;
+  const contact_name    = formData.get("contact_name")     as string;
+  const contact_address = formData.get("contact_address")  as string | null;
+  const vessel_id       = formData.get("vessel_id")        as string | null;
+  const vessel_name     = formData.get("vessel_name")      as string | null;
+  const template_id     = formData.get("template_id")      as string | null;
+  const service_label   = formData.get("service_label")    as string;
+  const qty_raw         = formData.get("qty")              as string;
+  const rate_raw        = formData.get("rate")             as string;
+  const discount_raw    = formData.get("discount")         as string;
+  const start_time      = formData.get("start_time")       as string;
+  const end_time        = formData.get("end_time")         as string;
+  const frequency       = formData.get("frequency")        as string | null; // "1","2","4","6" or null = one-time
+  const description     = formData.get("description")      as string | null;
 
   if (!contact_id || !service_label || !start_time) {
     return { error: "Contact, service, and date are required." };
@@ -1989,6 +1990,7 @@ export async function createServiceEvent(
     const eventId = await createCalendarEvent({
       title,
       description: description ?? undefined,
+      location:    contact_address || undefined,
       startTime:   dateOnly,
       endTime:     nextDateStr,
       isAllDay:    true,
@@ -2026,14 +2028,15 @@ export async function createSalesMeetingEvent(
   _prev: NewEventState,
   formData: FormData
 ): Promise<NewEventState> {
-  const contact_id   = formData.get("contact_id")    as string;
-  const contact_name = formData.get("contact_name")  as string;
-  const vessel_name  = formData.get("vessel_name")   as string | null;
-  const vessel_id    = formData.get("vessel_id")     as string | null;
-  const start_time   = formData.get("start_time")    as string;
-  const end_time     = formData.get("end_time")      as string;
-  const is_all_day   = formData.get("is_all_day")    === "true";
-  const description  = formData.get("description")   as string | null;
+  const contact_id      = formData.get("contact_id")       as string;
+  const contact_name    = formData.get("contact_name")     as string;
+  const contact_address = formData.get("contact_address")  as string | null;
+  const vessel_name     = formData.get("vessel_name")      as string | null;
+  const vessel_id       = formData.get("vessel_id")        as string | null;
+  const start_time      = formData.get("start_time")       as string;
+  const end_time        = formData.get("end_time")         as string;
+  const is_all_day      = formData.get("is_all_day")       === "true";
+  const description     = formData.get("description")      as string | null;
 
   if (!contact_id || !start_time) {
     return { error: "Contact and date are required." };
@@ -2054,6 +2057,7 @@ export async function createSalesMeetingEvent(
     const eventId = await createCalendarEvent({
       title,
       description: description ?? undefined,
+      location:    contact_address || undefined,
       startTime:   start_time,
       endTime:     is_all_day ? nextDay(start_time.split("T")[0]) : end_time,
       isAllDay:    is_all_day,

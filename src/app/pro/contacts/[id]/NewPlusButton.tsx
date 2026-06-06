@@ -8,11 +8,13 @@ type VesselOption = { id: string; name: string | null; make_model: string | null
 export default function NewPlusButton({
   contactId,
   contactName,
+  contactAddress,
   vessels,
 }: {
-  contactId:   string;
-  contactName: string;
-  vessels:     VesselOption[];
+  contactId:      string;
+  contactName:    string;
+  contactAddress: string | null;
+  vessels:        VesselOption[];
 }) {
   const [open, setOpen] = useState(false);
 
@@ -32,6 +34,7 @@ export default function NewPlusButton({
           onClose={() => setOpen(false)}
           preContactId={contactId}
           preContactName={contactName}
+          preContactAddress={contactAddress}
           preVessels={vessels}
         />
       )}

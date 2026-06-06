@@ -30,7 +30,7 @@ const GCAL_COLORS: { id: string; name: string; bg: string; border: string }[] = 
 ];
 
 type EventType = "recurring" | "one_time" | "sales_meeting" | "calendar_event";
-type ContactResult = { id: string; name: string; email: string | null };
+type ContactResult = { id: string; name: string; email: string | null; address: string | null };
 type VesselOption  = { id: string; name: string | null; make_model: string | null; length_ft: string | null };
 
 const FREQUENCY_OPTIONS = [
@@ -61,12 +61,13 @@ function addHours(iso: string, h: number): string {
 type Props = {
   onClose: () => void;
   // If pre-set from contact detail page
-  preContactId?:   string;
-  preContactName?: string;
-  preVessels?:     VesselOption[];
+  preContactId?:      string;
+  preContactName?:    string;
+  preContactAddress?: string | null;
+  preVessels?:        VesselOption[];
 };
 
-export default function NewPlusModal({ onClose, preContactId, preContactName, preVessels }: Props) {
+export default function NewPlusModal({ onClose, preContactId, preContactName, preContactAddress, preVessels }: Props) {
   const router = useRouter();
 
   // Step: "customer" (pipeline only) | "type" | "service" | "sales" | "calendar"
@@ -78,7 +79,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
   const [query,   setQuery]   = useState("");
   const [results, setResults] = useState<ContactResult[]>([]);
   const [picked,  setPicked]  = useState<ContactResult | null>(
-    preContactId && preContactName ? { id: preContactId, name: preContactName, email: null } : null
+    preContactId && preContactName ? { id: preContactId, name: preContactName, email: null, address: preContactAddress ?? null } : null
   );
   const [searching, startSearch] = useTransition();
 
@@ -442,20 +443,21 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
               {serviceState.error && <p className="text-red-600 text-xs">{serviceState.error}</p>}
 
               <form action={serviceAction}>
-                <input type="hidden" name="contact_id"    value={picked?.id ?? ""} />
-                <input type="hidden" name="contact_name"  value={picked?.name ?? ""} />
-                <input type="hidden" name="vessel_id"     value={vesselId} />
-                <input type="hidden" name="vessel_name"   value={vesselLabel} />
-                <input type="hidden" name="template_id"   value={templateId} />
-                <input type="hidden" name="service_label" value={serviceLabel} />
-                <input type="hidden" name="qty"           value={qty} />
-                <input type="hidden" name="rate"          value={rate} />
-                <input type="hidden" name="discount"      value={discount} />
-                <input type="hidden" name="start_time"    value={startTime} />
-                <input type="hidden" name="end_time"      value={endTime} />
-                <input type="hidden" name="is_all_day"    value="true" />
-                <input type="hidden" name="frequency"     value={eventType === "recurring" ? frequency : ""} />
-                <input type="hidden" name="description"   value={notes} />
+                <input type="hidden" name="contact_id"      value={picked?.id ?? ""} />
+                <input type="hidden" name="contact_name"    value={picked?.name ?? ""} />
+                <input type="hidden" name="contact_address" value={picked?.address ?? ""} />
+                <input type="hidden" name="vessel_id"       value={vesselId} />
+                <input type="hidden" name="vessel_name"     value={vesselLabel} />
+                <input type="hidden" name="template_id"     value={templateId} />
+                <input type="hidden" name="service_label"   value={serviceLabel} />
+                <input type="hidden" name="qty"             value={qty} />
+                <input type="hidden" name="rate"            value={rate} />
+                <input type="hidden" name="discount"        value={discount} />
+                <input type="hidden" name="start_time"      value={startTime} />
+                <input type="hidden" name="end_time"        value={endTime} />
+                <input type="hidden" name="is_all_day"      value="true" />
+                <input type="hidden" name="frequency"       value={eventType === "recurring" ? frequency : ""} />
+                <input type="hidden" name="description"     value={notes} />
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={servicePending || !picked || !serviceLabel || !rate}
                     className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-40">
@@ -538,14 +540,15 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
               {salesState.error && <p className="text-red-600 text-xs">{salesState.error}</p>}
 
               <form action={salesAction}>
-                <input type="hidden" name="contact_id"   value={picked?.id ?? ""} />
-                <input type="hidden" name="contact_name" value={picked?.name ?? ""} />
-                <input type="hidden" name="vessel_id"    value={vesselId} />
-                <input type="hidden" name="vessel_name"  value={vesselLabel} />
-                <input type="hidden" name="start_time"   value={startTime} />
-                <input type="hidden" name="end_time"     value={endTime} />
-                <input type="hidden" name="is_all_day"   value={calIsAllDay ? "true" : "false"} />
-                <input type="hidden" name="description"  value={notes} />
+                <input type="hidden" name="contact_id"      value={picked?.id ?? ""} />
+                <input type="hidden" name="contact_name"    value={picked?.name ?? ""} />
+                <input type="hidden" name="contact_address" value={picked?.address ?? ""} />
+                <input type="hidden" name="vessel_id"       value={vesselId} />
+                <input type="hidden" name="vessel_name"     value={vesselLabel} />
+                <input type="hidden" name="start_time"      value={startTime} />
+                <input type="hidden" name="end_time"        value={endTime} />
+                <input type="hidden" name="is_all_day"      value={calIsAllDay ? "true" : "false"} />
+                <input type="hidden" name="description"     value={notes} />
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={salesPending || !picked}
                     className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-40">

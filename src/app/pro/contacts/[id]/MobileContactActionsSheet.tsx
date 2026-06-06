@@ -16,6 +16,7 @@ type VesselOption = { id: string; name: string | null; make_model: string | null
 interface Props {
   contactId: string;
   contactName: string;
+  contactAddress: string | null;
   vessels: VesselOption[];
   qbCustomerId: string | null;
   pipelineStage: PipelineStage | null;
@@ -27,6 +28,7 @@ type ActiveSheet = "pipeline" | "more" | null;
 export default function MobileContactActionsSheet({
   contactId,
   contactName,
+  contactAddress,
   vessels,
   qbCustomerId,
   pipelineStage,
@@ -259,6 +261,7 @@ export default function MobileContactActionsSheet({
           onClose={() => setShowNewPlus(false)}
           preContactId={contactId}
           preContactName={contactName}
+          preContactAddress={contactAddress}
           preVessels={vessels}
         />
       )}
