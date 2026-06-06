@@ -1984,13 +1984,22 @@ export async function createServiceEvent(
   nextDate.setDate(nextDate.getDate() + 1);
   const nextDateStr = nextDate.toISOString().split("T")[0];
 
+  // Fetch address directly from DB to ensure accuracy regardless of form serialization
+  const supabase = await svc();
+  const { data: contactRow } = await supabase
+    .from("contacts")
+    .select("address")
+    .eq("id", contact_id)
+    .single();
+  const location = contactRow?.address || contact_address || undefined;
+
   try {
     const { createCalendarEvent, RECURRING_WORK_COLOR_ID, ONE_OFF_WORK_COLOR_ID } = await import("@/lib/google-calendar");
     const colorId = frequency ? RECURRING_WORK_COLOR_ID : ONE_OFF_WORK_COLOR_ID;
     const eventId = await createCalendarEvent({
       title,
       description: description ?? undefined,
-      location:    contact_address || undefined,
+      location,
       startTime:   dateOnly,
       endTime:     nextDateStr,
       isAllDay:    true,
@@ -1998,7 +2007,6 @@ export async function createServiceEvent(
       recurrenceRule,
     });
 
-    const supabase = await svc();
     await supabase.from("calendar_contact_links").insert({
       gcal_event_id:       eventId,
       contact_id,
@@ -2052,19 +2060,27 @@ export async function createSalesMeetingEvent(
     return `${next.getFullYear()}-${p(next.getMonth() + 1)}-${p(next.getDate())}`;
   }
 
+  // Fetch address directly from DB
+  const supabase = await svc();
+  const { data: contactRow } = await supabase
+    .from("contacts")
+    .select("address")
+    .eq("id", contact_id)
+    .single();
+  const location = contactRow?.address || contact_address || undefined;
+
   try {
     const { createCalendarEvent, SALES_EVENT_COLOR_ID } = await import("@/lib/google-calendar");
     const eventId = await createCalendarEvent({
       title,
       description: description ?? undefined,
-      location:    contact_address || undefined,
+      location,
       startTime:   start_time,
       endTime:     is_all_day ? nextDay(start_time.split("T")[0]) : end_time,
       isAllDay:    is_all_day,
       colorId:     SALES_EVENT_COLOR_ID,
     });
 
-    const supabase = await svc();
     await supabase.from("calendar_contact_links").insert({
       gcal_event_id: eventId,
       contact_id,
