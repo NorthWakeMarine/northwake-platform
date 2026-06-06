@@ -40,9 +40,9 @@ function getAuth() {
 }
 
 // Google Calendar colorId constants (1-11 are valid event colorIds)
-export const RECURRING_WORK_COLOR_ID = "2";  // Sage (green) — recurring maintenance
-export const ONE_OFF_WORK_COLOR_ID   = "6";  // Tangerine (orange) — one-time invoice
-export const SALES_EVENT_COLOR_ID    = "9";  // Blueberry (navy) — sales meetings
+export const RECURRING_WORK_COLOR_ID = "9";  // Blueberry — recurring work label
+export const ONE_OFF_WORK_COLOR_ID   = "1";  // Lavender — one-off work label
+export const SALES_EVENT_COLOR_ID    = "11"; // Tomato (red) — sales label
 // Legacy alias kept for any existing references
 export const WORK_EVENT_COLOR_ID     = RECURRING_WORK_COLOR_ID;
 
