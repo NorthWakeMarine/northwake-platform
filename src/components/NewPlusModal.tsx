@@ -159,8 +159,10 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
     if (tpl.is_per_foot) {
       const v = vessels.find(v => v.id === vesselId);
       const ft = v?.length_ft ? parseFloat(v.length_ft) : null;
-      setRate(ft ? String((tpl.default_amount * ft).toFixed(2)) : "");
+      if (ft) setQty(String(ft));
+      setRate(String(tpl.default_amount));
     } else {
+      setQty("1");
       setRate(String(tpl.default_amount));
     }
   }
@@ -171,7 +173,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
     if (!tpl?.is_per_foot) return;
     const v = vessels.find(v => v.id === id);
     const ft = v?.length_ft ? parseFloat(v.length_ft) : null;
-    setRate(ft ? String((tpl.default_amount * ft).toFixed(2)) : "");
+    if (ft) setQty(String(ft));
   }
 
   const gross = parseFloat(qty || "1") * parseFloat(rate || "0");
