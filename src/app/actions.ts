@@ -1984,14 +1984,15 @@ export async function createServiceEvent(
   const nextDateStr = nextDate.toISOString().split("T")[0];
 
   try {
-    const { createCalendarEvent, WORK_EVENT_COLOR_ID } = await import("@/lib/google-calendar");
+    const { createCalendarEvent, RECURRING_WORK_COLOR_ID, ONE_OFF_WORK_COLOR_ID } = await import("@/lib/google-calendar");
+    const colorId = frequency ? RECURRING_WORK_COLOR_ID : ONE_OFF_WORK_COLOR_ID;
     const eventId = await createCalendarEvent({
       title,
       description: description ?? undefined,
       startTime:   dateOnly,
       endTime:     nextDateStr,
       isAllDay:    true,
-      colorId:     WORK_EVENT_COLOR_ID,
+      colorId,
       recurrenceRule,
     });
 
@@ -2009,7 +2010,7 @@ export async function createServiceEvent(
       auto_invoice:        true,
       billing_frequency:   billingFreq,
       event_type:          "work",
-      color_id:            WORK_EVENT_COLOR_ID,
+      color_id:            colorId,
       recurrence_rule:     recurrenceRule ?? null,
     });
 

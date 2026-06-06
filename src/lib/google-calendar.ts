@@ -39,9 +39,12 @@ function getAuth() {
   return oauth2;
 }
 
-// Google Calendar colorId constants
-export const WORK_EVENT_COLOR_ID   = "10"; // Basil (deep green)
-export const SALES_EVENT_COLOR_ID  = "9";  // Blueberry
+// Google Calendar colorId constants (1-11 are valid event colorIds)
+export const RECURRING_WORK_COLOR_ID = "2";  // Sage (green) — recurring maintenance
+export const ONE_OFF_WORK_COLOR_ID   = "6";  // Tangerine (orange) — one-time invoice
+export const SALES_EVENT_COLOR_ID    = "9";  // Blueberry (navy) — sales meetings
+// Legacy alias kept for any existing references
+export const WORK_EVENT_COLOR_ID     = RECURRING_WORK_COLOR_ID;
 
 export type CalendarEventInput = {
   title: string;

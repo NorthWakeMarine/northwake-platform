@@ -607,27 +607,18 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
               {/* Color picker */}
               <div className="flex flex-col gap-2">
                 <label className={labelCls}>Color</label>
-                <div className="flex flex-wrap gap-2">
-                  {GCAL_COLORS.map(c => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setCalColorId(prev => prev === c.id ? "" : c.id)}
-                      title={c.name}
-                      className="w-7 h-7 rounded-full border-2 transition-all"
-                      style={{
-                        backgroundColor: c.border,
-                        borderColor:     calColorId === c.id ? "#000080" : "transparent",
-                        outline:         calColorId === c.id ? "2px solid #000080" : "none",
-                        outlineOffset:   "2px",
-                      }}
-                    />
-                  ))}
-                  {calColorId && (
-                    <button type="button" onClick={() => setCalColorId("")} className="text-[10px] text-slate-400 hover:text-slate-600 self-center ml-1">
-                      Clear
-                    </button>
-                  )}
+                <div className="relative">
+                  <select
+                    value={calColorId}
+                    onChange={e => setCalColorId(e.target.value)}
+                    className={inputCls}
+                    style={calColorId ? { borderLeftWidth: "4px", borderLeftColor: GCAL_COLORS.find(c => c.id === calColorId)?.border } : {}}
+                  >
+                    <option value="">Calendar default</option>
+                    {GCAL_COLORS.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
