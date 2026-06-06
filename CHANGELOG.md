@@ -2,6 +2,13 @@
 
 ## June 2026
 
+### June 4-6 | Pipeline vendor dedup, QB invoice reconcile, cron schedule spread, mobile action strip fix | CRM
+
+- **Pipeline vendor dedup by email and phone**: Leads were appearing in the pipeline board even when the same person already existed in contacts as a vendor. Root cause: the dedup set only pulled emails from `contact_type = 'customer'` contacts, so vendor emails slipped through. Fixed in `pipeline.ts` to fetch all contacts (any type) for dedup, and to also match by phone — not just email — so phone-only leads are excluded if a contact with that phone exists.
+- **QB invoice reconcile**: New `reconcileQbInvoices` server action added to `actions.ts`. On Sync All, it fetches current QB transactions for all linked contacts and compares against CRM timeline events. Timeline entries whose `qb_txn_id` no longer exists in QB (deleted or voided) are deleted from the CRM. Entries with changed status or amount (e.g. Unpaid to Paid) are updated in place. Results shown in Sync All panel under "QB Invoice Reconcile" (removed count, updated count).
+- **Cron schedule spread**: Vercel Hobby plan has a 1-hour flexible execution window per cron. `integrity-check` (8am) and `calendar-sync` (9am) were adjacent — their windows could overlap. Rescheduled: `integrity-check` stays at 8am, `calendar-sync` moved to 10am, `maintenance-invoices` moved to noon on the 15th. All gaps are now 2+ hours so windows can never collide.
+- **Mobile action strip overlap on leads detail page**: The fixed action strip on `/pro/leads/[id]` was positioned at `bottom-16` (64px flat), which overlapped the ProShell tab bar on iOS devices with a home indicator (safe area ~34px). Fixed to `bottom-[calc(4rem+env(safe-area-inset-bottom))]` to match how the contact page action sheet was already positioned. Content bottom padding bumped from `pb-36` to `pb-48` on both the leads and contacts detail pages so last cards are not hidden behind the action strip.
+
 ### June 3 | Kanban paid column fix, column widths, QB invoice cross-contact bug | CRM
 
 - **Kanban "Paid" column was reverting on drop**: Moving cards to the Paid column triggered a DB check constraint violation (`contacts_pipeline_stage_check` was missing `"paid"` as a valid value). The server action returned `ok: false`, the optimistic update reverted, and no error was surfaced to the user. Migration `20260601_fix_pipeline_stage_constraint.sql` drops and re-adds the constraint with all 8 stages including `"paid"`. Run in Supabase SQL editor to activate.
