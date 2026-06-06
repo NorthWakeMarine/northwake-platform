@@ -1962,16 +1962,35 @@ export async function createServiceEvent(
   const nameParts = [contact_name.trim(), vessel_name?.trim(), service_label.trim()].filter(Boolean);
   const title = nameParts.join(" - ");
 
-  const freqN          = frequency ? Math.max(1, parseInt(frequency, 10)) : null;
-  const rruleUnit      = freq_unit === "days" ? "DAILY" : freq_unit === "months" ? "MONTHLY" : "WEEKLY";
-  const recurrenceRule = freqN ? `RRULE:FREQ=${rruleUnit};INTERVAL=${freqN}` : undefined;
-  const billingFreq    = recurrenceRule ?? "monthly";
+  const freqN    = frequency ? Math.max(1, parseInt(frequency, 10)) : null;
 
   // All-day: end date must be the next calendar day for GCal
   const dateOnly = start_time.split("T")[0];
   const nextDate = new Date(dateOnly + "T12:00:00");
   nextDate.setDate(nextDate.getDate() + 1);
   const nextDateStr = nextDate.toISOString().split("T")[0];
+
+  // Build RRULE — for weekly and monthly, pin to the same weekday as the start date
+  // so events always land on the same day of week regardless of interval.
+  const RRULE_DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+  const startDateObj = new Date(dateOnly + "T12:00:00");
+  const dayCode      = RRULE_DAYS[startDateObj.getDay()];
+  const dayOfMonth   = startDateObj.getDate();
+  const ordinal      = Math.ceil(dayOfMonth / 7);
+  const daysInMonth  = new Date(startDateObj.getFullYear(), startDateObj.getMonth() + 1, 0).getDate();
+  const byDay        = dayOfMonth + 7 > daysInMonth ? `-1${dayCode}` : `${ordinal}${dayCode}`;
+
+  let recurrenceRule: string | undefined;
+  if (freqN) {
+    if (freq_unit === "days") {
+      recurrenceRule = `RRULE:FREQ=DAILY;INTERVAL=${freqN}`;
+    } else if (freq_unit === "months") {
+      recurrenceRule = `RRULE:FREQ=MONTHLY;INTERVAL=${freqN};BYDAY=${byDay}`;
+    } else {
+      recurrenceRule = `RRULE:FREQ=WEEKLY;INTERVAL=${freqN};BYDAY=${dayCode}`;
+    }
+  }
+  const billingFreq = recurrenceRule ?? "monthly";
 
   // Fetch address directly from DB to ensure accuracy regardless of form serialization
   const supabase = await svc();
