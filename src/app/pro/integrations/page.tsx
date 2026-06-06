@@ -115,13 +115,13 @@ export default async function IntegrationsPage({
                   </div>
                   <div>
                     <h2 className="text-[#1E2938] text-sm font-bold">Google Calendar</h2>
-                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Appointment and scheduling sync</p>
+                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Scheduling and job management</p>
                   </div>
                 </div>
                 <StatusBadge connected={calendarConnected} />
               </div>
               <p className="text-slate-500 text-sm leading-relaxed flex-1">
-                Push booked jobs to Google Calendar in real time. Changes made on your phone sync back to the CRM automatically.
+                Schedule jobs, sync appointments, and manage your calendar from one place. Updates made on any device reflect in the CRM in real time.
               </p>
               <CalendarRegisterButton expires={webhookExpiry} calendarConnected={calendarConnected} />
             </div>
@@ -135,13 +135,13 @@ export default async function IntegrationsPage({
                   </div>
                   <div>
                     <h2 className="text-[#1E2938] text-sm font-bold">QuickBooks</h2>
-                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Invoice sync and financial mirror</p>
+                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Invoicing, payments, and customer sync</p>
                   </div>
                 </div>
                 <StatusBadge connected={qb.connected} />
               </div>
               <p className="text-slate-500 text-sm leading-relaxed flex-1">
-                Generate invoices in one click from asset cards. When a payment lands in QuickBooks, the contact moves to Done automatically.
+                Create and send invoices directly from contact records, sync customer data, and automatically move jobs to Done when payment is received.
               </p>
               {qb.connected ? (
                 <div className="flex flex-col gap-2">
@@ -175,13 +175,13 @@ export default async function IntegrationsPage({
                   </div>
                   <div>
                     <h2 className="text-[#1E2938] text-sm font-bold">Quo</h2>
-                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Call and SMS logging</p>
+                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Call and text logging with lead capture</p>
                   </div>
                 </div>
                 <StatusBadge connected={quo.connected} />
               </div>
               <p className="text-slate-500 text-sm leading-relaxed flex-1">
-                Log inbound and outbound calls and texts against contact records. Missed calls from unknown numbers auto-create a new lead.
+                Every call and text is logged against the right contact automatically. Unknown callers become new leads, and recordings are stored on the timeline.
               </p>
               {quo.connected && (
                 <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
@@ -206,13 +206,13 @@ export default async function IntegrationsPage({
                   </div>
                   <div>
                     <h2 className="text-[#1E2938] text-sm font-bold">Google Analytics</h2>
-                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">GA4 event tracking</p>
+                    <p className="text-slate-400 text-[10px] tracking-wide mt-0.5">Landing site analytics and event tracking</p>
                   </div>
                 </div>
                 <StatusBadge connected={!!gaId} />
               </div>
               <p className="text-slate-500 text-sm leading-relaxed flex-1">
-                Tracks page views, CTA clicks, form submissions, scroll depth, and phone/email interactions across the landing site.
+                Tracks visitor behavior across the landing site, including page views, form submissions, CTA clicks, and phone or email interactions.
               </p>
               {gaId ? (
                 <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
