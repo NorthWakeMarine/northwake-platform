@@ -183,7 +183,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4">
-      <div className="bg-white rounded-t-xl sm:rounded-sm shadow-2xl w-full sm:max-w-lg max-h-[92dvh] flex flex-col">
+      <div className="bg-white rounded-t-xl sm:rounded-sm shadow-2xl w-full sm:max-w-lg max-h-[92dvh] min-h-[480px] flex flex-col">
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
