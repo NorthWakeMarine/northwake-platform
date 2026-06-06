@@ -67,7 +67,7 @@ function TemplateForm({
       </label>
       {isPerFoot && (
         <p className="text-[10px] text-slate-400 -mt-2">
-          Invoice amount is calculated automatically from the vessel&apos;s length when linking a calendar event.
+          When creating a recurring or one-time service via New+, the rate is pre-filled from vessel length automatically.
         </p>
       )}
 
@@ -122,7 +122,7 @@ export default function ServicesClient({ templates: initial }: { templates: Serv
         <div>
           <h2 className="text-slate-800 text-base font-bold">Recurring Services</h2>
           <p className="text-slate-500 text-xs mt-0.5">
-            Define reusable service types with default pricing. When linking a calendar event to a contact, pick a template and optionally override the price per client.
+            Define reusable service types with default pricing. Pick a template in the New+ flow to pre-fill qty, rate, and description per client.
           </p>
         </div>
         {!showCreate && (
@@ -200,10 +200,10 @@ export default function ServicesClient({ templates: initial }: { templates: Serv
       <div className="bg-[#000080]/5 border border-[#000080]/15 rounded-sm px-5 py-4">
         <p className="text-[#000080] text-xs font-semibold mb-1">How auto-invoicing works</p>
         <ul className="text-slate-600 text-xs space-y-1 list-disc pl-4">
-          <li>Go to the Calendar and click a linked recurring event.</li>
-          <li>In the link panel, pick a service template and set the client-specific qty, rate, and discount.</li>
-          <li>Set billing frequency: Monthly, Twice Monthly, or Every 6 Weeks.</li>
-          <li>On the 15th of each month, the cron generates QB invoices for the following month.</li>
+          <li>Click New+ from the Pipeline or a contact page and choose Recurring Service or One-Time Invoice.</li>
+          <li>Pick a service template, then set the exact qty, rate, and discount for that client.</li>
+          <li>Choose a frequency: every 1, 2, 4, or 6 weeks. A Google Calendar event is created automatically.</li>
+          <li>On the 15th of each month, QB invoices are generated for all scheduled events in the following month.</li>
           <li>Each invoice is logged to the client&apos;s activity timeline automatically.</li>
         </ul>
       </div>
