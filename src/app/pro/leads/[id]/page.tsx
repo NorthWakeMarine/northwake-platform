@@ -17,6 +17,7 @@ type TimelineEvent = {
   title: string | null;
   body: string | null;
   created_by: string | null;
+  metadata?: Record<string, string> | null;
 };
 
 type Contact = {
@@ -109,7 +110,7 @@ export default async function LeadDetailPage({
     phoneNote = pn?.note?.trim() || null;
   }
 
-  // Try to find a matching contact record by email
+  // Try to find a matching contact record by email, then phone as fallback
   let contact: Contact | null = null;
   let timeline: TimelineEvent[] = [];
 
@@ -118,17 +119,30 @@ export default async function LeadDetailPage({
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SECRET_KEY!
     );
-    const { data: contactData } = await svc
-      .from("contacts")
-      .select("id, name, email, phone, waiver_signed")
-      .eq("email", lead.email)
-      .maybeSingle();
+
+    let contactData: Contact | null = null;
+    if (lead.email) {
+      const { data } = await svc
+        .from("contacts")
+        .select("id, name, email, phone, waiver_signed")
+        .eq("email", lead.email)
+        .maybeSingle();
+      contactData = data ?? null;
+    }
+    if (!contactData && lead.phone) {
+      const { data } = await svc
+        .from("contacts")
+        .select("id, name, email, phone, waiver_signed")
+        .eq("phone", lead.phone)
+        .maybeSingle();
+      contactData = data ?? null;
+    }
 
     if (contactData) {
       contact = contactData;
       const { data: events } = await svc
         .from("timeline_events")
-        .select("id, created_at, event_type, title, body, created_by")
+        .select("id, created_at, event_type, title, body, created_by, metadata")
         .eq("contact_id", contactData.id)
         .order("created_at", { ascending: false });
       timeline = events ?? [];
@@ -325,21 +339,75 @@ export default async function LeadDetailPage({
                 </div>
               </div>
 
-              {/* Call data from Quo */}
-              {lead.source === "quo" ? (
-                <div className="bg-[#F1F2F5] neu-card rounded-md p-5">
-                  <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-3">Call Details</p>
-                  <p className="text-slate-400 text-xs leading-relaxed">Call data is logged automatically via the Quo webhook.</p>
-                </div>
-              ) : (
-                <div className="bg-[#F1F2F5] neu-card rounded-md p-5 flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Call Data</p>
-                    <span className="text-[9px] tracking-widest uppercase text-slate-300 border border-slate-200 px-2 py-0.5 rounded-sm">Quo</span>
+              {/* Call / SMS log from Quo */}
+              {(() => {
+                const callEvents = timeline.filter(e => e.event_type === "call" || e.event_type === "sms");
+                return (
+                  <div className="bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
+                      <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400">Call Details</p>
+                      {callEvents.length > 0 && (
+                        <span className="text-slate-400 text-[11px]">{callEvents.length} {callEvents.length === 1 ? "event" : "events"}</span>
+                      )}
+                    </div>
+                    {callEvents.length === 0 ? (
+                      <p className="text-slate-400 text-xs px-5 py-5 leading-relaxed">
+                        {contact ? "No calls or texts logged yet." : "No contact record found for this number."}
+                      </p>
+                    ) : (
+                      <ul className="flex flex-col max-h-72 overflow-y-auto">
+                        {callEvents.map((ev, i) => {
+                          const isCall = ev.event_type === "call";
+                          const recordingUrl = ev.metadata?.recording_url;
+                          const t = (ev.title ?? "").toLowerCase();
+                          const badge = t.includes("missed")
+                            ? <span className="text-[9px] tracking-widest uppercase px-1.5 py-0.5 rounded-sm font-medium bg-red-50 text-red-500 border border-red-100">Missed</span>
+                            : t.includes("voicemail")
+                            ? <span className="text-[9px] tracking-widest uppercase px-1.5 py-0.5 rounded-sm font-medium bg-amber-50 text-amber-600 border border-amber-100">Voicemail</span>
+                            : t.includes("inbound")
+                            ? <span className="text-[9px] tracking-widest uppercase px-1.5 py-0.5 rounded-sm font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">Inbound</span>
+                            : t.includes("outbound")
+                            ? <span className="text-[9px] tracking-widest uppercase px-1.5 py-0.5 rounded-sm font-medium bg-blue-50 text-blue-600 border border-blue-100">Outbound</span>
+                            : null;
+                          return (
+                            <li key={ev.id} className={`flex gap-3 px-5 py-3 ${i < callEvents.length - 1 ? "border-b border-slate-100" : ""}`}>
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isCall ? "bg-purple-50" : "bg-blue-50"}`}>
+                                {isCall ? (
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-500">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                                  </svg>
+                                ) : (
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-slate-700 text-xs font-medium">{ev.title ?? (isCall ? "Call" : "SMS")}</span>
+                                  {badge}
+                                  <span className="text-slate-300 text-[10px] ml-auto whitespace-nowrap">
+                                    {new Date(ev.created_at).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                                  </span>
+                                </div>
+                                {ev.body && <p className="text-slate-500 text-xs mt-0.5 leading-relaxed">{ev.body}</p>}
+                                {recordingUrl && (
+                                  <a href={recordingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-[#000080] hover:underline mt-1">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
+                                    </svg>
+                                    Listen to recording
+                                  </a>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
-                  <p className="text-slate-400 text-xs leading-relaxed">Inbound call data, duration, and recordings are logged automatically via Quo.</p>
-                </div>
-              )}
+                );
+              })()}
 
 
               {/* Timeline if contact matched */}
