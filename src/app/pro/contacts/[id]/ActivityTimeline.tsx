@@ -83,15 +83,15 @@ function NoteItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
 
   return (
     <li className="flex gap-4 relative">
-      {!isLast && <div className="absolute left-[5px] top-4 bottom-0 w-px bg-slate-100" />}
+      {!isLast && <div className="dossier-rail absolute left-[5px] top-4 bottom-0 w-px" />}
       <div className="pt-0.5 shrink-0">
-        <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 block ${dot}`} />
+        <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 block relative z-10 ring-[3px] ring-[#F1F2F5] ${dot}`} />
       </div>
       <div className="pb-5 flex-1 min-w-0 flex gap-3">
 
         {/* Left: label + body */}
         <div className="flex-1 min-w-0">
-          <span className="text-slate-700 text-xs font-medium">Note</span>
+          <span className="text-slate-700 text-[10px] tracking-[0.2em] uppercase font-semibold">Note</span>
 
           {editing ? (
             <div className="mt-1.5 flex flex-col gap-2">
@@ -173,7 +173,7 @@ function NoteItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
               </button>
             </div>
           )}
-          <p className="text-slate-300 text-[10px] whitespace-nowrap">
+          <p className="text-slate-400 text-[10px] whitespace-nowrap tabular-nums">
             {author ? `by ${author} · ` : ""}{fmtFull(ev.created_at)}
           </p>
           {localEdits.map((e, i) => (
@@ -229,17 +229,17 @@ function InvoiceItem({
 
   return (
     <li className="flex gap-4 relative group">
-      {!isLast && <div className="absolute left-[5px] top-4 bottom-0 w-px bg-slate-100" />}
+      {!isLast && <div className="dossier-rail absolute left-[5px] top-4 bottom-0 w-px" />}
       <div className="pt-0.5 shrink-0">
-        <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 block ${cfg.dot}`} />
+        <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 block relative z-10 ring-[3px] ring-[#F1F2F5] ${cfg.dot}`} />
       </div>
       <div className="pb-5 flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-slate-700 text-xs font-medium">{cfg.label}</span>
+          <span className="text-slate-700 text-[10px] tracking-[0.2em] uppercase font-semibold">{cfg.label}</span>
           {ev.title && (
             <span className="text-slate-500 text-xs">{ev.title}</span>
           )}
-          <span className="text-slate-300 text-[10px] ml-auto whitespace-nowrap">{fmtFull(ev.created_at)}</span>
+          <span className="text-slate-400 text-[10px] ml-auto whitespace-nowrap tabular-nums">{fmtFull(ev.created_at)}</span>
         </div>
         {ev.body && (
           <p className="text-slate-500 text-xs mt-1 leading-relaxed">{ev.body}</p>
@@ -300,17 +300,17 @@ function StaticItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
 
   return (
     <li className="flex gap-4 relative group">
-      {!isLast && <div className="absolute left-[5px] top-4 bottom-0 w-px bg-slate-100" />}
+      {!isLast && <div className="dossier-rail absolute left-[5px] top-4 bottom-0 w-px" />}
       <div className="pt-0.5 shrink-0">
-        <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 block ${cfg.dot}`} />
+        <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 block relative z-10 ring-[3px] ring-[#F1F2F5] ${cfg.dot}`} />
       </div>
       <div className="pb-5 flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-slate-700 text-xs font-medium">{cfg.label}</span>
+          <span className="text-slate-700 text-[10px] tracking-[0.2em] uppercase font-semibold">{cfg.label}</span>
           {ev.title && !["Lead created", "Note added", "New form submission"].includes(ev.title) && (
             <span className="text-slate-500 text-xs">{ev.title}</span>
           )}
-          <span className="text-slate-300 text-[10px] ml-auto whitespace-nowrap">{fmtFull(ev.created_at)}</span>
+          <span className="text-slate-400 text-[10px] ml-auto whitespace-nowrap tabular-nums">{fmtFull(ev.created_at)}</span>
           {!confirmDelete && (
             <button
               onClick={() => setConfirmDelete(true)}
@@ -358,7 +358,17 @@ function StaticItem({ ev, isLast }: { ev: TimelineEvent; isLast: boolean }) {
 export function NotesList({ events }: { events: TimelineEvent[] }) {
   const notes = events.filter((ev) => ev.event_type === "note");
   if (notes.length === 0) {
-    return <p className="text-slate-400 text-xs px-1 py-3 italic">No notes yet.</p>;
+    return (
+      <div className="px-1 py-6 flex flex-col items-center gap-2 text-center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="chrome-text-dark">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2v6h6" />
+          <line x1="9" y1="13" x2="15" y2="13" />
+          <line x1="9" y1="17" x2="13" y2="17" />
+        </svg>
+        <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase">No notes yet</p>
+      </div>
+    );
   }
   return (
     <ul className="flex flex-col gap-0 mt-1">
@@ -408,7 +418,13 @@ export default function ActivityTimeline({
       </div>
       <div className="max-h-[560px] overflow-y-auto">
         {visible.length === 0 ? (
-          <p className="text-slate-400 text-sm px-6 py-8">No activity yet.</p>
+          <div className="px-6 py-10 flex flex-col items-center gap-3 text-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="chrome-text-dark">
+              <circle cx="12" cy="12" r="9" />
+              <polyline points="12 7 12 12 15 14" />
+            </svg>
+            <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase">Awaiting activity</p>
+          </div>
         ) : (
           <ul className="px-6 py-4 flex flex-col gap-0">
             {visible.map((ev, i) =>

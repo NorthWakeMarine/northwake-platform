@@ -134,15 +134,19 @@ export default async function LeadsPage({
               <p className="text-red-500 text-xs px-6 py-6">Failed to load leads: {error.message}</p>
             ) : !leads || leads.length === 0 ? (
               <div className="px-6 py-12 flex flex-col items-center gap-3 text-center">
-                <p className="text-slate-400 text-sm">No leads yet.</p>
-                <p className="text-slate-300 text-xs max-w-xs leading-relaxed">
-                  Leads appear here automatically when someone submits a quote request on the website. Share your contact page link to start receiving them.
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="chrome-text-dark">
+                  <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+                  <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+                </svg>
+                <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase">Awaiting your first lead</p>
+                <p className="text-slate-400/80 text-xs max-w-xs leading-relaxed mt-1">
+                  Leads appear here automatically when someone submits a quote request on the website.
                 </p>
                 <a
                   href={`${clientConfig.siteUrl}/contact`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] tracking-widest uppercase text-[#000080] font-semibold hover:underline mt-1"
+                  className="text-[10px] tracking-widest uppercase text-[#000080] font-semibold hover:underline mt-2"
                 >
                   View Contact Page →
                 </a>

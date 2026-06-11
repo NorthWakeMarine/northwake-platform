@@ -337,3 +337,14 @@ body {
     animation: none !important;
   }
 }
+
+/* Dossier rail — chrome-tinted vertical timeline gradient */
+.dossier-rail {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 128, 0.22) 0%,
+    rgba(160, 162, 164, 0.45) 18%,
+    rgba(160, 162, 164, 0.22) 80%,
+    transparent 100%
+  );
+}

@@ -2,6 +2,15 @@
 
 ## June 2026
 
+### June 10 | Vibe-code Round 2: dossier timeline + refined empty states | CRM
+
+- **Activity Timeline dossier feel** (`ActivityTimeline.tsx`): vertical rail switched from flat `bg-slate-100` to a new `.dossier-rail` utility (chrome-tinted gradient: navy at top, steel in the middle, fading to transparent at the bottom). Event dots gained a 3px ring in the surface color so they sit above the rail like beads instead of being interrupted by the line.
+- **Terminal eyebrow labels**: every event type label (`Note`, `Call`, `Invoice`, `Lead Created`, etc.) switched from `text-xs font-medium` to `text-[10px] tracking-[0.2em] uppercase font-semibold` for a command-terminal vibe.
+- **Tabular timestamps**: all `fmtFull` timestamps now use `tabular-nums` (and bumped from `text-slate-300` to `text-slate-400`) so they align like a system log instead of drifting on proportional digits.
+- **Bespoke timeline empty states**: "No activity yet" replaced with a chrome-tinted clock SVG + `AWAITING ACTIVITY` uppercase eyebrow. "No notes yet" replaced with a chrome document SVG + matching eyebrow treatment.
+- **Contacts page empty state** (`contacts/page.tsx`): three bespoke variants — magnifier glyph for "No results for [term]", truck glyph for "No vendors yet", users glyph for "No customers yet", all chrome-tinted with uppercase tracking copy.
+- **Leads page empty state** (`leads/page.tsx`): chrome inbox glyph + `AWAITING YOUR FIRST LEAD` eyebrow + softened helper copy + existing CTA preserved.
+
 ### June 10 | Vibe-code Round 1: pipeline motion + ambient hero glow | CRM + Landing
 
 - **framer-motion added** (`^12.40.0`) with `transpilePackages: ["framer-motion"]` in `next.config.ts` so Next 15 static gen doesn't crash on the home page prerender. Used sparingly — only where a spring lift adds tactile feel.

@@ -314,8 +314,28 @@ export default async function ContactsPage({
               <p className="text-red-500 text-xs px-6 py-6">Failed to load contacts: {error}</p>
             ) : contacts.length === 0 ? (
               <div className="px-6 py-12 flex flex-col items-center gap-3 text-center">
-                <p className="text-slate-400 text-sm">
-                  {searchHit ? `No results found for "${term}".` : isVendorTab ? "No vendors yet." : "No customers yet."}
+                {searchHit ? (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="chrome-text-dark">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="21" y1="21" x2="16.5" y2="16.5" />
+                  </svg>
+                ) : isVendorTab ? (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="chrome-text-dark">
+                    <path d="M1 3h15v13H1z" />
+                    <path d="M16 8h4l3 3v5h-7V8z" />
+                    <circle cx="5.5" cy="18.5" r="2.5" />
+                    <circle cx="18.5" cy="18.5" r="2.5" />
+                  </svg>
+                ) : (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="chrome-text-dark">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                )}
+                <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase">
+                  {searchHit ? `No results for "${term}"` : isVendorTab ? "No vendors yet" : "No customers yet"}
                 </p>
               </div>
             ) : isVendorTab ? (
