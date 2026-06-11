@@ -2,6 +2,17 @@
 
 ## June 2026
 
+### June 10 | Vibe-code Round 1: pipeline motion + ambient hero glow | CRM + Landing
+
+- **framer-motion added** (`^12.40.0`) with `transpilePackages: ["framer-motion"]` in `next.config.ts` so Next 15 static gen doesn't crash on the home page prerender. Used sparingly — only where a spring lift adds tactile feel.
+- **Pipeline cards** (`PipelineCard.tsx`): wrapped in `motion.div` with a 420/28 spring (`whileHover: { y: -2, scale: 1.01 }`, `whileTap: { scale: 0.99 }`). Motion is suppressed while a card is being dragged so dnd-kit's transform isn't fought. Heat dots replaced with new `.status-glow-red/amber/emerald` utilities (soft blurred halo + center dot, slow pulse on red, reduce-motion fallback). Source tag (`New lead`, vessel name, `Returning · Overdue`) hoisted into a chrome eyebrow row above the contact name. The × button is now `opacity-0 group-hover:opacity-100` to reduce visual noise at rest.
+- **Pipeline columns** (`PipelineColumn.tsx`): bespoke empty states — each stage gets its own inline SVG glyph (chrome-tinted via `chrome-text-dark`) above stage-specific copy ("Awaiting new leads", "All clear", "No jobs scheduled", etc.) instead of the generic "Drag cards here." Drop-zone state adds a `ring-1 ring-[#000080]/15` for clearer targeting. Count badge softens to 50% when stage is empty.
+- **Drag overlay** (`PipelineBoard.tsx`): replaced `shadow-xl ring-1 ring-[#000080]/20` with a layered chrome-tinted shadow (`0 20px 40px rgba(0,0,80,0.35)` + inner navy ring + 24px blue glow) so dragged cards feel lifted off the board with a premium glow trail.
+- **Hero ambient glow** (new `HeroAmbientGlow.tsx`): slow-drifting radial navy orb behind the hero copy (`mix-blend-screen`, 75vw, 50px blur, `ambient-drift` keyframes, 24s loop, reduce-motion respected). Sits between the water photo and the content grid for warm depth behind the headline.
+- **Hero typography**: city/year tracking bumped from `0.45em` to `0.5em`. All hero copy switched from Tailwind's `drop-shadow` to a new `.hero-text-shadow` utility (`0 2px 12px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35)`) for richer legibility over the water photo.
+- **Hero quote form card**: swapped from `chrome-stage-light bg-white/95 backdrop-blur-md` to a new `.chrome-stage-glass` utility — same chrome border, but with `backdrop-blur: 14px`, a faint inset highlight at the top (`inset 0 1px 0 rgba(255,255,255,0.7)`), and a soft navy outer shadow (`0 8px 32px rgba(0,0,80,0.08)`). Feels weightier and more glass-like.
+- **Hero desktop CTAs** (new `HeroDesktopNav.tsx`): "View Services" / "About Us" wrapped in `motion.div` with the same 420/28 spring for `whileHover: { scale: 1.03 }`, `whileTap: { scale: 0.97 }`. Client component so the server-rendered home page stays static.
+
 ### June 10 | Automated SMS appointment reminders | CRM
 
 - **2-day SMS reminder cron**: New `/api/send-reminders` Vercel cron runs daily at 9am ET (14:00 UTC). Queries `calendar_contact_links` for recurring jobs (`recurrence_rule IS NOT NULL`), fetches Google Calendar events 2 days out, matches instances to series via `ev.id` or `ev.recurringEventId`, and texts the customer: "NorthWake Marine: [First Name], Sending out a reminder that we will be out on [Month Day] for your scheduled work. Thank You."

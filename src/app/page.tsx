@@ -4,6 +4,8 @@ import Footer from "@/components/Footer";
 import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import HeroQuoteForm from "@/components/HeroQuoteForm";
 import HeroCarouselClient from "@/components/HeroCarouselClient";
+import HeroAmbientGlow from "@/components/HeroAmbientGlow";
+import HeroDesktopNav from "@/components/HeroDesktopNav";
 import ReviewsCarousel from "@/components/ReviewsCarousel";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
@@ -96,6 +98,10 @@ export default async function Home() {
               priority
             />
           </div>
+
+          {/* Ambient navy glow layer */}
+          <HeroAmbientGlow />
+
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-2 gap-10 lg:gap-16 items-center">
 
             {/* ── Left: logo + tagline ── */}
@@ -110,37 +116,24 @@ export default async function Home() {
               />
               <div className="flex flex-col gap-1.5 items-center">
                 <h1 id="hero-heading" className="flex flex-col items-center gap-0.5 uppercase leading-snug">
-                  <span className="text-white font-black text-xl sm:text-2xl lg:text-3xl tracking-wide drop-shadow">
+                  <span className="text-white font-black text-xl sm:text-2xl lg:text-3xl tracking-wide hero-text-shadow">
                     {heroHeadline}
                   </span>
-                  <span className="text-white/80 font-bold text-base sm:text-lg lg:text-xl tracking-widest drop-shadow">
+                  <span className="text-white/80 font-bold text-base sm:text-lg lg:text-xl tracking-widest hero-text-shadow">
                     {heroSubheadline}
                   </span>
                 </h1>
-                <p className="text-white/70 text-xs tracking-[0.45em] uppercase drop-shadow">
+                <p className="text-white/70 text-xs tracking-[0.5em] uppercase hero-text-shadow">
                   {clientConfig.city}, {clientConfig.state} &nbsp;·&nbsp; Est. {clientConfig.foundedYear}
                 </p>
                 <p className="sr-only">
                   {clientConfig.companyName} is {clientConfig.city}&apos;s premier marine services company. {clientConfig.seoDescription} Free, no-obligation quotes returned same day. Call {clientConfig.phone}.
                 </p>
               </div>
-              <div className="hidden md:flex gap-4 justify-center">
-                <Link
-                  href="/services"
-                  className="border border-white/60 text-white text-xs font-semibold tracking-[0.3em] uppercase px-6 py-3 hover:border-white hover:text-white transition-colors duration-300 drop-shadow"
-                >
-                  View Services
-                </Link>
-                <Link
-                  href="/about"
-                  className="text-white/70 text-xs font-semibold tracking-[0.3em] uppercase px-6 py-3 hover:text-white transition-colors duration-300 drop-shadow"
-                >
-                  About Us
-                </Link>
-              </div>
+              <HeroDesktopNav />
               <a
                 href={`tel:${clientConfig.phoneE164}`}
-                className="text-white/80 text-sm font-semibold tracking-widest hover:text-white transition-colors duration-200 drop-shadow"
+                className="text-white/80 text-sm font-semibold tracking-widest hover:text-white transition-colors duration-200 hero-text-shadow"
                 aria-label={`Call ${clientConfig.companyName}`}
               >
                 {clientConfig.phone}
@@ -148,7 +141,7 @@ export default async function Home() {
             </div>
 
             {/* ── Right: Free Quote form card ── */}
-            <div className="order-1 md:order-2 chrome-stage-light bg-white/95 backdrop-blur-md p-5 sm:p-7 shadow-sm">
+            <div className="order-1 md:order-2 chrome-stage-glass p-5 sm:p-7">
               <div className="flex flex-col gap-0.5 mb-4">
                 <h2 className="text-gray-900 text-xl font-bold tracking-tight">{clientConfig.ctaText}</h2>
                 <p className="text-gray-500 text-xs tracking-wide">{clientConfig.ctaSubtext}</p>

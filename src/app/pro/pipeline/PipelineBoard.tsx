@@ -215,7 +215,13 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
 
           <DragOverlay>
             {activeCard ? (
-              <div className="shadow-xl ring-1 ring-[#000080]/20 rounded-md rotate-1 opacity-95">
+              <div
+                className="rounded-md rotate-1 opacity-95"
+                style={{
+                  boxShadow:
+                    "0 20px 40px -8px rgba(0, 0, 80, 0.35), 0 0 0 1px rgba(0, 0, 128, 0.25), 0 0 24px rgba(80, 100, 255, 0.25)",
+                }}
+              >
                 <PipelineCardComponent card={activeCard} />
               </div>
             ) : null}

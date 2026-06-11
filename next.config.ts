@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import withPWA from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["framer-motion"],
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",

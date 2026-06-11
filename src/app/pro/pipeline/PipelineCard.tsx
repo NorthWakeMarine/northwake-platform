@@ -4,6 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { motion } from "framer-motion";
 import type { PipelineCard as PipelineCardType } from "@/types/pipeline";
 import { removeFromPipeline, deleteLead } from "@/app/actions";
 
@@ -39,23 +40,16 @@ function getHours(isoAt: string | null): number | null {
   return Math.floor((new Date().getTime() - new Date(isoAt).getTime()) / 3_600_000);
 }
 
-function HeatDot({ heat, stageEnteredAt }: { heat: PipelineCardType["heat"]; stageEnteredAt: string | null }) {
+function StatusGlow({ heat, stageEnteredAt }: { heat: PipelineCardType["heat"]; stageEnteredAt: string | null }) {
   if (!heat) return null;
   const hours = getHours(stageEnteredAt);
   const title = hours !== null ? `In stage ${hours}h` : "Stage time unknown";
+  const cls =
+    heat === "red"   ? "status-glow-red"
+    : heat === "amber" ? "status-glow-amber"
+    : "status-glow-emerald";
 
-  return (
-    <span
-      title={title}
-      className={`w-2 h-2 rounded-full shrink-0 ${
-        heat === "red"
-          ? "bg-red-500 animate-pulse"
-          : heat === "amber"
-          ? "bg-amber-400"
-          : "bg-emerald-400"
-      }`}
-    />
-  );
+  return <span title={title} className={cls} />;
 }
 
 function HealthWarningIcon({ flags }: { flags: PipelineCardType["healthFlags"] }) {
@@ -71,6 +65,16 @@ function HealthWarningIcon({ flags }: { flags: PipelineCardType["healthFlags"] }
   );
 }
 
+function buildEyebrow(card: PipelineCardType): string | null {
+  if (card.sourceType === "lead") return "New lead";
+  const parts: string[] = [];
+  if (card.vesselName) parts.push(card.vesselName);
+  if (card.isReturningClient) {
+    parts.push(card.returningReason === "overdue_service" ? "Returning · Overdue" : "Returning");
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 export default function PipelineCard({ card, onRemove }: { card: PipelineCardType; onRemove?: (id: string) => void }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -84,6 +88,8 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const motionLocked = isDragging || isPending || confirming;
 
   function handleClick() {
     if (card.contactId) router.push(`/pro/contacts/${card.contactId}`);
@@ -113,25 +119,39 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
     setConfirming(false);
   }
 
+  const eyebrow = buildEyebrow(card);
+  const removable = card.contactId || (card.sourceType === "lead" && card.leadId);
+
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
       onClick={handleClick}
-      className={`bg-[#F1F2F5] neu-card rounded-md px-2.5 py-2 flex flex-col gap-1.5 cursor-grab active:cursor-grabbing select-none transition-opacity ${
+      whileHover={motionLocked ? undefined : { y: -2, scale: 1.01 }}
+      whileTap={motionLocked ? undefined : { scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 420, damping: 28 }}
+      className={`group bg-[#F1F2F5] neu-card rounded-md px-2.5 py-2 flex flex-col gap-1 cursor-grab active:cursor-grabbing select-none ${
         isDragging || isPending ? "opacity-40" : "opacity-100"
       }`}
     >
+      {eyebrow && (
+        <div className="pl-8 -mb-0.5">
+          <span className="text-slate-400/80 text-[9px] tracking-[0.25em] uppercase font-semibold">
+            {eyebrow}
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
         <AssetIcon type={card.assetType} />
         <span className="flex-1 text-[#1E2938] text-xs font-semibold leading-snug break-words min-w-0">
           {card.name || card.phone || card.email || <span className="text-slate-400 italic font-normal">Unknown</span>}
         </span>
         <HealthWarningIcon flags={card.healthFlags} />
-        <HeatDot heat={card.heat} stageEnteredAt={card.stageEnteredAt} />
-        {(card.contactId || (card.sourceType === "lead" && card.leadId)) && (
+        <StatusGlow heat={card.heat} stageEnteredAt={card.stageEnteredAt} />
+        {removable && (
           confirming ? (
             <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
               <button
@@ -153,7 +173,7 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
             <button
               onClick={handleRemoveClick}
               disabled={isPending}
-              className="text-slate-300 hover:text-red-400 text-xs leading-none shrink-0 transition-colors"
+              className="text-slate-300 hover:text-red-400 text-xs leading-none shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
               title={card.sourceType === "lead" ? "Dismiss lead" : "Remove from pipeline"}
             >
               ×
@@ -161,25 +181,6 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
           )
         )}
       </div>
-
-      {(card.vesselName || card.isReturningClient) && (
-        <div className="flex items-center justify-between gap-2 pl-8">
-          {card.vesselName && (
-            <span className="text-slate-400 text-[10px] truncate">{card.vesselName}</span>
-          )}
-          {card.isReturningClient && (
-            <span className="bg-[#000080]/10 text-[#000080] text-[9px] tracking-widest uppercase font-semibold rounded-sm px-1.5 py-0.5 shrink-0 whitespace-nowrap">
-              {card.returningReason === "overdue_service" ? "Returning · Overdue" : "Returning"}
-            </span>
-          )}
-        </div>
-      )}
-
-      {card.sourceType === "lead" && (
-        <div className="pl-8">
-          <span className="text-slate-400 text-[9px] tracking-widest uppercase">New lead</span>
-        </div>
-      )}
-    </div>
+    </motion.div>
   );
 }
