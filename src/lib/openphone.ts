@@ -136,6 +136,28 @@ export async function fetchMessagesByPhone(phone: string, maxTotal = 500): Promi
   return all;
 }
 
+let cachedPhoneNumberId: string | null = null;
+
+async function resolvePhoneNumberId(): Promise<string> {
+  if (cachedPhoneNumberId) return cachedPhoneNumberId;
+  const phoneNumber = process.env.QUO_PHONE_NUMBER;
+  if (!phoneNumber) throw new Error("QUO_PHONE_NUMBER not set");
+  type Resp = { data: { id: string; number: string }[] };
+  const res = await opRequest<Resp>("/phone-numbers");
+  const match = res.data.find((p) => p.number === phoneNumber);
+  if (!match) throw new Error(`No OpenPhone number found matching ${phoneNumber}`);
+  cachedPhoneNumberId = match.id;
+  return match.id;
+}
+
+export async function sendSMS(to: string, content: string): Promise<void> {
+  const phoneNumberId = await resolvePhoneNumberId();
+  await opRequest("/messages", {
+    method: "POST",
+    body: JSON.stringify({ from: phoneNumberId, to: [to], content }),
+  });
+}
+
 export function splitName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/);
   return {
