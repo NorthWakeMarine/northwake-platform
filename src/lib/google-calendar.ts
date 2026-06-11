@@ -152,7 +152,7 @@ export async function listEvents(from: Date, to: Date): Promise<CalendarEvent[]>
     timeMax:      to.toISOString(),
     singleEvents: true,
     orderBy:      "startTime",
-    maxResults:   200,
+    maxResults:   2500,
   });
 
   return (res.data.items ?? [])
