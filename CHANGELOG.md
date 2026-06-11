@@ -2,6 +2,14 @@
 
 ## June 2026
 
+### June 10 | Propel OS template forked from this repo | Platform
+
+- Forked the current `northwake-platform` state into a new master template at `/Users/ianwilliams/Desktop/propel-os-template`, branded as **Propel OS**.
+- Template is the basis for white-label client deployments. Per-tenant builds will fork from there, not from this repo.
+- Renamed package to `propel-os-template`, wrote tenant-onboarding docs (`README.md`, `CLAUDE.md`, `TENANT_SETUP.md`), preserved this changelog as `LEGACY_CHANGELOG.md` for feature reference, cleaned PWA build artifacts, and committed initial state (`7c97913`).
+- The older `/Users/ianwilliams/Desktop/platform-template` (May 11) is now deprecated; the new fork supersedes it with 30 days of platform improvements (PWA, pdf-lib, resend, expanded `clientConfig`, framer-motion micro-interactions, dossier timeline, status glows).
+- **Follow-up milestone:** `vessel` → `asset` vocabulary rename for cross-vertical generality. Tracked in the template's own changelog and `TENANT_SETUP.md` under "Vocabulary".
+
 ### June 10 | Vibe-code Round 3b: CRM polish | CRM
 
 - **ProShell sidebar accents** (`ProShell.tsx`): logo block (`#000080` 36px square) and user avatar (28px circle) both gain a subtle chrome inset ring (`inset 0 0 0 1px rgba(160,163,166,0.4)`) so they feel forged rather than flat. Logo block adds a navy glow on hover (`shadow-[0_0_14px_rgba(80,100,255,0.5)]`).
