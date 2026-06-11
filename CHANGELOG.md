@@ -2,6 +2,13 @@
 
 ## June 2026
 
+### June 10 | Automated SMS appointment reminders | CRM
+
+- **2-day SMS reminder cron**: New `/api/send-reminders` Vercel cron runs daily at 9am ET (14:00 UTC). Queries `calendar_contact_links` for recurring jobs (`recurrence_rule IS NOT NULL`), fetches Google Calendar events 2 days out, matches instances to series via `ev.id` or `ev.recurringEventId`, and texts the customer: "NorthWake Marine: [First Name], Sending out a reminder that we will be out on [Month Day] for your scheduled work. Thank You."
+- **sendSMS helper in `lib/openphone.ts`**: Posts to OpenPhone `/messages` with the customer's E.164 phone. Auto-resolves the OpenPhone phoneNumberId from `QUO_PHONE_NUMBER` env var (set to the actual NorthWake number, e.g. `+19046065454`) by calling `/phone-numbers` and matching — caches the ID for the function lifetime.
+- **Dedup via timeline_events**: Each send is logged as `event_type: "sms"`, `created_by: "cron"`, `metadata.reminder_gcal_event_id`. Cron skips any event ID already in that set, so re-runs are idempotent and customers never get double-texted.
+- **Activity timeline visibility**: Sent reminders appear on the contact's CRM activity timeline with title "Appointment Reminder Sent" so there's a record of every text. Summary upserted to `system_flags` under `sms_reminders_YYYY-MM-DD`.
+
 ### June 4-6 | Pipeline vendor dedup, QB invoice reconcile, cron schedule spread, mobile action strip fix | CRM
 
 - **Pipeline vendor dedup by email and phone**: Leads were appearing in the pipeline board even when the same person already existed in contacts as a vendor. Root cause: the dedup set only pulled emails from `contact_type = 'customer'` contacts, so vendor emails slipped through. Fixed in `pipeline.ts` to fetch all contacts (any type) for dedup, and to also match by phone — not just email — so phone-only leads are excluded if a contact with that phone exists.
