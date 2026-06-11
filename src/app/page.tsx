@@ -193,20 +193,20 @@ export default async function Home() {
                   key={svc.title}
                   className="group bg-white p-5 flex flex-col gap-3 hover:bg-gray-50 transition-colors duration-300"
                 >
-                  <span aria-hidden="true" className="chrome-text-dark text-2xl leading-none">
+                  <span aria-hidden="true" className="chrome-text-dark text-2xl leading-none transition-transform duration-300 group-hover:scale-110 origin-left">
                     {svc.icon}
                   </span>
                   <div>
-                    <p className="text-gray-500 text-xs tracking-[0.35em] uppercase mb-0.5">
+                    <p className="text-gray-500 text-xs tracking-[0.35em] uppercase mb-0.5 transition-colors duration-200 group-hover:text-gray-700">
                       {svc.tagline}
                     </p>
-                    <h3 className="text-gray-900 text-base font-bold tracking-tight">{svc.title}</h3>
+                    <h3 className="text-gray-900 text-base font-bold tracking-tight transition-colors duration-200 group-hover:text-navy">{svc.title}</h3>
                   </div>
                   <p className="text-gray-700 text-sm leading-relaxed">{svc.description}</p>
                   <ul className="flex flex-col gap-1 mt-auto list-none">
                     {svc.includes.slice(0, 3).map((d) => (
                       <li key={d} className="flex items-start gap-2 text-gray-500 text-xs">
-                        <span aria-hidden="true" className="text-navy mt-0.5">▸</span>
+                        <span aria-hidden="true" className="text-navy mt-0.5 transition-transform duration-200 group-hover:translate-x-0.5">▸</span>
                         {d}
                       </li>
                     ))}

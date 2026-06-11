@@ -83,11 +83,18 @@ export default function ReviewsCarousel({
         style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
       >
         {items.map((review, i) => (
-          <div key={i} className="bg-obsidian p-6 flex flex-col gap-4">
+          <div key={i} className="bg-obsidian p-6 flex flex-col gap-4 relative group">
+            <span
+              aria-hidden="true"
+              className="absolute top-2 right-5 text-6xl leading-none chrome-text opacity-25 group-hover:opacity-45 transition-opacity duration-300 pointer-events-none select-none"
+              style={{ fontFamily: "Georgia, serif" }}
+            >
+              &ldquo;
+            </span>
             {isGoogle && <StarRating rating={review.rating} />}
-            <p className="text-steel-light text-xs leading-relaxed italic">&ldquo;{review.text}&rdquo;</p>
-            <div className="mt-auto flex flex-col gap-0.5">
-              <span className="text-wake text-xs font-bold tracking-wide">{review.author}</span>
+            <p className="text-steel-light text-xs leading-relaxed italic relative z-10">&ldquo;{review.text}&rdquo;</p>
+            <div className="mt-auto flex flex-col gap-0.5 relative z-10">
+              <span className="text-wake text-xs font-bold tracking-wide transition-colors duration-200 group-hover:text-white">{review.author}</span>
               <span className="text-steel text-[10px] tracking-[0.2em] uppercase">{review.relativeTime}</span>
             </div>
           </div>
@@ -105,10 +112,17 @@ export default function ReviewsCarousel({
           style={{ transform: `translateX(-${current * 100}%)` }}
         >
           {items.map((review, i) => (
-            <div key={i} className="min-w-full bg-obsidian p-6 flex flex-col gap-4">
+            <div key={i} className="min-w-full bg-obsidian p-6 flex flex-col gap-4 relative">
+              <span
+                aria-hidden="true"
+                className="absolute top-2 right-5 text-6xl leading-none chrome-text opacity-25 pointer-events-none select-none"
+                style={{ fontFamily: "Georgia, serif" }}
+              >
+                &ldquo;
+              </span>
               {isGoogle && <StarRating rating={review.rating} />}
-              <p className="text-steel-light text-xs leading-relaxed italic">&ldquo;{review.text}&rdquo;</p>
-              <div className="mt-auto flex flex-col gap-0.5">
+              <p className="text-steel-light text-xs leading-relaxed italic relative z-10">&ldquo;{review.text}&rdquo;</p>
+              <div className="mt-auto flex flex-col gap-0.5 relative z-10">
                 <span className="text-wake text-xs font-bold tracking-wide">{review.author}</span>
                 <span className="text-steel text-[10px] tracking-[0.2em] uppercase">{review.relativeTime}</span>
               </div>

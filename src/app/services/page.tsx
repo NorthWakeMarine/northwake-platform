@@ -135,7 +135,7 @@ export default function ServicesPage() {
                   {/* Card header */}
                   <div className="flex flex-col gap-4 p-7 border-b border-steel-dark group-hover:bg-navy-dark transition-colors duration-300">
                     <div className="flex items-start justify-between gap-3">
-                      <span aria-hidden="true" className="chrome-text text-3xl leading-none">
+                      <span aria-hidden="true" className="chrome-text text-3xl leading-none transition-transform duration-300 group-hover:scale-110 origin-left">
                         {svc.icon}
                       </span>
                       {svc.badge && (
@@ -165,7 +165,7 @@ export default function ServicesPage() {
                       <ul className="grid grid-cols-2 gap-x-6 gap-y-2 list-none">
                         {svc.includes.map((item) => (
                           <li key={item} className="flex items-start gap-2 text-steel-light text-xs">
-                            <span aria-hidden="true" className="text-navy mt-0.5 shrink-0">▸</span>
+                            <span aria-hidden="true" className="text-navy mt-0.5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5">▸</span>
                             {item}
                           </li>
                         ))}

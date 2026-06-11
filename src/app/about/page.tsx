@@ -129,8 +129,8 @@ export default async function AboutPage() {
                   className="group bg-white p-7 flex flex-col gap-4 hover:bg-gray-50 transition-colors duration-300"
                 >
                   <div>
-                    <h3 className="text-gray-900 text-sm font-bold">{member.name}</h3>
-                    <p className="text-gray-500 text-xs tracking-[0.25em] uppercase mt-0.5">
+                    <h3 className="text-gray-900 text-sm font-bold transition-colors duration-200 group-hover:text-navy">{member.name}</h3>
+                    <p className="text-gray-500 text-xs tracking-[0.25em] uppercase mt-0.5 transition-colors duration-200 group-hover:text-gray-700">
                       {member.role}
                     </p>
                   </div>
@@ -223,9 +223,9 @@ export default async function AboutPage() {
                   key={item.title}
                   className="group bg-white p-8 flex flex-col gap-4 hover:bg-gray-50 transition-colors duration-300"
                 >
-                  <span aria-hidden="true" className="chrome-text-dark text-2xl leading-none">{item.icon}</span>
+                  <span aria-hidden="true" className="chrome-text-dark text-2xl leading-none transition-transform duration-300 group-hover:scale-110 origin-left">{item.icon}</span>
                   <div>
-                    <h3 className="text-gray-900 text-sm font-bold mb-2 leading-snug">{item.title}</h3>
+                    <h3 className="text-gray-900 text-sm font-bold mb-2 leading-snug transition-colors duration-200 group-hover:text-navy">{item.title}</h3>
                     <p className="text-gray-700 text-sm leading-relaxed">{item.body}</p>
                   </div>
                 </li>

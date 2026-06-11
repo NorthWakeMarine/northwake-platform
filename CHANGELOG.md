@@ -2,6 +2,12 @@
 
 ## June 2026
 
+### June 10 | Vibe-code Round 3a: landing polish | Landing
+
+- **Services grid micro-interactions** (`page.tsx`, `services/page.tsx`): chrome icons scale to 110% on card hover (`origin-left` so they grow away from the edge, not from center). Card titles tint to navy on hover. ▸ bullet arrows nudge `translate-x-0.5` to the right so each item feels actionable. The gap-px gray grid stays intact (no card-level scale that would break the divider lines).
+- **About page values + team cards** (`about/page.tsx`): same chrome icon scale + navy title tint applied to both the Values grid and the Team member cards. Team role text softens to `text-gray-700` on hover.
+- **ReviewsCarousel chrome watermark** (`ReviewsCarousel.tsx`): each testimonial card now carries a large serif chrome quote glyph (`"`) in the upper-right at 25% opacity, brightening to 45% on desktop hover. Card content sits above it via `z-10`. Author name brightens to pure white on hover for a subtle reveal.
+
 ### June 10 | Vibe-code Round 2: dossier timeline + refined empty states | CRM
 
 - **Activity Timeline dossier feel** (`ActivityTimeline.tsx`): vertical rail switched from flat `bg-slate-100` to a new `.dossier-rail` utility (chrome-tinted gradient: navy at top, steel in the middle, fading to transparent at the bottom). Event dots gained a 3px ring in the surface color so they sit above the rail like beads instead of being interrupted by the line.
