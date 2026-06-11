@@ -2,6 +2,15 @@
 
 ## June 2026
 
+### June 11 | Dark hero + web-services content moved to Propel OS site | Landing
+
+- **Hero converted to dark mode**: water photo replaced with `bg-[#0a0a18]` + new `.dot-grid-dark` texture utility. `HeroAmbientGlow` now reads cleanly over the dark base. Form card swapped from `chrome-stage-glass` (white) to `chrome-stage` (dark) with a navy-tinted drop shadow.
+- **Hero typography**: headline bumped from `text-xl/2xl/3xl` to `text-3xl/4xl/5xl` and subhead from `text-base/lg/xl` to `text-lg/xl/2xl` so the copy reads as prominent as the logo. City line bumped from `text-xs` to `text-sm`.
+- **HeroQuoteForm rebuilt for dark mode**: inputs `bg-white/[0.04] border-white/15 text-white`, focus state highlights with `border-navy-light`, labels `text-white/65`, required asterisks `text-navy-light`, error states use red-300/400, select dropdown options match `bg-[#0a0a18]`.
+- **Header glass refined**: `bg-obsidian/90 border-steel-dark` → `bg-[#0a0a18]/75 border-white/[0.07]` for a subtler propel-aligned glass feel.
+- **Web Services page removed**: `/web-services` route, `WebServicesForm` component, `submitWebServicesInquiry` server action, and `webServicesSchema` deleted from this repo. Its content (pricing tiers, add-ons, comparison table, FAQ, multiple CTAs, deep dives) now lives on `/Users/ianwilliams/Desktop/propel-os-marketing/` because it pitches Propel OS, not marine services.
+- **Header nav cleaned**: "Web Services" link removed from primary navigation. Lead-source mapping for legacy `web_services` source rows in `/pro/leads` left intact so historical data still renders.
+
 ### June 10 | Propel OS template forked from this repo | Platform
 
 - Forked the current `northwake-platform` state into a new master template at `/Users/ianwilliams/Desktop/propel-os-template`, branded as **Propel OS**.

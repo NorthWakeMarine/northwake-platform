@@ -8,12 +8,11 @@ import { trackNavClick, trackCtaClick } from "@/lib/analytics";
 import { clientConfig } from "@/config/client";
 
 const navLinks = [
-  { label: "Home",         href: "/"             },
-  { label: "Services",     href: "/services"     },
-  { label: "About",        href: "/about"        },
-  { label: "Socials",      href: "/socials"      },
-  { label: "Contact",      href: "/contact"      },
-  { label: "Web Services", href: "/web-services" },
+  { label: "Home",     href: "/"         },
+  { label: "Services", href: "/services" },
+  { label: "About",    href: "/about"    },
+  { label: "Socials",  href: "/socials"  },
+  { label: "Contact",  href: "/contact"  },
 ];
 
 export default function Header() {
@@ -21,7 +20,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-obsidian/90 backdrop-blur-md border-b border-steel-dark">
+    <header className="fixed top-0 inset-x-0 z-50 bg-[#0a0a18]/75 backdrop-blur-md border-b border-white/[0.07]">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" aria-label={`${clientConfig.companyName}, home`}>
@@ -87,11 +86,11 @@ export default function Header() {
       {/* Mobile menu */}
       <div
         id="mobile-menu"
-        className={`md:hidden overflow-hidden transition-all duration-300 border-t border-steel-dark ${
+        className={`md:hidden overflow-hidden transition-all duration-300 border-t border-white/[0.07] ${
           open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <nav aria-label="Mobile navigation" className="bg-obsidian px-6 py-6 flex flex-col gap-5">
+        <nav aria-label="Mobile navigation" className="bg-[#0a0a18] px-6 py-6 flex flex-col gap-5">
           {navLinks.map(({ label, href }) => (
             <Link
               key={href}

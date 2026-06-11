@@ -343,6 +343,12 @@ body {
   }
 }
 
+/* Dot grid for dark hero sections */
+.dot-grid-dark {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
 /* Dossier rail — chrome-tinted vertical timeline gradient */
 .dossier-rail {
   background: linear-gradient(

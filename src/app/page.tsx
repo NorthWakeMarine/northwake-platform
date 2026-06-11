@@ -88,16 +88,9 @@ export default async function Home() {
           aria-labelledby="hero-heading"
           className="relative min-h-screen flex items-center overflow-hidden pt-[65px]"
         >
-          {/* Water background photo */}
-          <div aria-hidden="true" className="absolute inset-0">
-            <Image
-              src="/brand/water-hero.jpg"
-              alt=""
-              fill
-              className="object-cover object-center"
-              priority
-            />
-          </div>
+          {/* Dark backdrop + dot grid texture */}
+          <div aria-hidden="true" className="absolute inset-0 bg-[#0a0a18]" />
+          <div aria-hidden="true" className="absolute inset-0 dot-grid-dark" />
 
           {/* Ambient navy glow layer */}
           <HeroAmbientGlow />
@@ -114,16 +107,16 @@ export default async function Home() {
                 className="w-full max-w-[320px] sm:max-w-[420px]"
                 priority
               />
-              <div className="flex flex-col gap-1.5 items-center">
-                <h1 id="hero-heading" className="flex flex-col items-center gap-0.5 uppercase leading-snug">
-                  <span className="text-white font-black text-xl sm:text-2xl lg:text-3xl tracking-wide hero-text-shadow">
+              <div className="flex flex-col gap-2 items-center">
+                <h1 id="hero-heading" className="flex flex-col items-center gap-1 uppercase leading-[1.1]">
+                  <span className="text-white font-black text-3xl sm:text-4xl lg:text-5xl tracking-tight hero-text-shadow">
                     {heroHeadline}
                   </span>
-                  <span className="text-white/80 font-bold text-base sm:text-lg lg:text-xl tracking-widest hero-text-shadow">
+                  <span className="text-white/85 font-bold text-lg sm:text-xl lg:text-2xl tracking-widest hero-text-shadow">
                     {heroSubheadline}
                   </span>
                 </h1>
-                <p className="text-white/70 text-xs tracking-[0.5em] uppercase hero-text-shadow">
+                <p className="text-white/75 text-sm tracking-[0.45em] uppercase hero-text-shadow mt-1">
                   {clientConfig.city}, {clientConfig.state} &nbsp;·&nbsp; Est. {clientConfig.foundedYear}
                 </p>
                 <p className="sr-only">
@@ -141,10 +134,13 @@ export default async function Home() {
             </div>
 
             {/* ── Right: Free Quote form card ── */}
-            <div className="order-1 md:order-2 chrome-stage-glass p-5 sm:p-7">
+            <div
+              className="order-1 md:order-2 chrome-stage backdrop-blur-md p-5 sm:p-7"
+              style={{ boxShadow: "0 30px 60px -20px rgba(0, 0, 128, 0.5), 0 0 0 1px rgba(160, 163, 166, 0.08)" }}
+            >
               <div className="flex flex-col gap-0.5 mb-4">
-                <h2 className="text-gray-900 text-xl font-bold tracking-tight">{clientConfig.ctaText}</h2>
-                <p className="text-gray-500 text-xs tracking-wide">{clientConfig.ctaSubtext}</p>
+                <h2 className="text-white text-xl font-bold tracking-tight">{clientConfig.ctaText}</h2>
+                <p className="text-white/55 text-xs tracking-wide">{clientConfig.ctaSubtext}</p>
               </div>
               <HeroQuoteForm />
             </div>
