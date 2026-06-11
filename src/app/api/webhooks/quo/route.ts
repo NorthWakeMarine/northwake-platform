@@ -126,6 +126,12 @@ export async function POST(req: NextRequest) {
 }
 
 async function createQuoLead(supabase: AnySupabase, phone: string) {
+  // Reject SMS short codes and verification senders (e.g. "57564", "22000").
+  // Real US/intl numbers normalize to E.164 with 10+ digits; anything shorter
+  // is not a callable lead.
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 10) return;
+
   const { data: existing } = await supabase
     .from("leads")
     .select("id")
@@ -255,8 +261,19 @@ async function handleInboundSms(obj: Record<string, unknown>) {
 
   if (!contact) {
     const trimmed = body.trim();
-    const spamPatterns = /^(stop|unstop|start|cancel|end|quit|unsubscribe|help|yes|no|y|n|ok|okay)$/i;
-    if (trimmed.length > 3 && !spamPatterns.test(trimmed)) {
+    const replyKeywords = /^(stop|unstop|start|cancel|end|quit|unsubscribe|help|yes|no|y|n|ok|okay)$/i;
+    // Verification/OTP messages from automated senders. Any mention of "code"
+    // is treated as a verification SMS — real prospects describe their boat,
+    // they don't say "code".
+    const verificationPatterns = /\bcode\b|\b(otp|2fa|two[- ]?factor|passcode|do not share|don't share)\b|^G-\d{4,}/i;
+    const isJustCode = /^[A-Z]?-?\d{4,8}$/.test(trimmed);
+
+    if (
+      trimmed.length > 3 &&
+      !replyKeywords.test(trimmed) &&
+      !verificationPatterns.test(trimmed) &&
+      !isJustCode
+    ) {
       await createQuoLead(supabase, normalized);
     }
   }
