@@ -106,7 +106,15 @@ export default async function CallsPage() {
 
         <div className="flex-1 px-4 md:px-8 py-6 flex flex-col gap-4">
           {calls.length === 0 ? (
-            <p className="text-slate-400 text-sm">No calls logged yet. Calls and texts from Quo will appear here automatically via webhook.</p>
+            <div className="px-6 py-12 flex flex-col items-center gap-3 text-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="chrome-text-dark">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
+              <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase">No calls logged yet</p>
+              <p className="text-slate-400/70 text-xs max-w-xs leading-relaxed">
+                Calls and texts from Quo appear here automatically via webhook.
+              </p>
+            </div>
           ) : (
             <>
               {/* Desktop table */}

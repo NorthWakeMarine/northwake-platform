@@ -215,8 +215,13 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
 
         {/* Logo */}
         <div className="px-3 py-5 border-b border-white/[0.07] flex items-center justify-center">
-          <Link href="/pro/pipeline" className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 bg-[#000080] flex items-center justify-center shrink-0">
+          <Link href="/pro/pipeline" className="flex items-center gap-3 min-w-0 group/logo">
+            <div
+              className="w-9 h-9 bg-[#000080] flex items-center justify-center shrink-0 transition-shadow duration-300 group-hover/logo:shadow-[0_0_14px_rgba(80,100,255,0.5)]"
+              style={{
+                boxShadow: "inset 0 0 0 1px rgba(160, 163, 166, 0.4), inset 0 1px 0 rgba(216, 218, 220, 0.3)",
+              }}
+            >
               <Image
                 src={clientConfig.logoWhiteSvg}
                 alt={clientConfig.companyName}
@@ -242,6 +247,11 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
+                style={
+                  active
+                    ? { boxShadow: "inset 0 0 22px rgba(80, 100, 255, 0.18), 0 0 0 1px rgba(160, 163, 166, 0.08)" }
+                    : undefined
+                }
                 className={`group/navitem relative flex items-center gap-3 px-3 py-2 rounded-sm text-xs font-medium transition-colors duration-150 ${
                   collapsed ? "justify-center" : ""
                 } ${
@@ -283,7 +293,10 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
         {/* User + sign out */}
         <div className="px-2 pb-4 border-t border-white/[0.07] pt-4 flex flex-col gap-1">
           <div className={`group/useravatar relative flex items-center gap-2.5 px-3 py-2 ${collapsed ? "justify-center" : ""}`}>
-            <div className="w-7 h-7 rounded-full bg-[#000080] flex items-center justify-center shrink-0">
+            <div
+              className="w-7 h-7 rounded-full bg-[#000080] flex items-center justify-center shrink-0"
+              style={{ boxShadow: "inset 0 0 0 1px rgba(160, 163, 166, 0.4)" }}
+            >
               {collapsed && (
                 <span className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 whitespace-nowrap bg-[#1a1a3a] text-white text-[11px] font-medium px-2.5 py-1.5 rounded-sm border border-white/10 opacity-0 group-hover/useravatar:opacity-100 transition-opacity duration-150 shadow-lg">
                   {userName}

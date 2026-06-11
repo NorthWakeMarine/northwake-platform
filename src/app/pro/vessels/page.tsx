@@ -98,10 +98,10 @@ export default async function VesselsPage() {
   const healthy = vessels.filter(v => healthMap.get(v.id) === "healthy").length;
 
   const healthDot: Record<HealthStatus, string> = {
-    overdue:  "bg-red-500",
-    due_soon: "bg-amber-400",
-    healthy:  "bg-emerald-500",
-    unknown:  "bg-slate-300",
+    overdue:  "status-glow-red",
+    due_soon: "status-glow-amber",
+    healthy:  "status-glow-emerald",
+    unknown:  "status-glow-slate",
   };
 
   const healthLabel: Record<HealthStatus, string> = {
@@ -164,8 +164,16 @@ export default async function VesselsPage() {
             </div>
 
             {sorted.length === 0 ? (
-              <div className="px-6 py-12 text-center text-slate-400 text-sm">
-                No vessels on file yet. Add vessels from a contact profile.
+              <div className="px-6 py-12 flex flex-col items-center gap-3 text-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="chrome-text-dark">
+                  <circle cx="12" cy="5" r="3" />
+                  <line x1="12" y1="8" x2="12" y2="22" />
+                  <path d="M5 15H2a10 10 0 0 0 20 0h-3" />
+                </svg>
+                <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase">No vessels on file</p>
+                <p className="text-slate-400/70 text-xs max-w-xs leading-relaxed">
+                  Add vessels from a contact profile.
+                </p>
               </div>
             ) : (
               <>
@@ -207,7 +215,7 @@ export default async function VesselsPage() {
                             </td>
                             <td className="px-4 py-3.5">
                               <div className="flex items-center gap-2">
-                                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${healthDot[status]}`} />
+                                <span className={healthDot[status]} />
                                 <span className={`text-xs font-medium ${healthTextCls[status]}`}>{healthLabel[status]}</span>
                               </div>
                             </td>
@@ -238,7 +246,7 @@ export default async function VesselsPage() {
                     const href = ownerId ? `/pro/contacts/${ownerId}` : "#";
                     return (
                       <Link key={vessel.id} href={href} className="flex items-start gap-3 px-5 py-4 hover:bg-slate-50/60 transition-colors">
-                        <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${healthDot[status]}`} />
+                        <span className={`mt-1.5 ${healthDot[status]}`} />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-slate-800 text-sm truncate">
                             {[vessel.year, vessel.make_model, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" - ") || "Unnamed"}

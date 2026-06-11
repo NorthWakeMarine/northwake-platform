@@ -268,11 +268,16 @@ body {
 /* Status glow dots — soft blurred halo + center dot, used on Kanban cards */
 .status-glow-red,
 .status-glow-amber,
-.status-glow-emerald {
+.status-glow-emerald,
+.status-glow-slate {
   width: 8px;
   height: 8px;
   border-radius: 9999px;
   flex-shrink: 0;
+}
+.status-glow-slate {
+  background: #cbd5e1;
+  box-shadow: 0 0 0 2px rgba(203, 213, 225, 0.18), 0 0 4px 1px rgba(203, 213, 225, 0.3);
 }
 .status-glow-red {
   background: #ef4444;

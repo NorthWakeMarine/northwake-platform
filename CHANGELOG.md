@@ -2,6 +2,13 @@
 
 ## June 2026
 
+### June 10 | Vibe-code Round 3b: CRM polish | CRM
+
+- **ProShell sidebar accents** (`ProShell.tsx`): logo block (`#000080` 36px square) and user avatar (28px circle) both gain a subtle chrome inset ring (`inset 0 0 0 1px rgba(160,163,166,0.4)`) so they feel forged rather than flat. Logo block adds a navy glow on hover (`shadow-[0_0_14px_rgba(80,100,255,0.5)]`).
+- **ProShell active nav glow**: active nav item gains a navy inner glow via inline `box-shadow: inset 0 0 22px rgba(80,100,255,0.18)` so the current page reads as lit-up rather than just tinted. The existing white left border stays.
+- **Vessels page health glows** (`vessels/page.tsx`): flat color dots (`bg-red-500`, `bg-amber-400`, etc.) replaced with the round-1 `.status-glow-*` utilities — overdue cards pulse red, due-soon cards have an amber halo, healthy cards have an emerald halo. Added a new `.status-glow-slate` variant for `unknown` health states.
+- **Bespoke empty states** (`vessels/page.tsx`, `calls/page.tsx`): "No vessels on file" gets the navy compass-style anchor glyph + uppercase chrome eyebrow. "No calls logged yet" gets the chrome phone glyph + matching treatment. Helper text softened to `text-slate-400/70`.
+
 ### June 10 | Vibe-code Round 3a: landing polish | Landing
 
 - **Services grid micro-interactions** (`page.tsx`, `services/page.tsx`): chrome icons scale to 110% on card hover (`origin-left` so they grow away from the edge, not from center). Card titles tint to navy on hover. ▸ bullet arrows nudge `translate-x-0.5` to the right so each item feels actionable. The gap-px gray grid stays intact (no card-level scale that would break the divider lines).
