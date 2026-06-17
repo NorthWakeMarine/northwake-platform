@@ -1035,6 +1035,13 @@ export async function updateContactFields(
   if ("waiver_signed" in fields) patch.waiver_signed = fields.waiver_signed ?? false;
   if ("contact_type"  in fields) patch.contact_type  = fields.contact_type        || null;
 
+  // A non-customer doesn't belong on the pipeline board — drop any stage it
+  // carried so reclassifying (e.g. customer -> vendor) removes it cleanly
+  // instead of leaving a stale pipeline_stage behind.
+  if ("contact_type" in fields && fields.contact_type && fields.contact_type !== "customer") {
+    patch.pipeline_stage = null;
+  }
+
   // When reclassifying to "other", unlink and inactivate the QB customer
   if (fields.contact_type === "other") {
     const { data: existing } = await supabase.from("contacts").select("qb_customer_id").eq("id", contactId).single();
@@ -1053,6 +1060,8 @@ export async function updateContactFields(
   const { error } = await supabase.from("contacts").update(patch).eq("id", contactId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/pro/contacts/${contactId}`);
+  // contact_type / name / stage changes affect the pipeline board too
+  revalidatePath("/pro/pipeline");
 
   // Push name/email/phone changes to Quo in the background
   const quoFields = ["name", "email", "phone", "company_name"] as const;
