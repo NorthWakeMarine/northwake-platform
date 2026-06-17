@@ -201,6 +201,7 @@ export default function ContactDetailsCard(props: Props) {
               >
                 <option value="customer">Customer</option>
                 <option value="vendor">Vendor</option>
+                <option value="other">Other</option>
                 <option value="lead">Lead</option>
               </select>
             ) : (
@@ -209,6 +210,8 @@ export default function ContactDetailsCard(props: Props) {
                   ? "bg-slate-50 text-slate-600 border-slate-200"
                   : props.contactType === "lead"
                   ? "bg-blue-50 text-blue-600 border-blue-200"
+                  : props.contactType === "other"
+                  ? "bg-purple-50 text-purple-600 border-purple-200"
                   : "bg-emerald-50 text-emerald-600 border-emerald-200"
               }`}>
                 {props.contactType ?? "customer"}

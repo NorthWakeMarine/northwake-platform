@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createContact } from "@/app/actions";
 
-type Props = { defaultType?: "customer" | "vendor" };
+type Props = { defaultType?: "customer" | "vendor" | "other" };
 
 export default function CreateContactModal({ defaultType = "customer" }: Props) {
   const router = useRouter();
@@ -81,11 +81,12 @@ export default function CreateContactModal({ defaultType = "customer" }: Props) 
                 <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1 block">Type</label>
                 <select
                   value={draft.contact_type}
-                  onChange={(e) => setDraft((d) => ({ ...d, contact_type: e.target.value as "customer" | "vendor" }))}
+                  onChange={(e) => setDraft((d) => ({ ...d, contact_type: e.target.value as "customer" | "vendor" | "other" }))}
                   className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080] bg-white"
                 >
                   <option value="customer">Customer</option>
                   <option value="vendor">Vendor</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
 
@@ -109,6 +110,19 @@ export default function CreateContactModal({ defaultType = "customer" }: Props) 
                     onChange={(e) => setDraft((d) => ({ ...d, company_name: e.target.value }))}
                     className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
                     placeholder="Company name"
+                  />
+                </div>
+              )}
+
+              {/* Label (other contacts only) */}
+              {draft.contact_type === "other" && (
+                <div>
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1 block">Label</label>
+                  <input
+                    value={draft.company_name}
+                    onChange={(e) => setDraft((d) => ({ ...d, company_name: e.target.value }))}
+                    className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                    placeholder="e.g. Interviewee, Reference, Contractor"
                   />
                 </div>
               )}

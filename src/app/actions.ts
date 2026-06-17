@@ -983,16 +983,18 @@ export async function createContact(fields: {
   if (error) return { ok: false, error: error.message };
   revalidatePath("/pro/contacts");
 
-  // Push to QB in the background
+  // Push to QB in the background (skip for non-customer types)
   const contactId = data.id;
-  (async () => {
-    try {
-      const { findOrCreateQbCustomer, getQbTokens } = await import("@/lib/quickbooks");
-      const tokens = await getQbTokens();
-      if (!tokens) return;
-      await findOrCreateQbCustomer({ id: contactId, name: fields.name?.trim() ?? null, company_name: fields.company_name?.trim() ?? null, email: fields.email?.trim() ?? null, phone: fields.phone?.trim() ?? null });
-    } catch { /* non-fatal */ }
-  })();
+  if (fields.contact_type !== "vendor" && fields.contact_type !== "other") {
+    (async () => {
+      try {
+        const { findOrCreateQbCustomer, getQbTokens } = await import("@/lib/quickbooks");
+        const tokens = await getQbTokens();
+        if (!tokens) return;
+        await findOrCreateQbCustomer({ id: contactId, name: fields.name?.trim() ?? null, company_name: fields.company_name?.trim() ?? null, email: fields.email?.trim() ?? null, phone: fields.phone?.trim() ?? null });
+      } catch { /* non-fatal */ }
+    })();
+  }
 
   // Push to Quo in the background — don't block the response
   (async () => {
@@ -1032,6 +1034,22 @@ export async function updateContactFields(
   if ("notes"         in fields) patch.notes         = fields.notes?.trim()        || null;
   if ("waiver_signed" in fields) patch.waiver_signed = fields.waiver_signed ?? false;
   if ("contact_type"  in fields) patch.contact_type  = fields.contact_type        || null;
+
+  // When reclassifying to "other", unlink and inactivate the QB customer
+  if (fields.contact_type === "other") {
+    const { data: existing } = await supabase.from("contacts").select("qb_customer_id").eq("id", contactId).single();
+    if (existing?.qb_customer_id) {
+      patch.qb_customer_id = null;
+      (async () => {
+        try {
+          const { getQbTokens, inactivateQbCustomer } = await import("@/lib/quickbooks");
+          const tokens = await getQbTokens();
+          if (tokens) await inactivateQbCustomer(existing.qb_customer_id!);
+        } catch { /* non-fatal */ }
+      })();
+    }
+  }
+
   const { error } = await supabase.from("contacts").update(patch).eq("id", contactId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/pro/contacts/${contactId}`);

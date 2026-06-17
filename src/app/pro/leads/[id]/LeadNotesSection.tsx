@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { addLeadNote, updateTimelineNote, deleteTimelineNote, type NoteState, type LeadNote } from "@/app/actions";
 
 type EditEntry = { edited_at: string; edited_by?: string };
@@ -143,12 +143,14 @@ export default function LeadNotesSection({
 
   // Append new note to list when action succeeds
   const prevSuccessRef = useRef(false);
-  if (state.success && state.note && !prevSuccessRef.current) {
-    prevSuccessRef.current = true;
-    setNotes((prev) => [...prev, state.note!]);
-    if (textareaRef.current) textareaRef.current.value = "";
-  }
-  if (!state.success) prevSuccessRef.current = false;
+  useEffect(() => {
+    if (state.success && state.note && !prevSuccessRef.current) {
+      prevSuccessRef.current = true;
+      setNotes((prev) => [...prev, state.note!]);
+      if (textareaRef.current) textareaRef.current.value = "";
+    }
+    if (!state.success) prevSuccessRef.current = false;
+  }, [state]);
 
   function handleDeleted(id: string) {
     setNotes((prev) => prev.filter((n) => n.id !== id));

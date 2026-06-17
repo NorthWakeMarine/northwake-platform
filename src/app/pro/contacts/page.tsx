@@ -100,8 +100,14 @@ export default async function ContactsPage({
   const { q, type, sort, dir } = (await searchParams) ?? {};
   const term = q?.trim() ?? "";
   // Default to customers tab
-  const typeFilter = (type?.trim() === "vendor" ? "vendor" : type?.trim() === "all" ? "" : "customer");
+  const typeFilter = (
+    type?.trim() === "vendor" ? "vendor"
+    : type?.trim() === "other" ? "other"
+    : type?.trim() === "all" ? ""
+    : "customer"
+  );
   const isVendorTab = typeFilter === "vendor";
+  const isOtherTab = typeFilter === "other";
   const sortField = SORTABLE_COLS[Object.keys(SORTABLE_COLS).find((k) => SORTABLE_COLS[k] === (sort ?? "")) ?? ""] ? (sort ?? "name") : "name";
   const sortDir = dir === "asc" ? "asc" : (sort ? "desc" : "asc");
 
@@ -131,12 +137,6 @@ export default async function ContactsPage({
   }
   const duplicateGroups = [...phoneMap.values()].filter((g) => g.length > 1);
 
-  function applyTypeFilter<T extends ReturnType<typeof supabase.from>>(q: T): T {
-    if (typeFilter === "vendor") return (q as unknown as { eq: (f: string, v: string) => T }).eq("contact_type", "vendor") as T;
-    if (typeFilter === "customer") return (q as unknown as { eq: (f: string, v: string) => T }).eq("contact_type", "customer") as T;
-    return q;
-  }
-
   if (term) {
     searchHit = true;
 
@@ -144,7 +144,7 @@ export default async function ContactsPage({
       .from("contacts")
       .select(COLS)
       .or(`name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%,company_name.ilike.%${term}%`);
-    if (typeFilter === "customer" || typeFilter === "vendor") {
+    if (typeFilter === "customer" || typeFilter === "vendor" || typeFilter === "other") {
       directQuery = directQuery.eq("contact_type", typeFilter);
     }
     const { data: direct } = await directQuery;
@@ -171,7 +171,7 @@ export default async function ContactsPage({
         .select(COLS)
         .in("id", allIds)
         .order(sortField, { ascending: sortDir === "asc" });
-      if (typeFilter === "customer" || typeFilter === "vendor") {
+      if (typeFilter === "customer" || typeFilter === "vendor" || typeFilter === "other") {
         q = q.eq("contact_type", typeFilter);
       }
       const { data, error: err } = await q;
@@ -183,7 +183,7 @@ export default async function ContactsPage({
       .from("contacts")
       .select(COLS)
       .order(sortField, { ascending: sortDir === "asc" });
-    if (typeFilter === "customer" || typeFilter === "vendor") {
+    if (typeFilter === "customer" || typeFilter === "vendor" || typeFilter === "other") {
       q = q.eq("contact_type", typeFilter);
     }
     const { data, error: err } = await q;
@@ -194,7 +194,7 @@ export default async function ContactsPage({
   // Fetch first vessel per contact (only needed for customer tab)
   const contactIds = contacts.map((c) => c.id);
   const vesselMap = new Map<string, FirstVessel>();
-  if (!isVendorTab && contactIds.length > 0) {
+  if (!isVendorTab && !isOtherTab && contactIds.length > 0) {
     const { data: vessels } = await supabase
       .from("vessels")
       .select("owner_id, year, make_model, length_ft")
@@ -223,12 +223,12 @@ export default async function ContactsPage({
             <div>
               <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Contacts</h1>
               <p className="text-[#1E2938]/50 text-sm mt-0.5">
-                {term ? `Showing results for "${term}"` : isVendorTab ? "Vendors and service companies." : "Customers with status flags for missing waivers or incomplete info."}
+                {term ? `Showing results for "${term}"` : isVendorTab ? "Vendors and service companies." : isOtherTab ? "Misc contacts not tied to QuickBooks or vendors." : "Customers with status flags for missing waivers or incomplete info."}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <SearchBar initialQ={term} />
-              <CreateContactModal defaultType={isVendorTab ? "vendor" : "customer"} />
+              <CreateContactModal defaultType={isVendorTab ? "vendor" : isOtherTab ? "other" : "customer"} />
             </div>
           </div>
 
@@ -237,6 +237,7 @@ export default async function ContactsPage({
             {([
               { label: "Customers", value: "customer" },
               { label: "Vendors",   value: "vendor"   },
+              { label: "Other",     value: "other"    },
               { label: "All",       value: "all"       },
             ] as const).map((tab) => {
               const active = tab.value === "all" ? typeFilter === "" : typeFilter === tab.value;
@@ -284,7 +285,7 @@ export default async function ContactsPage({
           )}
 
           {/* Status legend (customers only) */}
-          {!isVendorTab && (
+          {!isVendorTab && !isOtherTab && (
             <div className="flex flex-wrap gap-2">
               {[
                 { label: "Waiver Missing", cls: "bg-red-50 text-red-600 border border-red-200" },
@@ -303,7 +304,7 @@ export default async function ContactsPage({
           <div className="hidden md:block bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
             <div className="px-6 py-4 border-b border-[#dcdee3] flex items-center justify-between">
               <h2 className="text-[#1E2938] text-sm font-bold">
-                {term ? "Search Results" : isVendorTab ? "Vendors" : "Customers"}
+                {term ? "Search Results" : isVendorTab ? "Vendors" : isOtherTab ? "Other" : "Customers"}
               </h2>
               <span className="text-[#1E2938]/45 text-[11px] tabular-nums">
                 {contacts.length} {contacts.length === 1 ? "contact" : "contacts"}
@@ -335,8 +336,51 @@ export default async function ContactsPage({
                   </svg>
                 )}
                 <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase">
-                  {searchHit ? `No results for "${term}"` : isVendorTab ? "No vendors yet" : "No customers yet"}
+                  {searchHit ? `No results for "${term}"` : isVendorTab ? "No vendors yet" : isOtherTab ? "No other contacts yet" : "No customers yet"}
                 </p>
+              </div>
+            ) : isOtherTab ? (
+              /* Other contacts table */
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#dcdee3]">
+                      {(["Date", "Name", "Label", "Phone", "Email"] as const).map((h) => (
+                        <SortableHeader
+                          key={h}
+                          label={h}
+                          field={SORTABLE_COLS[h] ?? null}
+                          currentSort={sortField}
+                          currentDir={sortDir}
+                          baseParams={baseParams}
+                        />
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contacts.map((c) => (
+                      <ClickableRow key={c.id} href={`/pro/contacts/${c.id}`} className="border-b border-[#dcdee3]/50 hover:bg-white/60 transition-colors group">
+                        <td className="py-3 px-4 first:pl-6 text-slate-400 whitespace-nowrap">{fmt(c.created_at)}</td>
+                        <td className="py-3 px-4 text-slate-800 font-medium whitespace-nowrap">{c.name || <span className="text-slate-300 italic">—</span>}</td>
+                        <td className="py-3 px-4">
+                          {c.company_name
+                            ? <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium bg-purple-50 text-purple-600 border border-purple-200">{c.company_name}</span>
+                            : <span className="text-slate-300">—</span>}
+                        </td>
+                        <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                          {c.phone
+                            ? <a href={`tel:${c.phone}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
+                            : <span className="text-slate-300">—</span>}
+                        </td>
+                        <td className="py-3 px-4 text-slate-500 last:pr-6">
+                          {c.email
+                            ? <a href={`mailto:${c.email}`} className="hover:text-blue-600 transition-colors">{c.email}</a>
+                            : <span className="text-slate-300">—</span>}
+                        </td>
+                      </ClickableRow>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : isVendorTab ? (
               /* Vendor table */
@@ -433,7 +477,7 @@ export default async function ContactsPage({
               <p className="text-red-500 text-sm text-center py-8">Failed to load contacts.</p>
             ) : contacts.length === 0 ? (
               <p className="text-slate-400 text-sm text-center py-12">
-                {searchHit ? `No results for "${term}".` : isVendorTab ? "No vendors yet." : "No customers yet."}
+                {searchHit ? `No results for "${term}".` : isVendorTab ? "No vendors yet." : isOtherTab ? "No other contacts yet." : "No customers yet."}
               </p>
             ) : contacts.map((c) => (
               <Link
@@ -445,9 +489,9 @@ export default async function ContactsPage({
                   <span className="text-slate-800 font-semibold text-base leading-snug">
                     {c.name || <span className="text-slate-400 italic">Unknown</span>}
                   </span>
-                  {!isVendorTab && <StatusBadges contact={c} hasVessel={vesselMap.has(c.id)} />}
-                  {isVendorTab && c.company_name && (
-                    <span className="text-slate-500 text-xs shrink-0">{c.company_name}</span>
+                  {!isVendorTab && !isOtherTab && <StatusBadges contact={c} hasVessel={vesselMap.has(c.id)} />}
+                  {(isVendorTab || isOtherTab) && c.company_name && (
+                    <span className={`text-xs shrink-0 ${isOtherTab ? "text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-sm tracking-widest uppercase font-medium text-[9px]" : "text-slate-500"}`}>{c.company_name}</span>
                   )}
                 </div>
                 {c.email && (
@@ -457,7 +501,7 @@ export default async function ContactsPage({
                   <span className="text-slate-600 text-sm font-medium">
                     {c.phone || <span className="text-slate-300 text-xs">No phone</span>}
                   </span>
-                  {!isVendorTab && (() => {
+                  {!isVendorTab && !isOtherTab && (() => {
                     const v = vesselMap.get(c.id);
                     if (!v) return null;
                     return (
