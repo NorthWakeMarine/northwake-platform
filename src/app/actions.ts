@@ -223,13 +223,14 @@ export async function updateSiteContent(
 
 // ─── Timeline Notes ───────────────────────────────────────────────────────────
 
-export type NoteState = { success?: boolean; error?: string };
+export type LeadNote = { id: string; created_at: string; body: string | null; created_by: string | null; metadata: Record<string, unknown> | null };
+export type NoteState = { success?: boolean; error?: string; note?: LeadNote };
 
 export async function addLeadNote(
   _prev: NoteState,
   formData: FormData
 ): Promise<NoteState> {
-  const lead_id   = formData.get("lead_id")    as string;
+  const lead_id    = formData.get("lead_id")    as string;
   const lead_phone = formData.get("lead_phone") as string | null;
   const lead_email = formData.get("lead_email") as string | null;
   const body = (formData.get("body") as string)?.trim();
@@ -241,7 +242,7 @@ export async function addLeadNote(
   const { data: { user } } = await supabase.auth.getUser();
   const username = user?.email?.split("@")[0] ?? "pro";
 
-  const { error } = await supabase.from("timeline_events").insert({
+  const { data, error } = await supabase.from("timeline_events").insert({
     lead_id,
     event_type: "note",
     title: "Note added",
@@ -251,12 +252,12 @@ export async function addLeadNote(
       ...(lead_phone ? { lead_phone } : {}),
       ...(lead_email ? { lead_email } : {}),
     },
-  });
+  }).select("id, created_at, body, created_by, metadata").single();
 
   if (error) return { error: error.message };
 
   revalidatePath(`/pro/leads/${lead_id}`);
-  return { success: true };
+  return { success: true, note: data as LeadNote };
 }
 
 export async function addTimelineNote(

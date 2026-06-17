@@ -7,8 +7,7 @@ import ProShell from "@/components/ProShell";
 import ConvertButton from "./ConvertButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteLeadButton from "../DeleteLeadButton";
-import LeadNoteForm from "./LeadNoteForm";
-import LeadNotesList from "./LeadNotesList";
+import LeadNotesSection from "./LeadNotesSection";
 import LeadFieldEditor from "./LeadFieldEditor";
 
 type TimelineEvent = {
@@ -333,12 +332,12 @@ export default async function LeadDetailPage({
               {/* Notes */}
               <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
                 <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Notes</p>
-                <LeadNoteForm
+                <LeadNotesSection
                   leadId={id}
                   leadPhone={lead.phone ?? undefined}
                   leadEmail={lead.email ?? undefined}
+                  initialNotes={leadNotes}
                 />
-                <LeadNotesList notes={leadNotes} />
               </div>
 
             </div>
