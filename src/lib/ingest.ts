@@ -104,5 +104,25 @@ export async function ingestContact(
     created_by: "system",
   });
 
+  if (created) {
+    const contactId = contact.id;
+    (async () => {
+      try {
+        const { createOpenPhoneContact, splitName } = await import("./openphone");
+        const { firstName, lastName } = splitName(payload.name?.trim() ?? "");
+        const newId = await createOpenPhoneContact({
+          firstName,
+          lastName: lastName || undefined,
+          role: "Lead",
+          phoneNumbers: payload.phone?.trim() ? [{ name: "main", value: payload.phone.trim() }] : [],
+          emails: payload.email?.trim() ? [{ name: "main", value: payload.email.trim() }] : [],
+        });
+        if (newId) {
+          await supabase.from("contacts").update({ openphone_contact_id: newId }).eq("id", contactId);
+        }
+      } catch { /* non-fatal */ }
+    })();
+  }
+
   return { contact_id: contact.id, created };
 }

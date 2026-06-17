@@ -703,6 +703,30 @@ export async function convertLead(
 
   await supabase.from("leads").update({ status: "converted" }).eq("id", lead_id);
 
+  // Fire-and-forget: retag as Customer in OpenPhone and write vessel info
+  const _convertedContactId = contactId;
+  const _convertedLead = lead;
+  (async () => {
+    try {
+      const { createClient: cc } = await import("@supabase/supabase-js");
+      const sb = cc(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
+      const { data: c } = await sb.from("contacts")
+        .select("openphone_contact_id, name")
+        .eq("id", _convertedContactId)
+        .maybeSingle();
+      if (!c?.openphone_contact_id) return;
+      const { updateOpenPhoneContact, splitName } = await import("@/lib/openphone");
+      const { firstName, lastName } = splitName(c.name?.trim() ?? "");
+      const vesselParts = [_convertedLead.vessel_type, _convertedLead.vessel_length].filter(Boolean);
+      await updateOpenPhoneContact(c.openphone_contact_id, {
+        firstName,
+        lastName: lastName || undefined,
+        role: "Customer",
+        company: vesselParts.length ? vesselParts.join(" ") : undefined,
+      });
+    } catch { /* non-fatal */ }
+  })();
+
   revalidatePath(`/pro/leads/${lead_id}`);
   revalidatePath(`/pro/contacts/${contactId}`);
   redirect(`/pro/contacts/${contactId}`);
@@ -742,7 +766,7 @@ export async function mergeLead(
 
   const { data: existingContact } = await supabase
     .from("contacts")
-    .select("notes")
+    .select("notes, openphone_contact_id, name")
     .eq("id", contact_id)
     .maybeSingle();
   const mergedNotes = [existingContact?.notes, phoneNote].filter(Boolean).join("\n\n---\n\n") || null;
@@ -782,6 +806,26 @@ export async function mergeLead(
 
   // Delete the lead to keep the database clean
   await supabase.from("leads").delete().eq("id", lead_id);
+
+  // Fire-and-forget: retag as Customer in OpenPhone and write vessel info
+  if (existingContact?.openphone_contact_id) {
+    const _opId = existingContact.openphone_contact_id;
+    const _mergedName = lead.name || existingContact.name || "";
+    const _mergedLead = lead;
+    (async () => {
+      try {
+        const { updateOpenPhoneContact, splitName } = await import("@/lib/openphone");
+        const { firstName, lastName } = splitName(_mergedName.trim());
+        const vesselParts = [_mergedLead.vessel_type, _mergedLead.vessel_length].filter(Boolean);
+        await updateOpenPhoneContact(_opId, {
+          firstName,
+          lastName: lastName || undefined,
+          role: "Customer",
+          company: vesselParts.length ? vesselParts.join(" ") : undefined,
+        });
+      } catch { /* non-fatal */ }
+    })();
+  }
 
   revalidatePath("/pro/leads");
   revalidatePath(`/pro/contacts/${contact_id}`);

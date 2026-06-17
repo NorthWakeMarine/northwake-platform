@@ -107,5 +107,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
 
+  // Mirror to contacts table and push to OpenPhone as a Lead (fire-and-forget)
+  (async () => {
+    try {
+      const { ingestContact } = await import("@/lib/ingest");
+      await ingestContact({
+        name: name || undefined,
+        email: email || undefined,
+        phone: phone || undefined,
+        vessel_type: vesselType || undefined,
+        vessel_length: vesselLength || undefined,
+        source: "google_ads",
+        event_type: "lead_created",
+        event_title: "Lead created from Google Ads",
+        metadata: {
+          campaign_name: body.campaign_name || undefined,
+          form_name: body.form_name || undefined,
+        },
+      });
+    } catch { /* non-fatal */ }
+  })();
+
   return NextResponse.json({ ok: true }, { status: 200 });
 }
