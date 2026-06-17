@@ -54,7 +54,14 @@ async function findContactByPhone(
   const normalized = normalizePhone(phone);
   if (!normalized) return null;
 
-  // Check primary contacts first
+  // Last 7 digits of the caller's number — used as a cheap fallback filter so we
+  // still match contacts whose stored phone is in a non-E.164 format (legacy data
+  // like "(904) 606-5454"). We re-normalize candidates in JS before accepting.
+  const suffix = normalized.replace(/\D/g, "").slice(-7);
+  const sameNumber = (stored: string | null) =>
+    !!stored && normalizePhone(stored) === normalized;
+
+  // Check primary contacts first — exact E.164 match, then digit-suffix fallback
   const { data: contact } = await supabase
     .from("contacts")
     .select("id, name")
@@ -62,19 +69,26 @@ async function findContactByPhone(
     .maybeSingle();
   if (contact) return { id: contact.id, name: contact.name, callerName: contact.name };
 
+  const { data: contactCandidates } = await supabase
+    .from("contacts")
+    .select("id, name, phone")
+    .ilike("phone", `%${suffix}`);
+  const contactMatch = (contactCandidates ?? []).find((c: { phone: string | null }) => sameNumber(c.phone));
+  if (contactMatch) return { id: contactMatch.id, name: contactMatch.name, callerName: contactMatch.name };
+
   // Check linked (household) contacts — resolve to primary contact, use linked name as caller
   const { data: linked } = await supabase
     .from("linked_contacts")
-    .select("id, name, primary_contact_id")
-    .eq("phone", normalized)
-    .maybeSingle();
-  if (linked) {
+    .select("id, name, primary_contact_id, phone")
+    .ilike("phone", `%${suffix}`);
+  const linkedMatch = (linked ?? []).find((l: { phone: string | null }) => sameNumber(l.phone));
+  if (linkedMatch) {
     const { data: primary } = await supabase
       .from("contacts")
       .select("id, name")
-      .eq("id", linked.primary_contact_id)
+      .eq("id", linkedMatch.primary_contact_id)
       .maybeSingle();
-    if (primary) return { id: primary.id, name: primary.name, callerName: linked.name };
+    if (primary) return { id: primary.id, name: primary.name, callerName: linkedMatch.name };
   }
 
   return null;

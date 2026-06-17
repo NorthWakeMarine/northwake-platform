@@ -363,7 +363,7 @@ export async function deleteTimelineNote(
 
   const { data: existing } = await supabase
     .from("timeline_events")
-    .select("contact_id")
+    .select("contact_id, lead_id")
     .eq("id", id)
     .single();
 
@@ -375,6 +375,7 @@ export async function deleteTimelineNote(
 
   if (error) return { ok: false, error: error.message };
   if (existing?.contact_id) revalidatePath(`/pro/contacts/${existing.contact_id}`);
+  if (existing?.lead_id)    revalidatePath(`/pro/leads/${existing.lead_id}`);
   return { ok: true };
 }
 
@@ -2753,14 +2754,13 @@ export async function runIntegrityCheck(): Promise<{ checked: number; flagged: n
 
     const hadFlags = flags.length > 0;
 
+    // Flag in place: write the health flags but never move the card. A customer
+    // who texts (or is missing a QB link) keeps their real pipeline_stage and
+    // just shows the amber warning icon — they must not get yanked into
+    // needs_attention, which had no column and surfaced them as "New Leads".
     await supabase
       .from("contacts")
-      .update({
-        health_flags: flags,
-        ...(hadFlags && contact.pipeline_stage !== "needs_attention"
-          ? { pipeline_stage: "needs_attention" }
-          : {}),
-      })
+      .update({ health_flags: flags })
       .eq("id", contact.id);
 
     return hadFlags;

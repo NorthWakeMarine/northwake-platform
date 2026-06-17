@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { PipelineCard, PipelineStage, HeatLevel, HealthFlag } from "@/types/pipeline";
+import { normalizePhone } from "@/lib/phone";
 
 function svc() {
   return createClient(
@@ -88,10 +89,12 @@ export async function getPipelineBoard(): Promise<PipelineCard[]> {
   // Deduplicate: skip lead-only cards for anyone already in contacts (any type), matched by email or phone
   const allContacts = allContactsRes.data ?? [];
   const contactEmails = new Set(allContacts.map((c) => c.email).filter(Boolean));
-  const contactPhones = new Set(allContacts.map((c) => c.phone).filter(Boolean));
+  // Normalize phones on both sides so a known caller whose contact phone is
+  // stored in a non-E.164 format still dedupes against the lead Quo created.
+  const contactPhones = new Set(allContacts.map((c) => normalizePhone(c.phone)).filter(Boolean));
 
   const leadCards: PipelineCard[] = (leadsRes.data ?? [])
-    .filter((l) => !contactEmails.has(l.email) && !contactPhones.has(l.phone))
+    .filter((l) => !contactEmails.has(l.email) && !contactPhones.has(normalizePhone(l.phone)))
     .map((l) => ({
       id: `lead_${l.id}`,
       sourceType: "lead" as const,
