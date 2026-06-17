@@ -225,6 +225,40 @@ export async function updateSiteContent(
 
 export type NoteState = { success?: boolean; error?: string };
 
+export async function addLeadNote(
+  _prev: NoteState,
+  formData: FormData
+): Promise<NoteState> {
+  const lead_id   = formData.get("lead_id")    as string;
+  const lead_phone = formData.get("lead_phone") as string | null;
+  const lead_email = formData.get("lead_email") as string | null;
+  const body = (formData.get("body") as string)?.trim();
+
+  if (!lead_id) return { error: "Missing lead." };
+  if (!body)    return { error: "Note cannot be empty." };
+
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  const username = user?.email?.split("@")[0] ?? "pro";
+
+  const { error } = await supabase.from("timeline_events").insert({
+    lead_id,
+    event_type: "note",
+    title: "Note added",
+    body,
+    created_by: username,
+    metadata: {
+      ...(lead_phone ? { lead_phone } : {}),
+      ...(lead_email ? { lead_email } : {}),
+    },
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/pro/leads/${lead_id}`);
+  return { success: true };
+}
+
 export async function addTimelineNote(
   _prev: NoteState,
   formData: FormData
@@ -650,6 +684,13 @@ export async function convertLead(
 
   if (contactId) await insertVessel(supabase, contactId, lead);
 
+  // Migrate any lead notes to the contact timeline
+  await supabase
+    .from("timeline_events")
+    .update({ contact_id: contactId, lead_id: null })
+    .eq("lead_id", lead_id)
+    .eq("event_type", "note");
+
   await supabase.from("timeline_events").insert({
     contact_id: contactId,
     event_type: "lead_converted",
@@ -719,6 +760,13 @@ export async function mergeLead(
     .eq("id", contact_id);
 
   await insertVessel(supabase, contact_id, lead);
+
+  // Migrate any lead notes to the contact timeline
+  await supabase
+    .from("timeline_events")
+    .update({ contact_id, lead_id: null })
+    .eq("lead_id", lead_id)
+    .eq("event_type", "note");
 
   // Log original lead as a web_lead timeline event
   await supabase.from("timeline_events").insert({
@@ -3073,7 +3121,10 @@ export async function createContactFromQb(
     source: "quickbooks",
     status: "client",
     contact_type: companyName?.trim() ? "vendor" : "customer",
-    pipeline_stage: "new_leads",
+    // Established QB customers live in Contacts only, not on the pipeline board.
+    // They are added to the board manually when there's actual work, so they
+    // never show up mislabeled as a brand-new lead.
+    pipeline_stage: null,
     waiver_signed: false,
   }).select("id").single();
   if (error || !newContact) return { ok: false, error: error?.message ?? "Insert failed." };

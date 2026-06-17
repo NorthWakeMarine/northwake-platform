@@ -7,7 +7,8 @@ import ProShell from "@/components/ProShell";
 import ConvertButton from "./ConvertButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteLeadButton from "../DeleteLeadButton";
-import PhoneNoteForm from "./PhoneNoteForm";
+import LeadNoteForm from "./LeadNoteForm";
+import LeadNotesList from "./LeadNotesList";
 import LeadFieldEditor from "./LeadFieldEditor";
 
 type TimelineEvent = {
@@ -100,14 +101,30 @@ export default async function LeadDetailPage({
   if (leadError) console.error("Lead fetch error:", leadError.message);
   if (!lead) notFound();
 
-  let phoneNote: string | null = null;
-  if (lead.phone) {
-    const { data: pn } = await svcClient
-      .from("phone_notes")
-      .select("note")
-      .eq("phone", lead.phone)
-      .maybeSingle();
-    phoneNote = pn?.note?.trim() || null;
+  // Fetch notes on this lead directly, plus orphaned notes from past leads with the same phone/email
+  type LeadNote = { id: string; created_at: string; body: string | null; created_by: string | null; metadata: Record<string, unknown> | null };
+  let leadNotes: LeadNote[] = [];
+  {
+    const { data: direct } = await svcClient
+      .from("timeline_events")
+      .select("id, created_at, body, created_by, metadata")
+      .eq("lead_id", id)
+      .eq("event_type", "note")
+      .order("created_at", { ascending: true });
+    leadNotes = direct ?? [];
+
+    // Recover orphaned notes from prior deleted leads with the same phone number
+    if (lead.phone) {
+      const { data: orphaned } = await svcClient
+        .from("timeline_events")
+        .select("id, created_at, body, created_by, metadata")
+        .eq("event_type", "note")
+        .is("contact_id", null)
+        .is("lead_id", null)
+        .filter("metadata->>lead_phone", "eq", lead.phone)
+        .order("created_at", { ascending: true });
+      if (orphaned?.length) leadNotes = [...orphaned, ...leadNotes];
+    }
   }
 
   // Try to find a matching contact record by email, then phone as fallback
@@ -313,13 +330,16 @@ export default async function LeadDetailPage({
                 </dl>
               </div>
 
-              {/* Caller note — only for leads with a phone number */}
-              {lead.phone && (
-                <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
-                  <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Caller Note</p>
-                  <PhoneNoteForm phone={lead.phone} initialNote={phoneNote} />
-                </div>
-              )}
+              {/* Notes */}
+              <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
+                <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-400 mb-4">Notes</p>
+                <LeadNoteForm
+                  leadId={id}
+                  leadPhone={lead.phone ?? undefined}
+                  leadEmail={lead.email ?? undefined}
+                />
+                <LeadNotesList notes={leadNotes} />
+              </div>
 
             </div>
 
