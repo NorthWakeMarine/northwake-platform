@@ -192,7 +192,7 @@ export default async function LeadDetailPage({
           <div className="hidden md:flex items-center gap-2 shrink-0 flex-wrap">
             {lead.phone && (
               <a
-                href={`tel:${lead.phone}`}
+                href={`openphone://call?number=${lead.phone}`}
                 className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold transition-colors"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -241,7 +241,7 @@ export default async function LeadDetailPage({
           <div className="flex gap-2 px-4 py-3 overflow-x-auto">
             {lead.phone && (
               <a
-                href={`tel:${lead.phone}`}
+                href={`openphone://call?number=${lead.phone}`}
                 className="flex items-center gap-2 bg-slate-800 text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold whitespace-nowrap shrink-0"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
