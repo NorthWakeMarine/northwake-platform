@@ -136,19 +136,18 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
         isDragging || isPending ? "opacity-40" : "opacity-100"
       }`}
     >
-      {eyebrow && (
-        <div className="pl-8 -mb-0.5">
-          <span className="text-slate-400/80 text-[9px] tracking-[0.25em] uppercase font-semibold">
-            {eyebrow}
-          </span>
-        </div>
-      )}
-
       <div className="flex items-center gap-2">
         <AssetIcon type={card.assetType} />
-        <span className="flex-1 text-[#1E2938] text-xs font-semibold leading-snug break-words min-w-0">
-          {card.name || card.phone || card.email || <span className="text-slate-400 italic font-normal">Unknown</span>}
-        </span>
+        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+          <span className="text-[#1E2938] text-xs font-semibold leading-snug break-words">
+            {card.name || card.phone || card.email || <span className="text-slate-400 italic font-normal">Unknown</span>}
+          </span>
+          {eyebrow && (
+            <span className="text-slate-400/80 text-[9px] tracking-[0.2em] uppercase font-medium leading-none">
+              {eyebrow}
+            </span>
+          )}
+        </div>
         <HealthWarningIcon flags={card.healthFlags} />
         <StatusGlow heat={card.heat} stageEnteredAt={card.stageEnteredAt} />
         {removable && (
