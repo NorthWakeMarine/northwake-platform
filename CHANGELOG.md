@@ -2,6 +2,16 @@
 
 ## June 2026
 
+### June 17 | Lead notes timeline | CRM
+
+- **Caller Note replaced**: the single-field "Caller Note" box on lead detail pages is gone. In its place is a full multi-note section backed by `timeline_events` (same system contacts use).
+- **DB migration** (`20260617_lead_timeline_notes.sql`): adds `lead_id uuid references leads(id) on delete set null` to `timeline_events`, plus indexes on `lead_id` and `metadata->>'lead_phone'` for orphan recovery.
+- **Instant feedback**: new notes appear in the list immediately on save (action returns the created row; component appends it to local state). No page reload needed.
+- **Edit and delete inline**: notes support in-place editing and one-step delete confirmation, same as the contact timeline.
+- **Conversion carry-over**: `convertLead` and `mergeLead` both reassign lead notes (`lead_id → contact_id`) before writing the "Converted to client" event, so notes move seamlessly to the client profile.
+- **Phone re-match**: `addLeadNote` stores `lead_phone`/`lead_email` in note metadata. If a lead is deleted (setting `lead_id = null` via cascade), its notes are recovered by phone number when a new lead comes in with the same number.
+- **Pipeline card hierarchy**: vessel name moved below customer name and rendered smaller/lighter — customer name now reads first.
+
 ### June 17 | Stop established customers landing in New Leads | CRM
 
 - **Root cause**: `runIntegrityCheck` (cron + Sync panel) overwrote a contact's `pipeline_stage` with `needs_attention` whenever it tripped a health flag, including `comms_gap` ("Unreturned Message") which fires on an inbound call/text with no reply. Because `needs_attention` is not in `STAGES` (no column), `groupByStage` dumped those cards into **New Leads**. So an existing customer who called/texted got yanked out of their real stage and surfaced as a new lead. This was also destructive: their prior stage (e.g. `paid`) was lost.
