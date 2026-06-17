@@ -2,6 +2,14 @@
 
 ## June 2026
 
+### June 17 | Other contacts tab with label tagging | CRM
+
+- **New "Other" tab** on the Contacts page for misc contacts (interviewees, references, contractors, etc.) that should not appear in Customers or sync to QuickBooks.
+- **Label field**: Other contacts use `company_name` as a freeform label (shown as a purple badge in the table and on mobile cards). Create modal shows a "Label" field with placeholder examples when type is set to Other.
+- **QB isolation**: `createContact` skips the QuickBooks push for `contact_type = "other"`. Any contact reclassified to "other" via the Type dropdown on their detail page automatically inactivates and unlinks the QB customer profile in the background.
+- **Type badge**: detail page now shows a purple "other" badge and the type dropdown includes Other as a selectable option.
+- **LeadNotesSection ref fix**: refs (`prevSuccessRef`, `textareaRef`) were being accessed during render, which Next.js 15 ESLint now treats as a build error. Moved into a `useEffect` keyed on `state`.
+
 ### June 17 | Lead notes timeline | CRM
 
 - **Caller Note replaced**: the single-field "Caller Note" box on lead detail pages is gone. In its place is a full multi-note section backed by `timeline_events` (same system contacts use).
