@@ -24,7 +24,7 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function NoteItem({ note, isLast }: { note: Note; isLast: boolean }) {
+function NoteItem({ note, isLast, onDeleted }: { note: Note; isLast: boolean; onDeleted: (id: string) => void }) {
   const [editing, setEditing]       = useState(false);
   const [draft, setDraft]           = useState(note.body ?? "");
   const [localBody, setLocalBody]   = useState(note.body ?? "");
@@ -54,7 +54,8 @@ function NoteItem({ note, isLast }: { note: Note; isLast: boolean }) {
   function handleDelete() {
     startTransition(async () => {
       const res = await deleteTimelineNote(note.id);
-      if (!res.ok) { setError(res.error ?? "Failed to delete."); setConfirmDelete(false); }
+      if (!res.ok) { setError(res.error ?? "Failed to delete."); setConfirmDelete(false); return; }
+      onDeleted(note.id);
     });
   }
 
@@ -157,7 +158,13 @@ function NoteItem({ note, isLast }: { note: Note; isLast: boolean }) {
   );
 }
 
-export default function LeadNotesList({ notes }: { notes: Note[] }) {
+export default function LeadNotesList({ notes: initialNotes }: { notes: Note[] }) {
+  const [notes, setNotes] = useState(initialNotes);
+
+  function handleDeleted(id: string) {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+  }
+
   if (notes.length === 0) {
     return (
       <p className="text-slate-400 text-xs py-2">No notes yet. Add one above.</p>
@@ -166,7 +173,7 @@ export default function LeadNotesList({ notes }: { notes: Note[] }) {
   return (
     <ul className="mt-4 flex flex-col">
       {notes.map((note, i) => (
-        <NoteItem key={note.id} note={note} isLast={i === notes.length - 1} />
+        <NoteItem key={note.id} note={note} isLast={i === notes.length - 1} onDeleted={handleDeleted} />
       ))}
     </ul>
   );
