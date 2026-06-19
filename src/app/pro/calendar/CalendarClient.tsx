@@ -748,17 +748,6 @@ function EventDetailModal({ event, linkMap, serviceTemplates, onEdit, onDelete, 
   );
 }
 
-// ── Color swatches for EventModal ─────────────────────────────────────────────
-
-const COLOR_SWATCHES = [
-  { id: "1",  border: "#7986CB" }, { id: "2",  border: "#33B679" },
-  { id: "3",  border: "#8E24AA" }, { id: "4",  border: "#E67C73" },
-  { id: "5",  border: "#F6BF26" }, { id: "6",  border: "#F4511E" },
-  { id: "7",  border: "#039BE5" }, { id: "8",  border: "#616161" },
-  { id: "9",  border: "#3F51B5" }, { id: "10", border: "#0B8043" },
-  { id: "11", border: "#D50000" },
-];
-
 // ── Event Modal ────────────────────────────────────────────────────────────────
 
 function EventModal({ event, editScope, defaultDate, onClose }: {
@@ -768,8 +757,8 @@ function EventModal({ event, editScope, defaultDate, onClose }: {
   onClose: () => void;
 }) {
   const isEdit = !!event;
-  const [isAllDay,  setIsAllDay]  = useState(event ? !event.start.includes("T") : false);
-  const [colorId,   setColorId]   = useState(event?.colorId ?? "");
+  const [isAllDay, setIsAllDay] = useState(event ? !event.start.includes("T") : false);
+  const colorId = event?.colorId ?? "";
   const [createState, createAction, creating]   = useActionState<CalendarEventState, FormData>(createStandaloneEvent, {});
   const [updateState, updateAction, updating]   = useActionState<CalendarEventState, FormData>(updateStandaloneEvent, {});
   const [instanceState, instanceAction, instUpd] = useActionState<CalendarEventState, FormData>(updateCalendarEventInstance, {});
