@@ -7,6 +7,7 @@ import ProShell from "@/components/ProShell";
 import ConvertButton from "./ConvertButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteLeadButton from "../DeleteLeadButton";
+import BlockLeadButton from "../BlockLeadButton";
 import LeadNotesSection from "./LeadNotesSection";
 import LeadFieldEditor from "./LeadFieldEditor";
 
@@ -130,6 +131,9 @@ export default async function LeadDetailPage({
   let contact: Contact | null = null;
   let timeline: TimelineEvent[] = [];
 
+  // Timeline events fetched directly by phone (for Quo leads without a contact record yet)
+  let quoTimeline: TimelineEvent[] = [];
+
   try {
     const svc = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -162,6 +166,28 @@ export default async function LeadDetailPage({
         .eq("contact_id", contactData.id)
         .order("created_at", { ascending: false });
       timeline = events ?? [];
+    } else if (lead.phone) {
+      // No contact yet: pull call/SMS events logged by the Quo webhook for this number.
+      const [{ data: byCallerNumber }, { data: byFromNumber }] = await Promise.all([
+        svc
+          .from("timeline_events")
+          .select("id, created_at, event_type, title, body, created_by, metadata")
+          .is("contact_id", null)
+          .filter("metadata->>caller_number", "eq", lead.phone)
+          .in("event_type", ["call", "sms"])
+          .order("created_at", { ascending: false }),
+        svc
+          .from("timeline_events")
+          .select("id, created_at, event_type, title, body, created_by, metadata")
+          .is("contact_id", null)
+          .filter("metadata->>from_number", "eq", lead.phone)
+          .eq("event_type", "sms")
+          .order("created_at", { ascending: false }),
+      ]);
+      const seen = new Set<string>();
+      quoTimeline = [...(byCallerNumber ?? []), ...(byFromNumber ?? [])]
+        .filter((e) => { if (seen.has(e.id)) return false; seen.add(e.id); return true; })
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
   } catch {
     // contacts table may not exist yet — degrade gracefully
@@ -217,6 +243,7 @@ export default async function LeadDetailPage({
               {src.label}
             </span>
             <DeleteLeadButton leadId={lead.id} redirectTo="/pro/leads" />
+            {lead.phone && <BlockLeadButton leadId={lead.id} />}
             {lead.status === "converted" && contact ? (
               <Link
                 href={`/pro/contacts/${contact.id}`}
@@ -276,6 +303,7 @@ export default async function LeadDetailPage({
               </>
             )}
             <DeleteLeadButton leadId={lead.id} redirectTo="/pro/leads" />
+            {lead.phone && <BlockLeadButton leadId={lead.id} />}
           </div>
         </div>
 
@@ -360,7 +388,9 @@ export default async function LeadDetailPage({
 
               {/* Call / SMS log from Quo */}
               {(() => {
-                const callEvents = timeline.filter(e => e.event_type === "call" || e.event_type === "sms");
+                const callEvents = contact
+                  ? timeline.filter(e => e.event_type === "call" || e.event_type === "sms")
+                  : quoTimeline;
                 return (
                   <div className="bg-[#F1F2F5] neu-card rounded-md overflow-hidden">
                     <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">

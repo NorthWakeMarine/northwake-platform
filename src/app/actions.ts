@@ -2412,6 +2412,29 @@ export async function deleteLead(leadId: string): Promise<{ error?: string }> {
   return {};
 }
 
+export async function blockLead(leadId: string): Promise<{ error?: string }> {
+  const supabase = await svc();
+  const { data: lead, error: fetchErr } = await supabase
+    .from("leads")
+    .select("phone")
+    .eq("id", leadId)
+    .single();
+  if (fetchErr || !lead) return { error: fetchErr?.message ?? "Lead not found" };
+
+  if (lead.phone) {
+    await supabase
+      .from("blocked_numbers")
+      .upsert({ phone: lead.phone, blocked_by: "crm" }, { onConflict: "phone" });
+  }
+
+  const { error: delErr } = await supabase.from("leads").delete().eq("id", leadId);
+  if (delErr) return { error: delErr.message };
+
+  revalidatePath("/pro/leads");
+  revalidatePath("/pro/pipeline");
+  return {};
+}
+
 // ─── QuickBooks Invoice Auto-Schedule (hook stub) ─────────────────────────────
 // Call this from the QB webhook handler once QBO_CLIENT_ID, QBO_CLIENT_SECRET,
 // QBO_REALM_ID, and QBO_REFRESH_TOKEN are configured in Vercel env vars.

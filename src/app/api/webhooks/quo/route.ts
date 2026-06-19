@@ -139,12 +139,21 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
+const TOLL_FREE_PREFIXES = ["+1800", "+1888", "+1877", "+1866", "+1844", "+1833", "+1855"];
+
 async function createQuoLead(supabase: AnySupabase, phone: string) {
-  // Reject SMS short codes and verification senders (e.g. "57564", "22000").
-  // Real US/intl numbers normalize to E.164 with 10+ digits; anything shorter
-  // is not a callable lead.
+  // Reject SMS short codes (< 10 digits) and toll-free numbers (robocallers).
   const digits = phone.replace(/\D/g, "");
   if (digits.length < 10) return;
+  if (TOLL_FREE_PREFIXES.some((p) => phone.startsWith(p))) return;
+
+  // Skip numbers explicitly blocked in the CRM.
+  const { data: blocked } = await supabase
+    .from("blocked_numbers")
+    .select("id")
+    .eq("phone", phone)
+    .maybeSingle();
+  if (blocked) return;
 
   const { data: existing } = await supabase
     .from("leads")
@@ -205,9 +214,9 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
   });
   console.log("[quo webhook] call insert result", { error: callErr ?? null });
 
-  // Unknown inbound caller who actually talked (>20s) becomes a lead — filters pocket dials
+  // Unknown inbound caller who actually talked (>60s) becomes a lead — filters robocall recordings.
   // Skip if the number belongs to a linked/household contact (already resolved to primary)
-  if (!contact && direction === "inbound" && (duration ?? 0) > 20) {
+  if (!contact && direction === "inbound" && (duration ?? 0) > 60) {
     await createQuoLead(supabase, normalized);
   }
 }
@@ -243,11 +252,8 @@ async function handleMissedCall(obj: Record<string, unknown>) {
   });
   if (missedErr) console.error("[quo webhook] missed call insert error", missedErr);
 
-  // Only create a lead for inbound missed calls — outbound means we already know them
-  // Skip if the number belongs to a linked/household contact (already resolved to primary)
-  if (!contact && direction === "inbound") {
-    await createQuoLead(supabase, normalized);
-  }
+  // Missed calls are too weak a signal — robocallers and wrong numbers all hang up.
+  // We still log the event; we just don't auto-create a lead from it.
 }
 
 async function handleInboundSms(obj: Record<string, unknown>) {
