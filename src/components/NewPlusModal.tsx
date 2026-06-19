@@ -13,21 +13,6 @@ import {
   type ServiceTemplate,
 } from "@/app/actions";
 
-// ── Google Calendar color swatches ────────────────────────────────────────────
-
-const GCAL_COLORS: { id: string; name: string; bg: string; border: string }[] = [
-  { id: "1",  name: "Lavender",  bg: "#EEF0FB", border: "#7986CB" },
-  { id: "2",  name: "Sage",      bg: "#E6F4EA", border: "#33B679" },
-  { id: "3",  name: "Grape",     bg: "#F5E6FB", border: "#8E24AA" },
-  { id: "4",  name: "Flamingo",  bg: "#FCE8E6", border: "#E67C73" },
-  { id: "5",  name: "Banana",    bg: "#FEF9E0", border: "#F6BF26" },
-  { id: "6",  name: "Tangerine", bg: "#FDE9E0", border: "#F4511E" },
-  { id: "7",  name: "Peacock",   bg: "#E3F5FD", border: "#039BE5" },
-  { id: "8",  name: "Graphite",  bg: "#F1F1F1", border: "#616161" },
-  { id: "9",  name: "Blueberry", bg: "#E8EAF6", border: "#3F51B5" },
-  { id: "10", name: "Basil",     bg: "#E6F4EA", border: "#0B8043" },
-  { id: "11", name: "Tomato",    bg: "#FCE8E6", border: "#D50000" },
-];
 
 type EventType = "recurring" | "one_time" | "sales_meeting" | "calendar_event";
 type ContactResult = { id: string; name: string; email: string | null; address: string | null };
@@ -99,9 +84,12 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
   // ── Calendar event fields ──
   const [calTitle,    setCalTitle]    = useState("");
   const [calIsAllDay, setCalIsAllDay] = useState(false);
-  const [calColorId,  setCalColorId]  = useState("");
   const [calLocation, setCalLocation] = useState("");
   const [calNotes,    setCalNotes]    = useState("");
+
+  // ── Location fields for service + sales steps (pre-filled from contact address) ──
+  const [salesLocation,   setSalesLocation]   = useState(preContactAddress ?? "");
+  const [serviceLocation, setServiceLocation] = useState(preContactAddress ?? "");
 
   // ── Action state ──
   const [serviceState,  serviceAction,  servicePending]  = useActionState<NewEventState, FormData>(createServiceEvent,      {});
@@ -239,6 +227,10 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                         onClick={() => {
                           setPicked(r);
                           setResults([]);
+                          if (r.address) {
+                            setSalesLocation(r.address);
+                            setServiceLocation(r.address);
+                          }
                           setStep("type");
                         }}
                         className="w-full text-left px-3 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
@@ -442,6 +434,12 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 </div>
               )}
 
+              {/* Location */}
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>Location (optional)</label>
+                <input value={serviceLocation} onChange={e => setServiceLocation(e.target.value)} placeholder="Address, marina slip, dock location..." className={inputCls} />
+              </div>
+
               {/* Notes */}
               <div className="flex flex-col gap-1">
                 <label className={labelCls}>Notes (optional)</label>
@@ -464,6 +462,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 <input type="hidden" name="contact_id"      value={picked?.id ?? ""} />
                 <input type="hidden" name="contact_name"    value={picked?.name ?? ""} />
                 <input type="hidden" name="contact_address" value={picked?.address ?? ""} />
+                <input type="hidden" name="location"        value={serviceLocation} />
                 <input type="hidden" name="vessel_id"       value={vesselId} />
                 <input type="hidden" name="vessel_name"     value={vesselLabel} />
                 <input type="hidden" name="template_id"     value={templateId} />
@@ -540,10 +539,16 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 </div>
               )}
 
+              {/* Location */}
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>Location (optional)</label>
+                <input value={salesLocation} onChange={e => setSalesLocation(e.target.value)} placeholder="Address, marina, meeting spot..." className={inputCls} />
+              </div>
+
               {/* Notes */}
               <div className="flex flex-col gap-1">
                 <label className={labelCls}>Notes (optional)</label>
-                <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Agenda, location, etc." className={`${inputCls} resize-none`} />
+                <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Agenda, talking points..." className={`${inputCls} resize-none`} />
               </div>
 
               {/* Title preview */}
@@ -562,6 +567,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 <input type="hidden" name="contact_id"      value={picked?.id ?? ""} />
                 <input type="hidden" name="contact_name"    value={picked?.name ?? ""} />
                 <input type="hidden" name="contact_address" value={picked?.address ?? ""} />
+                <input type="hidden" name="location"        value={salesLocation} />
                 <input type="hidden" name="vessel_id"       value={vesselId} />
                 <input type="hidden" name="vessel_name"     value={vesselLabel} />
                 <input type="hidden" name="start_time"      value={startTime} />
@@ -626,28 +632,10 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 </div>
               )}
 
-              {/* Color picker */}
-              <div className="flex flex-col gap-2">
-                <label className={labelCls}>Color</label>
-                <div className="relative">
-                  <select
-                    value={calColorId}
-                    onChange={e => setCalColorId(e.target.value)}
-                    className={inputCls}
-                    style={calColorId ? { borderLeftWidth: "4px", borderLeftColor: GCAL_COLORS.find(c => c.id === calColorId)?.border } : {}}
-                  >
-                    <option value="">Calendar default</option>
-                    {GCAL_COLORS.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
               {/* Location */}
               <div className="flex flex-col gap-1">
                 <label className={labelCls}>Location (optional)</label>
-                <input value={calLocation} onChange={e => setCalLocation(e.target.value)} placeholder="Address, marina, etc." className={inputCls} />
+                <input value={calLocation || picked?.address || ""} onChange={e => setCalLocation(e.target.value)} placeholder="Address, marina, etc." className={inputCls} />
               </div>
 
               {/* Notes */}
@@ -664,8 +652,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 <input type="hidden" name="start_time"  value={startTime} />
                 <input type="hidden" name="end_time"    value={endTime} />
                 <input type="hidden" name="is_all_day"  value={calIsAllDay ? "true" : "false"} />
-                <input type="hidden" name="color_id"    value={calColorId} />
-                <input type="hidden" name="location"    value={calLocation} />
+                <input type="hidden" name="location"    value={calLocation || picked?.address || ""} />
                 <input type="hidden" name="description" value={calNotes} />
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={calPending || !calTitle}

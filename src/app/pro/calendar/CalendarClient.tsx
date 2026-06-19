@@ -860,34 +860,6 @@ function EventModal({ event, editScope, defaultDate, onClose }: {
             </div>
           )}
 
-          {/* Color picker */}
-          <div className="flex flex-col gap-2">
-            <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Color</label>
-            <div className="flex flex-wrap gap-2 items-center">
-              <button
-                type="button"
-                onClick={() => setColorId("")}
-                title="Default"
-                className="w-6 h-6 rounded-full border-2 bg-[#000080] transition-all"
-                style={{ borderColor: colorId === "" ? "#000080" : "transparent", outline: colorId === "" ? "2px solid #000080" : "none", outlineOffset: "2px" }}
-              />
-              {COLOR_SWATCHES.map(c => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setColorId(prev => prev === c.id ? "" : c.id)}
-                  className="w-6 h-6 rounded-full border-2 transition-all"
-                  style={{
-                    backgroundColor: c.border,
-                    borderColor:     colorId === c.id ? "#000080" : "transparent",
-                    outline:         colorId === c.id ? "2px solid #000080" : "none",
-                    outlineOffset:   "2px",
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Location</label>
             <input name="location" defaultValue={event?.location ?? ""}

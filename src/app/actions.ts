@@ -2057,14 +2057,14 @@ export async function createServiceEvent(
   }
   const billingFreq = recurrenceRule ?? "monthly";
 
-  // Fetch address directly from DB to ensure accuracy regardless of form serialization
   const supabase = await svc();
   const { data: contactRow } = await supabase
     .from("contacts")
     .select("address")
     .eq("id", contact_id)
-    .single();
-  const location = contactRow?.address || contact_address || undefined;
+    .maybeSingle();
+  const user_location = (formData.get("location") as string | null)?.trim() || null;
+  const location = user_location || contactRow?.address || contact_address || undefined;
 
   try {
     const { createCalendarEvent, RECURRING_WORK_COLOR_ID, ONE_OFF_WORK_COLOR_ID } = await import("@/lib/google-calendar");
@@ -2112,6 +2112,7 @@ export async function createSalesMeetingEvent(
   const contact_id      = formData.get("contact_id")       as string;
   const contact_name    = formData.get("contact_name")     as string;
   const contact_address = formData.get("contact_address")  as string | null;
+  const user_location   = (formData.get("location") as string | null)?.trim() || null;
   const vessel_name     = formData.get("vessel_name")      as string | null;
   const vessel_id       = formData.get("vessel_id")        as string | null;
   const start_time      = formData.get("start_time")       as string;
@@ -2133,14 +2134,14 @@ export async function createSalesMeetingEvent(
     return `${next.getFullYear()}-${p(next.getMonth() + 1)}-${p(next.getDate())}`;
   }
 
-  // Fetch address directly from DB
   const supabase = await svc();
   const { data: contactRow } = await supabase
     .from("contacts")
     .select("address")
     .eq("id", contact_id)
-    .single();
-  const location = contactRow?.address || contact_address || undefined;
+    .maybeSingle();
+  // User-typed location takes priority; fall back to contact's saved address
+  const location = user_location || contactRow?.address || contact_address || undefined;
 
   try {
     const { createCalendarEvent, SALES_EVENT_COLOR_ID } = await import("@/lib/google-calendar");

@@ -60,9 +60,11 @@ export type CalendarEventInput = {
 };
 
 function gcalTime(iso: string, allDay: boolean) {
-  return allDay
-    ? { date: iso }
-    : { dateTime: iso, timeZone: "America/New_York" };
+  if (allDay) return { date: iso };
+  // datetime-local inputs give "YYYY-MM-DDTHH:MM" without seconds.
+  // RFC 3339 requires at least seconds, so append ":00" when missing.
+  const dt = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso) ? iso + ":00" : iso;
+  return { dateTime: dt, timeZone: "America/New_York" };
 }
 
 export async function createCalendarEvent(event: CalendarEventInput): Promise<string> {
