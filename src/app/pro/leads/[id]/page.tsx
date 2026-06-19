@@ -169,7 +169,8 @@ export default async function LeadDetailPage({
       timeline = events ?? [];
     } else if (lead.phone) {
       // No contact yet: pull call/SMS events logged by the Quo webhook for this number.
-      const [{ data: byCallerNumber }, { data: byFromNumber }] = await Promise.all([
+      // Covers inbound calls (caller_number), inbound SMS (from_number), and outbound SMS (to_number).
+      const [{ data: byCallerNumber }, { data: byFromNumber }, { data: byToNumber }] = await Promise.all([
         svc
           .from("timeline_events")
           .select("id, created_at, event_type, title, body, created_by, metadata")
@@ -184,9 +185,16 @@ export default async function LeadDetailPage({
           .filter("metadata->>from_number", "eq", lead.phone)
           .eq("event_type", "sms")
           .order("created_at", { ascending: false }),
+        svc
+          .from("timeline_events")
+          .select("id, created_at, event_type, title, body, created_by, metadata")
+          .is("contact_id", null)
+          .filter("metadata->>to_number", "eq", lead.phone)
+          .eq("event_type", "sms")
+          .order("created_at", { ascending: false }),
       ]);
       const seen = new Set<string>();
-      quoTimeline = [...(byCallerNumber ?? []), ...(byFromNumber ?? [])]
+      quoTimeline = [...(byCallerNumber ?? []), ...(byFromNumber ?? []), ...(byToNumber ?? [])]
         .filter((e) => { if (seen.has(e.id)) return false; seen.add(e.id); return true; })
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
@@ -219,7 +227,7 @@ export default async function LeadDetailPage({
           <div className="hidden md:flex items-center gap-2 shrink-0 flex-wrap">
             {lead.phone && (
               <a
-                href={`openphone://call?number=${lead.phone}`}
+                href={`openphone://call?number=${encodeURIComponent(lead.phone)}`}
                 className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold transition-colors"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -269,7 +277,7 @@ export default async function LeadDetailPage({
           <div className="flex gap-2 px-4 py-3 overflow-x-auto">
             {lead.phone && (
               <a
-                href={`openphone://call?number=${lead.phone}`}
+                href={`openphone://call?number=${encodeURIComponent(lead.phone)}`}
                 className="flex items-center gap-2 bg-slate-800 text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold whitespace-nowrap shrink-0"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

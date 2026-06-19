@@ -184,7 +184,7 @@ export default async function LeadsPage({
                           </td>
                           <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
                             {lead.phone
-                              ? <a href={`openphone://call?number=${lead.phone}`} className="hover:text-blue-600 transition-colors">{lead.phone}</a>
+                              ? <a href={`openphone://call?number=${encodeURIComponent(lead.phone)}`} className="hover:text-blue-600 transition-colors">{lead.phone}</a>
                               : <span className="text-slate-300">—</span>}
                           </td>
                           <td className="py-3 px-4 text-slate-500 whitespace-nowrap">

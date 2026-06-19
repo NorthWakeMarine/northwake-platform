@@ -155,6 +155,14 @@ async function createQuoLead(supabase: AnySupabase, phone: string) {
     .maybeSingle();
   if (blocked) return;
 
+  // Skip numbers that already belong to any CRM contact (any role — customer, vendor, other).
+  const { data: knownContact } = await supabase
+    .from("contacts")
+    .select("id")
+    .eq("phone", phone)
+    .maybeSingle();
+  if (knownContact) return;
+
   const { data: existing } = await supabase
     .from("leads")
     .select("id")
@@ -311,14 +319,14 @@ async function handleOutboundSms(obj: Record<string, unknown>) {
   if (!normalized) return;
 
   const contact = await findContactByPhone(supabase, normalized);
-  if (!contact) return; // only log outbound SMS against known contacts
 
+  // Log even when there is no CRM contact so the outbound SMS shows on the lead page.
   await supabase.from("timeline_events").insert({
-    contact_id: contact.id,
+    contact_id: contact?.id ?? null,
     event_type: "sms",
     title:      "Outbound SMS",
     body,
-    metadata:   { direction: "outbound", to_number: normalized, quo_message_id: obj.id },
+    metadata:   { direction: "outbound", to_number: normalized, caller_name: contact?.callerName ?? null, quo_message_id: obj.id },
     created_by: "system",
   });
 }
@@ -350,6 +358,11 @@ async function handleContactUpsert(obj: Record<string, unknown>) {
       const { data } = await supabase.from("contacts").select("id, name, phone, email, company_name").ilike("email", emails[0]).maybeSingle();
       if (data) match = data;
     }
+    // Last resort: match by name (catches empty CRM contacts that have no phone/email yet)
+    if (!match && fullName) {
+      const { data } = await supabase.from("contacts").select("id, name, phone, email, company_name").ilike("name", fullName).maybeSingle();
+      if (data) match = data;
+    }
 
     // Backfill name on any matching lead rows that still have no name
     if (fullName && phones.length > 0) {
@@ -360,7 +373,21 @@ async function handleContactUpsert(obj: Record<string, unknown>) {
         .is("name", null);
     }
 
-    if (!match) return;
+    if (!match) {
+      // No CRM contact found by phone, email, or name. Create one so future
+      // calls/SMS from this number are recognised and don't generate new leads.
+      // Role defaults to "other" since we don't know the customer relationship.
+      if (phones[0]) {
+        await supabase.from("contacts").insert({
+          name:         fullName,
+          phone:        phones[0],
+          email:        emails[0] ?? null,
+          company_name: company ?? null,
+          contact_type: "other",
+        });
+      }
+      return;
+    }
 
     const update: Record<string, unknown> = {};
     if (fullName && !match.name) update.name = fullName;

@@ -198,7 +198,7 @@ export default function LinkedContacts({
                   <p className="text-slate-500 text-[11px]">{lc.phone}</p>
                   <div className="flex gap-1.5">
                     <a
-                      href={`openphone://call?number=${lc.phone}`}
+                      href={`openphone://call?number=${encodeURIComponent(lc.phone)}`}
                       className="flex items-center gap-1 text-[9px] tracking-widest uppercase font-semibold px-2.5 py-1 rounded-sm border border-slate-200 text-slate-500 hover:border-[#000080] hover:text-[#000080] transition-colors"
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

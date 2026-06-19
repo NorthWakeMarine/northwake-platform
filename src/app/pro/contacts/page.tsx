@@ -369,7 +369,7 @@ export default async function ContactsPage({
                         </td>
                         <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
                           {c.phone
-                            ? <a href={`openphone://call?number=${c.phone}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
+                            ? <a href={`openphone://call?number=${encodeURIComponent(c.phone)}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
                             : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="py-3 px-4 text-slate-500 last:pr-6">
@@ -413,7 +413,7 @@ export default async function ContactsPage({
                         </td>
                         <td className="py-3 px-4 text-slate-500 whitespace-nowrap last:pr-6">
                           {c.phone
-                            ? <a href={`openphone://call?number=${c.phone}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
+                            ? <a href={`openphone://call?number=${encodeURIComponent(c.phone)}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
                             : <span className="text-slate-300">—</span>}
                         </td>
                       </ClickableRow>
@@ -451,7 +451,7 @@ export default async function ContactsPage({
                         </td>
                         <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
                           {c.phone
-                            ? <a href={`openphone://call?number=${c.phone}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
+                            ? <a href={`openphone://call?number=${encodeURIComponent(c.phone)}`} className="hover:text-blue-600 transition-colors">{c.phone}</a>
                             : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="py-3 px-4 text-slate-500 whitespace-nowrap">

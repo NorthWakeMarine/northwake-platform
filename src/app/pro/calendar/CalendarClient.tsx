@@ -35,6 +35,7 @@ export type EventLink = {
   invoiceRate: number | null;
   autoInvoice: boolean;
   colorId: string | null;
+  qbCustomerId: string | null;
 };
 
 // ── Google Calendar color map ──────────────────────────────────────────────────
@@ -346,12 +347,23 @@ function LinkedPanel({
           </div>
         ) : (
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setShowInvoice(true)}
-              className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors"
-            >
-              Create Invoice
-            </button>
+            {link.qbCustomerId ? (
+              <a
+                href={`https://app.qbo.intuit.com/app/invoice?customerId=${link.qbCustomerId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-center bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors"
+              >
+                Create Invoice
+              </a>
+            ) : (
+              <button
+                onClick={() => setShowInvoice(true)}
+                className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors"
+              >
+                Create Invoice
+              </button>
+            )}
             <button
               onClick={openClaimInvoice}
               className="flex-1 border border-slate-200 text-slate-600 text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:border-slate-300 hover:text-slate-800 transition-colors"

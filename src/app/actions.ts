@@ -1706,13 +1706,37 @@ export async function getVesselRecurringLinks(vesselId: string): Promise<VesselR
     .select("gcal_event_id, service_label, invoice_amount, invoice_discount, auto_invoice")
     .eq("vessel_id", vesselId)
     .order("service_label");
-  return (data ?? []).map(r => ({
-    gcal_event_id:    r.gcal_event_id,
-    service_label:    r.service_label ?? null,
-    invoice_amount:   r.invoice_amount != null ? Number(r.invoice_amount) : null,
-    invoice_discount: r.invoice_discount != null ? Number(r.invoice_discount) : null,
-    auto_invoice:     r.auto_invoice ?? false,
-  }));
+
+  const rows = data ?? [];
+  if (!rows.length) return [];
+
+  // Auto-prune links whose Google Calendar event was deleted outside the CRM.
+  try {
+    const { detectCalendarDiscrepancies } = await import("@/lib/google-calendar");
+    const reports = await detectCalendarDiscrepancies(rows.map(r => r.gcal_event_id));
+    const staleIds = new Set(reports.filter(r => r.status === "deleted").map(r => r.googleEventId));
+    if (staleIds.size > 0) {
+      await supabase.from("calendar_contact_links").delete().in("gcal_event_id", [...staleIds]);
+    }
+    return rows
+      .filter(r => !staleIds.has(r.gcal_event_id))
+      .map(r => ({
+        gcal_event_id:    r.gcal_event_id,
+        service_label:    r.service_label ?? null,
+        invoice_amount:   r.invoice_amount != null ? Number(r.invoice_amount) : null,
+        invoice_discount: r.invoice_discount != null ? Number(r.invoice_discount) : null,
+        auto_invoice:     r.auto_invoice ?? false,
+      }));
+  } catch {
+    // If GCal check fails, return the full list without pruning.
+    return rows.map(r => ({
+      gcal_event_id:    r.gcal_event_id,
+      service_label:    r.service_label ?? null,
+      invoice_amount:   r.invoice_amount != null ? Number(r.invoice_amount) : null,
+      invoice_discount: r.invoice_discount != null ? Number(r.invoice_discount) : null,
+      auto_invoice:     r.auto_invoice ?? false,
+    }));
+  }
 }
 
 // ─── Linked Contacts ──────────────────────────────────────────────────────────
