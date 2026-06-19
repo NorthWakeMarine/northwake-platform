@@ -265,7 +265,9 @@ function RecurringServicesSection({ initialLinks }: { initialLinks: VesselRecurr
       </div>
       <div className="flex flex-col gap-2">
         {links.map((link) => {
-          const gross = link.invoice_amount ?? 0;
+          const gross = link.invoice_rate != null
+            ? link.invoice_rate * (link.invoice_qty ?? 1)
+            : (link.invoice_amount ?? 0);
           const disc  = link.invoice_discount ?? 0;
           const net   = Math.max(0, gross - disc);
           const isConfirming = confirmId === link.gcal_event_id;

@@ -165,5 +165,26 @@ export async function GET(request: Request) {
     flagged++;
   }
 
+  // 3. Prune stale calendar_contact_links (events deleted from Google Calendar)
+  try {
+    const { data: linkRows } = await supabase
+      .from("calendar_contact_links")
+      .select("gcal_event_id");
+
+    const linkIds = (linkRows ?? []).map((r: { gcal_event_id: string }) => r.gcal_event_id);
+    if (linkIds.length > 0) {
+      const linkReports = await detectCalendarDiscrepancies(linkIds);
+      const staleIds = linkReports.filter(r => r.status === "deleted").map(r => r.googleEventId);
+      if (staleIds.length > 0) {
+        await supabase.from("calendar_contact_links").delete().in("gcal_event_id", staleIds);
+        results.stale_links_pruned = staleIds.length;
+      } else {
+        results.stale_links_pruned = 0;
+      }
+    }
+  } catch (err) {
+    results.stale_links_error = err instanceof Error ? err.message : String(err);
+  }
+
   return NextResponse.json({ ...results, checked: googleIds.length, flagged });
 }

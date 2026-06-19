@@ -1694,6 +1694,8 @@ export type VesselRecurringLink = {
   gcal_event_id: string;
   service_label: string | null;
   invoice_amount: number | null;
+  invoice_rate: number | null;
+  invoice_qty: number | null;
   invoice_discount: number | null;
   auto_invoice: boolean;
 };
@@ -1703,12 +1705,22 @@ export async function getVesselRecurringLinks(vesselId: string): Promise<VesselR
   const supabase = await svc();
   const { data } = await supabase
     .from("calendar_contact_links")
-    .select("gcal_event_id, service_label, invoice_amount, invoice_discount, auto_invoice")
+    .select("gcal_event_id, service_label, invoice_amount, invoice_rate, invoice_qty, invoice_discount, auto_invoice")
     .eq("vessel_id", vesselId)
     .order("service_label");
 
   const rows = data ?? [];
   if (!rows.length) return [];
+
+  const mapRow = (r: typeof rows[number]): VesselRecurringLink => ({
+    gcal_event_id:    r.gcal_event_id,
+    service_label:    r.service_label ?? null,
+    invoice_amount:   r.invoice_amount != null ? Number(r.invoice_amount) : null,
+    invoice_rate:     r.invoice_rate != null ? Number(r.invoice_rate) : null,
+    invoice_qty:      r.invoice_qty != null ? Number(r.invoice_qty) : null,
+    invoice_discount: r.invoice_discount != null ? Number(r.invoice_discount) : null,
+    auto_invoice:     r.auto_invoice ?? false,
+  });
 
   // Auto-prune links whose Google Calendar event was deleted outside the CRM.
   try {
@@ -1718,24 +1730,9 @@ export async function getVesselRecurringLinks(vesselId: string): Promise<VesselR
     if (staleIds.size > 0) {
       await supabase.from("calendar_contact_links").delete().in("gcal_event_id", [...staleIds]);
     }
-    return rows
-      .filter(r => !staleIds.has(r.gcal_event_id))
-      .map(r => ({
-        gcal_event_id:    r.gcal_event_id,
-        service_label:    r.service_label ?? null,
-        invoice_amount:   r.invoice_amount != null ? Number(r.invoice_amount) : null,
-        invoice_discount: r.invoice_discount != null ? Number(r.invoice_discount) : null,
-        auto_invoice:     r.auto_invoice ?? false,
-      }));
+    return rows.filter(r => !staleIds.has(r.gcal_event_id)).map(mapRow);
   } catch {
-    // If GCal check fails, return the full list without pruning.
-    return rows.map(r => ({
-      gcal_event_id:    r.gcal_event_id,
-      service_label:    r.service_label ?? null,
-      invoice_amount:   r.invoice_amount != null ? Number(r.invoice_amount) : null,
-      invoice_discount: r.invoice_discount != null ? Number(r.invoice_discount) : null,
-      auto_invoice:     r.auto_invoice ?? false,
-    }));
+    return rows.map(mapRow);
   }
 }
 
