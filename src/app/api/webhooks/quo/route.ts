@@ -282,16 +282,17 @@ async function handleInboundSms(obj: Record<string, unknown>) {
   if (!contact) {
     const trimmed = body.trim();
     const replyKeywords = /^(stop|unstop|start|cancel|end|quit|unsubscribe|help|yes|no|y|n|ok|okay)$/i;
-    // Verification/OTP messages from automated senders. Any mention of "code"
-    // is treated as a verification SMS — real prospects describe their boat,
-    // they don't say "code".
+    // Verification/OTP messages from automated senders.
     const verificationPatterns = /\bcode\b|\b(otp|2fa|two[- ]?factor|passcode|do not share|don't share)\b|^G-\d{4,}/i;
+    // Wireless marketing compliance boilerplate: opt-in confirmations, unsubscribe notices, promotional blasts.
+    const marketingOptinPatterns = /opted[- ]?in|opted[- ]?out|msg\s*&\s*data rates|message\s*&\s*data rates|message frequency varies|periodic messaging|reply\s+stop|respond with\s+.?stop.?|thanks for subscribing|subscrib\w+ to text messages|to opt[- ]?out|unsubscribe at any time|download our (free )?mobile app/i;
     const isJustCode = /^[A-Z]?-?\d{4,8}$/.test(trimmed);
 
     if (
       trimmed.length > 3 &&
       !replyKeywords.test(trimmed) &&
       !verificationPatterns.test(trimmed) &&
+      !marketingOptinPatterns.test(trimmed) &&
       !isJustCode
     ) {
       await createQuoLead(supabase, normalized);

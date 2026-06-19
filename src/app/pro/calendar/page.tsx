@@ -26,7 +26,7 @@ async function fetchLinkMap(): Promise<Record<string, EventLink>> {
     );
     const { data } = await supabase
       .from("calendar_contact_links")
-      .select("gcal_event_id, contact_id, vessel_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, auto_invoice, contacts(name), vessels(name, make_model)");
+      .select("gcal_event_id, contact_id, vessel_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, auto_invoice, color_id, contacts(name), vessels(name, make_model)");
 
     const map: Record<string, EventLink> = {};
     for (const row of data ?? []) {
@@ -43,6 +43,7 @@ async function fetchLinkMap(): Promise<Record<string, EventLink>> {
         invoiceQty:      row.invoice_qty ?? null,
         invoiceRate:     row.invoice_rate ?? null,
         autoInvoice:     row.auto_invoice ?? false,
+        colorId:         row.color_id ?? null,
       };
     }
     return map;

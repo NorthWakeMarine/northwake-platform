@@ -8,6 +8,7 @@ import {
   deleteAsset,
   getContactCalendarEvents, type ContactCalendarEvent,
   getVesselRecurringLinks, type VesselRecurringLink,
+  unlinkCalendarEvent,
 } from "@/app/actions";
 
 export type VesselService = {
@@ -501,8 +502,10 @@ function fmtEventDate(iso: string): string {
 }
 
 function RecurringLinksSection({ vesselId }: { vesselId: string }) {
-  const [links, setLinks] = useState<VesselRecurringLink[] | null>(null);
-  const [loading, startLoad] = useTransition();
+  const [links, setLinks]           = useState<VesselRecurringLink[] | null>(null);
+  const [loading, startLoad]        = useTransition();
+  const [confirmId, setConfirmId]   = useState<string | null>(null);
+  const [unlinking, setUnlinking]   = useState<string | null>(null);
 
   useEffect(() => {
     startLoad(async () => {
@@ -511,6 +514,14 @@ function RecurringLinksSection({ vesselId }: { vesselId: string }) {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vesselId]);
+
+  async function handleUnlink(gcalEventId: string) {
+    setUnlinking(gcalEventId);
+    await unlinkCalendarEvent(gcalEventId);
+    setLinks(prev => prev ? prev.filter(l => l.gcal_event_id !== gcalEventId) : prev);
+    setConfirmId(null);
+    setUnlinking(null);
+  }
 
   if (loading) return (
     <div className="flex flex-col gap-2">
@@ -537,6 +548,8 @@ function RecurringLinksSection({ vesselId }: { vesselId: string }) {
           const gross = link.invoice_amount ?? 0;
           const disc  = link.invoice_discount ?? 0;
           const net   = Math.max(0, gross - disc);
+          const isConfirming = confirmId === link.gcal_event_id;
+          const isBusy       = unlinking === link.gcal_event_id;
           return (
             <div key={link.gcal_event_id} className="border border-slate-100 rounded-sm px-3 py-2.5 flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -554,14 +567,41 @@ function RecurringLinksSection({ vesselId }: { vesselId: string }) {
                   )}
                 </div>
               </div>
-              {gross > 0 && (
-                <div className="text-right shrink-0">
-                  <p className="text-xs font-bold text-slate-800">${net.toFixed(2)}/mo</p>
-                  {disc > 0 && (
-                    <p className="text-[9px] text-slate-400 line-through">${gross.toFixed(2)}</p>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center gap-2 shrink-0">
+                {gross > 0 && (
+                  <div className="text-right">
+                    <p className="text-xs font-bold text-slate-800">${net.toFixed(2)}/mo</p>
+                    {disc > 0 && (
+                      <p className="text-[9px] text-slate-400 line-through">${gross.toFixed(2)}</p>
+                    )}
+                  </div>
+                )}
+                {isConfirming ? (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleUnlink(link.gcal_event_id)}
+                      disabled={isBusy}
+                      className="text-[9px] tracking-widest uppercase font-semibold text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
+                    >
+                      {isBusy ? "..." : "Confirm"}
+                    </button>
+                    <button
+                      onClick={() => setConfirmId(null)}
+                      className="text-[9px] tracking-widest uppercase font-semibold text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmId(link.gcal_event_id)}
+                    className="text-[9px] tracking-widest uppercase font-semibold text-slate-300 hover:text-red-400 transition-colors"
+                    title="Remove this service link"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

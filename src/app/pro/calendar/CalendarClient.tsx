@@ -34,6 +34,7 @@ export type EventLink = {
   invoiceQty: number | null;
   invoiceRate: number | null;
   autoInvoice: boolean;
+  colorId: string | null;
 };
 
 // ── Google Calendar color map ──────────────────────────────────────────────────
@@ -669,11 +670,10 @@ function EventDetailModal({ event, linkMap, serviceTemplates, onEdit, onDelete, 
     ? new Date(...(event.start.split("-").map(Number) as [number, number, number]).map((v, i) => i === 1 ? v - 1 : v) as [number, number, number]).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
     : new Date(event.start).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const timeStr = isAllDay ? "All day" : `${fmtTime(event.start)} – ${fmtTime(event.end)}`;
-  const color = getEventColor(event.colorId);
-
   // Resolve link: prefer direct ID match, fall back to series base ID
   const link = linkMap[event.id] ?? (event.recurringEventId ? linkMap[event.recurringEventId] : undefined);
   const linkKey = linkMap[event.id] !== undefined ? event.id : (event.recurringEventId ?? event.id);
+  const color = getEventColor(event.colorId ?? link?.colorId ?? undefined);
 
   const [invoiceSuccess, setInvoiceSuccess] = useState<{ url: string; docNumber: string } | null>(null);
 
@@ -939,9 +939,10 @@ function DeleteConfirm({ event, onClose }: { event: CalendarEvent; onClose: () =
 
 // ── Day Events Modal (overflow) ────────────────────────────────────────────────
 
-function DayEventsModal({ day, dayEvents, onEventClick, onClose }: {
+function DayEventsModal({ day, dayEvents, linkMap, onEventClick, onClose }: {
   day: Date;
   dayEvents: CalendarEvent[];
+  linkMap: Record<string, EventLink>;
   onEventClick: (e: CalendarEvent) => void;
   onClose: () => void;
 }) {
@@ -956,7 +957,8 @@ function DayEventsModal({ day, dayEvents, onEventClick, onClose }: {
         </div>
         <div className="overflow-y-auto flex-1 p-3 flex flex-col gap-2">
           {dayEvents.map(ev => {
-            const color = getEventColor(ev.colorId);
+            const evLink = linkMap[ev.id] ?? (ev.recurringEventId ? linkMap[ev.recurringEventId] : undefined);
+            const color = getEventColor(ev.colorId ?? evLink?.colorId ?? undefined);
             const isAllDay = !ev.start.includes("T");
             return (
               <button
@@ -989,10 +991,11 @@ const EVENT_H  = 22;   // px — height of each event banner
 const EVENT_GAP = 2;   // px — gap between banner rows
 const MAX_SLOTS = 3;   // visible event rows before "+N more"
 
-function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDeleteClick, onOverflowClick }: {
+function MonthGrid({ monthDate, events, today, linkMap, onDayClick, onEventClick, onDeleteClick, onOverflowClick }: {
   monthDate: Date;
   events: CalendarEvent[];
   today: Date;
+  linkMap: Record<string, EventLink>;
   onDayClick: (iso: string) => void;
   onEventClick: (e: CalendarEvent) => void;
   onDeleteClick: (e: CalendarEvent) => void;
@@ -1099,7 +1102,8 @@ function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDelet
             {weekSegs
               .filter(s => s.slotRow < MAX_SLOTS)
               .map((seg, si) => {
-                const color = getEventColor(seg.event.colorId);
+                const segLink = linkMap[seg.event.id] ?? (seg.event.recurringEventId ? linkMap[seg.event.recurringEventId] : undefined);
+                const color = getEventColor(seg.event.colorId ?? segLink?.colorId ?? undefined);
                 const isAllDay = !seg.event.start.includes("T");
                 const timeLabel = isAllDay ? null : fmtTime(seg.event.start);
                 const isMultiDay = seg.colSpan > 1 || !seg.isStart || !seg.isEnd;
@@ -1158,10 +1162,11 @@ function MonthGrid({ monthDate, events, today, onDayClick, onEventClick, onDelet
 
 // ── Week Grid ──────────────────────────────────────────────────────────────────
 
-function WeekGrid({ weekStart, events, today, onDayClick, onEventClick, onDeleteClick }: {
+function WeekGrid({ weekStart, events, today, linkMap, onDayClick, onEventClick, onDeleteClick }: {
   weekStart: Date;
   events: CalendarEvent[];
   today: Date;
+  linkMap: Record<string, EventLink>;
   onDayClick: (iso: string) => void;
   onEventClick: (e: CalendarEvent) => void;
   onDeleteClick: (e: CalendarEvent) => void;
@@ -1205,7 +1210,8 @@ function WeekGrid({ weekStart, events, today, onDayClick, onEventClick, onDelete
 
             <div className="flex-1 p-1.5 flex flex-col gap-1 overflow-y-auto">
               {dayEvents.map(ev => {
-                const color = getEventColor(ev.colorId);
+                const dayEvLink = linkMap[ev.id] ?? (ev.recurringEventId ? linkMap[ev.recurringEventId] : undefined);
+                const color = getEventColor(ev.colorId ?? dayEvLink?.colorId ?? undefined);
                 return (
                   <div
                     key={ev.id}
@@ -1379,6 +1385,7 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
               monthDate={monthDate}
               events={events}
               today={today}
+              linkMap={linkMap}
               onDayClick={openCreate}
               onEventClick={openDetail}
               onDeleteClick={openDelete}
@@ -1389,6 +1396,7 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
               weekStart={weekStart}
               events={events}
               today={today}
+              linkMap={linkMap}
               onDayClick={openCreate}
               onEventClick={openDetail}
               onDeleteClick={openDelete}
@@ -1478,6 +1486,7 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
         <DayEventsModal
           day={overflowDay}
           dayEvents={overflowDayEvents}
+          linkMap={linkMap}
           onEventClick={openDetail}
           onClose={closeOverflow}
         />
