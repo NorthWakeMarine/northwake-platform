@@ -195,7 +195,7 @@ export default async function VesselsPage() {
                         const ownerId = vessel.contacts?.id;
                         const ownerName = vessel.contacts?.name ?? "Unknown";
                         return (
-                          <tr key={vessel.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors cursor-pointer" onClick={() => { window.location.href = `/pro/vessels/${vessel.id}`; }}>
+                          <tr key={vessel.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
                             <td className="px-6 py-3.5">
                               <Link href={`/pro/vessels/${vessel.id}`} className="font-medium text-slate-800 hover:text-[#000080] transition-colors">
                                 {[vessel.year, vessel.make_model, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" - ") || "Unnamed"}
@@ -214,20 +214,22 @@ export default async function VesselsPage() {
                               )}
                             </td>
                             <td className="px-4 py-3.5">
-                              <div className="flex items-center gap-2">
+                              <Link href={`/pro/vessels/${vessel.id}`} className="flex items-center gap-2">
                                 <span className={healthDot[status]} />
                                 <span className={`text-xs font-medium ${healthTextCls[status]}`}>{healthLabel[status]}</span>
-                              </div>
+                              </Link>
                             </td>
                             <td className="px-4 py-3.5">
-                              {due ? (
-                                <div>
-                                  <div className="text-sm text-slate-700">{due.name}</div>
-                                  <div className={`text-[11px] mt-0.5 ${healthTextCls[status]}`}>{due.daysAgo}d since last service</div>
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 text-xs">No schedule set</span>
-                              )}
+                              <Link href={`/pro/vessels/${vessel.id}`} className="block">
+                                {due ? (
+                                  <div>
+                                    <div className="text-sm text-slate-700">{due.name}</div>
+                                    <div className={`text-[11px] mt-0.5 ${healthTextCls[status]}`}>{due.daysAgo}d since last service</div>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 text-xs">No schedule set</span>
+                                )}
+                              </Link>
                             </td>
                           </tr>
                         );
