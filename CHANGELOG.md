@@ -2,6 +2,13 @@
 
 ## June 2026
 
+### June 19 | Auto-sync leads to Quo as contacts | CRM + Integrations
+
+- **Lead intake pushes to OpenPhone**: `ingestContact()` now creates an OpenPhone contact (role: "Lead") whenever a brand-new contact is created from a website form or Google Ads submission. The OpenPhone contact ID is stored on the contact record so future updates can reference it.
+- **Google Ads leads mirror to contacts**: the Google Ads webhook previously only wrote to the `leads` table. It now also calls `ingestContact()` fire-and-forget, so Google Ads leads appear in Contacts and push to OpenPhone just like website form leads.
+- **Conversion retagging**: `convertLead()` and `mergeLead()` both fire a background update to OpenPhone on conversion. The contact is retagged `role: "Customer"` and vessel type/length are written to the OpenPhone company field (e.g., "MasterCraft X24"), so the contact is findable by vessel in Quo.
+- **CRM call buttons open Quo**: all `tel:` links inside the pro CRM (leads list, lead detail, contacts list, contact detail card, linked contacts) now use `openphone://call?number=` so clicking "Call" opens the Quo desktop/mobile app directly instead of the system dialer. Public landing pages keep `tel:`.
+
 ### June 17 | Other contacts tab with label tagging | CRM
 
 - **New "Other" tab** on the Contacts page for misc contacts (interviewees, references, contractors, etc.) that should not appear in Customers or sync to QuickBooks.
