@@ -140,6 +140,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
     const tpl = templates.find(t => t.id === id);
     if (!tpl) return;
     setServiceLabel(tpl.service_label);
+    if (tpl.description) setNotes(tpl.description);
     if (tpl.is_per_foot) {
       const v = vessels.find(v => v.id === vesselId);
       const ft = v?.length_ft ? parseFloat(v.length_ft) : null;

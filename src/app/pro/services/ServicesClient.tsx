@@ -71,6 +71,17 @@ function TemplateForm({
         </p>
       )}
 
+      <div className="flex flex-col gap-1">
+        <label className={labelCls}>Calendar Notes (optional)</label>
+        <textarea
+          name="description"
+          rows={3}
+          defaultValue={template?.description ?? ""}
+          placeholder="Access instructions, service details, etc. Pre-fills the Notes field when this template is selected in New+."
+          className={`${inputCls} resize-none`}
+        />
+        <p className="text-[10px] text-slate-400">Paste into the calendar event automatically. You can still edit it per booking.</p>
+      </div>
 
       {state.error && <p className="text-red-600 text-xs">{state.error}</p>}
 
@@ -162,6 +173,9 @@ export default function ServicesClient({ templates: initial }: { templates: Serv
                   <div className="flex items-center gap-6 min-w-0">
                     <div className="min-w-0">
                       <p className="text-slate-800 text-sm font-semibold truncate">{t.name}</p>
+                      {t.description && (
+                        <p className="text-slate-400 text-xs truncate mt-0.5 max-w-xs">{t.description}</p>
+                      )}
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-slate-800 text-sm font-bold">

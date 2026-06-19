@@ -216,20 +216,13 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="px-3 py-5 border-b border-white/[0.07] flex items-center justify-center">
           <Link href="/pro/pipeline" className="flex items-center gap-3 min-w-0 group/logo">
-            <div
-              className="w-9 h-9 bg-[#000080] flex items-center justify-center shrink-0 transition-shadow duration-300 group-hover/logo:shadow-[0_0_14px_rgba(80,100,255,0.5)]"
-              style={{
-                boxShadow: "inset 0 0 0 1px rgba(160, 163, 166, 0.4), inset 0 1px 0 rgba(216, 218, 220, 0.3)",
-              }}
-            >
-              <Image
-                src={clientConfig.logoWhiteSvg}
-                alt={clientConfig.companyName}
-                width={22}
-                height={22}
-                className="w-5 h-5 opacity-90"
-              />
-            </div>
+            <Image
+              src={clientConfig.logoWhiteSvg}
+              alt={clientConfig.companyName}
+              width={36}
+              height={36}
+              className="w-9 h-9 opacity-90 shrink-0"
+            />
             {!collapsed && (
               <div className="leading-none">
                 <p className="text-white text-[11px] font-bold tracking-[0.15em]">{clientConfig.companyShortName}</p>
