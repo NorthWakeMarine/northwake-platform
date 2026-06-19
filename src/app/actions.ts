@@ -1666,6 +1666,30 @@ export async function getContactCalendarEvents(contactId: string): Promise<Conta
     .sort((a, b) => a.start.localeCompare(b.start));
 }
 
+export async function getVesselCalendarEvents(vesselId: string): Promise<ContactCalendarEvent[]> {
+  const supabase = await svc();
+  const { data: links } = await supabase
+    .from("calendar_contact_links")
+    .select("gcal_event_id, vessel_id")
+    .eq("vessel_id", vesselId);
+
+  if (!links?.length) return [];
+
+  const { getEventById } = await import("@/lib/google-calendar");
+  const settled = await Promise.allSettled(
+    links.map(async (link) => {
+      const ev = await getEventById(link.gcal_event_id);
+      if (!ev) return null;
+      return { id: ev.id, title: ev.title, start: ev.start, end: ev.end, location: ev.location, vesselId: link.vessel_id ?? null } as ContactCalendarEvent;
+    })
+  );
+
+  return settled
+    .filter((r): r is PromiseFulfilledResult<ContactCalendarEvent | null> => r.status === "fulfilled" && r.value !== null)
+    .map((r) => r.value!)
+    .sort((a, b) => a.start.localeCompare(b.start));
+}
+
 export type VesselRecurringLink = {
   gcal_event_id: string;
   service_label: string | null;

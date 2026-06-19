@@ -195,11 +195,11 @@ export default async function VesselsPage() {
                         const ownerId = vessel.contacts?.id;
                         const ownerName = vessel.contacts?.name ?? "Unknown";
                         return (
-                          <tr key={vessel.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
+                          <tr key={vessel.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors cursor-pointer" onClick={() => { window.location.href = `/pro/vessels/${vessel.id}`; }}>
                             <td className="px-6 py-3.5">
-                              <div className="font-medium text-slate-800">
+                              <Link href={`/pro/vessels/${vessel.id}`} className="font-medium text-slate-800 hover:text-[#000080] transition-colors">
                                 {[vessel.year, vessel.make_model, vessel.length_ft ? `${vessel.length_ft.replace(/\s*ft\s*$/i, "")}ft` : null].filter(Boolean).join(" - ") || "Unnamed"}
-                              </div>
+                              </Link>
                               {vessel.name && (
                                 <div className="text-[11px] text-slate-400 mt-0.5">{vessel.name}</div>
                               )}
@@ -245,7 +245,7 @@ export default async function VesselsPage() {
                     const ownerName = vessel.contacts?.name ?? "Unknown";
                     const href = ownerId ? `/pro/contacts/${ownerId}` : "#";
                     return (
-                      <Link key={vessel.id} href={href} className="flex items-start gap-3 px-5 py-4 hover:bg-slate-50/60 transition-colors">
+                      <Link key={vessel.id} href={`/pro/vessels/${vessel.id}`} className="flex items-start gap-3 px-5 py-4 hover:bg-slate-50/60 transition-colors">
                         <span className={`mt-1.5 ${healthDot[status]}`} />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-slate-800 text-sm truncate">

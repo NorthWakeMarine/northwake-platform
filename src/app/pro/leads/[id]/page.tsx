@@ -50,7 +50,8 @@ const sourceConfig: Record<string, { label: string; cls: string; description: st
   api:         { label: "API Ingest",             cls: "bg-slate-100 text-slate-600 border border-slate-200", description: "Received via the universal ingest API." },
   quo:         { label: "Quo — Inbound Call",     cls: "bg-purple-50 text-purple-700 border border-purple-200", description: "Auto-created from an inbound call via Quo." },
   google_ads:  { label: "Google Ads",             cls: "bg-green-50 text-green-700 border border-green-200",  description: "Generated from a Google Ads lead form." },
-  manual:      { label: "Manual Entry",           cls: "bg-amber-50 text-amber-700 border border-amber-200",  description: "Entered manually by the team." },
+  manual:           { label: "Manual Entry",           cls: "bg-amber-50 text-amber-700 border border-amber-200",  description: "Entered manually by the team." },
+  service_reminder: { label: "Service Reminder",       cls: "bg-orange-50 text-orange-700 border border-orange-200", description: "Auto-created from an overdue service interval." },
 };
 
 const eventConfig: Record<string, { dot: string }> = {
@@ -312,6 +313,19 @@ export default async function LeadDetailPage({
 
             {/* Left: lead data */}
             <div className="lg:col-span-2 flex flex-col gap-5">
+
+              {/* Service reminder flag */}
+              {lead.source === "service_reminder" && lead.message && (
+                <div className="bg-orange-50 border border-orange-200 rounded-md px-5 py-4 flex gap-3 items-start">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c2410c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                  <div>
+                    <p className="text-[10px] tracking-widest uppercase font-semibold text-orange-700 mb-1">Service Due</p>
+                    <p className="text-sm text-orange-900 leading-snug">{lead.message}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Contact info */}
               <div className="bg-[#F1F2F5] neu-card rounded-md p-6">
