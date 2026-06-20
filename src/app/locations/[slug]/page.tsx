@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!loc) return {};
 
   const title = `Marine Services in ${loc.name}, FL | ${clientConfig.companyName}`;
-  const description = `${clientConfig.companyName} provides professional marine detailing, maintenance, and vessel management in ${loc.name}, FL. Mobile services that come to your dock or marina.`;
+  const description = `${clientConfig.companyName} provides professional marine detailing, outboard engine service, and vessel management in ${loc.name}, FL. Mobile services that come to your dock or marina.`;
 
   return {
     title,

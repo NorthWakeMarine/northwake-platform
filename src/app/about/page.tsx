@@ -19,7 +19,7 @@ async function getCMS(): Promise<Record<string, string>> {
 
 export const metadata: Metadata = {
   title: `About ${clientConfig.companyName}, ${clientConfig.city}'s Premier Services`,
-  description: `Learn about ${clientConfig.companyName}'s story and commitment to delivering the highest level of care in ${clientConfig.city}, ${clientConfig.state}.`,
+  description: `Learn about ${clientConfig.companyName}'s story, Yamaha-certified outboard mechanics, and commitment to the highest level of marine care in ${clientConfig.city}, ${clientConfig.state}.`,
   keywords: clientConfig.seoKeywords,
   openGraph: {
     title: `About ${clientConfig.companyName} | ${clientConfig.city}'s Premier Services`,
@@ -206,7 +206,7 @@ export default async function AboutPage() {
                 {
                   icon: "△",
                   title: "Continuous Certification",
-                  body: "Certification isn't a one-time box to check. We mandate ongoing training as products, coatings, and best practices evolve.",
+                  body: "Our Yamaha-certified outboard mechanic brings factory-trained expertise to scheduled engine services and diagnostics. We stay current so every client gets work done right.",
                 },
                 {
                   icon: "⬡",

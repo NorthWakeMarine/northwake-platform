@@ -185,7 +185,7 @@ export const clientConfig: ClientConfig = {
 
   seoTitle: "NorthWake Marine | Premium Boat Detailing & Vessel Management: Jacksonville, FL",
   seoDescription:
-    "Jacksonville's premier marine services company. Expert ceramic coating, monthly boat maintenance, and full-service yacht management on the St. Johns River and beyond.",
+    "Jacksonville's premier marine services company. Expert ceramic coating, monthly boat maintenance, Yamaha-certified outboard engine service, and full-service yacht management on the St. Johns River and beyond.",
   seoKeywords: [
     "boat detailing Jacksonville FL",
     "ceramic coating marine Jacksonville",
@@ -193,6 +193,11 @@ export const clientConfig: ClientConfig = {
     "vessel maintenance Florida",
     "boat cleaning Jacksonville",
     "marine services St Johns River",
+    "boat mechanic Jacksonville FL",
+    "outboard engine service Jacksonville",
+    "Yamaha outboard service Jacksonville",
+    "marine engine repair Jacksonville FL",
+    "outboard motor service Jacksonville",
     "NorthWake Marine",
   ],
   localBusinessType: "LocalBusiness",
@@ -366,24 +371,24 @@ export const clientConfig: ClientConfig = {
         "Full bow-to-stern boat detailing in Jacksonville, FL. Includes clay bar, multi-stage compounding, polishing, sealant, interior cleaning, and optional engine bay service.",
     },
     {
-      id: "captain-crew",
-      icon: "◉",
-      tier: "Transport",
+      id: "outboard-engine-service",
+      icon: "⬡",
+      tier: "Mechanical",
       badge: null,
-      title: "Captain & Crew Services",
-      tagline: "Experienced Professionals, On Demand",
+      title: "Outboard Engine Service",
+      tagline: "Yamaha Certified. All Brands Welcome.",
       description:
-        "Qualified captains, deckhands, and crew available on a day-rate or contract basis. Whether you need help moving a vessel, running a charter, delivery captaining, or simply want extra experienced hands onboard, we provide reliable, licensed marine professionals.",
+        "Scheduled maintenance keeps your outboard running clean and reliable. Our Yamaha-certified mechanic performs 100-hour and 300-hour services, oil and filter changes, gear lube, spark plug replacement, fuel filter service, and impeller inspections on Yamaha and non-Yamaha outboards.",
       includes: [
-        "USCG-licensed captains",
-        "Day-rate & contract crew",
-        "Delivery captaining (local & coastal)",
-        "Charter support crew",
-        "New vessel pickup & relocation",
-        "On-call scheduling available",
+        "100-hour & 300-hour service",
+        "Engine oil & filter change",
+        "Gear lube service",
+        "Spark plug replacement",
+        "Fuel filter service",
+        "Impeller inspection",
       ],
       schemaDescription:
-        "Captain and crew services in Jacksonville, FL. USCG-licensed captains and experienced crew available for charters, deliveries, and vessel relocations.",
+        "Yamaha-certified outboard engine service in Jacksonville, FL. 100-hour and 300-hour maintenance, oil changes, gear lube, and impeller service for all outboard brands.",
     },
     {
       id: "ceramic-coating",
@@ -404,6 +409,46 @@ export const clientConfig: ClientConfig = {
       ],
       schemaDescription:
         "Professional 9H nano-ceramic coating application for boats and yachts in Jacksonville, FL. Provides up to 5 years of UV and salt-water protection with a mirror-grade finish.",
+    },
+    {
+      id: "captain-crew",
+      icon: "△",
+      tier: "Transport",
+      badge: null,
+      title: "Captain & Crew Services",
+      tagline: "Experienced Professionals, On Demand",
+      description:
+        "Qualified captains, deckhands, and crew available on a day-rate or contract basis. Whether you need help moving a vessel, running a charter, delivery captaining, or simply want extra experienced hands onboard, we provide reliable, licensed marine professionals.",
+      includes: [
+        "USCG-licensed captains",
+        "Day-rate & contract crew",
+        "Delivery captaining (local & coastal)",
+        "Charter support crew",
+        "New vessel pickup & relocation",
+        "On-call scheduling available",
+      ],
+      schemaDescription:
+        "Captain and crew services in Jacksonville, FL. USCG-licensed captains and experienced crew available for charters, deliveries, and vessel relocations.",
+    },
+    {
+      id: "outboard-diagnostics",
+      icon: "◉",
+      tier: "Mechanical",
+      badge: null,
+      title: "Outboard Diagnostics & Repair",
+      tagline: "Find the Problem. Get Back on the Water.",
+      description:
+        "When something feels off, bring it to us. We diagnose and troubleshoot outboard issues across all major brands, from overheating and no-start conditions to trim/tilt problems and propeller damage. Straightforward answers and honest repair work, no guesswork.",
+      includes: [
+        "Engine diagnostics & troubleshooting",
+        "Overheating diagnosis",
+        "No-start diagnosis",
+        "Trim & tilt service",
+        "Propeller inspection & service",
+        "All major brands serviced",
+      ],
+      schemaDescription:
+        "Outboard engine diagnostics and repair in Jacksonville, FL. Troubleshooting and repair for Yamaha and all major outboard brands.",
     },
     {
       id: "vinyl-upholstery",

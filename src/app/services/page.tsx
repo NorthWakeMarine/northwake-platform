@@ -9,11 +9,11 @@ const { services, companyName, siteUrl, city, state, seoKeywords } = clientConfi
 
 export const metadata: Metadata = {
   title: `${companyName} Services`,
-  description: `${companyName} offers expert marine detailing, ceramic coating, monthly maintenance washes, teak restoration, and full-service vessel management in ${city}, ${state}. Browse the full service catalog and request a free quote.`,
+  description: `${companyName} offers expert marine detailing, ceramic coating, Yamaha-certified outboard engine service, monthly maintenance washes, and full-service vessel management in ${city}, ${state}. Browse the full service catalog and request a free quote.`,
   keywords: seoKeywords,
   openGraph: {
     title: `Services | ${companyName}, ${city}, ${state}`,
-    description: `From maintenance washes to full-service management, ${companyName} offers concierge-level care.`,
+    description: `From maintenance washes and Yamaha-certified outboard service to full-service management, ${companyName} offers concierge-level care.`,
     url: `${siteUrl}/services`,
   },
   alternates: { canonical: `${siteUrl}/services` },
