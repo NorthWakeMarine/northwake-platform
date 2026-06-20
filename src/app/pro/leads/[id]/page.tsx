@@ -483,7 +483,12 @@ export default async function LeadDetailPage({
 
               {/* Timeline if contact matched */}
               {contact && (() => {
-                const activityEvents = timeline.filter(e => e.event_type !== "call" && e.event_type !== "sms");
+                const PHONE_TITLE_RE = /^(inbound|outbound)\s+(call|sms|voicemail)\b|^missed call\b/i;
+                const activityEvents = timeline.filter(e =>
+                  e.event_type !== "call" &&
+                  e.event_type !== "sms" &&
+                  !PHONE_TITLE_RE.test(e.title ?? "")
+                );
                 return (
                 <div className="bg-[#F1F2F5] neu-card rounded-md flex flex-col">
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
