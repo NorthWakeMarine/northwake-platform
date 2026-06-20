@@ -2,42 +2,49 @@ import type { MetadataRoute } from "next";
 import { clientConfig } from "@/config/client";
 
 const BASE = clientConfig.siteUrl;
+const UPDATED = new Date("2026-06-20");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: BASE,
-      lastModified: new Date("2025-05-01"),
+      lastModified: UPDATED,
       changeFrequency: "monthly",
       priority: 1.0,
     },
     {
       url: `${BASE}/services`,
-      lastModified: new Date("2025-05-01"),
+      lastModified: UPDATED,
       changeFrequency: "monthly",
       priority: 1.0,
     },
     {
       url: `${BASE}/contact`,
-      lastModified: new Date("2025-05-01"),
+      lastModified: UPDATED,
       changeFrequency: "yearly",
       priority: 1.0,
     },
     {
       url: `${BASE}/about`,
-      lastModified: new Date("2025-05-01"),
+      lastModified: UPDATED,
       changeFrequency: "yearly",
       priority: 0.8,
     },
     {
       url: `${BASE}/socials`,
-      lastModified: new Date("2025-05-01"),
+      lastModified: UPDATED,
       changeFrequency: "yearly",
       priority: 0.6,
     },
+    ...clientConfig.services.map((svc) => ({
+      url: `${BASE}/services/${svc.id}`,
+      lastModified: UPDATED,
+      changeFrequency: "monthly" as const,
+      priority: 0.9,
+    })),
     ...clientConfig.locations.map((loc) => ({
       url: `${BASE}/locations/${loc.slug}`,
-      lastModified: new Date("2025-05-01"),
+      lastModified: UPDATED,
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),

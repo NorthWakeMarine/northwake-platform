@@ -174,13 +174,20 @@ export default function ServicesPage() {
                   </div>
 
                   {/* Card footer */}
-                  <div className="px-7 pb-7">
+                  <div className="px-7 pb-7 flex items-center gap-4">
                     <Link
                       href={`/contact?service=${encodeURIComponent(svc.title)}`}
                       aria-label={`Request service: ${svc.title}`}
                       className="chrome-btn inline-block text-xs font-bold tracking-[0.25em] uppercase px-5 py-2.5 transition-all duration-300 hover:scale-105"
                     >
                       Request Service
+                    </Link>
+                    <Link
+                      href={`/services/${svc.id}`}
+                      aria-label={`Learn more about ${svc.title}`}
+                      className="text-xs font-semibold tracking-[0.2em] uppercase text-steel hover:text-wake transition-colors border-b border-steel-dark hover:border-wake pb-0.5"
+                    >
+                      Learn More
                     </Link>
                   </div>
                 </li>

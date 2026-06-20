@@ -183,9 +183,9 @@ export const clientConfig: ClientConfig = {
     accent: "#ffffff",
   },
 
-  seoTitle: "NorthWake Marine | Premium Boat Detailing & Vessel Management: Jacksonville, FL",
+  seoTitle: "NorthWake Marine | Boat Detailing, Engine Service & Vessel Management in Jacksonville, FL",
   seoDescription:
-    "Jacksonville's premier marine services company. Expert ceramic coating, monthly boat maintenance, Yamaha-certified outboard engine service, and full-service yacht management on the St. Johns River and beyond.",
+    "Jacksonville's premier marine services company. Expert ceramic coating, monthly boat maintenance, Yamaha-certified outboard engine service, boat transport, and full-service yacht management on the St. Johns River and beyond.",
   seoKeywords: [
     "boat detailing Jacksonville FL",
     "ceramic coating marine Jacksonville",
@@ -198,6 +198,15 @@ export const clientConfig: ClientConfig = {
     "Yamaha outboard service Jacksonville",
     "marine engine repair Jacksonville FL",
     "outboard motor service Jacksonville",
+    "boat transport Jacksonville FL",
+    "vessel transport Florida",
+    "marine transport Jacksonville",
+    "boat haul Jacksonville",
+    "yacht transport Jacksonville",
+    "boat transport company near me",
+    "salt removal boat wash Jacksonville",
+    "boat wash Jacksonville FL",
+    "hull cleaning Jacksonville",
     "NorthWake Marine",
   ],
   localBusinessType: "LocalBusiness",
