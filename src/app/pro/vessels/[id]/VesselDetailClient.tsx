@@ -49,10 +49,12 @@ function ServiceScheduleSection({
   vesselId,
   contactId,
   initialServices,
+  isAdmin,
 }: {
   vesselId: string;
   contactId: string | null;
   initialServices: VesselService[];
+  isAdmin: boolean;
 }) {
   const [services, setServices] = useState<VesselService[]>(initialServices);
   const [addState, addAction, isAdding]   = useActionState<VesselServiceState, FormData>(addVesselService, {});
@@ -118,12 +120,14 @@ function ServiceScheduleSection({
                   {INTERVAL_OPTIONS.map((o) => <option key={o.days} value={o.days}>{o.label}</option>)}
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
-                <input type="number" name="typical_price" step="0.01" min="0"
-                  placeholder="0.00" defaultValue={s.typical_price ?? ""}
-                  className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
-              </div>
+              {isAdmin && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
+                  <input type="number" name="typical_price" step="0.01" min="0"
+                    placeholder="0.00" defaultValue={s.typical_price ?? ""}
+                    className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
+                </div>
+              )}
               <NotificationsToggle defaultValue={notifOn} />
               {editState.error && <p className="text-red-500 text-[11px]">{editState.error}</p>}
               <div className="flex gap-2 pt-1">
@@ -184,7 +188,7 @@ function ServiceScheduleSection({
                 Last: {new Date(s.last_service_date + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </p>
             )}
-            {s.typical_price != null && (
+            {isAdmin && s.typical_price != null && (
               <p className="text-[10px] text-slate-400">Typical: ${Number(s.typical_price).toFixed(2)}</p>
             )}
           </div>
@@ -211,11 +215,13 @@ function ServiceScheduleSection({
                 {INTERVAL_OPTIONS.map((o) => <option key={o.days} value={o.days}>{o.label}</option>)}
               </select>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
-              <input type="number" name="typical_price" step="0.01" min="0" placeholder="0.00"
-                className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
-            </div>
+            {isAdmin && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
+                <input type="number" name="typical_price" step="0.01" min="0" placeholder="0.00"
+                  className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
+              </div>
+            )}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Last Done</label>
               <input type="date" name="last_service_date"
@@ -240,7 +246,7 @@ function ServiceScheduleSection({
   );
 }
 
-function RecurringServicesSection({ initialLinks }: { initialLinks: VesselRecurringLink[] }) {
+function RecurringServicesSection({ initialLinks, isAdmin }: { initialLinks: VesselRecurringLink[]; isAdmin: boolean }) {
   const [links, setLinks]         = useState<VesselRecurringLink[]>(initialLinks);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [unlinking, setUnlinking] = useState<string | null>(null);
@@ -290,7 +296,7 @@ function RecurringServicesSection({ initialLinks }: { initialLinks: VesselRecurr
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {gross > 0 && (
+                {isAdmin && gross > 0 && (
                   <div className="text-right">
                     <p className="text-xs font-bold text-slate-800">${net.toFixed(2)}/mo</p>
                     {disc > 0 && (
@@ -336,14 +342,21 @@ export default function VesselDetailClient({
   initialServices: VesselService[];
   initialRecurring: VesselRecurringLink[];
 }) {
+  const [isAdmin, setIsAdmin] = useState(true);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsAdmin((localStorage.getItem("pro-user-role") ?? "admin") === "admin");
+  }, []);
+
   return (
     <>
       <ServiceScheduleSection
         vesselId={vesselId}
         contactId={contactId}
         initialServices={initialServices}
+        isAdmin={isAdmin}
       />
-      <RecurringServicesSection initialLinks={initialRecurring} />
+      <RecurringServicesSection initialLinks={initialRecurring} isAdmin={isAdmin} />
     </>
   );
 }

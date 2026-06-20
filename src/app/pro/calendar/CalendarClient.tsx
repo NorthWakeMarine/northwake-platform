@@ -245,7 +245,7 @@ type InvoiceRecord = { id: string; title: string | null; body: string | null; me
 function LinkedPanel({
   event, link, linkKey, suggestedService, inputCls, serviceTemplates,
   showInvoice, setShowInvoice, invoiceState, invoiceAction, invoicing,
-  unlinking, unlinkError, handleUnlink, onInvoiceCreated,
+  unlinking, unlinkError, handleUnlink, onInvoiceCreated, isAdmin,
 }: {
   event: CalendarEvent;
   link: EventLink;
@@ -262,6 +262,7 @@ function LinkedPanel({
   unlinkError: string;
   handleUnlink: () => void;
   onInvoiceCreated: (url: string, docNumber: string) => void;
+  isAdmin: boolean;
 }) {
   const router = useRouter();
   const [showClaimInvoice,  setShowClaimInvoice]  = useState(false);
@@ -347,7 +348,7 @@ function LinkedPanel({
           </div>
         ) : (
           <div className="flex items-center gap-2 flex-wrap">
-            {link.qbCustomerId ? (
+            {isAdmin && link.qbCustomerId ? (
               <a
                 href={`https://app.qbo.intuit.com/app/invoice?customerId=${link.qbCustomerId}`}
                 target="_blank"
@@ -356,32 +357,36 @@ function LinkedPanel({
               >
                 Create Invoice
               </a>
-            ) : (
+            ) : isAdmin ? (
               <button
                 onClick={() => setShowInvoice(true)}
                 className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors"
               >
                 Create Invoice
               </button>
+            ) : null}
+            {isAdmin && (
+              <button
+                onClick={openClaimInvoice}
+                className="flex-1 border border-slate-200 text-slate-600 text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:border-slate-300 hover:text-slate-800 transition-colors"
+              >
+                Claim to Invoice
+              </button>
             )}
-            <button
-              onClick={openClaimInvoice}
-              className="flex-1 border border-slate-200 text-slate-600 text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:border-slate-300 hover:text-slate-800 transition-colors"
-            >
-              Claim to Invoice
-            </button>
-            <button
-              onClick={handleUnlink}
-              disabled={unlinking}
-              className="w-full text-[10px] tracking-widest uppercase font-semibold text-red-400 hover:text-red-600 transition-colors disabled:opacity-50 py-1"
-            >
-              {unlinking ? "..." : "Unlink"}
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleUnlink}
+                disabled={unlinking}
+                className="w-full text-[10px] tracking-widest uppercase font-semibold text-red-400 hover:text-red-600 transition-colors disabled:opacity-50 py-1"
+              >
+                {unlinking ? "..." : "Unlink"}
+              </button>
+            )}
           </div>
         )
       )}
 
-      {showInvoice && (
+      {isAdmin && showInvoice && (
         <form action={invoiceAction} className="flex flex-col gap-3">
           <input type="hidden" name="contact_id"    value={link.contactId} />
           <input type="hidden" name="gcal_event_id" value={event.id} />
@@ -455,7 +460,7 @@ function LinkedPanel({
                 ? Number(link.invoiceRate) * Number(link.invoiceQty ?? 1)
                 : Number(link.invoiceAmount ?? 0);
               const net = gross - Number(link.invoiceDiscount ?? 0);
-              return `Auto-invoice ON — $${net.toFixed(2)}`;
+              return isAdmin ? `Auto-invoice ON — $${net.toFixed(2)}` : "Auto-invoice ON";
             })()}
           </p>
           {link.serviceLabel && (
@@ -474,7 +479,7 @@ function LinkedPanel({
 type ContactResult = { id: string; name: string; email: string | null };
 type VesselOption  = { id: string; name: string | null; make_model: string | null; length_ft: string | null };
 
-function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUnlinked, onInvoiceCreated }: {
+function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUnlinked, onInvoiceCreated, isAdmin }: {
   event: CalendarEvent;
   link: EventLink | undefined;
   linkKey: string;
@@ -482,6 +487,7 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
   onLinked: () => void;
   onUnlinked: () => void;
   onInvoiceCreated: (url: string, docNumber: string) => void;
+  isAdmin: boolean;
 }) {
   const titleParts = event.title.split(" - ");
   const suggestedName    = titleParts[0].trim();
@@ -571,6 +577,7 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
         unlinkError={unlinkError}
         handleUnlink={handleUnlink}
         onInvoiceCreated={onInvoiceCreated}
+        isAdmin={isAdmin}
       />
     );
   }
@@ -669,13 +676,14 @@ function EventLinkPanel({ event, link, linkKey, serviceTemplates, onLinked, onUn
 
 // ── Event Detail Modal ─────────────────────────────────────────────────────────
 
-function EventDetailModal({ event, linkMap, serviceTemplates, onEdit, onDelete, onClose }: {
+function EventDetailModal({ event, linkMap, serviceTemplates, onEdit, onDelete, onClose, isAdmin }: {
   event: CalendarEvent;
   linkMap: Record<string, EventLink>;
   serviceTemplates: ServiceTemplate[];
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
+  isAdmin: boolean;
 }) {
   const isAllDay = !event.start.includes("T");
   const dateStr = isAllDay
@@ -731,6 +739,7 @@ function EventDetailModal({ event, linkMap, serviceTemplates, onEdit, onDelete, 
               onLinked={onClose}
               onUnlinked={onClose}
               onInvoiceCreated={(url, docNumber) => setInvoiceSuccess({ url, docNumber })}
+              isAdmin={isAdmin}
             />
           )}
         </div>
@@ -1267,6 +1276,13 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const [isAdmin, setIsAdmin] = useState(true);
+  useEffect(() => {
+    const role = localStorage.getItem("pro-user-role") ?? "admin";
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsAdmin(role === "admin");
+  }, []);
+
   const [viewMode,   setViewMode]   = useState<ViewMode>("month");
   const [monthDate,  setMonthDate]  = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [weekStart,  setWeekStart]  = useState(() => startOfWeek(today));
@@ -1425,6 +1441,7 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
           onEdit={() => openEdit(selected)}
           onDelete={() => openDelete(selected)}
           onClose={closeModal}
+          isAdmin={isAdmin}
         />
       )}
       {(modal === "create" || modal === "edit") && (

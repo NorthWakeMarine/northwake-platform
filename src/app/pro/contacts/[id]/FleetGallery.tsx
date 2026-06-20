@@ -267,8 +267,8 @@ function AddAssetForm({ contactId, onDone }: { contactId: string; onDone: () => 
   );
 }
 
-function ServiceScheduleSection({ asset, contactId, services }: {
-  asset: Asset; contactId: string; services: VesselService[];
+function ServiceScheduleSection({ asset, contactId, services, isAdmin }: {
+  asset: Asset; contactId: string; services: VesselService[]; isAdmin: boolean;
 }) {
   const [addState,     addAction,     isAdding]    = useActionState<VesselServiceState, FormData>(addVesselService, {});
   const [markState,    markAction,    isMarking]   = useActionState<VesselServiceState, FormData>(markServiced, {});
@@ -326,12 +326,14 @@ function ServiceScheduleSection({ asset, contactId, services }: {
                   {INTERVAL_OPTIONS.map((o) => <option key={o.days} value={o.days}>{o.label}</option>)}
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
-                <input type="number" name="typical_price" step="0.01" min="0"
-                  placeholder="0.00" defaultValue={s.typical_price ?? ""}
-                  className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
-              </div>
+              {isAdmin && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
+                  <input type="number" name="typical_price" step="0.01" min="0"
+                    placeholder="0.00" defaultValue={s.typical_price ?? ""}
+                    className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
+                </div>
+              )}
               <NotificationsField defaultValue={notifOn} />
               {editState.error && <p className="text-red-500 text-[11px]">{editState.error}</p>}
               <div className="flex gap-2 pt-1">
@@ -373,10 +375,12 @@ function ServiceScheduleSection({ asset, contactId, services }: {
                     Mark Done
                   </button>
                 </form>
-                <button type="button" onClick={() => setInvoicingId(invoicingId === s.id ? null : s.id)}
-                  className="text-[9px] tracking-widest uppercase text-[#000080] font-semibold hover:text-[#0000a0]">
-                  Create Invoice
-                </button>
+                {isAdmin && (
+                  <button type="button" onClick={() => setInvoicingId(invoicingId === s.id ? null : s.id)}
+                    className="text-[9px] tracking-widest uppercase text-[#000080] font-semibold hover:text-[#0000a0]">
+                    Create Invoice
+                  </button>
+                )}
                 <button type="button" onClick={() => setEditingId(s.id)}
                   className="text-[9px] tracking-widest uppercase text-slate-400 hover:text-slate-700 font-semibold">
                   Edit
@@ -394,7 +398,7 @@ function ServiceScheduleSection({ asset, contactId, services }: {
             {s.last_service_date && (
               <p className="text-[10px] text-slate-400">Last: {new Date(s.last_service_date + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
             )}
-            {s.typical_price !== null && s.typical_price !== undefined && (
+            {isAdmin && s.typical_price !== null && s.typical_price !== undefined && (
               <p className="text-[10px] text-slate-400">Typical: ${s.typical_price.toFixed(2)}</p>
             )}
             {invoicingId === s.id && (
@@ -445,11 +449,13 @@ function ServiceScheduleSection({ asset, contactId, services }: {
                 {INTERVAL_OPTIONS.map((o) => <option key={o.days} value={o.days}>{o.label}</option>)}
               </select>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
-              <input type="number" name="typical_price" step="0.01" min="0" placeholder="0.00"
-                className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
-            </div>
+            {isAdmin && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Typical Price ($)</label>
+                <input type="number" name="typical_price" step="0.01" min="0" placeholder="0.00"
+                  className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
+              </div>
+            )}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Last Done</label>
               <input type="date" name="last_service_date"
@@ -501,7 +507,7 @@ function fmtEventDate(iso: string): string {
     " · " + dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-function RecurringLinksSection({ vesselId }: { vesselId: string }) {
+function RecurringLinksSection({ vesselId, isAdmin }: { vesselId: string; isAdmin: boolean }) {
   const [links, setLinks]           = useState<VesselRecurringLink[] | null>(null);
   const [loading, startLoad]        = useTransition();
   const [confirmId, setConfirmId]   = useState<string | null>(null);
@@ -568,7 +574,7 @@ function RecurringLinksSection({ vesselId }: { vesselId: string }) {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {gross > 0 && (
+                {isAdmin && gross > 0 && (
                   <div className="text-right">
                     <p className="text-xs font-bold text-slate-800">${net.toFixed(2)}/mo</p>
                     {disc > 0 && (
@@ -676,8 +682,8 @@ function CalendarEventsSection({ contactId }: { contactId: string }) {
   );
 }
 
-function AssetModal({ asset, contactId, services, onClose }: {
-  asset: Asset; contactId: string; services: VesselService[]; onClose: () => void;
+function AssetModal({ asset, contactId, services, onClose, isAdmin }: {
+  asset: Asset; contactId: string; services: VesselService[]; onClose: () => void; isAdmin: boolean;
 }) {
   const [notesState, notesAction, isSaving] = useActionState<AssetState, FormData>(updateAssetNotes, {});
   const [editState, editAction, isEditing] = useActionState<AssetState, FormData>(updateAsset, {});
@@ -774,9 +780,9 @@ function AssetModal({ asset, contactId, services, onClose }: {
             </dl>
           )}
 
-          <ServiceScheduleSection asset={asset} contactId={contactId} services={services} />
+          <ServiceScheduleSection asset={asset} contactId={contactId} services={services} isAdmin={isAdmin} />
 
-          <RecurringLinksSection vesselId={asset.id} />
+          <RecurringLinksSection vesselId={asset.id} isAdmin={isAdmin} />
 
           <CalendarEventsSection contactId={contactId} />
 
@@ -861,6 +867,11 @@ export default function FleetGallery({
 }) {
   const [showAddForm, setShowAddForm]     = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [isAdmin, setIsAdmin] = useState(true);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsAdmin((localStorage.getItem("pro-user-role") ?? "admin") === "admin");
+  }, []);
 
   return (
     <div className="bg-[#F1F2F5] neu-card rounded-md">
@@ -960,6 +971,7 @@ export default function FleetGallery({
           contactId={contactId}
           services={vesselServices.filter(s => s.vessel_id === selectedAsset.id)}
           onClose={() => setSelectedAsset(null)}
+          isAdmin={isAdmin}
         />
       )}
     </div>
