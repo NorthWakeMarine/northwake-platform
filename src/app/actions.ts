@@ -3738,3 +3738,55 @@ export async function deleteServiceTemplate(id: string): Promise<{ error?: strin
   revalidatePath("/pro/services");
   return {};
 }
+
+// ─── Team & Role Management ───────────────────────────────────────────────────
+
+async function requireAdmin(): Promise<void> {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const role = (user.app_metadata?.role as string) ?? "admin";
+  if (role !== "admin") throw new Error("Insufficient permissions");
+}
+
+export async function setUserRole(
+  userId: string,
+  role: string
+): Promise<{ error?: string }> {
+  try {
+    await requireAdmin();
+    const supabase = await svc();
+    const { error } = await supabase.auth.admin.updateUserById(userId, {
+      app_metadata: { role },
+    });
+    if (error) return { error: error.message };
+    revalidatePath("/pro/settings");
+    return {};
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+export async function inviteTeamMember(
+  email: string,
+  fullName: string,
+  role: string
+): Promise<{ error?: string }> {
+  try {
+    await requireAdmin();
+    const supabase = await svc();
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      data: { full_name: fullName },
+    });
+    if (error) return { error: error.message };
+    if (data?.user) {
+      await supabase.auth.admin.updateUserById(data.user.id, {
+        app_metadata: { role },
+      });
+    }
+    revalidatePath("/pro/settings");
+    return {};
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}

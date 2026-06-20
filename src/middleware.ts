@@ -2,8 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// /pro sub-routes that require an authenticated session
-const PROTECTED_PRO = /^\/pro\/(pipeline|contacts|leads|integrations|editor|clients|vessels|schedule|settings)(\/.*)?$/;
+// All /pro sub-routes that require an authenticated session
+const PROTECTED_PRO = /^\/pro\/(pipeline|contacts|leads|integrations|editor|clients|vessels|calls|calendar|services|release-notes|settings)(\/.*)?$/;
+
+// Routes accessible to the 'crew' role
+const CREW_ALLOWED = /^\/pro\/(contacts|calendar|vessels)(\/.*)?$/;
 
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Frame-Options":                    "DENY",
@@ -57,17 +60,24 @@ export async function middleware(request: NextRequest) {
 
   // Refresh session so auth cookies stay alive on every request
   const { data: { user } } = await supabase.auth.getUser();
+  const role = (user?.app_metadata?.role as string) ?? "admin";
 
-  // ── /pro (login page) — skip if already authenticated
+  // ── /pro (login page) — redirect authenticated users to their landing page
   if (pathname === "/pro" && user) {
-    return NextResponse.redirect(new URL("/pro/pipeline", request.url));
+    const dest = role === "crew" ? "/pro/contacts" : "/pro/pipeline";
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
-  // ── /pro/(dashboard|clients|...) — require Supabase session
+  // ── Protected routes — require authentication
   if (PROTECTED_PRO.test(pathname) && !user) {
     const loginUrl = new URL("/pro", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // ── Role enforcement — crew members can only access allowed routes
+  if (user && role === "crew" && PROTECTED_PRO.test(pathname) && !CREW_ALLOWED.test(pathname)) {
+    return NextResponse.redirect(new URL("/pro/contacts", request.url));
   }
 
   // Stamp every response with security headers

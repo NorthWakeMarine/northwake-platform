@@ -8,60 +8,18 @@ import { signOut } from "@/app/actions";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { clientConfig } from "@/config/client";
 
-const bottomTabs = [
+type NavItem = {
+  href: string;
+  label: string;
+  roles: string[];
+  icon: React.ReactNode;
+};
+
+const allNavLinks: NavItem[] = [
   {
     href: "/pro/pipeline",
     label: "Pipeline",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
-        <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-      </svg>
-    ),
-  },
-  {
-    href: "/pro/leads",
-    label: "Leads",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-      </svg>
-    ),
-  },
-  {
-    href: "/pro/contacts",
-    label: "Contacts",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
-    href: "/pro/calls",
-    label: "Calls",
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-      </svg>
-    ),
-  },
-];
-
-const moreLinks = [
-  { href: "/pro/vessels", label: "Vessels" },
-  { href: "/pro/calendar", label: "Calendar" },
-  { href: "/pro/services", label: "Services" },
-  { href: "/pro/integrations", label: "Integrations" },
-  { href: "/pro/editor", label: "Site Editor" },
-  { href: "/pro/release-notes", label: "Release Notes" },
-];
-
-const navLinks = [
-  {
-    href: "/pro/pipeline",
-    label: "Pipeline",
+    roles: ["admin"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
@@ -72,6 +30,7 @@ const navLinks = [
   {
     href: "/pro/vessels",
     label: "Vessels",
+    roles: ["admin", "crew"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="5" r="3" />
@@ -83,6 +42,7 @@ const navLinks = [
   {
     href: "/pro/leads",
     label: "Leads",
+    roles: ["admin"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
@@ -92,6 +52,7 @@ const navLinks = [
   {
     href: "/pro/contacts",
     label: "Contacts",
+    roles: ["admin", "crew"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
@@ -102,6 +63,7 @@ const navLinks = [
   {
     href: "/pro/calls",
     label: "Calls",
+    roles: ["admin"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
@@ -111,6 +73,7 @@ const navLinks = [
   {
     href: "/pro/calendar",
     label: "Calendar",
+    roles: ["admin", "crew"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -121,6 +84,7 @@ const navLinks = [
   {
     href: "/pro/services",
     label: "Services",
+    roles: ["admin"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -132,6 +96,7 @@ const navLinks = [
   {
     href: "/pro/integrations",
     label: "Integrations",
+    roles: ["admin"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
@@ -142,6 +107,7 @@ const navLinks = [
   {
     href: "/pro/editor",
     label: "Site Editor",
+    roles: ["admin"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -152,6 +118,7 @@ const navLinks = [
   {
     href: "/pro/release-notes",
     label: "Release Notes",
+    roles: ["admin"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -162,12 +129,106 @@ const navLinks = [
       </svg>
     ),
   },
+  {
+    href: "/pro/settings",
+    label: "Settings",
+    roles: ["admin"],
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    ),
+  },
+];
+
+// Mobile bottom tab definitions (role-filtered at render time)
+const allBottomTabs = [
+  {
+    href: "/pro/pipeline",
+    label: "Pipeline",
+    roles: ["admin"],
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+      </svg>
+    ),
+  },
+  {
+    href: "/pro/leads",
+    label: "Leads",
+    roles: ["admin"],
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+      </svg>
+    ),
+  },
+  {
+    href: "/pro/contacts",
+    label: "Contacts",
+    roles: ["admin", "crew"],
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    href: "/pro/calls",
+    label: "Calls",
+    roles: ["admin"],
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/pro/calendar",
+    label: "Calendar",
+    roles: ["admin", "crew"],
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+        <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+    ),
+  },
+  {
+    href: "/pro/vessels",
+    label: "Vessels",
+    roles: ["admin", "crew"],
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="5" r="3" />
+        <line x1="12" y1="8" x2="12" y2="22" />
+        <path d="M5 15H2a10 10 0 0 0 20 0h-3" />
+      </svg>
+    ),
+  },
+];
+
+// More drawer links (admin-only items shown in overflow menu on mobile)
+const allMoreLinks = [
+  { href: "/pro/services", label: "Services", roles: ["admin"] },
+  { href: "/pro/integrations", label: "Integrations", roles: ["admin"] },
+  { href: "/pro/editor", label: "Site Editor", roles: ["admin"] },
+  { href: "/pro/settings", label: "Settings", roles: ["admin"] },
+  { href: "/pro/release-notes", label: "Release Notes", roles: ["admin"] },
 ];
 
 function parseName(email: string, meta: Record<string, string>) {
   const raw = meta?.full_name || meta?.name || email.split("@")[0] || "Admin";
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  crew: "Field Crew",
+};
 
 export default function ProShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -176,6 +237,9 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
   );
   const [userEmail, setUserEmail] = useState(
     () => (typeof window !== "undefined" && localStorage.getItem("pro-user-email")) || ""
+  );
+  const [userRole, setUserRole] = useState(
+    () => (typeof window !== "undefined" && localStorage.getItem("pro-user-role")) || "admin"
   );
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("sidebar-collapsed") === "true"
@@ -193,10 +257,13 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
       const email = data.user?.email ?? "";
       const meta = (data.user?.user_metadata ?? {}) as Record<string, string>;
       const name = parseName(email, meta);
+      const role = (data.user?.app_metadata?.role as string) ?? "admin";
       setUserName(name);
       setUserEmail(email);
+      setUserRole(role);
       localStorage.setItem("pro-user-name", name);
       localStorage.setItem("pro-user-email", email);
+      localStorage.setItem("pro-user-role", role);
     });
   }, []);
 
@@ -207,6 +274,10 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
     });
   }
 
+  const navLinks = allNavLinks.filter((l) => l.roles.includes(userRole));
+  const bottomTabs = allBottomTabs.filter((l) => l.roles.includes(userRole));
+  const moreLinks = allMoreLinks.filter((l) => l.roles.includes(userRole));
+
   return (
     <div className="pro-shell flex min-h-screen bg-[#F1F2F5]">
 
@@ -215,7 +286,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
 
         {/* Logo */}
         <div className="px-3 py-5 border-b border-white/[0.07] flex items-center justify-center">
-          <Link href="/pro/pipeline" className="flex items-center gap-3 min-w-0 group/logo">
+          <Link href={userRole === "crew" ? "/pro/contacts" : "/pro/pipeline"} className="flex items-center gap-3 min-w-0 group/logo">
             <Image
               src={clientConfig.logoWhiteSvg}
               alt={clientConfig.companyName}
@@ -235,7 +306,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
         {/* Nav */}
         <nav className="flex-1 px-2 py-4 flex flex-col gap-0.5" aria-label="Pro portal">
           {navLinks.map(({ href, label, icon }) => {
-            const active = pathname === href;
+            const active = pathname === href || (href !== "/pro/pipeline" && pathname.startsWith(href));
             return (
               <Link
                 key={href}
@@ -300,7 +371,9 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
             {!collapsed && (
               <div className="leading-none min-w-0">
                 <p className="text-white/80 text-[11px] font-semibold truncate" suppressHydrationWarning>{userName}</p>
-                <p className="text-white/30 text-[9px] truncate mt-0.5" suppressHydrationWarning>{userEmail || clientConfig.email}</p>
+                <p className="text-white/30 text-[9px] truncate mt-0.5" suppressHydrationWarning>
+                  {ROLE_LABELS[userRole] ?? "Admin"}
+                </p>
               </div>
             )}
           </div>
@@ -328,7 +401,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
       <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#06061a] border-t border-white/[0.07] pb-[env(safe-area-inset-bottom)]">
 
         {/* More drawer */}
-        {moreOpen && (
+        {moreOpen && moreLinks.length > 0 && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setMoreOpen(false)} />
             <div className="relative z-50 bg-[#06061a] border-t border-white/[0.07] py-1">
@@ -351,7 +424,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
 
         {/* Tab bar */}
         <div className="flex h-16">
-          {bottomTabs.map(({ href, label, icon }) => {
+          {bottomTabs.slice(0, 4).map(({ href, label, icon }) => {
             const active = href === "/pro/pipeline" ? pathname === href || pathname.startsWith("/pro/pipeline") : pathname.startsWith(href);
             return (
               <Link
@@ -366,17 +439,19 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
-          <button
-            onClick={() => setMoreOpen((v) => !v)}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
-              moreOpen ? "text-white" : "text-white/35"
-            }`}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
-            </svg>
-            <span className="text-[9px] tracking-widest uppercase font-semibold">More</span>
-          </button>
+          {moreLinks.length > 0 && (
+            <button
+              onClick={() => setMoreOpen((v) => !v)}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+                moreOpen ? "text-white" : "text-white/35"
+              }`}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
+              </svg>
+              <span className="text-[9px] tracking-widest uppercase font-semibold">More</span>
+            </button>
+          )}
         </div>
       </div>
 
