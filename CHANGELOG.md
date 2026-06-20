@@ -2,6 +2,20 @@
 
 ## June 2026
 
+### June 20 | Vessel detail page, calendar fixes, Quo improvements | CRM
+
+- **Vessel detail page** (`/pro/vessels/[id]`): clicking a vessel row now opens a dedicated page showing specs, editable service schedule (Mark Done, Edit, Add, Remove), recurring calendar services with Remove, and upcoming/past appointments grouped in an accordion.
+- **Recurring service pricing corrected**: vessel detail page now computes gross as `rate * qty` (same formula as the calendar panel) instead of flat `invoice_amount`, so per-foot pricing (e.g. $5.50/ft * 30ft = $165 gross, $15 discount = $150 net) displays correctly everywhere.
+- **Stale calendar links pruned on Sync All**: `GET /api/calendar-sync` now checks all `calendar_contact_links` rows against Google Calendar and deletes any whose events have been deleted. Previously stale links were only pruned when the vessel detail page loaded.
+- **Service reminder leads cron** (`GET /api/service-reminder-leads`, Monday 9am): creates a `service_reminder` lead for any vessel service that is overdue by its interval. Lead detail page shows an orange "Service Due" banner. Skips numbers that already have an open reminder for that service.
+- **QB Create Invoice opens QuickBooks directly**: the "Create Invoice" button on a calendar event modal now opens `https://app.qbo.intuit.com/app/invoice?customerId={id}` in a new tab with the customer pre-selected, instead of showing an in-app form. Falls back to the manual form if the contact has no linked QB customer ID.
+- **OpenPhone keypad pre-fill fixed**: all `openphone://call?number=` links now wrap the phone number in `encodeURIComponent` so the `+` prefix is not silently dropped, fixing keypad pre-fill in Quo across leads list, lead detail, contacts list, contact detail card, and linked contacts.
+- **Outbound SMS always logged**: `handleOutboundSms` in the Quo webhook now logs the timeline event even when no CRM contact is found (`contact_id: null`). Lead detail pages pull outbound SMS by `to_number` so they appear in call details regardless.
+- **Vendor/Other contacts no longer create new leads**: `createQuoLead` now checks for a matching CRM contact before creating a lead. `handleContactUpsert` creates missing CRM contacts from Quo data (with name-based dedup fallback) so future calls/texts resolve to a contact instead of generating phantom leads.
+- **Marketing opt-in SMS filtered**: inbound messages matching opt-in/opt-out boilerplate (Fundbox, National Funding, STOP/HELP compliance) are silently dropped by the Quo webhook and never create leads.
+- **Vessels page server error fixed**: the `<tr onClick>` handler on the vessels list was in a Server Component, crashing at runtime. Replaced with `<Link>` wrappers on each cell so the full row is clickable without client-side JS.
+- **Auto-cleanup of stale recurring links**: `getVesselRecurringLinks` calls `detectCalendarDiscrepancies` on load and auto-deletes any links whose Google Calendar series has been deleted, so the fleet panel stays clean without manual intervention.
+
 ### June 19 | Auto-sync leads to Quo as contacts | CRM + Integrations
 
 - **Lead intake pushes to OpenPhone**: `ingestContact()` now creates an OpenPhone contact (role: "Lead") whenever a brand-new contact is created from a website form or Google Ads submission. The OpenPhone contact ID is stored on the contact record so future updates can reference it.
