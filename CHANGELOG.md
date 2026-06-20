@@ -2,9 +2,16 @@
 
 ## June 2026
 
+### June 20 | Manual-only lead creation from Quo calls and texts | CRM
+
+- **Quo calls and SMS no longer auto-create leads**: inbound calls and qualifying texts from unknown numbers no longer generate a Kanban card automatically. The `createQuoLead` function and its `TOLL_FREE_PREFIXES` constant are removed from the webhook. All communication is still logged to `timeline_events` with the phone in `metadata.caller_number` / `metadata.from_number` so nothing is lost.
+- **History populates on manual lead creation**: when you use the "Add Lead" button and enter a phone number, `createLeadFromCall` now runs two update queries after inserting the lead, linking any orphaned `timeline_events` (where `lead_id IS NULL AND contact_id IS NULL`) that match that number via `caller_number` or `from_number`. The full call and chat history is already in the timeline the moment you save.
+- Known contacts are unaffected: calls and texts from numbers already in CRM Contacts continue to resolve to `contact_id` as before.
+
 ### June 20 | Lead Activity de-duplication | CRM
 
 - **Call/SMS no longer appear in Activity**: the Activity section on lead detail pages was showing all timeline events including calls and texts, which were already visible in Call Details. Activity now filters out `call` and `sms` event types so each section shows only its own data. No DB changes needed; the data was never duplicated, just rendered twice.
+- **Activity filter hardened with title pattern fallback**: some older events in the DB had an unexpected `event_type` value (not `"call"` or `"sms"`) while still carrying titles like "Inbound SMS" or "Outbound SMS". Activity now also excludes events whose title matches `^(inbound|outbound) (call|sms|voicemail)` or `^missed call`, so they are suppressed regardless of what is stored in `event_type`.
 
 ### June 20 | Vessel detail page, calendar fixes, Quo improvements | CRM
 
