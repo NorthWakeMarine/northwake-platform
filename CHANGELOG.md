@@ -2,6 +2,10 @@
 
 ## June 2026
 
+### June 20 | Lead Activity de-duplication | CRM
+
+- **Call/SMS no longer appear in Activity**: the Activity section on lead detail pages was showing all timeline events including calls and texts, which were already visible in Call Details. Activity now filters out `call` and `sms` event types so each section shows only its own data. No DB changes needed; the data was never duplicated, just rendered twice.
+
 ### June 20 | Vessel detail page, calendar fixes, Quo improvements | CRM
 
 - **Vessel detail page** (`/pro/vessels/[id]`): clicking a vessel row now opens a dedicated page showing specs, editable service schedule (Mark Done, Edit, Add, Remove), recurring calendar services with Remove, and upcoming/past appointments grouped in an accordion.

@@ -482,21 +482,23 @@ export default async function LeadDetailPage({
 
 
               {/* Timeline if contact matched */}
-              {contact && (
+              {contact && (() => {
+                const activityEvents = timeline.filter(e => e.event_type !== "call" && e.event_type !== "sms");
+                return (
                 <div className="bg-[#F1F2F5] neu-card rounded-md flex flex-col">
                   <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                     <p className="text-slate-800 text-sm font-semibold">Activity</p>
-                    <span className="text-slate-400 text-[11px]">{timeline.length} events</span>
+                    <span className="text-slate-400 text-[11px]">{activityEvents.length} events</span>
                   </div>
-                  {timeline.length === 0 ? (
+                  {activityEvents.length === 0 ? (
                     <p className="text-slate-400 text-xs px-5 py-6">No activity yet.</p>
                   ) : (
                     <ul className="px-5 py-4 flex flex-col">
-                      {timeline.map((ev, i) => {
+                      {activityEvents.map((ev, i) => {
                         const dot = eventConfig[ev.event_type]?.dot ?? "bg-slate-300";
                         return (
                           <li key={ev.id} className="flex gap-3 relative">
-                            {i < timeline.length - 1 && (
+                            {i < activityEvents.length - 1 && (
                               <div className="absolute left-[5px] top-4 bottom-0 w-px bg-slate-100" />
                             )}
                             <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1 ${dot}`} />
@@ -511,7 +513,8 @@ export default async function LeadDetailPage({
                     </ul>
                   )}
                 </div>
-              )}
+                );
+              })()}
 
             </div>
           </div>
