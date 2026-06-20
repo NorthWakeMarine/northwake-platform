@@ -2,6 +2,26 @@
 
 ## June 2026
 
+### June 20 | Role-based access control and field crew permissions | CRM
+
+- **Settings page** (`/pro/settings`): admin-only page listing all team members with inline role selectors. Supports two roles: Admin (full access) and Field Crew (contacts, calendar, vessels only).
+- **Invite flow**: invite form sends a Supabase magic link and sets the role immediately. Role is stored in `app_metadata.role` (service-role-only write, tamper-proof).
+- **Middleware enforcement**: crew users are redirected to `/pro/contacts` on login and blocked from pipeline, integrations, editor, settings, and all other admin-only routes.
+- **Role-aware sidebar**: nav items in ProShell are filtered by role. Crew sees only Contacts, Calendar, and Vessels tabs. Admin sees everything including a new Settings gear item.
+- **Dollar amounts hidden from Field Crew**: across all three CRM surfaces, crew users see no dollar figures.
+  - Calendar event modal: "Create Invoice", "Claim to Invoice", and "Unlink" buttons hidden; auto-invoice status shows "Auto-invoice ON" without the amount.
+  - Vessel detail page: Typical Price fields and monthly recurring service net amounts hidden.
+  - Contact fleet panel: Typical Price fields, recurring service amounts, and "Create Invoice" button hidden.
+- Role defaults to admin so existing users are unaffected until a role is explicitly assigned.
+
+### June 20 | Outboard engine services added to landing site | Marketing + SEO
+
+- **Homepage**: replaced "Captain and Crew Services" card with new "Outboard Engine Service" card (Yamaha Certified, All Brands Welcome). Captain and Crew card moved to services catalog only.
+- **Services page**: two new mechanical service categories added: "Outboard Engine Service" (100/300-hr, oil changes, gear lube, spark plugs, fuel filter, impeller) and "Outboard Diagnostics and Repair" (troubleshooting all brands). Both flow from `client.ts` config and propagate to all 21 location pages and JSON-LD automatically.
+- **About page**: "Continuous Certification" value card updated to call out Yamaha-certified outboard mechanic on staff.
+- **SEO expanded**: `seoDescription` updated to include Yamaha-certified outboard service; `seoKeywords` expanded to 12 terms including "boat mechanic Jacksonville FL", "outboard engine service Jacksonville", "Yamaha outboard service Jacksonville", and "marine engine repair Jacksonville FL".
+- **`public/llms.txt`**: new AI crawler reference file with Mechanical Services section, full 21-location service area list, and certifications (Yamaha-certified mechanic, USCG-licensed captains) so ChatGPT, Perplexity, and Claude surface NorthWake for boat mechanic queries.
+
 ### June 20 | Manual-only lead creation from Quo calls and texts | CRM
 
 - **Quo calls and SMS no longer auto-create leads**: inbound calls and qualifying texts from unknown numbers no longer generate a Kanban card automatically. The `createQuoLead` function and its `TOLL_FREE_PREFIXES` constant are removed from the webhook. All communication is still logged to `timeline_events` with the phone in `metadata.caller_number` / `metadata.from_number` so nothing is lost.
