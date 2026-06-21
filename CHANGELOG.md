@@ -2,6 +2,10 @@
 
 ## June 2026
 
+### June 21 | Fix invite email linking to localhost | CRM
+
+- **Supabase invite link fix**: `inviteTeamMember` now passes `redirectTo: ${NEXT_PUBLIC_SITE_URL}/pro/settings` to `inviteUserByEmail`. Previously the link in the email pointed to `localhost:3000` because Supabase fell back to the project's Site URL setting. The code-side fix is live; Supabase dashboard Site URL also needs to be set to the production domain under Authentication > URL Configuration.
+
 ### June 21 | Dedicated service sub-pages and SEO improvements | Marketing + SEO
 
 - **19 new service detail pages** at `/services/[slug]` (statically generated): one page per service in the catalog. Each page has a unique H1 targeting `{Service} in Jacksonville, FL`, service-specific meta description, JSON-LD Service schema, breadcrumb schema, full description + includes section, Why NorthWake section, related services grid, and contact CTA.
