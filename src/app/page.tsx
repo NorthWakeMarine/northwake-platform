@@ -171,7 +171,7 @@ export default async function Home() {
                 id="services-heading"
                 className="text-gray-900 text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight"
               >
-                Marine Services Built for&nbsp;
+                Services Built for&nbsp;
                 <span className="chrome-text-dark">Perfection</span>
               </h2>
               <hr className="accent-rule w-48 mt-2" />
@@ -184,7 +184,9 @@ export default async function Home() {
             </header>
 
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-200 list-none" role="list">
-              {clientConfig.services.slice(0, 6).map((svc) => (
+              {clientConfig.services.filter((svc) =>
+                ["yacht-management","maintenance-wash","full-detail","ceramic-coating","outboard-engine-service","marine-transport","aero-detailing","rv-detailing","automotive-detailing"].includes(svc.id)
+              ).map((svc) => (
                 <li
                   key={svc.title}
                   className="group bg-white p-5 flex flex-col gap-3 hover:bg-gray-50 transition-colors duration-300"

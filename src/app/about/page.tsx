@@ -19,7 +19,7 @@ async function getCMS(): Promise<Record<string, string>> {
 
 export const metadata: Metadata = {
   title: `About ${clientConfig.companyName}, ${clientConfig.city}'s Premier Services`,
-  description: `Learn about ${clientConfig.companyName}'s story, Yamaha-certified outboard mechanics, and commitment to the highest level of marine care in ${clientConfig.city}, ${clientConfig.state}.`,
+  description: `Learn about ${clientConfig.companyName}'s story, Yamaha-certified outboard mechanics, and commitment to the highest level of marine, aircraft, and vehicle care in ${clientConfig.city}, ${clientConfig.state}.`,
   keywords: clientConfig.seoKeywords,
   openGraph: {
     title: `About ${clientConfig.companyName} | ${clientConfig.city}'s Premier Services`,
@@ -36,7 +36,7 @@ const aboutJsonLd = {
   "@type": "AboutPage",
   "@id": `${clientConfig.siteUrl}/about#page`,
   name: `About ${clientConfig.companyName}`,
-  description: `Learn about ${clientConfig.companyName}'s story, team, and commitment to delivering the highest level of marine care in ${clientConfig.city}, ${clientConfig.state}.`,
+  description: `Learn about ${clientConfig.companyName}'s story, team, and commitment to delivering the highest level of marine, aircraft, and vehicle care in ${clientConfig.city}, ${clientConfig.state}.`,
   url: `${clientConfig.siteUrl}/about`,
   mainEntity: { "@id": `${clientConfig.siteUrl}/#business` },
   mentions: team.map((member) => ({
@@ -180,7 +180,7 @@ export default async function AboutPage() {
                   Jacksonville&apos;s mild winters mean most boats stay in the water twelve months a year. From the St. Johns to the Intracoastal and offshore Atlantic, the conditions demand a level of care that most services simply aren&apos;t built to deliver.
                 </p>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  The NorthWake Standard is not a checklist. It&apos;s a commitment every member of our team carries onto every vessel, that every detail, visible and invisible, meets the level our clients expect and their investments deserve. Not a detailing shop that occasionally does ceramic. A dedicated, certified marine services company where the standard is never negotiated.
+                  The NorthWake Standard is not a checklist. It&apos;s a commitment every member of our team carries onto every job, that every detail, visible and invisible, meets the level our clients expect and their investments deserve. Not a detailing shop that occasionally does ceramic. A dedicated, certified services company covering marine vessels, aircraft, RVs, and automotive, where the standard is never negotiated.
                 </p>
               </div>
             </div>

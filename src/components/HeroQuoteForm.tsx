@@ -169,7 +169,7 @@ export default function HeroQuoteForm() {
           <select id="hero-vessel" name="vessel_type" required defaultValue=""
             className={selectCls}>
             <option value="" disabled className="bg-[#0a0a18] text-white/40">Select type…</option>
-            {["Center Console","Bowrider","Pontoon","Cruiser","Motor Yacht","Sailboat","Sport Fishing","Other"].map(v => (
+            {["Center Console","Bowrider","Pontoon","Cruiser","Motor Yacht","Sailboat","Sport Fishing","Aircraft","Motorhome / RV","Automobile / Truck","Other"].map(v => (
               <option key={v} value={v} className="bg-[#0a0a18] text-white">{v}</option>
             ))}
           </select>
@@ -182,7 +182,7 @@ export default function HeroQuoteForm() {
           <select id="hero-service" name="service" required defaultValue=""
             className={selectCls}>
             <option value="" disabled className="bg-[#0a0a18] text-white/40">Select service…</option>
-            {["Maintenance Wash","One-Off Wash","Full Detail","Exterior Detailing","Interior Cleaning & Cabin Detailing","Canvas Cleaning & Treatment","Vinyl & Upholstery Conditioning","Teak Cleaning & Brightening","Stainless Polish","Engine Bay & Bilge Cleaning","Water Spot & Mineral Deposit Removal","Ceramic Coating","Wax Application","Gel Coat Restoration","Monthly Maintenance Plan","Marine Transport","Captain & Crew Services","Yacht Management","Custom Request","Not Sure, Need Consultation"].map(s => (
+            {["Maintenance Wash","One-Off Wash","Full Detail","Exterior Detailing","Interior Cleaning & Cabin Detailing","Canvas Cleaning & Treatment","Vinyl & Upholstery Conditioning","Teak Cleaning & Brightening","Stainless Polish","Engine Bay & Bilge Cleaning","Water Spot & Mineral Deposit Removal","Ceramic Coating","Wax Application","Gel Coat Restoration","Monthly Maintenance Plan","Marine Transport","Captain & Crew Services","Yacht Management","Aircraft Detailing","RV Detailing","Automotive Detailing","Custom Request","Not Sure, Need Consultation"].map(s => (
               <option key={s} value={s} className="bg-[#0a0a18] text-white">{s}</option>
             ))}
           </select>

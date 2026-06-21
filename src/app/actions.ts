@@ -296,8 +296,30 @@ export async function createLeadFromCall(phone: string, name?: string): Promise<
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
   const { data: existing } = await supabase.from("leads").select("id").eq("phone", phone).maybeSingle();
   if (existing) return { ok: true }; // already a lead
-  const { error } = await supabase.from("leads").insert({ phone, name: name?.trim() || null, source: "quo", email: "" });
+  const { data: lead, error } = await supabase
+    .from("leads")
+    .insert({ phone, name: name?.trim() || null, source: "quo", email: "" })
+    .select("id")
+    .single();
   if (error) return { ok: false, error: error.message };
+
+  // Retroactively link any orphaned call/SMS events logged before this lead existed.
+  // Events from unknown callers are stored with caller_number or from_number in metadata.
+  if (lead?.id) {
+    await supabase
+      .from("timeline_events")
+      .update({ lead_id: lead.id })
+      .is("lead_id", null)
+      .is("contact_id", null)
+      .eq("metadata->>caller_number", phone);
+    await supabase
+      .from("timeline_events")
+      .update({ lead_id: lead.id })
+      .is("lead_id", null)
+      .is("contact_id", null)
+      .eq("metadata->>from_number", phone);
+  }
+
   revalidatePath("/pro/leads");
   return { ok: true };
 }

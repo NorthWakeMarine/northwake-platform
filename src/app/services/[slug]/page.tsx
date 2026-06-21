@@ -26,6 +26,12 @@ function buildMetaDescription(id: string, schemaDescription: string, city: strin
       `Marine ceramic coating in ${city}, FL. 9H nano-ceramic hull protection for up to 5 years. UV and salt-water resistant with a mirror finish. Professional application by NorthWake Marine.`,
     "yacht-management":
       `Full-service yacht management in ${city}, FL. Dedicated vessel manager, crew coordination, provisioning, USCG compliance, and voyage planning. Concierge-level care for serious yacht owners.`,
+    "aero-detailing":
+      `Aircraft detailing in ${city}, FL. Hangar-side service for piston singles, turboprops, and business jets at Craig Airport, Jacksonville Executive, and Cecil Airport. Aviation-safe exterior polish, interior cabin cleaning, and brightwork.`,
+    "rv-detailing":
+      `Mobile RV detailing in ${city}, FL. Full interior and exterior service for motorhomes, fifth wheels, and travel trailers. Roof cleaning, awning treatment, and slide-out care at your site or storage facility.`,
+    "automotive-detailing":
+      `Mobile auto detailing in ${city}, FL. Full-service car, truck, and SUV detailing including paint correction and ceramic coating. Comes to your home or office. No drop-off required.`,
   };
   return overrides[id] ?? `${schemaDescription} Mobile service throughout ${city}, ${state} and Northeast Florida. No trailering required.`;
 }

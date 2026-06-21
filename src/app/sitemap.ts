@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { clientConfig } from "@/config/client";
 
 const BASE = clientConfig.siteUrl;
-const UPDATED = new Date("2026-06-20");
+const UPDATED = new Date("2026-06-21");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

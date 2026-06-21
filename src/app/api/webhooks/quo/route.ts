@@ -139,45 +139,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-const TOLL_FREE_PREFIXES = ["+1800", "+1888", "+1877", "+1866", "+1844", "+1833", "+1855"];
-
-async function createQuoLead(supabase: AnySupabase, phone: string) {
-  // Reject SMS short codes (< 10 digits) and toll-free numbers (robocallers).
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length < 10) return;
-  if (TOLL_FREE_PREFIXES.some((p) => phone.startsWith(p))) return;
-
-  // Skip numbers explicitly blocked in the CRM.
-  const { data: blocked } = await supabase
-    .from("blocked_numbers")
-    .select("id")
-    .eq("phone", phone)
-    .maybeSingle();
-  if (blocked) return;
-
-  // Skip numbers that already belong to any CRM contact (any role — customer, vendor, other).
-  const { data: knownContact } = await supabase
-    .from("contacts")
-    .select("id")
-    .eq("phone", phone)
-    .maybeSingle();
-  if (knownContact) return;
-
-  const { data: existing } = await supabase
-    .from("leads")
-    .select("id")
-    .eq("phone", phone)
-    .maybeSingle();
-  if (existing) return;
-
-  await supabase.from("leads").insert({
-    phone,
-    source: "quo",
-    name: null,
-    email: "",
-  });
-}
-
 // OpenPhone sometimes sends `from`/`to` as a string or as a string array — normalise both
 function extractPhone(val: unknown): string | undefined {
   if (typeof val === "string") return val || undefined;
@@ -221,12 +182,6 @@ async function handleCompletedCall(obj: Record<string, unknown>) {
     created_by: "system",
   });
   console.log("[quo webhook] call insert result", { error: callErr ?? null });
-
-  // Unknown inbound caller who actually talked (>60s) becomes a lead — filters robocall recordings.
-  // Skip if the number belongs to a linked/household contact (already resolved to primary)
-  if (!contact && direction === "inbound" && (duration ?? 0) > 60) {
-    await createQuoLead(supabase, normalized);
-  }
 }
 
 async function handleMissedCall(obj: Record<string, unknown>) {
@@ -287,25 +242,6 @@ async function handleInboundSms(obj: Record<string, unknown>) {
   });
   if (smsErr) console.error("[quo webhook] sms insert error", smsErr);
 
-  if (!contact) {
-    const trimmed = body.trim();
-    const replyKeywords = /^(stop|unstop|start|cancel|end|quit|unsubscribe|help|yes|no|y|n|ok|okay)$/i;
-    // Verification/OTP messages from automated senders.
-    const verificationPatterns = /\bcode\b|\b(otp|2fa|two[- ]?factor|passcode|do not share|don't share)\b|^G-\d{4,}/i;
-    // Wireless marketing compliance boilerplate: opt-in confirmations, unsubscribe notices, promotional blasts.
-    const marketingOptinPatterns = /opted[- ]?in|opted[- ]?out|msg\s*&\s*data rates|message\s*&\s*data rates|message frequency varies|periodic messaging|reply\s+stop|respond with\s+.?stop.?|thanks for subscribing|subscrib\w+ to text messages|to opt[- ]?out|unsubscribe at any time|download our (free )?mobile app/i;
-    const isJustCode = /^[A-Z]?-?\d{4,8}$/.test(trimmed);
-
-    if (
-      trimmed.length > 3 &&
-      !replyKeywords.test(trimmed) &&
-      !verificationPatterns.test(trimmed) &&
-      !marketingOptinPatterns.test(trimmed) &&
-      !isJustCode
-    ) {
-      await createQuoLead(supabase, normalized);
-    }
-  }
 }
 
 async function handleOutboundSms(obj: Record<string, unknown>) {
