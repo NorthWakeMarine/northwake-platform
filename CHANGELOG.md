@@ -2,6 +2,15 @@
 
 ## June 2026
 
+### June 21 | Dedicated service sub-pages and SEO improvements | Marketing + SEO
+
+- **19 new service detail pages** at `/services/[slug]` (statically generated): one page per service in the catalog. Each page has a unique H1 targeting `{Service} in Jacksonville, FL`, service-specific meta description, JSON-LD Service schema, breadcrumb schema, full description + includes section, Why NorthWake section, related services grid, and contact CTA.
+- **Custom meta descriptions** written for high-value queries: marine-transport targets "boat transport Jacksonville FL," "yacht transport," "sailboat shipping," "boat haul"; outboard-engine-service and outboard-diagnostics target "boat mechanic Jacksonville FL" and "mercruiser mechanic near me"; maintenance-wash targets salt removal and boat wash queries.
+- **Sitemap updated**: all `lastModified` dates corrected (was stuck at 2025-05-01); all 19 service pages added to sitemap at priority 0.9.
+- **seoTitle and seoKeywords expanded**: title now mentions boat detailing, engine service, and vessel management; keywords expanded from 12 to 21 terms including "boat transport Jacksonville FL," "marine transport Jacksonville," "yacht transport Jacksonville," "salt removal boat wash," and "hull cleaning Jacksonville."
+- **Services page cards updated**: each card now has a "Learn More" link pointing to the service detail page alongside the "Request Service" button, improving internal link signals to the new pages.
+- **Indexing issues reviewed**: 8 "Page with redirect" entries are all legitimate redirect chains (www, http, .html) handled by next.config.ts — no code changes needed. 4 canonical URLs are `/contact?service=...` query params correctly pointing to /contact. 1 robots.txt block is intentional (/pro). 2 x 404s: /contact-us.html already has redirect in config (self-resolves); font file hash is an old Next.js build artifact (self-resolves).
+
 ### June 20 | Role-based access control and field crew permissions | CRM
 
 - **Settings page** (`/pro/settings`): admin-only page listing all team members with inline role selectors. Supports two roles: Admin (full access) and Field Crew (contacts, calendar, vessels only).
