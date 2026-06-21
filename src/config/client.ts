@@ -333,6 +333,72 @@ export const clientConfig: ClientConfig = {
         "Full-service yacht management in Jacksonville, FL, including crew coordination, provisioning, insurance compliance, and voyage planning.",
     },
     {
+      id: "aero-detailing",
+      icon: "✦",
+      tier: "Aero & Vehicle",
+      badge: "Featured",
+      title: "Aircraft Detailing",
+      tagline: "Hangar-Side Precision Care for Every Aircraft",
+      description:
+        "Professional aircraft detailing performed at your hangar or on the ramp. NorthWake's aero detailing team uses aviation-safe products to clean, polish, and protect everything from piston singles and light twins to turboprops and business jets. We handle interior cabin cleaning, exterior wash and wax, de-oxidation, and brightwork polishing with the precision and attention to detail your aircraft deserves.",
+      includes: [
+        "Full exterior wash and rinse",
+        "Aviation-safe paint polish and wax",
+        "De-oxidation and surface prep",
+        "Interior cabin vacuum and wipe-down",
+        "Window and windshield cleaning",
+        "Brightwork and metal polishing",
+        "Wheel well cleaning",
+        "Hangar-side or ramp service",
+      ],
+      schemaDescription:
+        "Professional aircraft and aviation detailing in Jacksonville, FL. Hangar-side service for piston aircraft, turboprops, and business jets. Aviation-safe products, interior and exterior detailing.",
+    },
+    {
+      id: "rv-detailing",
+      icon: "◉",
+      tier: "Aero & Vehicle",
+      badge: null,
+      title: "RV Detailing",
+      tagline: "Head-to-Toe Care for Your Rig",
+      description:
+        "Complete interior and exterior detailing for Class A, B, and C motorhomes, fifth wheels, and travel trailers. Our mobile team comes to your site or storage facility and handles everything from roof and awning cleaning to slide-out treatment, interior sanitation, and exterior polish, leaving your RV road-ready and showroom clean.",
+      includes: [
+        "Full exterior wash and rinse",
+        "Roof cleaning and treatment",
+        "Awning cleaning and conditioning",
+        "Slide-out seal inspection and wipe-down",
+        "Interior vacuum and surface wipe-down",
+        "Window cleaning inside and out",
+        "Tire and wheel cleaning",
+        "Optional wax or sealant application",
+      ],
+      schemaDescription:
+        "Mobile RV detailing in Jacksonville, FL. Full interior and exterior cleaning for motorhomes, fifth wheels, and travel trailers. Roof cleaning, awning treatment, and slide-out service.",
+    },
+    {
+      id: "automotive-detailing",
+      icon: "◇",
+      tier: "Aero & Vehicle",
+      badge: null,
+      title: "Automotive Detailing",
+      tagline: "Showroom Finish, At Your Location",
+      description:
+        "Full-service automotive detailing for cars, trucks, and SUVs performed at your home, office, or storage location. From a basic exterior and interior clean-up to a full multi-stage paint correction and ceramic coating, our detail team brings professional-grade results and products to your vehicle without you ever leaving.",
+      includes: [
+        "Exterior hand wash and dry",
+        "Clay bar decontamination",
+        "Single or multi-stage paint correction",
+        "Professional-grade wax or polymer sealant",
+        "Interior vacuum and surface cleaning",
+        "Leather and upholstery conditioning",
+        "Glass cleaning inside and out",
+        "Optional ceramic coating available",
+      ],
+      schemaDescription:
+        "Mobile automotive detailing in Jacksonville, FL. Full interior and exterior car, truck, and SUV detailing including paint correction and ceramic coating. Comes to your location.",
+    },
+    {
       id: "maintenance-wash",
       icon: "◇",
       tier: "Washing",
@@ -673,72 +739,6 @@ export const clientConfig: ClientConfig = {
       ],
       schemaDescription:
         "Canvas cleaning and UV treatment for boat biminis, covers, and enclosures in Jacksonville, FL. Removes mold and mildew and restores water repellency.",
-    },
-    {
-      id: "aero-detailing",
-      icon: "✦",
-      tier: "Aero & Vehicle",
-      badge: "Featured",
-      title: "Aircraft Detailing",
-      tagline: "Hangar-Side Precision Care for Every Aircraft",
-      description:
-        "Professional aircraft detailing performed at your hangar or on the ramp. NorthWake's aero detailing team uses aviation-safe products to clean, polish, and protect everything from piston singles and light twins to turboprops and business jets. We handle interior cabin cleaning, exterior wash and wax, de-oxidation, and brightwork polishing with the precision and attention to detail your aircraft deserves.",
-      includes: [
-        "Full exterior wash and rinse",
-        "Aviation-safe paint polish and wax",
-        "De-oxidation and surface prep",
-        "Interior cabin vacuum and wipe-down",
-        "Window and windshield cleaning",
-        "Brightwork and metal polishing",
-        "Wheel well cleaning",
-        "Hangar-side or ramp service",
-      ],
-      schemaDescription:
-        "Professional aircraft and aviation detailing in Jacksonville, FL. Hangar-side service for piston aircraft, turboprops, and business jets. Aviation-safe products, interior and exterior detailing.",
-    },
-    {
-      id: "rv-detailing",
-      icon: "◉",
-      tier: "Aero & Vehicle",
-      badge: null,
-      title: "RV Detailing",
-      tagline: "Head-to-Toe Care for Your Rig",
-      description:
-        "Complete interior and exterior detailing for Class A, B, and C motorhomes, fifth wheels, and travel trailers. Our mobile team comes to your site or storage facility and handles everything from roof and awning cleaning to slide-out treatment, interior sanitation, and exterior polish, leaving your RV road-ready and showroom clean.",
-      includes: [
-        "Full exterior wash and rinse",
-        "Roof cleaning and treatment",
-        "Awning cleaning and conditioning",
-        "Slide-out seal inspection and wipe-down",
-        "Interior vacuum and surface wipe-down",
-        "Window cleaning inside and out",
-        "Tire and wheel cleaning",
-        "Optional wax or sealant application",
-      ],
-      schemaDescription:
-        "Mobile RV detailing in Jacksonville, FL. Full interior and exterior cleaning for motorhomes, fifth wheels, and travel trailers. Roof cleaning, awning treatment, and slide-out service.",
-    },
-    {
-      id: "automotive-detailing",
-      icon: "◇",
-      tier: "Aero & Vehicle",
-      badge: null,
-      title: "Automotive Detailing",
-      tagline: "Showroom Finish, At Your Location",
-      description:
-        "Full-service automotive detailing for cars, trucks, and SUVs performed at your home, office, or storage location. From a basic exterior and interior clean-up to a full multi-stage paint correction and ceramic coating, our detail team brings professional-grade results and products to your vehicle without you ever leaving.",
-      includes: [
-        "Exterior hand wash and dry",
-        "Clay bar decontamination",
-        "Single or multi-stage paint correction",
-        "Professional-grade wax or polymer sealant",
-        "Interior vacuum and surface cleaning",
-        "Leather and upholstery conditioning",
-        "Glass cleaning inside and out",
-        "Optional ceramic coating available",
-      ],
-      schemaDescription:
-        "Mobile automotive detailing in Jacksonville, FL. Full interior and exterior car, truck, and SUV detailing including paint correction and ceramic coating. Comes to your location.",
     },
     {
       id: "custom-requests",
