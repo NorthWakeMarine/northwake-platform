@@ -3797,8 +3797,10 @@ export async function inviteTeamMember(
   try {
     await requireAdmin();
     const supabase = await svc();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://northwakemarine.com";
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
       data: { full_name: fullName },
+      redirectTo: `${siteUrl}/pro/settings`,
     });
     if (error) return { error: error.message };
     if (data?.user) {
