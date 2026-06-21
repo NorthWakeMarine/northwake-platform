@@ -2,6 +2,27 @@
 
 ## June 2026
 
+### June 21 | Meta Lead Ads integration | Integrations
+
+- **Meta Lead Ads webhook** (`POST /api/webhooks/meta-leads`): receives leadgen notifications from Meta, fetches lead data from Graph API using Page Access Token, inserts into `leads` table tagged `source: meta_ads`, and mirrors to contacts + OpenPhone via `ingestContact`. Signature-verified via `X-Hub-Signature-256` using `META_APP_SECRET`. GET handler responds to Meta's verification handshake using `META_VERIFY_TOKEN`.
+- **Zapier fallback endpoint** (`POST /api/webhooks/meta-leads-zapier`): alternate endpoint accepting Zapier's flat JSON format if the direct Meta webhook path is not used. Secured via `?secret=ZAPIER_WEBHOOK_SECRET` query param.
+- **Env vars added**: `META_VERIFY_TOKEN`, `META_APP_SECRET`, `META_PAGE_ACCESS_TOKEN` (permanent system user token). Meta app ID: `1502991310922795`.
+- **Setup**: Meta Business App "NorthWake Marine CRM" created; Page webhook configured for `leadgen` field; system user token generated for non-expiring page access. App must be switched to Live mode to receive production leads (currently Development).
+
+### June 21 | Aero, RV, and automotive detailing services | Marketing + SEO
+
+- **3 new services** added to `clientConfig.services` under new "Aero & Vehicle" tier, positioned at slots 2-4 (after Yacht Management, before marine services):
+  - **Aircraft Detailing** (`/services/aero-detailing`) — badge: Featured. Hangar-side service for piston singles, turboprops, and business jets. Targets Craig Airport (KCRG), Jacksonville Executive, and Cecil Field.
+  - **RV Detailing** (`/services/rv-detailing`) — Class A/B/C motorhomes, fifth wheels, travel trailers. Mobile, comes to site or storage facility.
+  - **Automotive Detailing** (`/services/automotive-detailing`) — full-service car, truck, and SUV detailing including paint correction and ceramic coating. Mobile.
+- **SEO keywords expanded**: 16 new terms added including "aircraft detailing Jacksonville FL", "aviation detailing Jacksonville", "private jet detailing Jacksonville FL", "turboprop detailing Jacksonville", "hangar detailing Jacksonville", "RV detailing Jacksonville FL", "motorhome detailing Jacksonville", "auto detailing Jacksonville FL", "mobile auto detailing Jacksonville", "paint correction Jacksonville FL".
+- **Custom meta descriptions** written for all 3 new service detail pages, targeting specific airports (Craig, Jacksonville Executive, Cecil) and asset types.
+- **Home page services grid**: updated from `slice(0, 6)` to a curated 9-service filter showing 6 marine + 3 new aero/vehicle services. Heading changed from "Marine Services Built for Perfection" to "Services Built for Perfection".
+- **About page**: metadata description and JSON-LD updated to include "aircraft, and vehicle care"; body paragraph updated to mention "marine vessels, aircraft, RVs, and automotive".
+- **Asset type selectors**: "Aircraft", "Motorhome / RV", "Automobile / Truck" added to `clientConfig.assetTypes` (auto-populates QuoteForm) and hardcoded into HeroQuoteForm vessel type dropdown.
+- **Both quote forms**: Aircraft Detailing, RV Detailing, Automotive Detailing added to service dropdown options.
+- **Sitemap**: `lastModified` bumped to `2026-06-21`; 3 new service URLs auto-included.
+
 ### June 21 | Fix invite email linking to localhost | CRM
 
 - **Supabase invite link fix**: `inviteTeamMember` now passes `redirectTo: ${NEXT_PUBLIC_SITE_URL}/pro/settings` to `inviteUserByEmail`. Previously the link in the email pointed to `localhost:3000` because Supabase fell back to the project's Site URL setting. The code-side fix is live; Supabase dashboard Site URL also needs to be set to the production domain under Authentication > URL Configuration.
