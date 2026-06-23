@@ -50,6 +50,19 @@ export const WORK_EVENT_COLOR_ID     = RECURRING_WORK_COLOR_ID;
 // Color IDs visible to field crew
 export const CREW_VISIBLE_COLOR_IDS  = new Set([RECURRING_WORK_COLOR_ID, ONE_OFF_WORK_COLOR_ID, TIME_BLOCK_COLOR_ID]);
 
+// Named event types shown in the CRM event-type picker (order = display order)
+export const EVENT_TYPES = [
+  { label: "Recurring Work",   colorId: "9"  }, // Blueberry
+  { label: "One Off Work",     colorId: "1"  }, // Lavender
+  { label: "Time Block",       colorId: "3"  }, // Grape
+  { label: "Sales",            colorId: "11" }, // Tomato
+  { label: "Boat Shows",       colorId: "5"  }, // Banana
+  { label: "Other Events",     colorId: "2"  }, // Sage
+  { label: "Service Outreach", colorId: "8"  }, // Graphite
+  { label: "Reminders",        colorId: "10" }, // Basil
+  { label: "Payment Date",     colorId: "4"  }, // Flamingo
+] as const;
+
 export type CalendarEventInput = {
   title: string;
   description?: string;

@@ -55,6 +55,18 @@ const GCAL_COLORS: Record<string, { bg: string; text: string; border: string }> 
 };
 const DEFAULT_COLOR = { bg: "#000080", text: "#fff", border: "#000060" };
 
+const EVENT_TYPE_LIST = [
+  { label: "Recurring Work",   colorId: "9"  },
+  { label: "One Off Work",     colorId: "1"  },
+  { label: "Time Block",       colorId: "3"  },
+  { label: "Sales",            colorId: "11" },
+  { label: "Boat Shows",       colorId: "5"  },
+  { label: "Other Events",     colorId: "2"  },
+  { label: "Service Outreach", colorId: "8"  },
+  { label: "Reminders",        colorId: "10" },
+  { label: "Payment Date",     colorId: "4"  },
+];
+
 function getEventColor(colorId?: string) {
   if (!colorId) return DEFAULT_COLOR;
   return GCAL_COLORS[colorId] ?? DEFAULT_COLOR;
@@ -783,7 +795,8 @@ function EventModal({ event, editScope, defaultDate, onClose }: {
 }) {
   const isEdit = !!event;
   const [isAllDay, setIsAllDay] = useState(event ? !event.start.includes("T") : false);
-  const colorId = event?.colorId ?? "";
+  const [colorId, setColorId] = useState(event?.colorId ?? "9"); // default Recurring Work
+  const [typeOpen, setTypeOpen] = useState(false);
   const [createState, createAction, creating]   = useActionState<CalendarEventState, FormData>(createStandaloneEvent, {});
   const [updateState, updateAction, updating]   = useActionState<CalendarEventState, FormData>(updateStandaloneEvent, {});
   const [instanceState, instanceAction, instUpd] = useActionState<CalendarEventState, FormData>(updateCalendarEventInstance, {});
@@ -828,6 +841,54 @@ function EventModal({ event, editScope, defaultDate, onClose }: {
           {isEdit && <input type="hidden" name="event_id" value={editEventId} />}
           <input type="hidden" name="is_all_day" value={isAllDay ? "true" : "false"} />
           <input type="hidden" name="color_id" value={colorId} />
+
+          {/* Event type picker */}
+          <div className="flex flex-col gap-1 relative">
+            <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Event Type</label>
+            <button
+              type="button"
+              onClick={() => setTypeOpen(v => !v)}
+              className="flex items-center gap-2.5 border border-slate-200 rounded-sm px-3 py-2 text-sm text-slate-800 bg-white hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#000080] w-full text-left"
+            >
+              {(() => {
+                const c = GCAL_COLORS[colorId];
+                const t = EVENT_TYPE_LIST.find(e => e.colorId === colorId);
+                return (
+                  <>
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c?.border ?? "#000080" }} />
+                    <span className="flex-1">{t?.label ?? "Select type"}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 shrink-0">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </>
+                );
+              })()}
+            </button>
+            {typeOpen && (
+              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-sm shadow-lg overflow-hidden">
+                {EVENT_TYPE_LIST.map(et => {
+                  const c = GCAL_COLORS[et.colorId];
+                  const active = colorId === et.colorId;
+                  return (
+                    <button
+                      key={et.colorId}
+                      type="button"
+                      onClick={() => { setColorId(et.colorId); setTypeOpen(false); }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${active ? "bg-slate-50 font-semibold" : "hover:bg-slate-50"}`}
+                    >
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c?.border ?? "#000080" }} />
+                      <span className="text-slate-800">{et.label}</span>
+                      {active && (
+                        <svg className="ml-auto text-[#000080] shrink-0" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-slate-500 text-[11px] font-medium uppercase tracking-wider">Title</label>
