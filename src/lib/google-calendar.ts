@@ -42,9 +42,13 @@ function getAuth() {
 // Google Calendar colorId constants (1-11 are valid event colorIds)
 export const RECURRING_WORK_COLOR_ID = "9";  // Blueberry — recurring work label
 export const ONE_OFF_WORK_COLOR_ID   = "1";  // Lavender — one-off work label
+export const TIME_BLOCK_COLOR_ID     = "3";  // Grape — time block label
 export const SALES_EVENT_COLOR_ID    = "11"; // Tomato (red) — sales label
 // Legacy alias kept for any existing references
 export const WORK_EVENT_COLOR_ID     = RECURRING_WORK_COLOR_ID;
+
+// Color IDs visible to field crew
+export const CREW_VISIBLE_COLOR_IDS  = new Set([RECURRING_WORK_COLOR_ID, ONE_OFF_WORK_COLOR_ID, TIME_BLOCK_COLOR_ID]);
 
 export type CalendarEventInput = {
   title: string;

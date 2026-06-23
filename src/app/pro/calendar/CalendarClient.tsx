@@ -1278,14 +1278,8 @@ function WeekGrid({ weekStart, events, today, linkMap, onDayClick, onEventClick,
   );
 }
 
-// ── Crew-visible event label filter ───────────────────────────────────────────
-
-const CREW_LABELS = ["recurring work", "one off work", "time block"];
-
-function isCrewVisible(title: string): boolean {
-  const lower = title.toLowerCase();
-  return CREW_LABELS.some((l) => lower.includes(l));
-}
+// Color IDs the crew can see: Recurring Work (9), One Off Work (1), Time Block (3)
+const CREW_COLOR_IDS = new Set(["9", "1", "3"]);
 
 // ── Main Client ────────────────────────────────────────────────────────────────
 
@@ -1302,7 +1296,12 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
     setIsAdmin(role === "admin");
   }, []);
 
-  const visibleEvents = isAdmin ? events : events.filter((ev) => isCrewVisible(ev.title));
+  const visibleEvents = isAdmin ? events : events.filter((ev) => {
+    const colorId = ev.colorId
+      ?? linkMap[ev.id]?.colorId
+      ?? (ev.recurringEventId ? linkMap[ev.recurringEventId]?.colorId : null);
+    return colorId != null && CREW_COLOR_IDS.has(colorId);
+  });
 
   const [viewMode,   setViewMode]   = useState<ViewMode>("month");
   const [monthDate,  setMonthDate]  = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
