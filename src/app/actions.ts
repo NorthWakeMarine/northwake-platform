@@ -425,7 +425,11 @@ export async function deleteTimelineEvent(
 
 // ─── Waiver Submission ────────────────────────────────────────────────────────
 
-export type WaiverState = { success?: boolean; error?: string };
+export type WaiverState = {
+  success?: boolean;
+  error?: string;
+  data?: { name: string; address: string; phone: string; email: string; boat: string; date: string; signature: string };
+};
 
 export async function submitWaiver(
   _prev: WaiverState,
@@ -583,7 +587,7 @@ export async function submitWaiver(
   })();
 
   revalidatePath(`/pro/contacts/${id}`);
-  return { success: true };
+  return { success: true, data: { name, address, phone, email, boat, date, signature } };
 }
 
 // ─── Lead Conversion ─────────────────────────────────────────────────────────
@@ -3800,7 +3804,7 @@ export async function inviteTeamMember(
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://northwakemarine.com";
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
       data: { full_name: fullName },
-      redirectTo: `${siteUrl}/pro/settings`,
+      redirectTo: `${siteUrl}/pro/set-password`,
     });
     if (error) return { error: error.message };
     if (data?.user) {

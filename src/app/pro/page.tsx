@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ProSignInPage() {
+export default async function ProSignInPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-6"
@@ -58,6 +59,14 @@ export default function ProSignInPage() {
               {clientConfig.proPortalName} operations portal
             </p>
           </div>
+
+          {error === "invite_expired" && (
+            <div className="border border-red-900/60 bg-red-950/20 px-3.5 py-2.5">
+              <p className="text-red-400 text-[10px] tracking-wide leading-relaxed">
+                Your invite link has expired. Contact {clientConfig.email} to request a new one.
+              </p>
+            </div>
+          )}
 
           <LoginForm />
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import { submitWaiver, type WaiverState } from "@/app/actions";
 import Image from "next/image";
 import { clientConfig } from "@/config/client";
@@ -71,11 +71,36 @@ type Props = {
 export default function WaiverForm({ contactId, prefill }: Props) {
   const [state, action, isPending] = useActionState<WaiverState, FormData>(submitWaiver, {});
   const formRef = useRef<HTMLFormElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (!e.currentTarget.checkValidity()) {
       e.preventDefault();
       e.currentTarget.reportValidity();
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!state.data) return;
+    setDownloading(true);
+    try {
+      const res = await fetch("/api/waiver-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state.data),
+      });
+      if (!res.ok) throw new Error("Failed to generate PDF");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `NorthWake-Waiver-${state.data.name.replace(/\s+/g, "-")}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Could not generate PDF. Please try again.");
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -94,6 +119,20 @@ export default function WaiverForm({ contactId, prefill }: Props) {
               Your liability waiver has been received and recorded. {clientConfig.companyName} will be in touch to confirm your service details.
             </p>
           </div>
+          {state.data && (
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="flex items-center gap-2 bg-[#000080] hover:bg-[#0000a0] disabled:opacity-50 text-white text-sm font-semibold px-5 py-3 rounded-sm transition-colors w-full justify-center"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {downloading ? "Generating PDF..." : "Download Your Copy (PDF)"}
+            </button>
+          )}
           <p className="text-slate-400 text-xs">{clientConfig.companyName}, {clientConfig.city}, {clientConfig.state}</p>
         </div>
       </div>
