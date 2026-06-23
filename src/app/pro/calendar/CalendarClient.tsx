@@ -745,21 +745,25 @@ function EventDetailModal({ event, linkMap, serviceTemplates, onEdit, onDelete, 
         </div>
 
         <div className="px-6 py-4 border-t border-slate-100 flex items-center gap-3">
-          <button
-            onClick={onEdit}
-            className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors"
-          >
-            Edit Event
-          </button>
-          <button
-            onClick={onDelete}
-            className="px-4 text-red-500 text-xs font-medium hover:text-red-700 transition-colors"
-          >
-            Delete
-          </button>
+          {isAdmin && (
+            <button
+              onClick={onEdit}
+              className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors"
+            >
+              Edit Event
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={onDelete}
+              className="px-4 text-red-500 text-xs font-medium hover:text-red-700 transition-colors"
+            >
+              Delete
+            </button>
+          )}
           <button
             onClick={onClose}
-            className="px-4 text-slate-500 text-xs font-medium hover:text-slate-800 transition-colors"
+            className={`${isAdmin ? "px-4" : "flex-1"} text-slate-500 text-xs font-medium hover:text-slate-800 transition-colors`}
           >
             Close
           </button>
@@ -1012,7 +1016,7 @@ const EVENT_H  = 22;   // px — height of each event banner
 const EVENT_GAP = 2;   // px — gap between banner rows
 const MAX_SLOTS = 3;   // visible event rows before "+N more"
 
-function MonthGrid({ monthDate, events, today, linkMap, onDayClick, onEventClick, onDeleteClick, onOverflowClick }: {
+function MonthGrid({ monthDate, events, today, linkMap, onDayClick, onEventClick, onDeleteClick, onOverflowClick, isAdmin }: {
   monthDate: Date;
   events: CalendarEvent[];
   today: Date;
@@ -1021,6 +1025,7 @@ function MonthGrid({ monthDate, events, today, linkMap, onDayClick, onEventClick
   onEventClick: (e: CalendarEvent) => void;
   onDeleteClick: (e: CalendarEvent) => void;
   onOverflowClick: (day: Date, dayEvents: CalendarEvent[]) => void;
+  isAdmin: boolean;
 }) {
   const year  = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -1163,14 +1168,16 @@ function MonthGrid({ monthDate, events, today, linkMap, onDayClick, onEventClick
                       )}
                     </div>
 
-                    {/* Delete button on hover */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDeleteClick(seg.event); }}
-                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 text-white/80 hover:text-white transition-opacity text-xs leading-none w-4 h-4 flex items-center justify-center"
-                      title="Delete"
-                    >
-                      &times;
-                    </button>
+                    {/* Delete button on hover — admin only */}
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDeleteClick(seg.event); }}
+                        className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 text-white/80 hover:text-white transition-opacity text-xs leading-none w-4 h-4 flex items-center justify-center"
+                        title="Delete"
+                      >
+                        &times;
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -1183,7 +1190,7 @@ function MonthGrid({ monthDate, events, today, linkMap, onDayClick, onEventClick
 
 // ── Week Grid ──────────────────────────────────────────────────────────────────
 
-function WeekGrid({ weekStart, events, today, linkMap, onDayClick, onEventClick, onDeleteClick }: {
+function WeekGrid({ weekStart, events, today, linkMap, onDayClick, onEventClick, onDeleteClick, isAdmin }: {
   weekStart: Date;
   events: CalendarEvent[];
   today: Date;
@@ -1191,6 +1198,7 @@ function WeekGrid({ weekStart, events, today, linkMap, onDayClick, onEventClick,
   onDayClick: (iso: string) => void;
   onEventClick: (e: CalendarEvent) => void;
   onDeleteClick: (e: CalendarEvent) => void;
+  isAdmin: boolean;
 }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -1250,13 +1258,15 @@ function WeekGrid({ weekStart, events, today, linkMap, onDayClick, onEventClick,
                     {ev.location && (
                       <p className="text-[9px] truncate mt-0.5 opacity-60" style={{ color: color.text }}>{ev.location}</p>
                     )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDeleteClick(ev); }}
-                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all text-xs leading-none w-4 h-4 flex items-center justify-center"
-                      title="Delete"
-                    >
-                      &times;
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDeleteClick(ev); }}
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all text-xs leading-none w-4 h-4 flex items-center justify-center"
+                        title="Delete"
+                      >
+                        &times;
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -1266,6 +1276,15 @@ function WeekGrid({ weekStart, events, today, linkMap, onDayClick, onEventClick,
       })}
     </div>
   );
+}
+
+// ── Crew-visible event label filter ───────────────────────────────────────────
+
+const CREW_LABELS = ["recurring work", "one off work", "time block"];
+
+function isCrewVisible(title: string): boolean {
+  const lower = title.toLowerCase();
+  return CREW_LABELS.some((l) => lower.includes(l));
 }
 
 // ── Main Client ────────────────────────────────────────────────────────────────
@@ -1282,6 +1301,8 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAdmin(role === "admin");
   }, []);
+
+  const visibleEvents = isAdmin ? events : events.filter((ev) => isCrewVisible(ev.title));
 
   const [viewMode,   setViewMode]   = useState<ViewMode>("month");
   const [monthDate,  setMonthDate]  = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
@@ -1396,13 +1417,15 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
               </svg>
               Google Cal
             </a>
-            <button onClick={() => openCreate()}
-              className="flex items-center gap-1.5 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm hover:bg-blue-900 transition-colors">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              New Event
-            </button>
+            {isAdmin && (
+              <button onClick={() => openCreate()}
+                className="flex items-center gap-1.5 bg-[#000080] text-white text-[10px] tracking-widests uppercase font-semibold px-3 py-2 rounded-sm hover:bg-blue-900 transition-colors">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                New Event
+              </button>
+            )}
           </div>
         </div>
 
@@ -1411,23 +1434,25 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
           {viewMode === "month" ? (
             <MonthGrid
               monthDate={monthDate}
-              events={events}
+              events={visibleEvents}
               today={today}
               linkMap={linkMap}
-              onDayClick={openCreate}
+              onDayClick={isAdmin ? openCreate : () => {}}
               onEventClick={openDetail}
               onDeleteClick={openDelete}
               onOverflowClick={openOverflow}
+              isAdmin={isAdmin}
             />
           ) : (
             <WeekGrid
               weekStart={weekStart}
-              events={events}
+              events={visibleEvents}
               today={today}
               linkMap={linkMap}
-              onDayClick={openCreate}
+              onDayClick={isAdmin ? openCreate : () => {}}
               onEventClick={openDetail}
               onDeleteClick={openDelete}
+              isAdmin={isAdmin}
             />
           )}
         </div>
