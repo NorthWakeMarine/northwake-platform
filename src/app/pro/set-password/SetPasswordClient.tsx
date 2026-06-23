@@ -20,31 +20,33 @@ export default function SetPasswordClient() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // createBrowserClient auto-detects #access_token= in the URL hash
-    // and calls setSession internally. We just need to wait for it.
     const supabase = createBrowserSupabase();
 
-    const check = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // onAuthStateChange fires as soon as the client processes the #access_token= hash
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const userRole = (session.user.app_metadata?.role as string) ?? "admin";
-        setRole(userRole);
+        setRole((session.user.app_metadata?.role as string) ?? "admin");
         setStep("set-password");
-      } else {
-        // Give the client a moment to process the hash, then try once more
-        setTimeout(async () => {
-          const { data: { session: s2 } } = await supabase.auth.getSession();
-          if (s2?.user) {
-            setRole((s2.user.app_metadata?.role as string) ?? "admin");
-            setStep("set-password");
-          } else {
-            setStep("error");
-          }
-        }, 1200);
       }
-    };
+    });
 
-    check();
+    // Also check immediately in case the session is already established
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setRole((session.user.app_metadata?.role as string) ?? "admin");
+        setStep("set-password");
+      }
+    });
+
+    // Only show "expired" after a generous wait — hash parsing can take a moment
+    const timer = setTimeout(() => {
+      setStep((prev) => (prev === "loading" ? "error" : prev));
+    }, 6000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
