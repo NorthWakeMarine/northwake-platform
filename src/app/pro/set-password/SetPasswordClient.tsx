@@ -22,31 +22,40 @@ export default function SetPasswordClient() {
   useEffect(() => {
     const supabase = createBrowserSupabase();
 
-    // onAuthStateChange fires as soon as the client processes the #access_token= hash
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const init = async () => {
+      // Parse tokens directly from the URL hash
+      const hash = window.location.hash.slice(1);
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (error || !data.session) {
+          setStep("error");
+          return;
+        }
+        setRole((data.session.user.app_metadata?.role as string) ?? "admin");
+        setStep("set-password");
+        // Clean the tokens out of the URL bar
+        window.history.replaceState(null, "", window.location.pathname);
+        return;
+      }
+
+      // No hash tokens — check if already have a live session
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setRole((session.user.app_metadata?.role as string) ?? "admin");
         setStep("set-password");
+      } else {
+        setStep("error");
       }
-    });
-
-    // Also check immediately in case the session is already established
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setRole((session.user.app_metadata?.role as string) ?? "admin");
-        setStep("set-password");
-      }
-    });
-
-    // Only show "expired" after a generous wait — hash parsing can take a moment
-    const timer = setTimeout(() => {
-      setStep((prev) => (prev === "loading" ? "error" : prev));
-    }, 6000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timer);
     };
+
+    init();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
