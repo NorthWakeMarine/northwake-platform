@@ -3775,6 +3775,61 @@ async function requireAdmin(): Promise<void> {
   if (role !== "admin") throw new Error("Insufficient permissions");
 }
 
+export async function deleteTeamMember(
+  userId: string
+): Promise<{ error?: string }> {
+  try {
+    await requireAdmin();
+    const supabase = await svc();
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) return { error: error.message };
+    revalidatePath("/pro/settings");
+    return {};
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+export async function resendTeamInvite(
+  userId: string,
+  email: string,
+  fullName: string
+): Promise<{ error?: string }> {
+  try {
+    await requireAdmin();
+    const supabase = await svc();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://northwakemarine.com";
+
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: {
+        redirectTo: `${siteUrl}/pro/set-password`,
+      },
+    });
+    if (error) return { error: error.message };
+
+    // Preserve the existing role
+    const { data: existing } = await supabase.auth.admin.getUserById(userId);
+    const role = (existing?.user?.app_metadata?.role as string) ?? "crew";
+    if (data?.user) {
+      await supabase.auth.admin.updateUserById(data.user.id, {
+        app_metadata: { role },
+      });
+    }
+
+    const inviteUrl = data?.properties?.action_link;
+    if (inviteUrl) {
+      const { sendTeamInviteEmail } = await import("@/lib/gmail");
+      await sendTeamInviteEmail({ email, fullName, inviteUrl });
+    }
+
+    return {};
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
 export async function setUserRole(
   userId: string,
   role: string

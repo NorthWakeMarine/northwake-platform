@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { setUserRole, inviteTeamMember } from "@/app/actions";
+import { setUserRole, inviteTeamMember, deleteTeamMember, resendTeamInvite } from "@/app/actions";
 import type { TeamMember } from "./page";
 
 const ROLES = [
@@ -10,12 +10,7 @@ const ROLES = [
 ];
 
 function initials(name: string) {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 }
 
 function RoleSelect({ member }: { member: TeamMember }) {
@@ -28,10 +23,7 @@ function RoleSelect({ member }: { member: TeamMember }) {
     setCurrent(next);
     startTransition(async () => {
       const res = await setUserRole(member.id, next);
-      if (res?.error) {
-        setCurrent(prev);
-        alert(res.error);
-      }
+      if (res?.error) { setCurrent(prev); alert(res.error); }
     });
   }
 
@@ -43,15 +35,64 @@ function RoleSelect({ member }: { member: TeamMember }) {
       className="text-xs border border-gray-200 rounded px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-gray-400 transition-colors disabled:opacity-50 focus:outline-none focus:border-[#000080]"
     >
       {ROLES.map((r) => (
-        <option key={r.value} value={r.value}>
-          {r.label}
-        </option>
+        <option key={r.value} value={r.value}>{r.label}</option>
       ))}
     </select>
   );
 }
 
-export default function SettingsClient({ members }: { members: TeamMember[] }) {
+function MemberActions({ member, currentUserId }: { member: TeamMember; currentUserId: string }) {
+  const [delPending, startDel] = useTransition();
+  const [resendPending, startResend] = useTransition();
+  const [resendDone, setResendDone] = useState(false);
+  const isSelf = member.id === currentUserId;
+
+  function handleDelete() {
+    if (!confirm(`Remove ${member.name} from the team? This cannot be undone.`)) return;
+    startDel(async () => {
+      const res = await deleteTeamMember(member.id);
+      if (res?.error) alert(res.error);
+    });
+  }
+
+  function handleResend() {
+    startResend(async () => {
+      const res = await resendTeamInvite(member.id, member.email, member.name);
+      if (res?.error) alert(res.error);
+      else setResendDone(true);
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      {!member.confirmed && (
+        <button
+          onClick={handleResend}
+          disabled={resendPending || resendDone}
+          className="text-[10px] font-medium px-2.5 py-1 rounded border border-gray-300 text-gray-600 hover:border-[#000080] hover:text-[#000080] transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          {resendPending ? "Sending…" : resendDone ? "Sent" : "Resend Invite"}
+        </button>
+      )}
+      <button
+        onClick={handleDelete}
+        disabled={delPending || isSelf}
+        title={isSelf ? "You cannot remove yourself" : `Remove ${member.name}`}
+        className="text-[10px] font-medium px-2.5 py-1 rounded border border-gray-300 text-red-500 hover:border-red-400 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {delPending ? "Removing…" : "Delete"}
+      </button>
+    </div>
+  );
+}
+
+export default function SettingsClient({
+  members,
+  currentUserId,
+}: {
+  members: TeamMember[];
+  currentUserId: string;
+}) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState("crew");
@@ -75,7 +116,6 @@ export default function SettingsClient({ members }: { members: TeamMember[] }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Page header */}
       <div className="bg-white border-b border-gray-200 px-6 py-5">
         <h1 className="text-gray-900 text-base font-bold tracking-tight">Settings</h1>
         <p className="text-gray-500 text-xs mt-0.5">Team access and role management</p>
@@ -98,21 +138,26 @@ export default function SettingsClient({ members }: { members: TeamMember[] }) {
                   <th className="text-left px-4 py-2.5 text-gray-400 font-medium uppercase tracking-wider text-[10px]">Member</th>
                   <th className="text-left px-4 py-2.5 text-gray-400 font-medium uppercase tracking-wider text-[10px]">Role</th>
                   <th className="text-left px-4 py-2.5 text-gray-400 font-medium uppercase tracking-wider text-[10px] hidden sm:table-cell">Last Sign In</th>
+                  <th className="px-4 py-2.5" />
                 </tr>
               </thead>
               <tbody>
                 {members.map((m, i) => (
-                  <tr
-                    key={m.id}
-                    className={i < members.length - 1 ? "border-b border-gray-100" : ""}
-                  >
+                  <tr key={m.id} className={i < members.length - 1 ? "border-b border-gray-100" : ""}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-7 h-7 rounded-full bg-[#000080]/10 flex items-center justify-center shrink-0">
                           <span className="text-[#000080] text-[10px] font-bold">{initials(m.name)}</span>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-gray-800 font-medium truncate">{m.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-gray-800 font-medium truncate">{m.name}</p>
+                            {!m.confirmed && (
+                              <span className="text-[9px] font-semibold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0">
+                                Pending
+                              </span>
+                            )}
+                          </div>
                           <p className="text-gray-400 truncate mt-0.5">{m.email}</p>
                         </div>
                       </div>
@@ -122,12 +167,11 @@ export default function SettingsClient({ members }: { members: TeamMember[] }) {
                     </td>
                     <td className="px-4 py-3 text-gray-400 hidden sm:table-cell">
                       {m.lastSignIn
-                        ? new Date(m.lastSignIn).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
+                        ? new Date(m.lastSignIn).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                         : "Never"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <MemberActions member={m} currentUserId={currentUserId} />
                     </td>
                   </tr>
                 ))}
@@ -204,9 +248,7 @@ export default function SettingsClient({ members }: { members: TeamMember[] }) {
                 className="border border-gray-300 rounded px-3 py-2 text-xs text-gray-700 focus:outline-none focus:border-[#000080] transition-colors w-full sm:w-48"
               >
                 {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
+                  <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
             </div>

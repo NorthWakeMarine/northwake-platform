@@ -12,6 +12,7 @@ export type TeamMember = {
   name: string;
   role: string;
   lastSignIn: string | null;
+  confirmed: boolean;
 };
 
 export default async function SettingsPage() {
@@ -33,11 +34,12 @@ export default async function SettingsPage() {
     name: ((u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split("@")[0] || "Unknown") as string),
     role: (u.app_metadata?.role as string) ?? "admin",
     lastSignIn: u.last_sign_in_at ?? null,
+    confirmed: !!u.email_confirmed_at,
   }));
 
   return (
     <ProShell>
-      <SettingsClient members={members} />
+      <SettingsClient members={members} currentUserId={user.id} />
     </ProShell>
   );
 }
