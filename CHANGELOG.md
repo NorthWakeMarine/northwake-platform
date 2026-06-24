@@ -2,6 +2,12 @@
 
 ## June 2026
 
+### June 23 | Outboard service copy restricted to Yamaha-only | Marketing
+
+- **Tagline**: removed "All Brands Welcome." — now reads "Yamaha Certified." only.
+- **Description**: updated to reference "your Yamaha outboard" and removed "all outboard brands" tail.
+- **Schema description**: updated from "for all outboard brands" to "for Yamaha outboards."
+
 ### June 21 | Meta Lead Ads integration | Integrations
 
 - **Meta Lead Ads webhook** (`POST /api/webhooks/meta-leads`): receives leadgen notifications from Meta, fetches lead data from Graph API using Page Access Token, inserts into `leads` table tagged `source: meta_ads`, and mirrors to contacts + OpenPhone via `ingestContact`. Signature-verified via `X-Hub-Signature-256` using `META_APP_SECRET`. GET handler responds to Meta's verification handshake using `META_VERIFY_TOKEN`.
