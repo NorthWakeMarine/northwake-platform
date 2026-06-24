@@ -2,6 +2,21 @@
 
 ## June 2026
 
+### June 24 | Monthly recurring invoice cron, calendar billing setup, and contact linking | CRM + Integrations
+
+- **Maintenance invoice cron fixed** (`/api/maintenance-invoices`): cron was only generating 1 invoice instead of all recurring customers. Root cause: stored `gcal_event_id` was an instance ID (e.g. `abc123_20260601T...`) instead of the series base ID, so July instances never matched. Fixed by storing `event.recurringEventId ?? event.id` on all new links. Added `linkByExtractedBase` fallback map using regex to match legacy stored instance IDs against new recurring instances.
+- **Debug mode added to cron** (`?debug=1`): returns a full breakdown of all auto-invoice links, GCal events in the target month window, match type (exact / recurringId / extractedBase / none), and matched contact name per event. Used to diagnose the 30-link/22-match discrepancy.
+- **QuickBooks invoice product lookup fixed**: `findQbItem` was called with the full formatted description string ("Maintenance Wash - Vessel Name - July 14, 2026") which never matched a QB product. Now passes `itemName: link.serviceLabel` (e.g. "Maintenance Wash") separately so the correct product/service is selected.
+- **QuickBooks invoice description fixed**: CRM template checklist was being used as the invoice line description. Now uses the QB item's own description field, with the CRM formatted label as the fallback.
+- **Duplicate invoice guard**: cron checks `timeline_events` for existing `gcal_event_id` in metadata before creating; skips any event already invoiced to prevent double-billing on re-runs.
+- **`createServiceEvent` action fixed** (New+ global button recurring service flow): removed `event_type` from `calendar_contact_links` insert (column does not exist, was causing silent failure). Changed `billing_frequency` from RRULE string to `"monthly"` (satisfies check constraint). Added error surfacing so billing link failures now return an error instead of silently closing the modal.
+- **Calendar store series base ID on link and invoice forms**: `CalendarClient` now stores `event.recurringEventId ?? event.id` when linking or invoicing from the event detail panel, so all future recurring instances match correctly.
+- **Billing setup from event detail panel**: linked events now show a "Set Up Billing" button (or "Edit" if already configured). Billing form supports template, qty, rate, discount, and auto-invoice toggle. Saves via `linkCalendarEvent` upsert.
+- **New+ service form includes contact link and billing**: the "Recurring Service" and "One-Time Invoice" flows in the New+ modal now link the created GCal event to the selected contact and persist billing details in `calendar_contact_links` in the same action.
+- **Service Label field removed everywhere**: the visible "Service Label" input was removed from the billing form in `LinkedPanel`, the `EventModal`, and `NewPlusModal`. The template name is used automatically as the service label via hidden input.
+- **Calendar event window extended**: now fetches from July 1, 2025 (fixed start) through 18 months ahead (rolling), so full history and future recurring series are always visible.
+- **CRON_SECRET**: new secret `nwm-cron-2026` set in Vercel for protected cron endpoint access.
+
 ### June 23 | Lead source selection and converted lead filtering | CRM
 
 - **Lead source dropdown on New Lead modal**: "New Lead" button now includes a Lead Source selector (Quo, Google, Meta, Website). Selected value is saved to the `source` column on insert. Previously hardcoded to "website".
