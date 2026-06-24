@@ -360,18 +360,6 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 </div>
               )}
 
-              {/* Service label */}
-              <div className="flex flex-col gap-1">
-                <label className={labelCls}>Service Label <span className="text-red-500">*</span></label>
-                <input
-                  value={serviceLabel}
-                  onChange={e => setServiceLabel(e.target.value)}
-                  placeholder="e.g. Bi-Weekly Wash"
-                  className={inputCls}
-                  required
-                />
-              </div>
-
               {/* Qty / Rate / Discount */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1">

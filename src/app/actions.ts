@@ -2192,7 +2192,6 @@ export async function createServiceEvent(
       invoice_amount:      amount,
       auto_invoice:        true,
       billing_frequency:   billingFreq,
-      event_type:          "work",
       color_id:            colorId,
       recurrence_rule:     recurrenceRule ?? null,
     });
