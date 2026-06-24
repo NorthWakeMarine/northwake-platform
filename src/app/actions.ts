@@ -2180,7 +2180,7 @@ export async function createServiceEvent(
       recurrenceRule,
     });
 
-    await supabase.from("calendar_contact_links").insert({
+    const { error: linkErr } = await supabase.from("calendar_contact_links").insert({
       gcal_event_id:       eventId,
       contact_id,
       vessel_id:           vessel_id || null,
@@ -2195,6 +2195,11 @@ export async function createServiceEvent(
       color_id:            colorId,
       recurrence_rule:     recurrenceRule ?? null,
     });
+
+    if (linkErr) {
+      console.error("[createServiceEvent] calendar_contact_links insert failed:", linkErr.message);
+      return { error: `Event created in Google Calendar but billing link failed: ${linkErr.message}` };
+    }
 
     revalidatePath("/pro/calendar");
     revalidatePath("/pro/pipeline");
