@@ -290,7 +290,7 @@ export async function addTimelineNote(
 
 // ─── Phone Notes ──────────────────────────────────────────────────────────────
 
-export async function createLeadFromCall(phone: string, name?: string): Promise<{ ok: boolean; error?: string }> {
+export async function createLeadFromCall(phone: string, name?: string, source?: string): Promise<{ ok: boolean; error?: string }> {
   if (!phone) return { ok: false, error: "No phone number." };
   const { createClient } = await import("@supabase/supabase-js");
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
@@ -298,7 +298,7 @@ export async function createLeadFromCall(phone: string, name?: string): Promise<
   if (existing) return { ok: true }; // already a lead
   const { data: lead, error } = await supabase
     .from("leads")
-    .insert({ phone, name: name?.trim() || null, source: "quo", email: "" })
+    .insert({ phone, name: name?.trim() || null, source: source || "website", email: "" })
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };

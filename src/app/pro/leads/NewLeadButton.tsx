@@ -8,6 +8,7 @@ export default function NewLeadButton() {
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
+  const [source, setSource] = useState("website");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -15,11 +16,12 @@ export default function NewLeadButton() {
     e.preventDefault();
     if (!phone.trim()) return;
     setLoading(true);
-    await createLeadFromCall(phone.trim(), name.trim() || undefined);
+    await createLeadFromCall(phone.trim(), name.trim() || undefined, source);
     setLoading(false);
     setOpen(false);
     setPhone("");
     setName("");
+    setSource("website");
     router.refresh();
   }
 
@@ -60,6 +62,19 @@ export default function NewLeadButton() {
                 placeholder="John Smith"
                 className="border border-gray-500 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-navy"
               />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-700">Lead Source</label>
+              <select
+                value={source}
+                onChange={e => setSource(e.target.value)}
+                className="border border-gray-500 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-navy bg-white"
+              >
+                <option value="quo">Quo</option>
+                <option value="google">Google</option>
+                <option value="meta">Meta</option>
+                <option value="website">Website</option>
+              </select>
             </div>
             <div className="flex gap-3 justify-end">
               <button type="button" onClick={() => setOpen(false)} className="text-xs text-slate-500 px-4 py-2 hover:text-slate-700 transition-colors">
