@@ -201,6 +201,7 @@ async function findQbItem(name: string): Promise<{ id: string; description: stri
 export async function createQbInvoiceDraft(opts: {
   qbCustomerId: string;
   lineDescription: string;
+  itemName?: string | null;
   lineBody?: string | null;
   amount?: number;
   discount?: number;
@@ -215,11 +216,11 @@ export async function createQbInvoiceDraft(opts: {
   const net   = Math.max(0, gross - disc);
 
   const [qbItem, nextDocNumber] = await Promise.all([
-    findQbItem(opts.lineDescription),
+    findQbItem(opts.itemName || opts.lineDescription),
     getNextInvoiceDocNumber(),
   ]);
   const itemId = qbItem?.id ?? "1";
-  const lineDesc = opts.lineBody || qbItem?.description || opts.lineDescription;
+  const lineDesc = qbItem?.description || opts.lineDescription;
 
   const body: Record<string, unknown> = {
     CustomerRef: { value: opts.qbCustomerId },

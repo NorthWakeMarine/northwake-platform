@@ -100,6 +100,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ invoiced: 0, skipped: 0, message: "No links with QB customers found." });
   }
 
+  // Also index links stored with a specific instance ID by their extracted base series ID
+  // so existing records created before the fix still match future recurring instances
+  const linkByExtractedBase = new Map<string, LinkInfo>();
+  for (const [storedId, info] of linkBySeriesId) {
+    const m = storedId.match(/^(.+)_\d{8}(?:T\d{6}Z?)?$/);
+    if (m) linkByExtractedBase.set(m[1], info);
+  }
+
   // 2. Fetch next month's GCal events
   let gcalEvents: { id: string; title: string; start: string; recurringEventId?: string }[] = [];
   try {
@@ -133,7 +141,9 @@ export async function GET(req: NextRequest) {
 
   const workItems: WorkItem[] = [];
   for (const ev of gcalEvents) {
-    const link = linkBySeriesId.get(ev.id) ?? (ev.recurringEventId ? linkBySeriesId.get(ev.recurringEventId) : undefined);
+    const link = linkBySeriesId.get(ev.id)
+      ?? (ev.recurringEventId ? linkBySeriesId.get(ev.recurringEventId) : undefined)
+      ?? (ev.recurringEventId ? linkByExtractedBase.get(ev.recurringEventId) : undefined);
     if (!link) continue;
     const txnDate = ev.start.includes("T")
       ? new Date(ev.start).toISOString().slice(0, 10)
@@ -173,7 +183,7 @@ export async function GET(req: NextRequest) {
       const { invoiceId, docNumber } = await createQbInvoiceDraft({
         qbCustomerId:    w.link.qbCustomerId!,
         lineDescription,
-        lineBody:        w.link.serviceDescription,
+        itemName:        w.link.serviceLabel,
         amount:          w.link.invoiceAmount,
         discount:        w.link.invoiceDiscount,
         qty:             w.link.invoiceQty,
