@@ -222,16 +222,27 @@ export async function createQbInvoiceDraft(opts: {
   const itemId = qbItem?.id ?? "1";
   const lineDesc = qbItem?.description || opts.lineDescription;
 
+  const lines: Record<string, unknown>[] = [
+    {
+      DetailType: "SalesItemLineDetail",
+      Amount: gross,
+      Description: lineDesc,
+      SalesItemLineDetail: { ItemRef: { value: itemId }, Qty: qty, UnitPrice: rate },
+    },
+  ];
+
+  if (disc > 0) {
+    lines.push({
+      DetailType: "SalesItemLineDetail",
+      Amount: -disc,
+      Description: "Discount",
+      SalesItemLineDetail: { ItemRef: { value: "1" }, Qty: 1, UnitPrice: -disc },
+    });
+  }
+
   const body: Record<string, unknown> = {
     CustomerRef: { value: opts.qbCustomerId },
-    Line: [
-      {
-        DetailType: "SalesItemLineDetail",
-        Amount: net,
-        Description: lineDesc,
-        SalesItemLineDetail: { ItemRef: { value: itemId }, Qty: qty, UnitPrice: rate },
-      },
-    ],
+    Line: lines,
   };
 
   if (nextDocNumber) body.DocNumber = nextDocNumber;

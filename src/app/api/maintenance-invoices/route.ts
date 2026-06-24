@@ -119,11 +119,13 @@ export async function GET(req: NextRequest) {
     const c = l.contacts as unknown as { qb_customer_id: string | null; name: string | null } | null;
     if (!c?.qb_customer_id) continue;
     const v = l.vessels as unknown as { name: string | null } | null;
-    const invoiceAmount = Number(l.invoice_amount);
-    const invoiceQty    = l.invoice_qty && Number(l.invoice_qty) > 0 ? Number(l.invoice_qty) : 1;
+    const invoiceAmount   = Number(l.invoice_amount);
+    const invoiceDiscount = Number(l.invoice_discount ?? 0);
+    const invoiceQty      = l.invoice_qty && Number(l.invoice_qty) > 0 ? Number(l.invoice_qty) : 1;
+    // invoice_amount is NET (after discount). To get per-unit rate we need the GROSS.
     const invoiceRate   = l.invoice_rate && Number(l.invoice_rate) > 0
       ? Number(l.invoice_rate)
-      : invoiceAmount / invoiceQty;
+      : (invoiceAmount + invoiceDiscount) / invoiceQty;
     linkBySeriesId.set(l.gcal_event_id, {
       contactId:          l.contact_id,
       qbCustomerId:       c.qb_customer_id,
@@ -132,7 +134,7 @@ export async function GET(req: NextRequest) {
       serviceLabel:       l.service_label ?? "Maintenance Service",
       serviceDescription: l.service_template_id ? (templateDescMap.get(l.service_template_id) ?? null) : null,
       invoiceAmount,
-      invoiceDiscount:    Number(l.invoice_discount ?? 0),
+      invoiceDiscount,
       invoiceQty,
       invoiceRate,
     });
