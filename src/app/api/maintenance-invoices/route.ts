@@ -209,8 +209,11 @@ export async function GET(req: NextRequest) {
   const toProcess = workItems.filter(w => !existingGcalIds.has(w.eventId));
 
   // 6. Create invoices
-  const failed: string[] = [];
-  let invoiced = 0;
+  const failed: { contact: string; event: string; error: string }[] = [];
+  const succeeded: { contact: string; event: string; docNumber: string | null }[] = [];
+  const dedupedList = workItems
+    .filter(w => existingGcalIds.has(w.eventId))
+    .map(w => ({ contact: w.link.contactName ?? w.link.contactId, event: w.eventId }));
 
   await pMap(toProcess, async (w) => {
     try {
@@ -248,9 +251,13 @@ export async function GET(req: NextRequest) {
         },
         created_by: "cron",
       });
-      invoiced++;
+      succeeded.push({ contact: w.link.contactName ?? w.link.contactId, event: w.eventId, docNumber: docNumber || null });
     } catch (err) {
-      failed.push(`${w.link.contactName ?? w.link.contactId}: ${err instanceof Error ? err.message : String(err)}`);
+      failed.push({
+        contact: w.link.contactName ?? w.link.contactId,
+        event:   w.eventId,
+        error:   err instanceof Error ? err.message : String(err),
+      });
     }
   }, 5);
 
@@ -258,9 +265,19 @@ export async function GET(req: NextRequest) {
   const month = nextMonthStart.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   await supabase.from("system_flags").upsert({
     key:        `maintenance_invoices_${nextMonthStart.toISOString().slice(0, 7)}`,
-    value:      { invoiced, skipped: toProcess.length - invoiced - failed.length, failed, month },
+    value:      { invoiced: succeeded.length, skipped: dedupedList.length, failed: failed.map(f => `${f.contact}: ${f.error}`), month },
     updated_at: new Date().toISOString(),
   }, { onConflict: "key" });
 
-  return NextResponse.json({ invoiced, skipped: workItems.length - toProcess.length, failed, month });
+  return NextResponse.json({
+    month,
+    matched:   workItems.length,
+    attempted: toProcess.length,
+    invoiced:  succeeded.length,
+    skipped:   dedupedList.length,
+    failed:    failed.length,
+    succeeded,
+    deduped:   dedupedList,
+    errors:    failed,
+  });
 }
