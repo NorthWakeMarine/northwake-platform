@@ -2,6 +2,17 @@
 
 ## June 2026
 
+### June 23 | Crew tab bar, calendar color picker, invite flow, and waiver PDF | CRM
+
+- **Waiver PDF download**: after a customer submits the liability waiver, the success screen now shows a "Download Your Copy (PDF)" button. POSTs to new `/api/waiver-pdf` endpoint which generates the same PDF the CRM receives and returns it as an attachment download.
+- **Employee invite set-password flow**: clicking "Accept Invite" in the invite email now lands on `/pro/set-password` instead of the login page. New page parses the Supabase implicit-flow hash tokens from the URL, calls `setSession()` directly (no timing dependency), then lets the user set their password. Routes to `/pro/pipeline` (admin) or `/pro/contacts` (crew) on success. Shows a "Link Expired" error screen if tokens are absent or invalid.
+- **Invite emails via Resend**: `inviteTeamMember` now uses `supabase.auth.admin.generateLink({ type: "invite" })` + `sendTeamInviteEmail` via Resend instead of `inviteUserByEmail`. Bypasses Supabase's mailer rate limits. From: `info@northwakemarine.com`.
+- **Delete and Resend Invite on settings page**: team members table on `/pro/settings` now has an Actions column. Admins can delete any member (with confirm dialog; cannot remove themselves). Unconfirmed members show a "Pending" amber badge and a "Resend Invite" button that turns to "Sent" after clicking.
+- **Crew calendar color filter**: field crew only see events in three color groups: Recurring Work (Blueberry, colorId 9), One Off Work (Lavender, colorId 1), and Time Block (Grape, colorId 3). Filter checks `event.colorId` and falls back to `linkMap` colorId for linked events. Admin sees all events unfiltered.
+- **Event type color picker**: admin new/edit event modal now has a visual dropdown replacing the hidden `color_id` input. Each option shows a colored dot and event type label. 9 types: Recurring Work, One Off Work, Time Block, Sales, Boat Shows, Other Events, Service Outreach, Reminders, Payment Date. New events default to Recurring Work. Events created in the CRM now appear in the correct Google Calendar color group.
+- **Admin mobile tab bar fix**: Calendar was dropped off the tab bar when too many tabs were present. Pinned tabs are now Pipeline (admin), Calendar (admin + crew), Contacts (admin + crew). Everything else (Leads, Calls, Vessels, Services, Integrations, Site Editor, Settings, Release Notes) moves to the More drawer.
+- **Crew tab bar (no More button)**: crew's mobile tab bar shows exactly 3 pinned tabs: Calendar, Contacts, Vessels. More button is hidden for crew since there is nothing in their drawer.
+
 ### June 23 | Outboard service copy restricted to Yamaha-only | Marketing
 
 - **Tagline**: removed "All Brands Welcome." — now reads "Yamaha Certified." only.
