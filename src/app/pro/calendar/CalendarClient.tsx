@@ -932,7 +932,7 @@ function EventModal({ event, editScope, defaultDate, serviceTemplates, onClose }
   }, [contactQuery, isEdit, pickedContact]);
 
   useEffect(() => {
-    if (!pickedContact) { setVessels([]); setVesselId(""); return; }
+    if (!pickedContact) { setTimeout(() => { setVessels([]); setVesselId(""); }, 0); return; }
     startFetchV2(async () => {
       const v = await getVesselsByContactId(pickedContact.id);
       setVessels(v);
