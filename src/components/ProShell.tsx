@@ -143,6 +143,7 @@ const allNavLinks: NavItem[] = [
 ];
 
 // Mobile bottom tab definitions (role-filtered at render time)
+// Pinned bottom tabs: Pipeline, Calendar, Contacts (+ More for everything else)
 const allBottomTabs = [
   {
     href: "/pro/pipeline",
@@ -152,27 +153,6 @@ const allBottomTabs = [
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
         <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-      </svg>
-    ),
-  },
-  {
-    href: "/pro/leads",
-    label: "Leads",
-    roles: ["admin"],
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-      </svg>
-    ),
-  },
-  {
-    href: "/pro/contacts",
-    label: "Contacts",
-    roles: ["admin", "crew"],
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
   },
@@ -188,36 +168,28 @@ const allBottomTabs = [
     ),
   },
   {
-    href: "/pro/calls",
-    label: "Calls",
-    roles: ["admin"],
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/pro/vessels",
-    label: "Vessels",
+    href: "/pro/contacts",
+    label: "Contacts",
     roles: ["admin", "crew"],
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="5" r="3" />
-        <line x1="12" y1="8" x2="12" y2="22" />
-        <path d="M5 15H2a10 10 0 0 0 20 0h-3" />
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
   },
 ];
 
-// More drawer links (admin-only items shown in overflow menu on mobile)
+// More drawer links (overflow menu on mobile)
 const allMoreLinks = [
-  { href: "/pro/services", label: "Services", roles: ["admin"] },
+  { href: "/pro/leads",        label: "Leads",        roles: ["admin"] },
+  { href: "/pro/calls",        label: "Calls",        roles: ["admin"] },
+  { href: "/pro/vessels",      label: "Vessels",      roles: ["admin", "crew"] },
+  { href: "/pro/services",     label: "Services",     roles: ["admin"] },
   { href: "/pro/integrations", label: "Integrations", roles: ["admin"] },
-  { href: "/pro/editor", label: "Site Editor", roles: ["admin"] },
-  { href: "/pro/settings", label: "Settings", roles: ["admin"] },
-  { href: "/pro/release-notes", label: "Release Notes", roles: ["admin"] },
+  { href: "/pro/editor",       label: "Site Editor",  roles: ["admin"] },
+  { href: "/pro/settings",     label: "Settings",     roles: ["admin"] },
+  { href: "/pro/release-notes",label: "Release Notes",roles: ["admin"] },
 ];
 
 function parseName(email: string, meta: Record<string, string>) {
@@ -430,12 +402,12 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
                   active ? "text-white" : "text-white/35"
                 }`}
               >
-                <span className="[&>svg]:w-[18px] [&>svg]:h-[18px]">{icon}</span>
-                <span className="text-[8px] tracking-wider uppercase font-semibold leading-none">{label}</span>
+                {icon}
+                <span className="text-[9px] tracking-widest uppercase font-semibold">{label}</span>
               </Link>
             );
           })}
@@ -446,10 +418,10 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
                 moreOpen ? "text-white" : "text-white/35"
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
               </svg>
-              <span className="text-[8px] tracking-wider uppercase font-semibold leading-none">More</span>
+              <span className="text-[9px] tracking-widest uppercase font-semibold">More</span>
             </button>
           )}
         </div>
