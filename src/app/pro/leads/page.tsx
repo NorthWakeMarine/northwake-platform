@@ -88,7 +88,7 @@ export default async function LeadsPage({
   const { data: leads, error } = await supabase
     .from("leads")
     .select("id, created_at, name, email, phone, vessel_type, vessel_length, service, source")
-    .neq("status", "client")
+    .neq("status", "converted")
     .order(sortField, { ascending: sortDir === "asc" });
 
   // Batch lookup for which phone numbers have a note
