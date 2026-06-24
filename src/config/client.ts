@@ -466,9 +466,9 @@ export const clientConfig: ClientConfig = {
       tier: "Mechanical",
       badge: null,
       title: "Outboard Engine Service",
-      tagline: "Yamaha Certified. All Brands Welcome.",
+      tagline: "Yamaha Certified.",
       description:
-        "Scheduled maintenance keeps your outboard running clean and reliable. Our Yamaha-certified mechanic performs 100-hour and 300-hour services, oil and filter changes, gear lube, spark plug replacement, fuel filter service, and impeller inspections on Yamaha and non-Yamaha outboards.",
+        "Scheduled maintenance keeps your Yamaha outboard running clean and reliable. Our Yamaha-certified mechanic performs 100-hour and 300-hour services, oil and filter changes, gear lube, spark plug replacement, fuel filter service, and impeller inspections.",
       includes: [
         "100-hour & 300-hour service",
         "Engine oil & filter change",
@@ -478,7 +478,7 @@ export const clientConfig: ClientConfig = {
         "Impeller inspection",
       ],
       schemaDescription:
-        "Yamaha-certified outboard engine service in Jacksonville, FL. 100-hour and 300-hour maintenance, oil changes, gear lube, and impeller service for all outboard brands.",
+        "Yamaha-certified outboard engine service in Jacksonville, FL. 100-hour and 300-hour maintenance, oil changes, gear lube, and impeller service for Yamaha outboards.",
     },
     {
       id: "ceramic-coating",
