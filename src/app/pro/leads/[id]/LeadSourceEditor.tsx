@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateLeadField, type LeadFieldState } from "@/app/actions";
 
 const SOURCE_OPTIONS = [
@@ -25,10 +26,14 @@ export default function LeadSourceEditor({
   currentSource: string;
 }) {
   const [editing, setEditing] = useState(false);
+  const router = useRouter();
   const [state, action, isPending] = useActionState<LeadFieldState, FormData>(
     async (prev, formData) => {
       const result = await updateLeadField(prev, formData);
-      if (result.success) setEditing(false);
+      if (result.success) {
+        setEditing(false);
+        router.refresh();
+      }
       return result;
     },
     {}
