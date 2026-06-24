@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const debug = req.nextUrl.searchParams.get("debug") === "1";
   const supabase = svc();
 
   // Target: next month
@@ -38,8 +39,7 @@ export async function GET(req: NextRequest) {
   // 1. Fetch all auto-invoice links that have a price set
   const { data: links, error: linkErr } = await supabase
     .from("calendar_contact_links")
-    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, service_template_id, vessel_id, contacts(qb_customer_id, name), vessels(name)")
-    .eq("auto_invoice", true)
+    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, service_template_id, vessel_id, auto_invoice, contacts(qb_customer_id, name), vessels(name)")
     .not("invoice_amount", "is", null)
     .gt("invoice_amount", 0);
 
@@ -48,8 +48,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ invoiced: 0, skipped: 0, message: "No auto-invoice links configured." });
   }
 
+  if (debug) {
+    const c = links.map(l => ({
+      gcal_event_id: l.gcal_event_id,
+      contact: (l.contacts as unknown as { name: string | null } | null)?.name,
+      auto_invoice: l.auto_invoice,
+      invoice_amount: l.invoice_amount,
+      has_qb: !!(l.contacts as unknown as { qb_customer_id: string | null } | null)?.qb_customer_id,
+    }));
+    return NextResponse.json({ total_links_with_amount: links.length, links: c });
+  }
+
+  const autoLinks = links.filter(l => l.auto_invoice);
+
   // Fetch template descriptions separately to avoid FK join failures
-  const templateIds = [...new Set(links.map(l => l.service_template_id).filter(Boolean))] as string[];
+  const templateIds = [...new Set(autoLinks.map(l => l.service_template_id).filter(Boolean))] as string[];
   const templateDescMap = new Map<string, string | null>();
   if (templateIds.length > 0) {
     const { data: tpls } = await supabase
@@ -73,7 +86,7 @@ export async function GET(req: NextRequest) {
   };
 
   const linkBySeriesId = new Map<string, LinkInfo>();
-  for (const l of links) {
+  for (const l of autoLinks) {
     const c = l.contacts as unknown as { qb_customer_id: string | null; name: string | null } | null;
     if (!c?.qb_customer_id) continue;
     const v = l.vessels as unknown as { name: string | null } | null;
