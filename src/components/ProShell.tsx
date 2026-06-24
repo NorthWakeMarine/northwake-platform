@@ -178,13 +178,25 @@ const allBottomTabs = [
       </svg>
     ),
   },
+  {
+    href: "/pro/vessels",
+    label: "Vessels",
+    roles: ["crew"],
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="5" r="3" />
+        <line x1="12" y1="8" x2="12" y2="22" />
+        <path d="M5 15H2a10 10 0 0 0 20 0h-3" />
+      </svg>
+    ),
+  },
 ];
 
 // More drawer links (overflow menu on mobile)
 const allMoreLinks = [
   { href: "/pro/leads",        label: "Leads",        roles: ["admin"] },
   { href: "/pro/calls",        label: "Calls",        roles: ["admin"] },
-  { href: "/pro/vessels",      label: "Vessels",      roles: ["admin", "crew"] },
+  { href: "/pro/vessels",      label: "Vessels",      roles: ["admin"] },
   { href: "/pro/services",     label: "Services",     roles: ["admin"] },
   { href: "/pro/integrations", label: "Integrations", roles: ["admin"] },
   { href: "/pro/editor",       label: "Site Editor",  roles: ["admin"] },
