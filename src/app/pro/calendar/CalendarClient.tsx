@@ -288,7 +288,7 @@ function LinkedPanel({
   const [billingAuto,       setBillingAuto]         = useState(link.autoInvoice);
 
   useEffect(() => {
-    if (billingState.success) { setShowBilling(false); router.refresh(); }
+    if (billingState.success) router.refresh();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [billingState.success]);
 
@@ -490,7 +490,7 @@ function LinkedPanel({
       {/* Billing section */}
       {isAdmin && !showInvoice && !showClaimInvoice && (
         <div className="border-t border-slate-100 pt-3">
-          {!showBilling ? (
+          {!showBilling || billingState.success ? (
             <div className="flex items-center justify-between gap-2">
               {link.autoInvoice ? (
                 <div className="flex items-center gap-1.5 min-w-0">
