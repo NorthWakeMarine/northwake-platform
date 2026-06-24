@@ -278,6 +278,31 @@ function LinkedPanel({
 }) {
   const router = useRouter();
   const [showClaimInvoice,  setShowClaimInvoice]  = useState(false);
+  const [showBilling,       setShowBilling]        = useState(false);
+  const [billingState,      billingAction, saving]  = useActionState<CalendarLinkState, FormData>(linkCalendarEvent, {});
+  const [selectedTplId,     setSelectedTplId]      = useState(link.autoInvoice ? "" : "");
+  const [billingLabel,      setBillingLabel]        = useState(link.serviceLabel ?? suggestedService);
+  const [billingQty,        setBillingQty]          = useState(String(link.invoiceQty ?? 1));
+  const [billingRate,       setBillingRate]         = useState(String(link.invoiceRate ?? link.invoiceAmount ?? ""));
+  const [billingDiscount,   setBillingDiscount]     = useState(String(link.invoiceDiscount ?? 0));
+  const [billingAuto,       setBillingAuto]         = useState(link.autoInvoice);
+
+  useEffect(() => {
+    if (billingState.success) { setShowBilling(false); router.refresh(); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [billingState.success]);
+
+  function handleTplChange(tplId: string) {
+    setSelectedTplId(tplId);
+    const tpl = serviceTemplates.find(t => t.id === tplId);
+    if (tpl) {
+      setBillingLabel(tpl.name);
+      setBillingRate(String(tpl.default_amount));
+    }
+  }
+
+  const gross = (parseFloat(billingQty) || 0) * (parseFloat(billingRate) || 0);
+  const net   = Math.max(0, gross - (parseFloat(billingDiscount) || 0));
   const [invoices,          setInvoices]           = useState<InvoiceRecord[]>([]);
   const [loadingInvoices,   startLoadInvoices]     = useTransition();
   const [claimingId,        setClaimingId]          = useState<string | null>(null);
@@ -462,21 +487,101 @@ function LinkedPanel({
         </div>
       )}
 
-      {/* Auto-invoice status badge (read-only) */}
-      {!showInvoice && !showClaimInvoice && link.autoInvoice && (
-        <div className="border-t border-slate-100 pt-3 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-          <p className="text-[10px] text-emerald-700 font-semibold">
-            {(() => {
-              const gross = link.invoiceRate != null
-                ? Number(link.invoiceRate) * Number(link.invoiceQty ?? 1)
-                : Number(link.invoiceAmount ?? 0);
-              const net = gross - Number(link.invoiceDiscount ?? 0);
-              return isAdmin ? `Auto-invoice ON — $${net.toFixed(2)}` : "Auto-invoice ON";
-            })()}
-          </p>
-          {link.serviceLabel && (
-            <p className="text-[10px] text-slate-400 truncate ml-1">{link.serviceLabel}</p>
+      {/* Billing section */}
+      {isAdmin && !showInvoice && !showClaimInvoice && (
+        <div className="border-t border-slate-100 pt-3">
+          {!showBilling ? (
+            <div className="flex items-center justify-between gap-2">
+              {link.autoInvoice ? (
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <p className="text-[10px] text-emerald-700 font-semibold truncate">
+                    {isAdmin
+                      ? `Auto-invoice ON — $${Math.max(0, (Number(link.invoiceRate ?? 0) * Number(link.invoiceQty ?? 1)) - Number(link.invoiceDiscount ?? 0)).toFixed(2)}`
+                      : "Auto-invoice ON"}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[10px] text-slate-400">No auto-invoice set up</p>
+              )}
+              <button
+                onClick={() => setShowBilling(true)}
+                className="text-[10px] tracking-widest uppercase font-semibold text-[#000080] hover:underline shrink-0"
+              >
+                {link.autoInvoice ? "Edit" : "Set Up Billing"}
+              </button>
+            </div>
+          ) : (
+            <form action={billingAction} className="flex flex-col gap-2">
+              <input type="hidden" name="gcal_event_id" value={event.recurringEventId ?? event.id} />
+              <input type="hidden" name="contact_id"    value={link.contactId} />
+              <input type="hidden" name="vessel_id"     value={link.vesselId ?? ""} />
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500 mb-1">Billing Setup</p>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Template</label>
+                <select value={selectedTplId} onChange={e => handleTplChange(e.target.value)} className={inputCls} name="service_template_id">
+                  <option value="">None</option>
+                  {serviceTemplates.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Label</label>
+                <input name="service_label" value={billingLabel} onChange={e => setBillingLabel(e.target.value)} className={inputCls} />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Qty</label>
+                  <input type="number" name="invoice_qty" value={billingQty} onChange={e => setBillingQty(e.target.value)} min="1" step="1" className={inputCls} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Rate</label>
+                  <input type="number" name="invoice_rate" value={billingRate} onChange={e => setBillingRate(e.target.value)} min="0" step="0.01" className={inputCls} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Discount</label>
+                  <input type="number" name="invoice_discount" value={billingDiscount} onChange={e => setBillingDiscount(e.target.value)} min="0" step="0.01" className={inputCls} />
+                </div>
+              </div>
+
+              <input type="hidden" name="invoice_amount" value={net.toFixed(2)} />
+
+              {gross > 0 && (
+                <p className="text-[10px] text-slate-500">
+                  Net: <span className="font-semibold text-slate-800">${net.toFixed(2)}</span>
+                  {parseFloat(billingDiscount) > 0 && <span className="text-slate-400 line-through ml-2">${gross.toFixed(2)}</span>}
+                </p>
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBillingAuto(v => !v)}
+                  className={`relative w-9 h-5 rounded-full transition-colors ${billingAuto ? "bg-emerald-500" : "bg-slate-200"}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${billingAuto ? "translate-x-4" : ""}`} />
+                </button>
+                <input type="hidden" name="auto_invoice" value={billingAuto ? "true" : "false"} />
+                <span className="text-[10px] text-slate-600 font-medium">Auto-invoice on the 15th</span>
+              </div>
+
+              {billingState.error && <p className="text-red-600 text-[11px]">{billingState.error}</p>}
+
+              <div className="flex gap-2 pt-1">
+                <button type="submit" disabled={saving}
+                  className="flex-1 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold py-2 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-50">
+                  {saving ? "Saving..." : "Save Billing"}
+                </button>
+                <button type="button" onClick={() => setShowBilling(false)}
+                  className="px-3 text-[10px] text-slate-500 hover:text-slate-800 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
           )}
         </div>
       )}
