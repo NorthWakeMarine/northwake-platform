@@ -2,6 +2,13 @@
 
 ## June 2026
 
+### June 23 | Lead source selection and converted lead filtering | CRM
+
+- **Lead source dropdown on New Lead modal**: "New Lead" button now includes a Lead Source selector (Quo, Google, Meta, Website). Selected value is saved to the `source` column on insert. Previously hardcoded to "website".
+- **Inline source editor on lead detail page**: Lead Source card in the right panel now has an "Edit Source" link. Clicking it reveals a dropdown with all source types. Saving updates the DB and refreshes the page so the badge reflects the change immediately.
+- **Converted leads hidden from leads list**: `/pro/leads` now filters out rows where `status = "converted"`. Converted contacts continue to appear under Contacts.
+- **sourceConfig expanded**: `"meta"` and `"google"` source keys added to both the leads list badge config and the lead detail page config. Previously unknown source values fell back silently to "Website Form".
+
 ### June 23 | Crew tab bar, calendar color picker, invite flow, and waiver PDF | CRM
 
 - **Waiver PDF download**: after a customer submits the liability waiver, the success screen now shows a "Download Your Copy (PDF)" button. POSTs to new `/api/waiver-pdf` endpoint which generates the same PDF the CRM receives and returns it as an attachment download.
