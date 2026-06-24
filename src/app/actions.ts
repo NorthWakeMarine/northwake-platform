@@ -993,7 +993,7 @@ export async function updateLeadField(
   const field   = formData.get("field")   as string;
   const value   = (formData.get("value")  as string)?.trim() || null;
 
-  const ALLOWED = ["name", "email", "phone", "vessel_type", "vessel_length", "service"];
+  const ALLOWED = ["name", "email", "phone", "vessel_type", "vessel_length", "service", "source"];
   if (!lead_id || !field || !ALLOWED.includes(field)) return { error: "Invalid request." };
 
   const supabase = await svc();

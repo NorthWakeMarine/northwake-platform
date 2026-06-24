@@ -10,6 +10,7 @@ import DeleteLeadButton from "../DeleteLeadButton";
 import BlockLeadButton from "../BlockLeadButton";
 import LeadNotesSection from "./LeadNotesSection";
 import LeadFieldEditor from "./LeadFieldEditor";
+import LeadSourceEditor from "./LeadSourceEditor";
 
 type TimelineEvent = {
   id: string;
@@ -402,6 +403,7 @@ export default async function LeadDetailPage({
                   {src.label}
                 </span>
                 <p className="text-slate-500 text-xs mt-2.5 leading-relaxed">{src.description}</p>
+                <LeadSourceEditor leadId={lead.id} currentSource={lead.source ?? "website"} />
                 <div className="mt-3 pt-3 border-t border-slate-100">
                   <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1">Received</p>
                   <p className="text-slate-600 text-xs">{fmtFull(lead.created_at)}</p>
