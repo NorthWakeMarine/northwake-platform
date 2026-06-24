@@ -528,10 +528,7 @@ function LinkedPanel({
                 </select>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Label</label>
-                <input name="service_label" value={billingLabel} onChange={e => setBillingLabel(e.target.value)} className={inputCls} />
-              </div>
+              <input type="hidden" name="service_label" value={billingLabel} />
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1">
@@ -892,10 +889,11 @@ function EventDetailModal({ event, linkMap, serviceTemplates, onEdit, onDelete, 
 
 // ── Event Modal ────────────────────────────────────────────────────────────────
 
-function EventModal({ event, editScope, defaultDate, onClose }: {
+function EventModal({ event, editScope, defaultDate, serviceTemplates, onClose }: {
   event: CalendarEvent | null;
   editScope?: "instance" | "series"; // if "series", use recurringEventId for the edit
   defaultDate?: string;
+  serviceTemplates: ServiceTemplate[];
   onClose: () => void;
 }) {
   const isEdit = !!event;
@@ -905,6 +903,51 @@ function EventModal({ event, editScope, defaultDate, onClose }: {
   const [createState, createAction, creating]   = useActionState<CalendarEventState, FormData>(createStandaloneEvent, {});
   const [updateState, updateAction, updating]   = useActionState<CalendarEventState, FormData>(updateStandaloneEvent, {});
   const [instanceState, instanceAction, instUpd] = useActionState<CalendarEventState, FormData>(updateCalendarEventInstance, {});
+
+  // Contact + billing for new events
+  const [contactQuery,    setContactQuery]    = useState("");
+  const [contactResults,  setContactResults]  = useState<ContactResult[]>([]);
+  const [pickedContact,   setPickedContact]   = useState<ContactResult | null>(null);
+  const [vessels,         setVessels]         = useState<VesselOption[]>([]);
+  const [vesselId,        setVesselId]        = useState("");
+  const [tplId,           setTplId]           = useState("");
+  const [svcLabel,        setSvcLabel]        = useState("");
+  const [qty,             setQty]             = useState("1");
+  const [rate,            setRate]            = useState("");
+  const [discount,        setDiscount]        = useState("0");
+  const [autoInvoice,     setAutoInvoice]     = useState(false);
+  const [searchingC,      startSearchC]       = useTransition();
+  const [fetchingV2,      startFetchV2]       = useTransition();
+
+  useEffect(() => {
+    if (isEdit || !contactQuery || pickedContact) return;
+    const t = setTimeout(() => {
+      if (contactQuery.length < 2) { setContactResults([]); return; }
+      startSearchC(async () => {
+        const r = await searchContactsByName(contactQuery);
+        setContactResults(r);
+      });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [contactQuery, isEdit, pickedContact]);
+
+  useEffect(() => {
+    if (!pickedContact) { setVessels([]); setVesselId(""); return; }
+    startFetchV2(async () => {
+      const v = await getVesselsByContactId(pickedContact.id);
+      setVessels(v);
+      setVesselId(v[0]?.id ?? "");
+    });
+  }, [pickedContact]);
+
+  function handleTplChange(id: string) {
+    setTplId(id);
+    const tpl = serviceTemplates.find(t => t.id === id);
+    if (tpl) { setSvcLabel(tpl.name); setRate(String(tpl.default_amount)); }
+  }
+
+  const gross = (parseFloat(qty) || 0) * (parseFloat(rate) || 0);
+  const net   = Math.max(0, gross - (parseFloat(discount) || 0));
 
   // When editing "just this event" use instanceAction, "all events" use updateAction
   const action = !isEdit ? createAction : (editScope === "instance" ? instanceAction : updateAction);
@@ -1052,6 +1095,101 @@ function EventModal({ event, editScope, defaultDate, onClose }: {
               placeholder="Service details, access info, etc."
               className={`${inputCls} resize-none`} />
           </div>
+          {/* Contact + billing — new events only */}
+          {!isEdit && (
+            <div className="flex flex-col gap-3 border-t border-slate-100 pt-4">
+              <p className="text-slate-500 text-[11px] font-semibold uppercase tracking-widest">Link to Contact (optional)</p>
+
+              {!pickedContact ? (
+                <div className="relative">
+                  <input
+                    value={contactQuery}
+                    onChange={e => setContactQuery(e.target.value)}
+                    placeholder="Search contact name..."
+                    className={inputCls}
+                  />
+                  {searchingC && <span className="absolute right-3 top-2.5 text-[10px] text-slate-400">searching...</span>}
+                  {contactResults.length > 0 && (
+                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-sm shadow-lg overflow-hidden">
+                      {contactResults.map(r => (
+                        <button key={r.id} type="button"
+                          onClick={() => { setPickedContact(r); setContactResults([]); }}
+                          className="w-full text-left px-3 py-2 hover:bg-slate-50 transition-colors">
+                          <p className="text-xs font-medium text-slate-800">{r.name}</p>
+                          {r.email && <p className="text-[10px] text-slate-400">{r.email}</p>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-sm px-3 py-2">
+                  <span className="text-xs font-medium text-slate-800">{pickedContact.name}</span>
+                  <button type="button" onClick={() => { setPickedContact(null); setVessels([]); setVesselId(""); }}
+                    className="text-slate-400 hover:text-slate-600 text-xs ml-2">&times;</button>
+                </div>
+              )}
+
+              {pickedContact && (
+                <>
+                  <input type="hidden" name="contact_id" value={pickedContact.id} />
+
+                  {vessels.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Vessel</label>
+                      <select value={vesselId} onChange={e => setVesselId(e.target.value)} name="vessel_id" className={inputCls}>
+                        <option value="">No vessel</option>
+                        {vessels.map(v => <option key={v.id} value={v.id}>{[v.name, v.make_model].filter(Boolean).join(" ")}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {fetchingV2 && <p className="text-[10px] text-slate-400">Loading vessels...</p>}
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Template</label>
+                    <select value={tplId} onChange={e => handleTplChange(e.target.value)} name="service_template_id" className={inputCls}>
+                      <option value="">None</option>
+                      {serviceTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  </div>
+
+                  <input type="hidden" name="service_label" value={svcLabel} />
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Qty</label>
+                      <input type="number" name="invoice_qty" value={qty} onChange={e => setQty(e.target.value)} min="1" step="1" className={inputCls} />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Rate</label>
+                      <input type="number" name="invoice_rate" value={rate} onChange={e => setRate(e.target.value)} min="0" step="0.01" className={inputCls} />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Discount</label>
+                      <input type="number" name="invoice_discount" value={discount} onChange={e => setDiscount(e.target.value)} min="0" step="0.01" className={inputCls} />
+                    </div>
+                  </div>
+
+                  {gross > 0 && (
+                    <p className="text-[10px] text-slate-500">
+                      Net: <span className="font-semibold text-slate-800">${net.toFixed(2)}</span>
+                      {parseFloat(discount) > 0 && <span className="text-slate-400 line-through ml-2">${gross.toFixed(2)}</span>}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setAutoInvoice(v => !v)}
+                      className={`relative w-9 h-5 rounded-full transition-colors ${autoInvoice ? "bg-emerald-500" : "bg-slate-200"}`}>
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${autoInvoice ? "translate-x-4" : ""}`} />
+                    </button>
+                    <input type="hidden" name="auto_invoice" value={autoInvoice ? "true" : "false"} />
+                    <span className="text-[10px] text-slate-600 font-medium">Auto-invoice on the 15th</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {state.error && <p className="text-red-600 text-xs">{state.error}</p>}
           <div className="flex gap-3 pt-1">
             <button type="submit" disabled={busy}
@@ -1639,6 +1777,7 @@ export default function CalendarClient({ events, linkMap, serviceTemplates }: { 
           event={modal === "edit" ? selected : null}
           editScope={editScope}
           defaultDate={defaultDate}
+          serviceTemplates={serviceTemplates}
           onClose={closeModal}
         />
       )}

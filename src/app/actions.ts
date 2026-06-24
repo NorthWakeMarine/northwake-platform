@@ -1979,6 +1979,17 @@ export async function createStandaloneEvent(
   const is_all_day  = formData.get("is_all_day")  === "true";
   const color_id    = formData.get("color_id")    as string | null;
 
+  // Optional contact link + billing
+  const contact_id          = (formData.get("contact_id")          as string)?.trim() || null;
+  const vessel_id           = (formData.get("vessel_id")           as string)?.trim() || null;
+  const service_template_id = (formData.get("service_template_id") as string)?.trim() || null;
+  const service_label       = (formData.get("service_label")       as string)?.trim() || null;
+  const invoice_qty         = parseFloat(formData.get("invoice_qty")  as string) || 1;
+  const invoice_rate        = parseFloat(formData.get("invoice_rate") as string) || 0;
+  const invoice_discount    = parseFloat(formData.get("invoice_discount") as string) || 0;
+  const invoice_amount      = invoice_qty * invoice_rate - invoice_discount;
+  const auto_invoice        = formData.get("auto_invoice") === "true";
+
   if (!title || !start_time || !end_time) return { error: "Title, start, and end time are required." };
 
   // All-day end dates from the form are inclusive; Google needs exclusive (next day)
@@ -2000,6 +2011,24 @@ export async function createStandaloneEvent(
       isAllDay:    is_all_day,
       colorId:     color_id ?? undefined,
     });
+
+    // If a contact was selected, create the link + billing in the same step
+    if (contact_id) {
+      const supabase = await svc();
+      await supabase.from("calendar_contact_links").upsert({
+        gcal_event_id:      eventId,
+        contact_id,
+        vessel_id:          vessel_id || null,
+        service_template_id: service_template_id || null,
+        service_label:      service_label || null,
+        invoice_qty,
+        invoice_rate:       invoice_rate || null,
+        invoice_discount:   invoice_discount || null,
+        invoice_amount:     invoice_amount > 0 ? invoice_amount : null,
+        auto_invoice,
+      }, { onConflict: "gcal_event_id" });
+    }
+
     revalidatePath("/pro/calendar");
     revalidatePath("/pro/pipeline");
     return { success: true, eventId };
