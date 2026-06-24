@@ -2155,7 +2155,7 @@ export async function createServiceEvent(
       recurrenceRule = `RRULE:FREQ=WEEKLY;INTERVAL=${freqN};BYDAY=${dayCode}`;
     }
   }
-  const billingFreq = recurrenceRule ?? "monthly";
+  const billingFreq = "monthly";
 
   const supabase = await svc();
   const { data: contactRow } = await supabase
