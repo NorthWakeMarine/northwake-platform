@@ -50,7 +50,9 @@ const sourceConfig: Record<string, { label: string; cls: string; description: st
   waiver:      { label: "Liability Waiver",       cls: "bg-emerald-50 text-emerald-700 border border-emerald-200", description: "Created when the liability waiver was signed." },
   api:         { label: "API Ingest",             cls: "bg-slate-100 text-slate-600 border border-slate-200", description: "Received via the universal ingest API." },
   quo:         { label: "Quo — Inbound Call",     cls: "bg-purple-50 text-purple-700 border border-purple-200", description: "Auto-created from an inbound call via Quo." },
+  google:      { label: "Google",                 cls: "bg-green-50 text-green-700 border border-green-200",   description: "Generated from a Google campaign." },
   google_ads:  { label: "Google Ads",             cls: "bg-green-50 text-green-700 border border-green-200",  description: "Generated from a Google Ads lead form." },
+  meta:        { label: "Meta",                   cls: "bg-blue-50 text-blue-600 border border-blue-200",      description: "Generated from a Meta (Facebook/Instagram) campaign." },
   manual:           { label: "Manual Entry",           cls: "bg-amber-50 text-amber-700 border border-amber-200",  description: "Entered manually by the team." },
   service_reminder: { label: "Service Reminder",       cls: "bg-orange-50 text-orange-700 border border-orange-200", description: "Auto-created from an overdue service interval." },
 };
