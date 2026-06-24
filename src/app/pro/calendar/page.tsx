@@ -11,7 +11,7 @@ async function fetchEvents(): Promise<CalendarEvent[]> {
     const { listEvents } = await import("@/lib/google-calendar");
     const now = new Date();
     const from = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-    const to   = new Date(now.getFullYear(), now.getMonth() + 7, 1);
+    const to   = new Date(2028, 0, 1);
     return await listEvents(from, to);
   } catch {
     return [];
