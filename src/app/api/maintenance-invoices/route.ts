@@ -48,18 +48,47 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ invoiced: 0, skipped: 0, message: "No auto-invoice links configured." });
   }
 
-  if (debug) {
-    const c = links.map(l => ({
-      gcal_event_id: l.gcal_event_id,
-      contact: (l.contacts as unknown as { name: string | null } | null)?.name,
-      auto_invoice: l.auto_invoice,
-      invoice_amount: l.invoice_amount,
-      has_qb: !!(l.contacts as unknown as { qb_customer_id: string | null } | null)?.qb_customer_id,
-    }));
-    return NextResponse.json({ total_links_with_amount: links.length, links: c });
-  }
-
   const autoLinks = links.filter(l => l.auto_invoice);
+
+  if (debug) {
+    // Build the same maps the real run uses so we can show matching results
+    const debugLinkMap = new Map<string, string>();
+    for (const l of autoLinks) {
+      const c = l.contacts as unknown as { qb_customer_id: string | null; name: string | null } | null;
+      if (c?.qb_customer_id) debugLinkMap.set(l.gcal_event_id, c.name ?? l.contact_id);
+    }
+    const debugExtracted = new Map<string, string>();
+    for (const [id, name] of debugLinkMap) {
+      const m = id.match(/^(.+)_R?\d{8}(?:T\d{6}Z?)?$/);
+      if (m) debugExtracted.set(m[1], name);
+    }
+
+    let gcalEvents: { id: string; title: string; start: string; recurringEventId?: string }[] = [];
+    try {
+      const { listEvents } = await import("@/lib/google-calendar");
+      gcalEvents = await listEvents(nextMonthStart, nextMonthEnd);
+    } catch (e) {
+      return NextResponse.json({ error: "GCal fetch failed", detail: String(e) });
+    }
+
+    const matched: { gcal_id: string; recurring_id?: string; title: string; start: string; matched_contact: string | null; match_type: string }[] = [];
+    for (const ev of gcalEvents) {
+      let matchedContact: string | null = null;
+      let matchType = "none";
+      if (debugLinkMap.has(ev.id)) { matchedContact = debugLinkMap.get(ev.id)!; matchType = "exact"; }
+      else if (ev.recurringEventId && debugLinkMap.has(ev.recurringEventId)) { matchedContact = debugLinkMap.get(ev.recurringEventId)!; matchType = "recurringId"; }
+      else if (ev.recurringEventId && debugExtracted.has(ev.recurringEventId)) { matchedContact = debugExtracted.get(ev.recurringEventId)!; matchType = "extractedBase"; }
+      matched.push({ gcal_id: ev.id, recurring_id: ev.recurringEventId, title: ev.title, start: ev.start, matched_contact: matchedContact, match_type: matchType });
+    }
+
+    return NextResponse.json({
+      window: { from: nextMonthStart, to: nextMonthEnd },
+      total_links: autoLinks.length,
+      gcal_events_in_window: gcalEvents.length,
+      matched_count: matched.filter(m => m.match_type !== "none").length,
+      events: matched,
+    });
+  }
 
   // Fetch template descriptions separately to avoid FK join failures
   const templateIds = [...new Set(autoLinks.map(l => l.service_template_id).filter(Boolean))] as string[];
