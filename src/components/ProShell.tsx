@@ -424,32 +424,32 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
 
         {/* Tab bar */}
         <div className="flex h-16">
-          {bottomTabs.slice(0, 4).map(({ href, label, icon }) => {
+          {bottomTabs.map(({ href, label, icon }) => {
             const active = href === "/pro/pipeline" ? pathname === href || pathname.startsWith("/pro/pipeline") : pathname.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
                   active ? "text-white" : "text-white/35"
                 }`}
               >
-                {icon}
-                <span className="text-[9px] tracking-widest uppercase font-semibold">{label}</span>
+                <span className="[&>svg]:w-[18px] [&>svg]:h-[18px]">{icon}</span>
+                <span className="text-[8px] tracking-wider uppercase font-semibold leading-none">{label}</span>
               </Link>
             );
           })}
           {moreLinks.length > 0 && (
             <button
               onClick={() => setMoreOpen((v) => !v)}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
                 moreOpen ? "text-white" : "text-white/35"
               }`}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
               </svg>
-              <span className="text-[9px] tracking-widest uppercase font-semibold">More</span>
+              <span className="text-[8px] tracking-wider uppercase font-semibold leading-none">More</span>
             </button>
           )}
         </div>
