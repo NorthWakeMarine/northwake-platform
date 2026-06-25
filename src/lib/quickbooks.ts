@@ -227,9 +227,8 @@ export async function createQbInvoiceDraft(opts: {
   const disc  = opts.discount ?? 0;
   const net   = Math.max(0, gross - disc);
 
-  const [qbItem, nextDocNumber, discAccountId] = await Promise.all([
+  const [qbItem, discAccountId] = await Promise.all([
     findQbItem(opts.itemName || opts.lineDescription),
-    getNextInvoiceDocNumber(),
     disc > 0 ? findQbDiscountAccountId() : Promise.resolve(null),
   ]);
   const itemId = qbItem?.id ?? "1";
@@ -264,8 +263,6 @@ export async function createQbInvoiceDraft(opts: {
     CustomerRef: { value: opts.qbCustomerId },
     Line: lines,
   };
-
-  if (nextDocNumber) body.DocNumber = nextDocNumber;
 
   if (opts.txnDate) body.TxnDate = opts.txnDate;
 
