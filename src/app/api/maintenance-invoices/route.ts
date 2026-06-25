@@ -261,7 +261,7 @@ export async function GET(req: NextRequest) {
         error:   err instanceof Error ? err.message : String(err),
       });
     }
-  }, 5);
+  }, 1);
 
   // 7. Log summary
   const month = nextMonthStart.toLocaleDateString("en-US", { month: "long", year: "numeric" });
