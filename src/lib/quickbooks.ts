@@ -183,6 +183,18 @@ async function getNextInvoiceDocNumber(): Promise<string | undefined> {
   }
 }
 
+async function findQbDiscountAccountId(): Promise<string | null> {
+  try {
+    type Resp = { QueryResponse: { Account?: { Id: string }[] } };
+    const data = await qbRequest<Resp>(
+      `/query?query=${encodeURIComponent("SELECT Id FROM Account WHERE AccountSubType = 'DiscountsRefundsGiven' MAXRESULTS 1")}`
+    );
+    return data.QueryResponse.Account?.[0]?.Id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function findQbItem(name: string): Promise<{ id: string; description: string | null } | null> {
   try {
     const escaped = name.replace(/'/g, "\\'");
@@ -215,9 +227,10 @@ export async function createQbInvoiceDraft(opts: {
   const disc  = opts.discount ?? 0;
   const net   = Math.max(0, gross - disc);
 
-  const [qbItem, nextDocNumber] = await Promise.all([
+  const [qbItem, nextDocNumber, discAccountId] = await Promise.all([
     findQbItem(opts.itemName || opts.lineDescription),
     getNextInvoiceDocNumber(),
+    disc > 0 ? findQbDiscountAccountId() : Promise.resolve(null),
   ]);
   const itemId = qbItem?.id ?? "1";
   const lineDesc = qbItem?.description || opts.lineDescription;
@@ -232,12 +245,19 @@ export async function createQbInvoiceDraft(opts: {
   ];
 
   if (disc > 0) {
-    lines.push({
-      DetailType: "SalesItemLineDetail",
-      Amount: -disc,
-      Description: "Discount",
-      SalesItemLineDetail: { ItemRef: { value: "1" }, Qty: 1, UnitPrice: -disc },
-    });
+    if (discAccountId) {
+      lines.push({
+        DetailType: "DiscountLineDetail",
+        Amount: disc,
+        DiscountLineDetail: {
+          PercentBased: false,
+          DiscountAccountRef: { value: discAccountId },
+        },
+      });
+    } else {
+      // fallback if no discount account found: adjust the main line Amount to net
+      (lines[0] as { Amount: number }).Amount = net;
+    }
   }
 
   const body: Record<string, unknown> = {
