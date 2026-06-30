@@ -387,7 +387,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
       <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#06061a] border-t border-white/[0.07] pb-[env(safe-area-inset-bottom)]">
 
         {/* More drawer */}
-        {moreOpen && moreLinks.length > 0 && (
+        {moreOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setMoreOpen(false)} />
             <div className="relative z-50 bg-[#06061a] border-t border-white/[0.07] py-1">
@@ -404,6 +404,11 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
                   <span className="text-base font-medium">{label}</span>
                 </Link>
               ))}
+              <form action={signOut} className="border-t border-white/[0.07] mt-1">
+                <button type="submit" className="flex items-center gap-4 px-6 py-4 w-full text-left text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors">
+                  <span className="text-base font-medium">Sign Out</span>
+                </button>
+              </form>
             </div>
           </>
         )}
@@ -425,19 +430,6 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
-          {moreLinks.length > 0 && (
-            <button
-              onClick={() => setMoreOpen((v) => !v)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
-                moreOpen ? "text-white" : "text-white/35"
-              }`}
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
-              </svg>
-              <span className="text-[9px] tracking-widest uppercase font-semibold">More</span>
-            </button>
-          )}
           {userRole === "crew" && (
             <button
               onClick={() => setLeadOpen(true)}
@@ -451,6 +443,17 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
               <span className="text-[9px] tracking-widest uppercase font-semibold">New Lead</span>
             </button>
           )}
+          <button
+            onClick={() => setMoreOpen((v) => !v)}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+              moreOpen ? "text-white" : "text-white/35"
+            }`}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
+            </svg>
+            <span className="text-[9px] tracking-widest uppercase font-semibold">More</span>
+          </button>
         </div>
       </div>
 
