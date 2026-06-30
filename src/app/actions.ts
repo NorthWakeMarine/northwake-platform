@@ -1026,6 +1026,41 @@ export async function updateContactField(
   return { success: true };
 }
 
+export async function createFieldLead(_prev: { success?: boolean; error?: string }, formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  const name    = (formData.get("name")    as string | null)?.trim() || null;
+  const phone   = (formData.get("phone")   as string | null)?.trim() || null;
+  const email   = (formData.get("email")   as string | null)?.trim() || null;
+  const make    = (formData.get("make")    as string | null)?.trim() || null;
+  const year    = (formData.get("year")    as string | null)?.trim() || null;
+  const service = (formData.get("service") as string | null)?.trim() || null;
+  const location = (formData.get("location") as string | null)?.trim() || null;
+  const notes   = (formData.get("notes")   as string | null)?.trim() || null;
+
+  if (!name && !phone && !email) {
+    return { error: "Enter at least a name, phone, or email." };
+  }
+
+  const vesselType = [year, make].filter(Boolean).join(" ") || null;
+  const message    = [location ? `Boat location: ${location}` : null, notes].filter(Boolean).join("\n") || null;
+
+  const supabase = await svc();
+  const { error } = await supabase.from("leads").insert({
+    name:        name ?? "Unknown",
+    email:       email || null,
+    phone:       phone ? normalizePhone(phone) : null,
+    vessel_type: vesselType,
+    service:     service || "General Inquiry",
+    message,
+    source:      "field_crew",
+    status:      "new",
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/pro/leads");
+  return { success: true };
+}
+
 export async function createContact(fields: {
   name?: string;
   email?: string;

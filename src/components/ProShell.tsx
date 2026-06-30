@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { signOut } from "@/app/actions";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { clientConfig } from "@/config/client";
+import CrewLeadModal from "@/components/CrewLeadModal";
 
 type NavItem = {
   href: string;
@@ -229,6 +230,7 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
     () => typeof window !== "undefined" && localStorage.getItem("sidebar-collapsed") === "true"
   );
   const [moreOpen, setMoreOpen] = useState(false);
+  const [leadOpen, setLeadOpen] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -436,8 +438,23 @@ export default function ProShell({ children }: { children: React.ReactNode }) {
               <span className="text-[9px] tracking-widest uppercase font-semibold">More</span>
             </button>
           )}
+          {userRole === "crew" && (
+            <button
+              onClick={() => setLeadOpen(true)}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 text-white/35 hover:text-white transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#000080] flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </div>
+              <span className="text-[9px] tracking-widest uppercase font-semibold">New Lead</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {leadOpen && <CrewLeadModal onClose={() => setLeadOpen(false)} />}
 
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-w-0 pt-[env(safe-area-inset-top)] md:pt-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
