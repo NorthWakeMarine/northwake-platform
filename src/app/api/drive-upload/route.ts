@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerSupabase } from "@/lib/supabase/server";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const authClient = await createServerSupabase();
   const { data: { user } } = await authClient.auth.getUser();
@@ -34,11 +37,13 @@ export async function POST(req: NextRequest) {
   const { getOrCreateContactFolder, uploadFileToFolder } = await import("@/lib/google-drive");
 
   // Create folder if it doesn't exist yet
-  let folderId = contact.drive_folder_id as string | null;
+  let folderId   = contact.drive_folder_id as string | null;
+  let folderUrl  = contact.drive_folder_url as string | null;
   if (!folderId) {
     try {
       const folder = await getOrCreateContactFolder(contact.name ?? "Unknown Contact");
-      folderId = folder.id;
+      folderId  = folder.id;
+      folderUrl = folder.url;
       await supabase
         .from("contacts")
         .update({ drive_folder_id: folder.id, drive_folder_url: folder.url })
@@ -53,7 +58,7 @@ export async function POST(req: NextRequest) {
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
     const uploaded = await uploadFileToFolder(folderId, file.name, file.type || "application/octet-stream", buffer);
-    return NextResponse.json({ ok: true, file: uploaded });
+    return NextResponse.json({ ok: true, file: uploaded, folderUrl });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Drive upload failed.";
     console.error("[drive-upload]", err);

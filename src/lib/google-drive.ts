@@ -57,6 +57,21 @@ export async function createAssetFolder(
   return link;
 }
 
+// Makes a file or folder viewable by anyone with the link (no Google login required).
+async function setPublicReadable(fileId: string) {
+  const auth  = getAuth();
+  const drive = google.drive({ version: "v3", auth });
+  try {
+    await drive.permissions.create({
+      fileId,
+      supportsAllDrives: true,
+      requestBody: { role: "reader", type: "anyone" },
+    });
+  } catch {
+    // Non-fatal: Shared Drive domain policy may restrict this
+  }
+}
+
 // Gets or creates a contact-level Documents folder. Returns { id, url }.
 export async function getOrCreateContactFolder(
   contactName: string
@@ -91,6 +106,8 @@ export async function getOrCreateContactFolder(
   });
 
   if (!res.data.id || !res.data.webViewLink) throw new Error("Failed to create contact folder.");
+  // Make folder publicly viewable so employees can open it without signing in
+  await setPublicReadable(res.data.id);
   return { id: res.data.id, url: res.data.webViewLink };
 }
 
@@ -145,5 +162,7 @@ export async function uploadFileToFolder(
   });
 
   if (!res.data.id || !res.data.webViewLink) throw new Error("Upload failed.");
+  // Make file publicly viewable so employees can open without signing in to Google
+  await setPublicReadable(res.data.id);
   return { id: res.data.id, url: res.data.webViewLink, name: res.data.name! };
 }

@@ -3,6 +3,39 @@
 import { useRef, useState } from "react";
 import type { DriveFile } from "@/lib/google-drive";
 
+// Resize + compress JPEG/PNG images to max 2048px before upload.
+// iPhone photos are 5-10 MB; Vercel's body limit is 4.5 MB.
+async function compressImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+  try {
+    const url = URL.createObjectURL(file);
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const el = new Image();
+      el.onload = () => res(el);
+      el.onerror = rej;
+      el.src = url;
+    });
+    URL.revokeObjectURL(url);
+
+    const MAX = 2048;
+    let w = img.naturalWidth, h = img.naturalHeight;
+    if (w <= MAX && h <= MAX && file.size < 3 * 1024 * 1024) return file;
+    if (w > MAX || h > MAX) {
+      const scale = MAX / Math.max(w, h);
+      w = Math.round(w * scale);
+      h = Math.round(h * scale);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+    const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.85));
+    return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
 type WaiverEvent = {
   id: string;
   created_at: string;
@@ -32,7 +65,7 @@ function fmtDate(iso: string) {
 export default function ContactDocuments({
   contactId,
   initialFiles,
-  folderUrl,
+  folderUrl: initialFolderUrl,
   waiverEvents,
 }: {
   contactId: string;
@@ -41,6 +74,7 @@ export default function ContactDocuments({
   waiverEvents: WaiverEvent[];
 }) {
   const [files, setFiles] = useState<DriveFile[]>(initialFiles);
+  const [folderUrl, setFolderUrl] = useState<string | null>(initialFolderUrl);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,28 +86,33 @@ export default function ContactDocuments({
 
     const errors: string[] = [];
     for (let i = 0; i < selected.length; i++) {
-      const file = selected[i];
+      const raw  = selected[i];
       setUploadProgress(selected.length > 1 ? `Uploading ${i + 1} of ${selected.length}...` : "Uploading...");
 
+      const file = await compressImage(raw);
       const fd = new FormData();
       fd.append("contact_id", contactId);
       fd.append("file", file);
 
       try {
         const res = await fetch("/api/drive-upload", { method: "POST", body: fd });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Upload failed.");
+        // Guard against non-JSON error responses (e.g. 413 from Vercel body limit)
+        const text = await res.text();
+        let json: Record<string, unknown>;
+        try { json = JSON.parse(text); } catch { throw new Error(`Upload failed (${res.status})`); }
+        if (!res.ok) throw new Error((json.error as string) ?? "Upload failed.");
+        if (json.folderUrl && !folderUrl) setFolderUrl(json.folderUrl as string);
         const uploaded: DriveFile = {
-          id:          json.file.id,
-          name:        json.file.name,
+          id:          json.file ? (json.file as { id: string }).id : "",
+          name:        json.file ? (json.file as { name: string }).name : file.name,
           mimeType:    file.type || "application/octet-stream",
-          webViewLink: json.file.url,
+          webViewLink: json.file ? (json.file as { url: string }).url : "",
           createdTime: new Date().toISOString(),
           size:        String(file.size),
         };
         setFiles((prev) => [uploaded, ...prev]);
       } catch (err) {
-        errors.push(`${file.name}: ${err instanceof Error ? err.message : "Upload failed."}`);
+        errors.push(`${raw.name}: ${err instanceof Error ? err.message : "Upload failed."}`);
       }
     }
 
