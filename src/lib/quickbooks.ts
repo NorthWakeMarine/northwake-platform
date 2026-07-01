@@ -259,12 +259,15 @@ export async function createQbInvoiceDraft(opts: {
     }
   }
 
+  const nextDocNumber = await getNextInvoiceDocNumber();
+
   const body: Record<string, unknown> = {
     CustomerRef: { value: opts.qbCustomerId },
     Line: lines,
   };
 
   if (opts.txnDate) body.TxnDate = opts.txnDate;
+  if (nextDocNumber) body.DocNumber = nextDocNumber;
 
   type InvoiceResponse = { Invoice: { Id: string; DocNumber?: string } };
   const data = await qbRequest<InvoiceResponse>("/invoice", {
@@ -274,7 +277,7 @@ export async function createQbInvoiceDraft(opts: {
 
   return {
     invoiceId: data.Invoice.Id,
-    docNumber: data.Invoice.DocNumber ?? "",
+    docNumber: data.Invoice.DocNumber ?? nextDocNumber ?? "",
   };
 }
 
