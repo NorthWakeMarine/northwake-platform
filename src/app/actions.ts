@@ -1571,10 +1571,11 @@ export async function getContactInvoices(
   const out: typeof rows = [];
   for (const row of rows) {
     const meta = row.metadata ?? {};
-    const docNum = meta.doc_number as string | null | undefined;
-    const hasUrl = Boolean(meta.invoice_url);
+    const docNum  = meta.doc_number as string | null | undefined;
+    const hasUrl  = Boolean(meta.invoice_url);
+    const hasTxn  = Boolean(meta.qb_txn_id); // synced from QB — always a real invoice
 
-    if (!docNum && !hasUrl) continue; // stale artifact with no useful data
+    if (!docNum && !hasUrl && !hasTxn) continue; // stale artifact with no useful data
 
     if (docNum) {
       const existing = seen.get(docNum);
@@ -3166,7 +3167,7 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
     const tokens = await getQbTokens();
     if (!tokens) return { imported: 0, skipped: 0, error: "QuickBooks not connected." };
 
-    const realmId = (tokens as { realmId?: string }).realmId ?? "";
+    const realmId = (tokens as { realm_id?: string; realmId?: string }).realm_id ?? (tokens as { realmId?: string }).realmId ?? "";
 
     const { data: contacts } = await supabase
       .from("contacts")
@@ -3221,13 +3222,14 @@ export async function importQbInvoices(): Promise<{ imported: number; skipped: n
         importedIds.add(contactKey);
 
         const label = typeLabels[txn.txnType] ?? txn.txnType;
-        const docPart = txn.docNumber ? ` #${txn.docNumber}` : "";
+        const docPart  = txn.docNumber ? ` #${txn.docNumber}` : "";
+        const datePart = !txn.docNumber ? ` (${new Date(txn.txnDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })})` : "";
         const invoiceUrl = txn.txnType === "Invoice" && realmId ? getQbInvoiceUrl(realmId, txn.id) : null;
 
         toInsert.push({
           contact_id: contact.id,
           event_type: eventTypes[txn.txnType] ?? "invoice",
-          title: `${label}${docPart} — $${Math.abs(txn.totalAmt).toFixed(2)}${txn.status ? ` (${txn.status})` : ""}`,
+          title: `${label}${docPart}${datePart} — $${Math.abs(txn.totalAmt).toFixed(2)}${txn.status ? ` (${txn.status})` : ""}`,
           body: txn.body ?? "",
           metadata: {
             qb_txn_id: key,
