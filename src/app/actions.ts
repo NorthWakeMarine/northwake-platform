@@ -493,9 +493,23 @@ export async function submitWaiver(
   }
 
   if (id) {
+    // Fetch current contact to avoid overwriting good data with customer-typed values
+    const { data: existing } = await supabase
+      .from("contacts")
+      .select("name, email, address")
+      .eq("id", id)
+      .single();
+
+    const patch: Record<string, unknown> = { waiver_signed: true };
+    // Always save address — it comes from the waiver form and is required
+    patch.address = address;
+    // Only fill in name/email/phone if they're currently blank
+    if (!existing?.name)    patch.name  = name;
+    if (!existing?.email)   patch.email = email;
+
     const { error: updateErr } = await supabase
       .from("contacts")
-      .update({ waiver_signed: true, name, phone, email, address })
+      .update(patch)
       .eq("id", id);
     if (updateErr) console.error("Waiver contact update error:", updateErr.message);
   } else {
