@@ -138,6 +138,7 @@ export default function ContactDocuments({
             <ul className="divide-y divide-slate-50">
               {waiverEvents.map((ev) => {
                 const m = ev.metadata;
+                const pdfUrl = m?.drive_file_url ?? null;
                 return (
                   <li key={ev.id} className="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 transition-colors">
                     <div className="w-8 h-8 rounded-sm bg-emerald-50 flex items-center justify-center shrink-0">
@@ -152,9 +153,20 @@ export default function ContactDocuments({
                         {m?.boat ? ` · ${m.boat}` : ""}
                       </p>
                     </div>
-                    <span className="text-[10px] tracking-widest uppercase text-emerald-600 font-medium whitespace-nowrap shrink-0">
-                      Signed
-                    </span>
+                    {pdfUrl ? (
+                      <a
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] tracking-widest uppercase text-blue-500 hover:text-blue-700 font-medium transition-colors whitespace-nowrap shrink-0"
+                      >
+                        Open
+                      </a>
+                    ) : (
+                      <span className="text-[10px] tracking-widest uppercase text-emerald-600 font-medium whitespace-nowrap shrink-0">
+                        Signed
+                      </span>
+                    )}
                   </li>
                 );
               })}

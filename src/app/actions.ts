@@ -511,14 +511,14 @@ export async function submitWaiver(
     id = newContact.id;
   }
 
-  await supabase.from("timeline_events").insert({
+  const { data: insertedWaiverEvent } = await supabase.from("timeline_events").insert({
     contact_id: id,
     event_type: "waiver_signed",
     title: "Liability waiver signed",
     body: `Signed by ${name} on ${date}. Vessel: ${boat}. Address: ${address}.`,
     metadata: { name, address, phone, email, boat, date, signature },
     created_by: "customer",
-  });
+  }).select("id").single();
 
   // Auto-save waiver to Google Drive
   try {
@@ -544,7 +544,14 @@ export async function submitWaiver(
     const pdfBuffer = await generateWaiverPdf({ name, address, phone, email, boat, date, signature });
 
     const fileName = `Waiver - ${name} - ${date}.pdf`;
-    await uploadFileToFolder(folderId, fileName, "application/pdf", pdfBuffer);
+    const uploaded = await uploadFileToFolder(folderId, fileName, "application/pdf", pdfBuffer);
+
+    // Save the Drive file URL back into the timeline event so the CRM can link to it
+    if (insertedWaiverEvent?.id) {
+      await supabase.from("timeline_events").update({
+        metadata: { name, address, phone, email, boat, date, signature, drive_file_url: uploaded.url },
+      }).eq("id", insertedWaiverEvent.id);
+    }
   } catch (err) {
     console.error("Waiver Drive upload failed (non-fatal):", err);
   }
