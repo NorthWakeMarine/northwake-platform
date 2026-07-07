@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { disqualifyLead } from "@/app/actions";
+import { reactivateLead } from "@/app/actions";
 
-export default function DeleteLeadButton({
+export default function ReactivateLeadButton({
   leadId,
   redirectTo,
+  className,
 }: {
   leadId: string;
   redirectTo?: string;
+  className?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -21,13 +23,13 @@ export default function DeleteLeadButton({
         e.preventDefault();
         e.stopPropagation();
         setBusy(true);
-        await disqualifyLead(leadId);
+        await reactivateLead(leadId);
         if (redirectTo) router.push(redirectTo);
         else router.refresh();
       }}
-      className="text-[10px] tracking-widest uppercase text-slate-400 hover:text-slate-600 font-medium transition-colors whitespace-nowrap disabled:opacity-50"
+      className={className ?? "text-[10px] tracking-widest uppercase text-[#000080] hover:text-blue-800 font-semibold transition-colors whitespace-nowrap disabled:opacity-50"}
     >
-      {busy ? "..." : "Not Qualified"}
+      {busy ? "..." : "Restore"}
     </button>
   );
 }

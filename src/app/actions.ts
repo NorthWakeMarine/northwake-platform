@@ -2574,6 +2574,22 @@ export async function deleteLead(leadId: string): Promise<{ error?: string }> {
   return {};
 }
 
+export async function disqualifyLead(leadId: string): Promise<{ error?: string }> {
+  const supabase = await svc();
+  const { error } = await supabase.from("leads").update({ status: "not_qualified" }).eq("id", leadId);
+  if (error) return { error: error.message };
+  revalidatePath("/pro/leads");
+  return {};
+}
+
+export async function reactivateLead(leadId: string): Promise<{ error?: string }> {
+  const supabase = await svc();
+  const { error } = await supabase.from("leads").update({ status: "lead" }).eq("id", leadId);
+  if (error) return { error: error.message };
+  revalidatePath("/pro/leads");
+  return {};
+}
+
 export async function blockLead(leadId: string): Promise<{ error?: string }> {
   const supabase = await svc();
   const { data: lead, error: fetchErr } = await supabase

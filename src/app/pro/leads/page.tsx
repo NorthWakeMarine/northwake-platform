@@ -6,6 +6,7 @@ import ProShell from "@/components/ProShell";
 import ClickableRow from "@/components/ClickableRow";
 import { clientConfig } from "@/config/client";
 import NewLeadButton from "./NewLeadButton";
+import ReactivateLeadButton from "./ReactivateLeadButton";
 
 type Lead = {
   id: string;
@@ -26,12 +27,13 @@ const sourceConfig: Record<string, { label: string; cls: string }> = {
   website:    { label: "Website",      cls: "bg-blue-50 text-blue-600 border border-blue-200" },
   waiver:     { label: "Waiver",       cls: "bg-emerald-50 text-emerald-600 border border-emerald-200" },
   api:        { label: "API",          cls: "bg-slate-100 text-slate-500 border border-slate-200" },
-  quo:        { label: "Quo",           cls: "bg-purple-50 text-purple-600 border border-purple-200" },
+  quo:        { label: "Quo",          cls: "bg-purple-50 text-purple-600 border border-purple-200" },
   google:     { label: "Google",       cls: "bg-green-50 text-green-600 border border-green-200" },
   google_ads: { label: "Google Ads",   cls: "bg-green-50 text-green-600 border border-green-200" },
   meta:       { label: "Meta",         cls: "bg-blue-50 text-blue-600 border border-blue-200" },
-  manual:      { label: "Manual",       cls: "bg-amber-50 text-amber-600 border border-amber-200" },
-  web_services: { label: "Web Client",  cls: "bg-violet-50 text-violet-600 border border-violet-200" },
+  manual:     { label: "Manual",       cls: "bg-amber-50 text-amber-600 border border-amber-200" },
+  web_services: { label: "Web Client", cls: "bg-violet-50 text-violet-600 border border-violet-200" },
+  field_crew: { label: "Field",        cls: "bg-teal-50 text-teal-600 border border-teal-200" },
 };
 
 function fmt(iso: string) {
@@ -76,9 +78,10 @@ function SortableHeader({ label, field, currentSort, currentDir }: {
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ sort?: string; dir?: string }>;
+  searchParams?: Promise<{ sort?: string; dir?: string; tab?: string }>;
 }) {
-  const { sort, dir } = (await searchParams) ?? {};
+  const { sort, dir, tab: rawTab } = (await searchParams) ?? {};
+  const tab = rawTab === "not_qualified" ? "not_qualified" : "active";
   const sortField = Object.values(SORTABLE_COLS).includes(sort ?? "") ? (sort ?? "created_at") : "created_at";
   const sortDir = dir === "asc" ? "asc" : "desc";
 
@@ -87,11 +90,27 @@ export default async function LeadsPage({
     process.env.SUPABASE_SECRET_KEY!
   );
 
-  const { data: leads, error } = await supabase
+  // Fetch active and not_qualified counts for the tab bar
+  const [{ count: activeCount }, { count: nqCount }] = await Promise.all([
+    supabase.from("leads").select("id", { count: "exact", head: true })
+      .neq("status", "converted").neq("status", "not_qualified"),
+    supabase.from("leads").select("id", { count: "exact", head: true })
+      .eq("status", "not_qualified"),
+  ]);
+
+  // Fetch leads for current tab
+  let leadsQuery = supabase
     .from("leads")
     .select("id, created_at, name, email, phone, vessel_type, vessel_length, service, source")
-    .neq("status", "converted")
     .order(sortField, { ascending: sortDir === "asc" });
+
+  if (tab === "not_qualified") {
+    leadsQuery = leadsQuery.eq("status", "not_qualified");
+  } else {
+    leadsQuery = leadsQuery.neq("status", "converted").neq("status", "not_qualified");
+  }
+
+  const { data: leads, error } = await leadsQuery;
 
   // Batch lookup for which phone numbers have a note
   const phones = (leads ?? []).map(l => l.phone).filter(Boolean) as string[];
@@ -113,6 +132,12 @@ export default async function LeadsPage({
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length ?? 0;
 
+  const tabHref = (t: string) => `?tab=${t}`;
+
+  const emptyMessage = tab === "not_qualified"
+    ? "No disqualified leads yet."
+    : "Awaiting your first lead";
+
   return (
     <ProShell>
       <div className="flex-1 flex flex-col">
@@ -121,12 +146,40 @@ export default async function LeadsPage({
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-[#1E2938] text-xl font-bold tracking-tight">Leads</h1>
             <div className="flex items-center gap-4 shrink-0">
-              <span className="text-xs text-[#1E2938]/50"><strong className="text-[#1E2938] tabular-nums">{total}</strong> total</span>
-              <span className="text-xs text-[#1E2938]/50"><strong className="text-[#1E2938] tabular-nums">{thisMonth}</strong> this month</span>
+              {tab === "active" && (
+                <>
+                  <span className="text-xs text-[#1E2938]/50"><strong className="text-[#1E2938] tabular-nums">{total}</strong> total</span>
+                  <span className="text-xs text-[#1E2938]/50"><strong className="text-[#1E2938] tabular-nums">{thisMonth}</strong> this month</span>
+                </>
+              )}
               <NewLeadButton />
             </div>
           </div>
           <p className="text-[#1E2938]/50 text-sm mt-1">Every lead received across all sources.</p>
+
+          {/* Tab bar */}
+          <div className="flex items-center gap-1 mt-4">
+            <Link
+              href={tabHref("active")}
+              className={`text-[11px] tracking-widest uppercase font-semibold px-4 py-2 rounded-sm transition-colors ${
+                tab === "active"
+                  ? "bg-white text-[#1E2938] shadow-sm"
+                  : "text-[#1E2938]/40 hover:text-[#1E2938]/70"
+              }`}
+            >
+              Active{activeCount != null ? <span className="ml-1.5 font-normal opacity-60">{activeCount}</span> : null}
+            </Link>
+            <Link
+              href={tabHref("not_qualified")}
+              className={`text-[11px] tracking-widest uppercase font-semibold px-4 py-2 rounded-sm transition-colors ${
+                tab === "not_qualified"
+                  ? "bg-white text-[#1E2938] shadow-sm"
+                  : "text-[#1E2938]/40 hover:text-[#1E2938]/70"
+              }`}
+            >
+              Not Qualified{nqCount != null ? <span className="ml-1.5 font-normal opacity-60">{nqCount}</span> : null}
+            </Link>
+          </div>
         </div>
 
         <div className="px-4 md:px-8 py-6 flex flex-col gap-4">
@@ -141,25 +194,24 @@ export default async function LeadsPage({
                   <path d="M22 12h-6l-2 3h-4l-2-3H2" />
                   <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
                 </svg>
-                <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase">Awaiting your first lead</p>
-                <p className="text-slate-400/80 text-xs max-w-xs leading-relaxed mt-1">
-                  Leads appear here automatically when someone submits a quote request on the website.
-                </p>
-                <a
-                  href={`${clientConfig.siteUrl}/contact`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] tracking-widest uppercase text-[#000080] font-semibold hover:underline mt-2"
-                >
-                  View Contact Page →
-                </a>
+                <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase">{emptyMessage}</p>
+                {tab === "active" && (
+                  <a
+                    href={`${clientConfig.siteUrl}/contact`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] tracking-widest uppercase text-[#000080] font-semibold hover:underline mt-2"
+                  >
+                    View Contact Page →
+                  </a>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#dcdee3]">
-                      {(["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source"] as const).map((h) => (
+                      {(["Date", "Name", "Email", "Phone", "Vessel", "Service", "Source", ""] as const).map((h) => (
                         <SortableHeader
                           key={h}
                           label={h}
@@ -196,10 +248,15 @@ export default async function LeadsPage({
                               : <span className="text-slate-300">—</span>}
                           </td>
                           <td className="py-3 px-4 text-slate-500 whitespace-nowrap">{lead.service || <span className="text-slate-300">—</span>}</td>
-                          <td className="py-3 px-4 last:pr-6 whitespace-nowrap">
+                          <td className="py-3 px-4 whitespace-nowrap">
                             <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium ${src.cls}`}>
                               {src.label}
                             </span>
+                          </td>
+                          <td className="py-3 px-4 last:pr-6 whitespace-nowrap">
+                            {tab === "not_qualified" ? (
+                              <ReactivateLeadButton leadId={lead.id} />
+                            ) : null}
                           </td>
                         </ClickableRow>
                       );
@@ -216,10 +273,7 @@ export default async function LeadsPage({
               <p className="text-red-500 text-sm text-center py-8">Failed to load leads.</p>
             ) : !leads || leads.length === 0 ? (
               <div className="flex flex-col items-center gap-3 text-center py-12">
-                <p className="text-slate-400 text-sm">No leads yet.</p>
-                <p className="text-slate-400 text-sm max-w-xs leading-relaxed">
-                  Leads appear automatically when someone submits a quote request on the website.
-                </p>
+                <p className="text-slate-400 text-sm">{emptyMessage}</p>
               </div>
             ) : leadsWithNotes.map((lead) => {
               const src = sourceConfig[lead.source ?? "website"] ?? sourceConfig.website;
@@ -243,9 +297,14 @@ export default async function LeadsPage({
                     <span className="text-slate-600 text-sm font-medium">
                       {lead.phone || <span className="text-slate-300 text-xs font-normal">No phone</span>}
                     </span>
-                    <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium shrink-0 ${src.cls}`}>
-                      {src.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {tab === "not_qualified" && (
+                        <ReactivateLeadButton leadId={lead.id} />
+                      )}
+                      <span className={`text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-sm font-medium shrink-0 ${src.cls}`}>
+                        {src.label}
+                      </span>
+                    </div>
                   </div>
                   {lead.vessel_type && (
                     <span className="text-slate-400 text-xs">

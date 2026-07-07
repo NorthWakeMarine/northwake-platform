@@ -7,6 +7,7 @@ import ProShell from "@/components/ProShell";
 import ConvertButton from "./ConvertButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteLeadButton from "../DeleteLeadButton";
+import ReactivateLeadButton from "../ReactivateLeadButton";
 import BlockLeadButton from "../BlockLeadButton";
 import LeadNotesSection from "./LeadNotesSection";
 import LeadFieldEditor from "./LeadFieldEditor";
@@ -254,7 +255,14 @@ export default async function LeadDetailPage({
             <span className={`text-[9px] tracking-widest uppercase px-2.5 py-1 rounded-sm font-semibold ${src.cls}`}>
               {src.label}
             </span>
-            <DeleteLeadButton leadId={lead.id} redirectTo="/pro/leads" />
+            {lead.status === "not_qualified" ? (
+              <ReactivateLeadButton
+                leadId={lead.id}
+                className="text-[10px] tracking-widest uppercase text-[#000080] border border-[#000080]/30 px-3 py-2 rounded-sm font-semibold hover:bg-[#000080]/5 transition-colors"
+              />
+            ) : (
+              <DeleteLeadButton leadId={lead.id} redirectTo="/pro/leads" />
+            )}
             {lead.phone && <BlockLeadButton leadId={lead.id} />}
             {lead.status === "converted" && contact ? (
               <Link
@@ -308,13 +316,20 @@ export default async function LeadDetailPage({
               >
                 View Profile
               </Link>
-            ) : (
+            ) : lead.status !== "not_qualified" ? (
               <>
                 <AddToPipelineButton id={lead.id} sourceType="lead" />
                 <ConvertButton leadId={lead.id} />
               </>
+            ) : null}
+            {lead.status === "not_qualified" ? (
+              <ReactivateLeadButton
+                leadId={lead.id}
+                className="flex items-center gap-2 bg-[#000080] text-white text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-sm font-semibold whitespace-nowrap shrink-0"
+              />
+            ) : (
+              <DeleteLeadButton leadId={lead.id} redirectTo="/pro/leads" />
             )}
-            <DeleteLeadButton leadId={lead.id} redirectTo="/pro/leads" />
             {lead.phone && <BlockLeadButton leadId={lead.id} />}
           </div>
         </div>
@@ -324,6 +339,20 @@ export default async function LeadDetailPage({
 
             {/* Left: lead data */}
             <div className="lg:col-span-2 flex flex-col gap-5">
+
+              {/* Not qualified banner */}
+              {lead.status === "not_qualified" && (
+                <div className="bg-slate-100 border border-slate-200 rounded-md px-5 py-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[9px] tracking-widest uppercase px-2.5 py-1 rounded-sm font-semibold bg-slate-200 text-slate-500">Not Qualified</span>
+                    <p className="text-slate-500 text-sm">This lead was marked as not qualified. Restore it to move it back to the active list.</p>
+                  </div>
+                  <ReactivateLeadButton
+                    leadId={lead.id}
+                    className="text-[10px] tracking-widest uppercase text-[#000080] font-semibold whitespace-nowrap hover:underline shrink-0"
+                  />
+                </div>
+              )}
 
               {/* Service reminder flag */}
               {lead.source === "service_reminder" && lead.message && (
