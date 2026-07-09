@@ -686,7 +686,7 @@ export async function convertLead(
 
   const { data: lead, error: leadErr } = await supabase
     .from("leads")
-    .select("id, name, email, phone, vessel_type, vessel_length, source, waiver_signed, last_service_date")
+    .select("id, name, email, phone, vessel_type, vessel_length, source, waiver_signed, last_service_date, message, service, referral_source")
     .eq("id", lead_id)
     .single();
 
@@ -733,12 +733,40 @@ export async function convertLead(
 
   if (contactId) await insertVessel(supabase, contactId, lead);
 
-  // Migrate any lead notes to the contact timeline
+  // Migrate lead notes (directly tied to this lead) to the contact timeline
   await supabase
     .from("timeline_events")
     .update({ contact_id: contactId, lead_id: null })
     .eq("lead_id", lead_id)
     .eq("event_type", "note");
+
+  // Migrate orphaned notes shown via phone recovery (lead_id null but same phone)
+  if (lead.phone) {
+    const normalPhone = normalizePhone(lead.phone) ?? lead.phone;
+    await supabase
+      .from("timeline_events")
+      .update({ contact_id: contactId })
+      .is("lead_id", null)
+      .is("contact_id", null)
+      .eq("event_type", "note")
+      .filter("metadata->>lead_phone", "eq", normalPhone);
+  }
+
+  // Carry original inquiry message into the contact timeline
+  const cleanMessage = (lead as { message?: string | null }).message?.trim();
+  if (cleanMessage) {
+    const parts: string[] = [];
+    if ((lead as { service?: string | null }).service) parts.push(`Service: ${(lead as { service?: string | null }).service}`);
+    if ((lead as { referral_source?: string | null }).referral_source) parts.push(`Referral: ${(lead as { referral_source?: string | null }).referral_source}`);
+    parts.push(cleanMessage);
+    await supabase.from("timeline_events").insert({
+      contact_id: contactId,
+      event_type: "note",
+      title: "Original inquiry",
+      body: parts.join("\n"),
+      created_by: "system",
+    });
+  }
 
   await supabase.from("timeline_events").insert({
     contact_id: contactId,
