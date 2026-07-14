@@ -1,5 +1,37 @@
 # NorthWake Platform Changelog
 
+## July 2026
+
+### July 9 | Lead conversion note migration | CRM
+
+- **Lead notes now transfer on conversion**: when a lead is converted to a contact, all timeline notes tied to that lead (by `lead_id`) are migrated to the new contact record. Previously, notes written on the lead profile were orphaned after conversion.
+- **Orphaned note recovery by phone**: notes written before a lead record existed (logged via phone lookup with no `lead_id`) are matched by phone number and re-linked to the new contact on conversion.
+- **Original inquiry preserved as timeline note**: the lead's initial message, service requested, and referral source are written as a permanent "Original inquiry" note on the contact timeline so the full context is always visible from the contact profile.
+
+### July 7 | Not Qualified leads tab | CRM
+
+- **"Not Qualified" replaces "Delete" on leads**: leads can no longer be permanently deleted. The action button now marks the lead `not_qualified` (reversible) instead of removing the row from the database.
+- **Not Qualified tab with live count**: leads list now has two tabs: Active and Not Qualified. Each tab shows a live count badge. Disqualified leads are filtered out of the Active tab and displayed in Not Qualified.
+- **Restore button**: each row in the Not Qualified tab has a "Restore" button that moves the lead back to active status. The lead detail page also shows a banner with a Restore link and hides the Convert and Add to Pipeline actions while a lead is not qualified.
+
+### July 3 | Invoice claim list and Sync All fixes | CRM + Integrations
+
+- **Sync All invoice URL fix**: QuickBooks "Sync All" was generating null invoice URLs for every imported invoice due to a camelCase/snake_case mismatch (`realmId` vs `realm_id`) when reading QB tokens. Fixed; all imported invoices now carry correct QB deep links.
+- **Invoice claim list no longer drops QB-synced rows**: `getContactInvoices` was filtering out any invoice row that had no doc number and no invoice URL. Rows with a `qb_txn_id` are now always included, so invoices synced before the URL fix are visible and claimable.
+- **Unnumbered invoices show date in title**: invoices without a QB DocNumber now display their transaction date in the title (e.g. "Maintenance Wash Jul 2") so they are identifiable in the claim list.
+
+### July 2 | Drive uploads, waiver linking, and photo compression | CRM
+
+- **Waiver PDF saved and linked in CRM**: signed waiver PDFs are now uploaded to the customer's Google Drive folder immediately on submission. The CRM Documents section shows an "Open" button linking directly to the PDF. Previously the upload result was discarded.
+- **Waiver no longer overwrites contact name or email**: if a customer types a name or email that differs from what is already in the CRM, the existing values are kept. Only blank fields are patched. Address and waiver status always update.
+- **iPhone photo compression**: large photos (5-10 MB) are compressed client-side using the Canvas API before upload, keeping all files under 1 MB. This resolves the 413 "Request Entity Too Large" error that was causing iPhone uploads to fail silently with a JSON parse error.
+- **Open Folder button visible after first upload**: the Drive folder link now appears immediately once the first file is uploaded, without requiring a page refresh.
+- **Drive files accessible without a Google account**: all uploaded files and newly created customer folders are set to "anyone with the link can view." Employees can open documents from the CRM without being signed in to Google.
+
+### July 1 | Cron invoice DocNumber fix | CRM + Integrations
+
+- **Cron invoices now show correct invoice numbers**: QB-generated invoices were appearing as "Invoice (Draft)" in the CRM because the QB API create response does not always echo back the DocNumber. Fixed by pre-assigning the next sequential DocNumber before the API call (safe since cron requests run one at a time) and using it as the stored value.
+
 ## June 2026
 
 ### June 24 | Monthly recurring invoice cron, calendar billing setup, and contact linking | CRM + Integrations
