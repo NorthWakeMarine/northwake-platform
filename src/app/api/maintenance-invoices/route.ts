@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   // 1. Fetch all auto-invoice links that have a price set
   const { data: links, error: linkErr } = await supabase
     .from("calendar_contact_links")
-    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, service_template_id, vessel_id, auto_invoice, contacts(qb_customer_id, name), vessels(name)")
+    .select("gcal_event_id, contact_id, service_label, invoice_amount, invoice_discount, invoice_qty, invoice_rate, service_template_id, vessel_id, auto_invoice, contacts(qb_customer_id, name, email, phone, company_name), vessels(name)")
     .not("invoice_amount", "is", null)
     .gt("invoice_amount", 0);
 
@@ -105,6 +105,9 @@ export async function GET(req: NextRequest) {
     contactId: string;
     qbCustomerId: string | null;
     contactName: string | null;
+    contactEmail: string | null;
+    contactPhone: string | null;
+    contactCompanyName: string | null;
     vesselName: string | null;
     serviceLabel: string;
     serviceDescription: string | null;
@@ -116,7 +119,7 @@ export async function GET(req: NextRequest) {
 
   const linkBySeriesId = new Map<string, LinkInfo>();
   for (const l of autoLinks) {
-    const c = l.contacts as unknown as { qb_customer_id: string | null; name: string | null } | null;
+    const c = l.contacts as unknown as { qb_customer_id: string | null; name: string | null; email: string | null; phone: string | null; company_name: string | null } | null;
     if (!c?.qb_customer_id) continue;
     const v = l.vessels as unknown as { name: string | null } | null;
     const invoiceAmount   = Number(l.invoice_amount);
@@ -130,6 +133,9 @@ export async function GET(req: NextRequest) {
       contactId:          l.contact_id,
       qbCustomerId:       c.qb_customer_id,
       contactName:        c.name ?? null,
+      contactEmail:       c.email ?? null,
+      contactPhone:       c.phone ?? null,
+      contactCompanyName: c.company_name ?? null,
       vesselName:         v?.name ?? null,
       serviceLabel:       l.service_label ?? "Maintenance Service",
       serviceDescription: l.service_template_id ? (templateDescMap.get(l.service_template_id) ?? null) : null,
@@ -165,11 +171,13 @@ export async function GET(req: NextRequest) {
   let createQbInvoiceDraft: typeof import("@/lib/quickbooks").createQbInvoiceDraft;
   let getQbInvoiceUrl: typeof import("@/lib/quickbooks").getQbInvoiceUrl;
   let getValidTokens: typeof import("@/lib/quickbooks").getValidTokens;
+  let findOrCreateQbCustomer: typeof import("@/lib/quickbooks").findOrCreateQbCustomer;
   try {
     const qb = await import("@/lib/quickbooks");
-    createQbInvoiceDraft = qb.createQbInvoiceDraft;
-    getQbInvoiceUrl      = qb.getQbInvoiceUrl;
-    getValidTokens       = qb.getValidTokens;
+    createQbInvoiceDraft   = qb.createQbInvoiceDraft;
+    getQbInvoiceUrl        = qb.getQbInvoiceUrl;
+    getValidTokens         = qb.getValidTokens;
+    findOrCreateQbCustomer = qb.findOrCreateQbCustomer;
   } catch {
     return NextResponse.json({ error: "Failed to load QuickBooks module." }, { status: 500 });
   }
@@ -226,6 +234,17 @@ export async function GET(req: NextRequest) {
       if (w.link.vesselName) lineParts.push(w.link.vesselName);
       lineParts.push(eventDateLabel);
       const lineDescription = lineParts.join(" - ");
+
+      // Sync the linked QB customer's email/phone/name before invoicing —
+      // the CRM's contact info is the source of truth, and a QB customer
+      // linked before the email was on file would otherwise stay stale forever.
+      await findOrCreateQbCustomer({
+        id: w.link.contactId,
+        name: w.link.contactName,
+        email: w.link.contactEmail,
+        phone: w.link.contactPhone,
+        company_name: w.link.contactCompanyName,
+      });
 
       const { invoiceId, docNumber } = await createQbInvoiceDraft({
         qbCustomerId:    w.link.qbCustomerId!,

@@ -108,6 +108,43 @@ async function qbRequest<T>(path: string, options: RequestInit = {}, attempt = 0
   return res.json();
 }
 
+async function syncQbCustomerFields(
+  qbCustomerId: string,
+  contact: { name: string | null; email: string | null; phone: string | null; company_name?: string | null }
+): Promise<void> {
+  const qbCustomer = await getQbCustomer(qbCustomerId);
+
+  const displayName = contact.name?.trim() || contact.company_name?.trim() || contact.email?.trim() || undefined;
+  const emailValid = contact.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email);
+  const trimmedCompany = contact.company_name?.trim();
+
+  const patch: Record<string, unknown> = {};
+  if (emailValid && contact.email !== (qbCustomer.PrimaryEmailAddr?.Address ?? null)) {
+    patch.PrimaryEmailAddr = { Address: contact.email };
+  }
+  if (contact.phone && contact.phone !== (qbCustomer.PrimaryPhone?.FreeFormNumber ?? null)) {
+    patch.PrimaryPhone = { FreeFormNumber: contact.phone };
+  }
+  if (trimmedCompany && trimmedCompany !== (qbCustomer.CompanyName ?? null)) {
+    patch.CompanyName = trimmedCompany;
+  }
+  if (displayName && displayName !== qbCustomer.DisplayName) {
+    patch.DisplayName = displayName;
+  }
+
+  if (Object.keys(patch).length === 0) return;
+
+  await qbRequest("/customer", {
+    method: "POST",
+    body: JSON.stringify({
+      Id: qbCustomerId,
+      SyncToken: qbCustomer.SyncToken ?? "0",
+      sparse: true,
+      ...patch,
+    }),
+  });
+}
+
 export async function findOrCreateQbCustomer(contact: {
   id: string;
   name: string | null;
@@ -123,7 +160,16 @@ export async function findOrCreateQbCustomer(contact: {
     .eq("id", contact.id)
     .single();
 
-  if (existing?.qb_customer_id) return existing.qb_customer_id;
+  if (existing?.qb_customer_id) {
+    // Already linked — patch the QB customer if the CRM has newer contact
+    // info (e.g. the customer had no email on file when first linked, or
+    // was created before their email was collected). Without this, a stale
+    // or missing email on the QB side never gets backfilled.
+    try {
+      await syncQbCustomerFields(existing.qb_customer_id, contact);
+    } catch { /* non-fatal — invoice/customer link still works */ }
+    return existing.qb_customer_id;
+  }
 
   // DisplayName: prefer personal name, fall back to company name, then email
   const displayName = contact.name?.trim() || contact.company_name?.trim() || contact.email || "Unknown";
