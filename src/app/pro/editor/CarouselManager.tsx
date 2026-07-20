@@ -138,6 +138,7 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
     [...initialImages].sort((a, b) => a.display_order - b.display_order)
   );
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [focalTarget, setFocalTarget] = useState<CarouselImage | null>(null);
@@ -150,16 +151,34 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
     const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!arr.length) return;
     setUploading(true);
+    setUploadError(null);
     const results: CarouselImage[] = [];
-    for (const file of arr) {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/carousel/upload", { method: "POST", body: fd });
-      const json = await res.json();
-      if (json.image) results.push(json.image as CarouselImage);
+    const errors: string[] = [];
+    try {
+      for (const file of arr) {
+        try {
+          const fd = new FormData();
+          fd.append("file", file);
+          const res = await fetch("/api/carousel/upload", { method: "POST", body: fd });
+          let json: { image?: CarouselImage; error?: string } = {};
+          try {
+            json = await res.json();
+          } catch {
+            throw new Error(`Server returned an unexpected response (status ${res.status}).`);
+          }
+          if (!res.ok || json.error) {
+            throw new Error(json.error || `Upload failed (status ${res.status}).`);
+          }
+          if (json.image) results.push(json.image);
+        } catch (err) {
+          errors.push(`${file.name}: ${err instanceof Error ? err.message : "Upload failed."}`);
+        }
+      }
+    } finally {
+      if (results.length) setImages((prev) => [...prev, ...results]);
+      if (errors.length) setUploadError(errors.join(" "));
+      setUploading(false);
     }
-    setImages((prev) => [...prev, ...results]);
-    setUploading(false);
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -273,6 +292,9 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
           onChange={(e) => e.target.files && uploadFiles(e.target.files)}
         />
       </div>
+      {uploadError && (
+        <p className="text-xs text-red-600 -mt-3">{uploadError}</p>
+      )}
 
       {/* Sync from storage */}
       <div className="flex justify-end -mt-2">
