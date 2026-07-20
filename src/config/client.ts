@@ -52,6 +52,15 @@ export type LocationEntry = {
   waterways: string[];
 };
 
+export type AirportEntry = {
+  name: string;
+  icao: string;
+  iata?: string;
+  slug: string;
+  city: string;
+  description: string;
+};
+
 export type ClientConfig = {
   // ── Identity ──────────────────────────────────────────────────────────────
   companyName: string;
@@ -134,6 +143,9 @@ export type ClientConfig = {
 
   // ── Location pages (drives /locations/[slug] dynamic pages) ──────────────
   locations: LocationEntry[];
+
+  // ── Airport pages (drives /airports/[slug] dynamic pages) ────────────────
+  airports: AirportEntry[];
 
   // ── Integrations (toggle per client) ──────────────────────────────────────
   integrations: {
@@ -964,6 +976,65 @@ export const clientConfig: ClientConfig = {
       description: "Ponte Vedra Beach is one of Northeast Florida's most desirable coastal communities, with private Intracoastal access and a discerning boating clientele. NorthWake Marine provides concierge-level marine services to Ponte Vedra Beach boat owners.",
       nearbyMarinas: ["Marsh Landing Marina", "Hidden Harbor Marina"],
       waterways: ["Intracoastal Waterway", "Guana River", "Pablo Creek"],
+    },
+  ],
+
+  airports: [
+    {
+      name: "Fernandina Beach Municipal Airport",
+      icao: "KFHB",
+      iata: "FHB",
+      slug: "fernandina-beach-municipal-airport",
+      city: "Fernandina Beach",
+      description: "Fernandina Beach Municipal Airport serves Amelia Island's general aviation community with a mix of piston singles, twins, and light jets. NorthWake Marine provides hangar-side and ramp-side aircraft detailing for owners based at FHB.",
+    },
+    {
+      name: "Jacksonville International Airport",
+      icao: "KJAX",
+      iata: "JAX",
+      slug: "jacksonville-international-airport",
+      city: "Jacksonville",
+      description: "Jacksonville International Airport is home to a large population of business jets and turboprops operating out of the airport's FBOs and private hangars. NorthWake Marine provides aviation-safe detailing for owners and flight departments based at JAX.",
+    },
+    {
+      name: "Cecil Airport",
+      icao: "KVQQ",
+      iata: "VQQ",
+      slug: "cecil-airport",
+      city: "Jacksonville",
+      description: "Cecil Airport is one of Jacksonville's busiest general aviation and testing facilities, with a growing base of corporate and private aircraft. NorthWake Marine provides hangar-side detailing for aircraft based at Cecil Field.",
+    },
+    {
+      name: "Craig Air Center",
+      icao: "KCRG",
+      iata: "CRG",
+      slug: "craig-air-center",
+      city: "Jacksonville",
+      description: "Craig Air Center, also known as Jacksonville Executive at Craig, is a busy reliever airport with hundreds of based aircraft. NorthWake Marine serves owners and flight schools based at Craig with regular and one-off detailing service.",
+    },
+    {
+      name: "Herlong Recreational Airport",
+      icao: "KHEG",
+      iata: "HEG",
+      slug: "herlong-recreational-airport",
+      city: "Jacksonville",
+      description: "Herlong Recreational Airport is a general aviation field on Jacksonville's Westside, home to a mix of piston aircraft and light experimental builds. NorthWake Marine provides mobile detailing service for owners based at Herlong.",
+    },
+    {
+      name: "St. Augustine Airport",
+      icao: "KSGJ",
+      iata: "UST",
+      slug: "st-augustine-airport",
+      city: "St. Augustine",
+      description: "St. Augustine Airport is a full-service general aviation airport with a large transient and based aircraft population, including business jets and turboprops. NorthWake Marine provides ramp-side and hangar-side aircraft detailing throughout the field.",
+    },
+    {
+      name: "Flagler Executive Airport",
+      icao: "KFIN",
+      iata: "FIN",
+      slug: "flagler-executive-airport",
+      city: "Palm Coast",
+      description: "Flagler Executive Airport serves the Palm Coast and Flagler County general aviation community with a mix of piston aircraft, turboprops, and light jets. NorthWake Marine provides mobile aircraft detailing for owners based at Flagler.",
     },
   ],
 

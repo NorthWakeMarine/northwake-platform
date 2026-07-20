@@ -48,5 +48,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
+    ...clientConfig.airports.map((airport) => ({
+      url: `${BASE}/airports/${airport.slug}`,
+      lastModified: UPDATED,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
   ];
 }
