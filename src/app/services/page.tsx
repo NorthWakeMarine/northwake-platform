@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ScrollDepthTracker from "@/components/ScrollDepthTracker";
+import ServicePageCategories from "@/components/ServicePageCategories";
 import { clientConfig } from "@/config/client";
 
 const { services, companyName, siteUrl, city, state, seoKeywords } = clientConfig;
@@ -125,74 +125,7 @@ export default function ServicesPage() {
           <div className="max-w-7xl mx-auto">
             <h2 id="services-grid-heading" className="sr-only">All Services</h2>
 
-            <ul className="grid grid-cols-1 lg:grid-cols-2 gap-5 list-none" role="list">
-              {services.map((svc) => (
-                <li
-                  key={svc.id}
-                  id={svc.id}
-                  className="group flex flex-col rounded-2xl overflow-hidden border border-steel-dark bg-obsidian hover:border-navy transition-colors duration-300"
-                >
-                  {/* Card header */}
-                  <div className="flex flex-col gap-4 p-7 border-b border-steel-dark group-hover:bg-navy-dark transition-colors duration-300">
-                    <div className="flex items-start justify-between gap-3">
-                      <span aria-hidden="true" className="chrome-text text-3xl leading-none transition-transform duration-300 group-hover:scale-110 origin-left">
-                        {svc.icon}
-                      </span>
-                      {svc.badge && (
-                        <span className="badge-chrome text-xs font-bold tracking-[0.2em] uppercase px-2.5 py-1">
-                          <span className="badge-chrome-text">{svc.badge}</span>
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-steel text-xs tracking-[0.35em] uppercase mb-1.5">
-                        {svc.tier}
-                      </p>
-                      <h3 className="text-wake text-xl font-bold tracking-tight leading-tight">
-                        {svc.title}
-                      </h3>
-                      <p className="text-steel text-xs mt-1 tracking-wide">{svc.tagline}</p>
-                    </div>
-                  </div>
-
-                  {/* Card body */}
-                  <div className="flex flex-col gap-5 p-7 flex-1">
-                    <p className="text-steel-light text-sm leading-relaxed">{svc.description}</p>
-                    <div>
-                      <p className="text-steel text-xs tracking-[0.3em] uppercase mb-3">
-                        What&apos;s Included
-                      </p>
-                      <ul className="grid grid-cols-2 gap-x-6 gap-y-2 list-none">
-                        {svc.includes.map((item) => (
-                          <li key={item} className="flex items-start gap-2 text-steel-light text-xs">
-                            <span aria-hidden="true" className="text-navy mt-0.5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5">▸</span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Card footer */}
-                  <div className="px-7 pb-7 flex items-center gap-4">
-                    <Link
-                      href={`/contact?service=${encodeURIComponent(svc.title)}`}
-                      aria-label={`Request service: ${svc.title}`}
-                      className="chrome-btn inline-block text-xs font-bold tracking-[0.25em] uppercase px-5 py-2.5 transition-all duration-300 hover:scale-105"
-                    >
-                      Request Service
-                    </Link>
-                    <Link
-                      href={`/services/${svc.id}`}
-                      aria-label={`Learn more about ${svc.title}`}
-                      className="text-xs font-semibold tracking-[0.2em] uppercase text-steel hover:text-wake transition-colors border-b border-steel-dark hover:border-wake pb-0.5"
-                    >
-                      Learn More
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <ServicePageCategories services={services} />
           </div>
         </section>
 
