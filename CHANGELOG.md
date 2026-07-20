@@ -28,6 +28,10 @@
 - **Open Folder button visible after first upload**: the Drive folder link now appears immediately once the first file is uploaded, without requiring a page refresh.
 - **Drive files accessible without a Google account**: all uploaded files and newly created customer folders are set to "anyone with the link can view." Employees can open documents from the CRM without being signed in to Google.
 
+### July 20 | QuickBooks email validation fix | Integrations
+
+- **Sync All no longer 400s on contacts with placeholder emails**: QB API rejects values like "NA" as invalid RFC 822 email addresses. `findOrCreateQbCustomer` and the inline contact-field QB update now validate the email matches a real address pattern before sending `PrimaryEmailAddr`. Contacts with bad email values are synced without an email field instead of failing.
+
 ### July 1 | Cron invoice DocNumber fix | CRM + Integrations
 
 - **Cron invoices now show correct invoice numbers**: QB-generated invoices were appearing as "Invoice (Draft)" in the CRM because the QB API create response does not always echo back the DocNumber. Fixed by pre-assigning the next sequential DocNumber before the API call (safe since cron requests run one at a time) and using it as the stored value.
