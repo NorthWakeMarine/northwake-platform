@@ -1269,7 +1269,8 @@ export async function pushCrmFieldToQb(
       sparse: true,
     };
     if (field === "email") {
-      patch.PrimaryEmailAddr = contact.email ? { Address: contact.email } : null;
+      const emailOk = contact.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email);
+      patch.PrimaryEmailAddr = emailOk ? { Address: contact.email } : null;
     } else if (field === "phone") {
       patch.PrimaryPhone = contact.phone ? { FreeFormNumber: contact.phone } : null;
     } else if (field === "name") {

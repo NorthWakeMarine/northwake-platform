@@ -130,7 +130,8 @@ export async function findOrCreateQbCustomer(contact: {
 
   const body: Record<string, unknown> = { DisplayName: displayName };
   if (contact.company_name?.trim()) body.CompanyName = contact.company_name.trim();
-  if (contact.email) body.PrimaryEmailAddr = { Address: contact.email };
+  const emailValid = contact.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email);
+  if (emailValid) body.PrimaryEmailAddr = { Address: contact.email };
   if (contact.phone) body.PrimaryPhone = { FreeFormNumber: contact.phone };
 
   type CustomerResponse = { Customer: { Id: string } };
