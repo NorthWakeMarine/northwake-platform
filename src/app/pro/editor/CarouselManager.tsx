@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
+import { createBrowserSupabase } from "@/lib/supabase/client";
 
 export type CarouselImage = {
   id: string;
@@ -157,19 +158,46 @@ export default function CarouselManager({ initialImages }: { initialImages: Caro
     try {
       for (const file of arr) {
         try {
-          const fd = new FormData();
-          fd.append("file", file);
-          const res = await fetch("/api/carousel/upload", { method: "POST", body: fd });
-          let json: { image?: CarouselImage; error?: string } = {};
+          // 1. Ask the server for a signed upload URL (small JSON request, no size limit).
+          const urlRes = await fetch("/api/carousel/upload-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename: file.name }),
+          });
+          let urlJson: { path?: string; token?: string; storagePath?: string; publicUrl?: string; error?: string } = {};
           try {
-            json = await res.json();
+            urlJson = await urlRes.json();
           } catch {
-            throw new Error(`Server returned an unexpected response (status ${res.status}).`);
+            throw new Error(`Server returned an unexpected response (status ${urlRes.status}).`);
           }
-          if (!res.ok || json.error) {
-            throw new Error(json.error || `Upload failed (status ${res.status}).`);
+          if (!urlRes.ok || urlJson.error || !urlJson.path || !urlJson.token) {
+            throw new Error(urlJson.error || `Could not start upload (status ${urlRes.status}).`);
           }
-          if (json.image) results.push(json.image);
+
+          // 2. Upload the file bytes directly to Supabase Storage from the browser,
+          // bypassing the Vercel function body size limit entirely.
+          const browserSupabase = createBrowserSupabase();
+          const { error: uploadErr } = await browserSupabase.storage
+            .from("carousel")
+            .uploadToSignedUrl(urlJson.path, urlJson.token, file, { contentType: file.type });
+          if (uploadErr) throw new Error(uploadErr.message);
+
+          // 3. Tell the server to record the new image row (small JSON request).
+          const finalizeRes = await fetch("/api/carousel/finalize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ storagePath: urlJson.storagePath, publicUrl: urlJson.publicUrl }),
+          });
+          let finalizeJson: { image?: CarouselImage; error?: string } = {};
+          try {
+            finalizeJson = await finalizeRes.json();
+          } catch {
+            throw new Error(`Server returned an unexpected response (status ${finalizeRes.status}).`);
+          }
+          if (!finalizeRes.ok || finalizeJson.error) {
+            throw new Error(finalizeJson.error || `Upload failed (status ${finalizeRes.status}).`);
+          }
+          if (finalizeJson.image) results.push(finalizeJson.image);
         } catch (err) {
           errors.push(`${file.name}: ${err instanceof Error ? err.message : "Upload failed."}`);
         }
