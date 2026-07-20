@@ -2,6 +2,12 @@
 
 ## July 2026
 
+### July 20 | Site Editor carousel upload fixes | Site,Infrastructure
+
+- **Production Supabase env vars restored**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SECRET_KEY` had been cleared to empty strings in Vercel's production environment, breaking every carousel upload (and any other Supabase call reading these at runtime). Values restored from Supabase's API Keys page; the URL was also corrected to the bare project URL (a `/rest/v1/` suffix had been pasted in by mistake).
+- **Upload spinner no longer hangs forever on failure**: `CarouselManager`'s upload handler had no error handling, so any failed request (bad response, network drop) left the "Uploading…" spinner stuck indefinitely with no feedback. It now always clears and shows a visible error message per failed file.
+- **Large photos no longer fail with 413**: carousel uploads were routed through a Next.js API route, which Vercel caps at ~4.5MB per request, so full-resolution phone photos were rejected. Uploads now go directly from the browser to Supabase Storage via a signed upload URL, with the API route only handling the small JSON request to get the URL and record the image afterward.
+
 ### July 20 | Technical SEO and AI-discoverability audit fixes | SEO,Site
 
 - **Fixed sitewide title-doubling bug**: the layout's title template was silently appending "| NorthWake Marine" a second time on nearly every page (About, Services, Contact, Socials, and every service/location/airport detail page), because each page's own title string already included the company name. All page titles now embed the brand exactly once.
