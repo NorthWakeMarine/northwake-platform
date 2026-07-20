@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { clientConfig } from "@/config/client";
 
 const MARINAS = [
   "Port 32 Jax",
@@ -132,7 +134,7 @@ export default function CoverageList() {
       </button>
 
       {expanded && (
-        <div className="grid md:grid-cols-3 gap-8 mt-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-8">
           <div>
             <p className="text-gray-500 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
               Marinas &amp; Facilities
@@ -167,6 +169,24 @@ export default function CoverageList() {
               {COMMUNITIES.map((name) => (
                 <li key={name} className="text-gray-600 text-xs leading-snug break-inside-avoid">
                   {name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-gray-500 text-xs tracking-[0.3em] uppercase mb-4 border-b border-gray-200 pb-2">
+              Airports
+            </p>
+            <ul className="list-none space-y-1.5">
+              {clientConfig.airports.map((airport) => (
+                <li key={airport.slug} className="text-xs leading-snug">
+                  <Link
+                    href={`/airports/${airport.slug}`}
+                    className="text-gray-600 hover:text-navy transition-colors duration-200"
+                  >
+                    {airport.name} ({airport.icao})
+                  </Link>
                 </li>
               ))}
             </ul>

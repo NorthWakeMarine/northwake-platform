@@ -18,8 +18,8 @@ async function getCMS(): Promise<Record<string, string>> {
 }
 
 export const metadata: Metadata = {
-  title: `About ${clientConfig.companyName}, ${clientConfig.city}'s Premier Services`,
-  description: `Learn about ${clientConfig.companyName}'s story, Yamaha-certified outboard mechanics, and commitment to the highest level of marine, aircraft, and vehicle care in ${clientConfig.city}, ${clientConfig.state}.`,
+  title: `About Us, ${clientConfig.city}'s Premier Services`,
+  description: `Learn about ${clientConfig.companyName}'s story and our commitment to marine, aircraft, and vehicle care in ${clientConfig.city}, ${clientConfig.state}.`,
   keywords: clientConfig.seoKeywords,
   openGraph: {
     title: `About ${clientConfig.companyName} | ${clientConfig.city}'s Premier Services`,

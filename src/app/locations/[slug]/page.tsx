@@ -17,14 +17,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const loc = clientConfig.locations.find((l) => l.slug === slug);
   if (!loc) return {};
 
-  const title = `Marine Services in ${loc.name}, FL | ${clientConfig.companyName}`;
-  const description = `${clientConfig.companyName} provides professional marine detailing, outboard engine service, and vessel management in ${loc.name}, FL. Mobile services that come to your dock or marina.`;
+  const title = `Marine Services in ${loc.name}, FL`;
+  const waterway = loc.waterways[0];
+  const description = waterway
+    ? `${clientConfig.companyName} provides mobile marine detailing and engine service in ${loc.name}, FL, on the ${waterway}. We come to your dock or marina.`
+    : `${clientConfig.companyName} provides mobile marine detailing, engine service, and vessel management in ${loc.name}, FL. We come to your dock or marina.`;
 
   return {
     title,
     description,
     openGraph: {
-      title,
+      title: `${title} | ${clientConfig.companyName}`,
       description,
       url: `${clientConfig.siteUrl}/locations/${slug}`,
     },
@@ -66,11 +69,25 @@ export default async function LocationPage({ params }: Props) {
     },
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
+      { "@type": "ListItem", position: 2, name: "Locations", item: `${siteUrl}/locations` },
+      { "@type": "ListItem", position: 3, name: loc.name, item: `${siteUrl}/locations/${slug}` },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <Header />
       <ScrollDepthTracker />

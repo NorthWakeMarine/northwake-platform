@@ -9,8 +9,8 @@ import { clientConfig } from "@/config/client";
 const { services, companyName, siteUrl, city, state, seoKeywords } = clientConfig;
 
 export const metadata: Metadata = {
-  title: `${companyName} Services`,
-  description: `${companyName} offers expert marine detailing, ceramic coating, Yamaha-certified outboard engine service, monthly maintenance washes, and full-service vessel management in ${city}, ${state}. Browse the full service catalog and request a free quote.`,
+  title: `Services in ${city}, ${state}`,
+  description: `Marine detailing, ceramic coating, Yamaha-certified engine service, and full-service vessel management in ${city}, ${state}. Browse the catalog, get a free quote.`,
   keywords: seoKeywords,
   openGraph: {
     title: `Services | ${companyName}, ${city}, ${state}`,

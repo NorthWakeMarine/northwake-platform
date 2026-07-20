@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { clientConfig } from "@/config/client";
 
 const BASE = clientConfig.siteUrl;
-const UPDATED = new Date("2026-06-21");
+const UPDATED = new Date("2026-07-20");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -35,6 +35,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: UPDATED,
       changeFrequency: "yearly",
       priority: 0.6,
+    },
+    {
+      url: `${BASE}/locations`,
+      lastModified: UPDATED,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${BASE}/airports`,
+      lastModified: UPDATED,
+      changeFrequency: "monthly",
+      priority: 0.7,
     },
     ...clientConfig.services.map((svc) => ({
       url: `${BASE}/services/${svc.id}`,

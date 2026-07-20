@@ -27,13 +27,93 @@ function buildMetaDescription(id: string, schemaDescription: string, city: strin
     "yacht-management":
       `Full-service yacht management in ${city}, FL. Dedicated vessel manager, crew coordination, provisioning, USCG compliance, and voyage planning. Concierge-level care for serious yacht owners.`,
     "aero-detailing":
-      `Aircraft detailing in ${city}, FL. Hangar-side service for piston singles, turboprops, and business jets at Craig Airport, Jacksonville Executive, and Cecil Airport. Aviation-safe exterior polish, interior cabin cleaning, and brightwork.`,
+      `Aircraft detailing in ${city}, FL. Hangar-side service for piston singles, turboprops, and business jets. Aviation-safe exterior polish, interior cleaning, and brightwork.`,
     "rv-detailing":
       `Mobile RV detailing in ${city}, FL. Full interior and exterior service for motorhomes, fifth wheels, and travel trailers. Roof cleaning, awning treatment, and slide-out care at your site or storage facility.`,
     "automotive-detailing":
       `Mobile auto detailing in ${city}, FL. Full-service car, truck, and SUV detailing including paint correction and ceramic coating. Comes to your home or office. No drop-off required.`,
+    "full-detail":
+      `Full bow-to-stern boat detailing in ${city}, FL. Clay bar, multi-stage compounding, polish, sealant, and interior cleaning for showroom-condition results.`,
+    "captain-crew":
+      `USCG-licensed captains and crew for hire in ${city}, FL. Day-rate and contract crew, delivery captaining, charter support, and vessel pickup or relocation.`,
+    "vinyl-upholstery":
+      `Marine vinyl and upholstery conditioning in ${city}, FL. UV-protective cleaning that prevents cracking and fading and restores color on seats and cushions.`,
+    "teak-cleaning":
+      `Teak cleaning and brightening in ${city}, FL. Two-part process removes stains and graying and restores the natural golden color of teak decks and trim.`,
+    "stainless-polish":
+      `Stainless steel polishing in ${city}, FL. Hand-polished rails, hardware, and cleats with corrosion removal and a marine-grade protectant for a mirror finish.`,
+    "engine-bilge":
+      `Engine bay and bilge cleaning in ${city}, FL. Marine-safe degreasers remove grease and oil buildup and help you spot leaks or corrosion early.`,
+    "water-spots":
+      `Water spot and mineral deposit removal in ${city}, FL. Marine-safe removers eliminate hard water stains and calcium deposits from glass, stainless, and paint.`,
+    "one-off-wash":
+      `One-off boat wash in ${city}, FL. A spotless finish before a trip or showing, no maintenance plan required. Same-day availability, subject to scheduling.`,
+    "wax-application":
+      `Marine wax application in ${city}, FL. Polymer or carnauba wax shields gelcoat and paint from UV and salt oxidation with a durable, high-gloss finish.`,
+    "gel-coat-restoration":
+      `Gel coat restoration in ${city}, FL. Multi-stage wet-sand, compound, and polish process reverses UV and oxidation damage and returns hulls to factory gloss.`,
+    "interior-detailing":
+      `Interior cabin detailing in ${city}, FL. Teak conditioning, upholstery treatment, stainless polishing, and odor elimination for a new-yacht feel every visit.`,
+    "canvas-cleaning":
+      `Canvas cleaning and treatment in ${city}, FL. Removes mold, mildew, and stains from biminis, covers, and enclosures with a UV and water-repellent finish.`,
+    "custom-requests":
+      `Custom marine services in ${city}, FL. Parts sourcing, pre-sale prep, insurance inspection coordination, and haul-out assistance. Tell us what you need.`,
   };
   return overrides[id] ?? `${schemaDescription} Mobile service throughout ${city}, ${state} and Northeast Florida. No trailering required.`;
+}
+
+type FAQ = { q: string; a: string };
+
+function buildFAQ(id: string, title: string, companyName: string, city: string, state: string): FAQ[] {
+  const overrides: Record<string, FAQ[]> = {
+    "yacht-management": [
+      { q: "What does a NorthWake vessel manager actually handle?", a: "Crew sourcing and vetting, provisioning, fuel coordination, insurance and USCG documentation, haul-out scheduling, and voyage or slip planning, all through a single dedicated point of contact." },
+      { q: "Is yacht management only for large vessels?", a: "It's built for owners who want operational details handled end-to-end, regardless of exact length. We evaluate every vessel individually during your free quote." },
+    ],
+    "aero-detailing": [
+      { q: "Do you come to my hangar or ramp position?", a: "Yes. We perform hangar-side or ramp-side service so your aircraft never has to be moved for detailing." },
+      { q: "Are your products safe for aircraft paint and composites?", a: "Yes. We use aviation-safe products for exterior polish, de-oxidation, brightwork, and interior cabin cleaning on piston singles, twins, turboprops, and business jets." },
+    ],
+    "rv-detailing": [
+      { q: "What types of RVs do you service?", a: "Class A, B, and C motorhomes, fifth wheels, and travel trailers, including roof, awning, slide-out, and full interior and exterior detailing." },
+      { q: "Do you come to my storage facility?", a: "Yes. Our mobile team comes to your site or storage facility, no need to move the RV." },
+    ],
+    "automotive-detailing": [
+      { q: "Do you detail cars at my home or office?", a: "Yes. We bring professional-grade products and equipment to your home, office, or storage location, no drop-off required." },
+      { q: "Do you offer paint correction and ceramic coating for vehicles?", a: "Yes. Automotive detailing ranges from a basic exterior and interior clean-up to full multi-stage paint correction and ceramic coating." },
+    ],
+    "maintenance-wash": [
+      { q: "What's included in a maintenance wash?", a: "A full exterior foam bath and rinse, chamois dry, glass and non-skid wipe-down, salt and grime removal, and a quick visual condition check." },
+      { q: "How often should I schedule a maintenance wash?", a: "Most owners in Jacksonville's saltwater environment book on a recurring schedule to prevent salt buildup and staining between deeper details." },
+    ],
+    "marine-transport": [
+      { q: "Are you licensed and insured for vessel transport?", a: "Yes. Our transport team is licensed and insured for local Jacksonville bay moves and statewide Florida relocations, including haul-out and launch coordination." },
+      { q: "Can you coordinate a haul-out for transport?", a: "Yes, we coordinate haul-out and launch scheduling as part of every transport job, with in-transit protection and documentation." },
+    ],
+    "outboard-engine-service": [
+      { q: "Are your mechanics Yamaha-certified?", a: "Yes. Our Yamaha-certified mechanic performs 100-hour and 300-hour scheduled maintenance, oil and filter changes, gear lube, spark plug replacement, fuel filter service, and impeller inspections." },
+      { q: "Do you service other outboard brands?", a: `This service is Yamaha-specific. For diagnostics and repair on other major brands, see our Outboard Diagnostics & Repair service.` },
+    ],
+    "outboard-diagnostics": [
+      { q: "What outboard problems can you diagnose?", a: "Overheating, no-start conditions, trim and tilt issues, and propeller damage, across all major outboard brands." },
+      { q: "Do you work on brands other than Yamaha?", a: "Yes. Diagnostics and repair cover all major outboard brands, not just Yamaha." },
+    ],
+    "ceramic-coating": [
+      { q: "How long does ceramic coating last on a boat?", a: "Our 9H professional nano-ceramic application is rated for up to 5 years of UV and salt-water resistance, backed by a transferable protection warranty." },
+      { q: "Does ceramic coating require paint correction first?", a: "Yes. Every application includes full paint correction prep (compound and polish) and surface decontamination before the ceramic coating is applied." },
+    ],
+  };
+
+  return overrides[id] ?? [
+    {
+      q: `How much does ${title.toLowerCase()} cost in ${city}, ${state}?`,
+      a: `Pricing depends on your asset's size and condition. Contact ${companyName} for a free, no-obligation quote, most quotes are returned the same day.`,
+    },
+    {
+      q: `Do you come to my location for ${title.toLowerCase()}?`,
+      a: `Yes. ${companyName} is fully mobile and comes to your dock, marina, hangar, or storage location throughout ${city}, ${state} and Northeast Florida. No trailering required.`,
+    },
+  ];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -43,14 +123,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { companyName, siteUrl, city, state } = clientConfig;
 
-  const title = `${svc.title} in ${city}, FL | ${companyName}`;
+  const title = `${svc.title} in ${city}, FL`;
   const description = buildMetaDescription(slug, svc.schemaDescription, city, state);
 
   return {
     title,
     description,
     openGraph: {
-      title,
+      title: `${title} | ${companyName}`,
       description,
       url: `${siteUrl}/services/${slug}`,
     },
@@ -74,6 +154,18 @@ export default async function ServiceDetailPage({ params }: Props) {
     .slice(0, relatedServices.length < 3 ? 3 - relatedServices.length + 3 : 3);
 
   const showcaseServices = [...relatedServices, ...otherServices].slice(0, 4);
+
+  const faq = buildFAQ(svc.id, svc.title, companyName, city, state);
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
+  };
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -123,6 +215,7 @@ export default async function ServiceDetailPage({ params }: Props) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <Header />
       <ScrollDepthTracker />
 
@@ -240,6 +333,26 @@ export default async function ServiceDetailPage({ params }: Props) {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
+        <section className="py-16 px-6 border-t border-gray-100 bg-gray-50" aria-labelledby="svc-faq-heading">
+          <div className="max-w-3xl mx-auto flex flex-col gap-8">
+            <header className="flex flex-col gap-1">
+              <p className="text-gray-500 text-xs tracking-[0.4em] uppercase">Common Questions</p>
+              <h2 id="svc-faq-heading" className="text-gray-900 text-2xl font-bold tracking-tight">
+                {svc.title} FAQs
+              </h2>
+            </header>
+            <dl className="flex flex-col gap-px bg-gray-200">
+              {faq.map(({ q, a }) => (
+                <div key={q} className="bg-white p-6 hover:bg-gray-50 transition-colors duration-200">
+                  <dt className="text-gray-900 text-sm font-semibold mb-2">{q}</dt>
+                  <dd className="text-gray-700 text-sm leading-relaxed">{a}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
 

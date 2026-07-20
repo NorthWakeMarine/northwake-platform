@@ -22,9 +22,10 @@ async function getContactPrefill(contact_id: string) {
 }
 
 export const metadata = {
-  title: `Liability Waiver & Service Agreement | ${clientConfig.companyName}`,
+  title: "Liability Waiver & Service Agreement",
   description: `${clientConfig.companyName} General Liability Waiver and Service Agreement. Please read and complete this form carefully before participation.`,
   robots: { index: false, follow: false },
+  alternates: { canonical: `${clientConfig.siteUrl}/liability-waiver` },
 };
 
 export default async function LiabilityWaiverPage({

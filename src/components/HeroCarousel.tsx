@@ -12,6 +12,9 @@ export type CarouselSlideSource = {
   src: string;
   focalX?: number;
   focalY?: number;
+  /** Per-photo description, e.g. "Ceramic coating applied to a 42ft center console hull." Falls back to a generic description when not provided. */
+  alt?: string;
+  caption?: string;
 };
 
 interface HeroCarouselProps {
@@ -25,13 +28,16 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
     const src = typeof item === "string" ? item : item.src;
     const focalX = typeof item === "string" ? 50 : (item.focalX ?? 50);
     const focalY = typeof item === "string" ? 50 : (item.focalY ?? 50);
+    const customAlt = typeof item === "string" ? undefined : item.alt;
+    const customCaption = typeof item === "string" ? undefined : item.caption;
+    const fallbackText = `${clientConfig.companyName}, professional services, ${clientConfig.city}, ${clientConfig.state}`;
     return {
       id: `slide-${i + 1}`,
       src,
       focalX,
       focalY,
-      alt: `${clientConfig.companyName}, professional services, ${clientConfig.city}, ${clientConfig.state}`,
-      caption: `Professional services by ${clientConfig.companyName}, ${clientConfig.city}, ${clientConfig.state}.`,
+      alt: customAlt || fallbackText,
+      caption: customCaption || `Professional services by ${clientConfig.companyName}, ${clientConfig.city}, ${clientConfig.state}.`,
       service: clientConfig.companyName,
       tagline: "",
       href: "/services",
@@ -98,11 +104,7 @@ export default function HeroCarousel({ showHeroOverlay = true, images = [] }: He
                   aria-hidden={i !== activeIndex}
                   className="relative flex-[0_0_100%] min-w-0 h-full"
                 >
-                  {/*
-                   * TO SWAP IMAGES: replace `src` in the `slides` array above
-                   * with your real photo path, e.g. "/images/ceramic-coating.jpg"
-                   * Keep the same `alt` and `caption` values, they drive SEO.
-                   */}
+                  {/* Set a per-photo `alt`/`caption` in carousel_images (or the images prop) to describe what's actually shown; falls back to a generic description otherwise. */}
                   <Image
                     src={slide.src}
                     alt={slide.alt}

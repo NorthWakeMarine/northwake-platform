@@ -35,8 +35,8 @@ const socialIcons: Record<string, React.ReactNode> = {
 };
 
 export const metadata: Metadata = {
-  title: `Follow ${clientConfig.companyName}, Social Media & Reviews`,
-  description: `Follow ${clientConfig.companyName} on social media. Leave us a Google review and stay up to date with our latest services and work.`,
+  title: "Social Media & Reviews",
+  description: `Follow ${clientConfig.companyName} for boat detailing, ceramic coating, and yacht care updates. Leave a Google review or catch our latest work.`,
   openGraph: {
     title: `Follow ${clientConfig.companyName} | Social Media & Reviews`,
     description: `Stay connected with ${clientConfig.companyName}, follow us on social media and leave a Google review.`,

@@ -17,14 +17,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const airport = clientConfig.airports.find((a) => a.slug === slug);
   if (!airport) return {};
 
-  const title = `Aircraft Detailing at ${airport.name} (${airport.icao}) | ${clientConfig.companyName}`;
-  const description = `${clientConfig.companyName} provides hangar-side and ramp-side aircraft detailing at ${airport.name} (${airport.icao}) in ${airport.city}, FL. Aviation-safe products, mobile service.`;
+  const title = `Aircraft Detailing at ${airport.name}`;
+  const description = `${clientConfig.companyName} provides hangar-side and ramp-side aircraft detailing at ${airport.name} (${airport.icao}) in ${airport.city}, FL.`;
 
   return {
     title,
     description,
     openGraph: {
-      title,
+      title: `${title} | ${clientConfig.companyName}`,
       description,
       url: `${clientConfig.siteUrl}/airports/${slug}`,
     },
@@ -71,11 +71,25 @@ export default async function AirportPage({ params }: Props) {
     },
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
+      { "@type": "ListItem", position: 2, name: "Airports", item: `${siteUrl}/airports` },
+      { "@type": "ListItem", position: 3, name: airport.name, item: `${siteUrl}/airports/${slug}` },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <Header />
       <ScrollDepthTracker />

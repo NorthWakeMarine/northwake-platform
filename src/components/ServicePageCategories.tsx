@@ -129,9 +129,9 @@ export default function ServicePageCategories({ services }: { services: ServiceI
                     <p className="text-steel text-xs tracking-[0.35em] uppercase mb-1.5">
                       {svc.tier}
                     </p>
-                    <h3 className="text-wake text-xl font-bold tracking-tight leading-tight">
+                    <h4 className="text-wake text-xl font-bold tracking-tight leading-tight">
                       {svc.title}
-                    </h3>
+                    </h4>
                     <p className="text-steel text-xs mt-1 tracking-wide">{svc.tagline}</p>
                   </div>
                 </div>

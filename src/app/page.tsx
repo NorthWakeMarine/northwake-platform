@@ -102,7 +102,7 @@ export default async function Home() {
             <div className="flex flex-col gap-4 order-2 md:order-1 text-center items-center">
               <Image
                 src={clientConfig.logoFullWhitePng}
-                alt={`${clientConfig.companyName}, ${clientConfig.seoDescription}`}
+                alt={`${clientConfig.companyName} logo`}
                 width={260}
                 height={70}
                 className="w-full max-w-[320px] sm:max-w-[420px]"
@@ -125,7 +125,7 @@ export default async function Home() {
                   {clientConfig.city}, {clientConfig.state} &nbsp;·&nbsp; Est. {clientConfig.foundedYear}
                 </p>
                 <p className="sr-only">
-                  {clientConfig.companyName} is {clientConfig.city}&apos;s premier marine services company. {clientConfig.seoDescription} Free, no-obligation quotes returned same day. Call {clientConfig.phone}.
+                  {clientConfig.companyName}: {clientConfig.seoDescription} Free, no-obligation quotes returned same day. Call {clientConfig.phone}.
                 </p>
               </div>
               <HeroDesktopNav />

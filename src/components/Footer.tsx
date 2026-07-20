@@ -6,11 +6,13 @@ import { trackNavClick, trackCtaClick, trackPhoneClick, trackEmailClick } from "
 import { clientConfig } from "@/config/client";
 
 const navLinks = [
-  { label: "Home",     href: "/"         },
-  { label: "Services", href: "/services" },
-  { label: "About",    href: "/about"    },
-  { label: "Socials",  href: "/socials"  },
-  { label: "Contact",  href: "/contact"  },
+  { label: "Home",           href: "/"           },
+  { label: "Services",       href: "/services"   },
+  { label: "Service Areas",  href: "/locations"   },
+  { label: "Airports",       href: "/airports"    },
+  { label: "About",          href: "/about"      },
+  { label: "Socials",        href: "/socials"    },
+  { label: "Contact",        href: "/contact"    },
 ];
 
 export default function Footer() {

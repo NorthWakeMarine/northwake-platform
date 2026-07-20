@@ -6,9 +6,9 @@ import QuoteForm from "@/components/QuoteForm";
 import { clientConfig } from "@/config/client";
 
 export const metadata: Metadata = {
-  title: `Contact ${clientConfig.companyName}, Get a Free Quote in ${clientConfig.city}, ${clientConfig.state}`,
+  title: `Get a Free Quote in ${clientConfig.city}, ${clientConfig.state}`,
   description:
-    `Contact ${clientConfig.companyName} for a free, no-obligation quote in ${clientConfig.city}, ${clientConfig.state}. Call, email, or submit your details online.`,
+    `Contact ${clientConfig.companyName} for a free, no-obligation quote in ${clientConfig.city}, ${clientConfig.state}. Same-day quotes, mobile service, no obligation.`,
   keywords: clientConfig.seoKeywords,
   openGraph: {
     title: `Contact ${clientConfig.companyName} | Free Quote, ${clientConfig.city}, ${clientConfig.state}`,
