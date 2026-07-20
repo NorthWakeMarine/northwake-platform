@@ -740,6 +740,11 @@ export async function createContact(fields: {
   company_name?: string;
   contact_type?: string;
   waiver_signed?: boolean;
+  asset_type?: string;
+  make_model?: string;
+  year?: string;
+  vessel_length?: string;
+  notes?: string;
 }): Promise<{ ok: boolean; id?: string; error?: string }> {
   const supabase = await svc();
   const contactType = fields.contact_type || "customer";
@@ -764,8 +769,36 @@ export async function createContact(fields: {
   revalidatePath("/pro/contacts");
   revalidatePath("/pro/pipeline");
 
-  // Push to Quo in the background — don't block the response
   const contactId = data.id;
+
+  // Create the customer's first vessel/asset if any asset info was provided
+  const makeModel = fields.make_model?.trim() || null;
+  const year = fields.year?.trim() ? parseInt(fields.year.trim(), 10) : null;
+  const lengthFt = fields.vessel_length?.trim().replace(/\s*ft\s*$/i, "") || null;
+  if (contactType === "customer" && (makeModel || year || lengthFt)) {
+    await supabase.from("vessels").insert({
+      owner_id: contactId,
+      asset_type: fields.asset_type || "vessel",
+      make_model: makeModel,
+      year: year && !isNaN(year) ? year : null,
+      length_ft: lengthFt,
+      service_interval_days: 90,
+    });
+  }
+
+  // Log the initial note on the contact's timeline
+  const notes = fields.notes?.trim() || null;
+  if (notes) {
+    await supabase.from("timeline_events").insert({
+      contact_id: contactId,
+      event_type: "note",
+      title: "Note added",
+      body: notes,
+      created_by: "pro",
+    });
+  }
+
+  // Push to Quo in the background — don't block the response
   after(async () => {
     try {
       const { createOpenPhoneContact, splitName } = await import("@/lib/openphone");

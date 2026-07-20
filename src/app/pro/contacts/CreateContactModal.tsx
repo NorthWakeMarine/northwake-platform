@@ -20,10 +20,19 @@ export default function CreateContactModal({ defaultType = "customer" }: Props) 
     address: "",
     contact_type: defaultType,
     waiver_signed: false,
+    asset_type: "vessel",
+    make_model: "",
+    year: "",
+    vessel_length: "",
+    notes: "",
   });
 
   function handleOpen() {
-    setDraft({ name: "", company_name: "", email: "", phone: "", address: "", contact_type: defaultType, waiver_signed: false });
+    setDraft({
+      name: "", company_name: "", email: "", phone: "", address: "",
+      contact_type: defaultType, waiver_signed: false,
+      asset_type: "vessel", make_model: "", year: "", vessel_length: "", notes: "",
+    });
     setError(null);
     setOpen(true);
   }
@@ -175,6 +184,70 @@ export default function CreateContactModal({ defaultType = "customer" }: Props) 
                   <span className="text-slate-700 text-xs">Waiver already signed</span>
                 </label>
               )}
+
+              {/* First asset (customers only) */}
+              {draft.contact_type === "customer" && (
+                <div className="border-t border-slate-200 pt-3 flex flex-col gap-3">
+                  <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 -mb-1 block">Asset (optional)</label>
+                  <div>
+                    <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1 block">Asset Type</label>
+                    <select
+                      value={draft.asset_type}
+                      onChange={(e) => setDraft((d) => ({ ...d, asset_type: e.target.value }))}
+                      className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080] bg-white"
+                    >
+                      <option value="vessel">Vessel</option>
+                      <option value="car">Car</option>
+                      <option value="plane">Plane</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1 block">Make / Model</label>
+                      <input
+                        value={draft.make_model}
+                        onChange={(e) => setDraft((d) => ({ ...d, make_model: e.target.value }))}
+                        className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                        placeholder="Grady White"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1 block">Year</label>
+                      <input
+                        value={draft.year}
+                        onChange={(e) => setDraft((d) => ({ ...d, year: e.target.value }))}
+                        inputMode="numeric"
+                        maxLength={4}
+                        className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                        placeholder="2021"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1 block">Length (ft)</label>
+                    <input
+                      value={draft.vessel_length}
+                      onChange={(e) => setDraft((d) => ({ ...d, vessel_length: e.target.value }))}
+                      inputMode="numeric"
+                      className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080]"
+                      placeholder="27"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              <div>
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400 mb-1 block">Notes</label>
+                <textarea
+                  value={draft.notes}
+                  onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+                  rows={2}
+                  className="w-full border border-slate-300 rounded-sm px-2.5 py-1.5 text-slate-800 text-xs focus:outline-none focus:border-[#000080] resize-none"
+                  placeholder="Anything worth noting..."
+                />
+              </div>
 
               {error && <p className="text-red-500 text-xs">{error}</p>}
             </div>
