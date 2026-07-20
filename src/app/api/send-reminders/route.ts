@@ -13,6 +13,13 @@ function formatEventDate(start: string): string {
   return d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
 }
 
+function getAlertPhoneNumbers(): string[] {
+  return (process.env.ALERT_PHONE_NUMBERS ?? "")
+    .split(",")
+    .map(p => p.trim())
+    .filter(Boolean);
+}
+
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
@@ -22,20 +29,24 @@ export async function GET(req: NextRequest) {
 
   const supabase = svc();
 
-  // Target: events occurring exactly 2 days from now
+  // Customer reminder fires for events exactly 2 days out; the internal
+  // heads-up fires 1 day before that (3 days out), so staff know a day
+  // ahead of time who's about to get texted.
   const now = new Date();
-  const targetStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
-  const targetEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
+  const reminderStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+  const reminderEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
+  const warningStart  = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
+  const warningEnd    = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 4);
 
-  // 1. Fetch all recurring calendar links with contact phone numbers
+  // 1. Fetch all calendar links with the reminder toggle on and a contact phone number
   const { data: links, error: linkErr } = await supabase
     .from("calendar_contact_links")
     .select("gcal_event_id, contact_id, service_label, contacts(name, phone)")
-    .not("recurrence_rule", "is", null);
+    .eq("sms_reminder_enabled", true);
 
   if (linkErr) return NextResponse.json({ error: linkErr.message }, { status: 500 });
   if (!links || links.length === 0) {
-    return NextResponse.json({ sent: 0, skipped: 0, message: "No recurring links configured." });
+    return NextResponse.json({ sent: 0, skipped: 0, message: "No links with reminders enabled." });
   }
 
   type LinkInfo = {
@@ -58,19 +69,28 @@ export async function GET(req: NextRequest) {
   }
 
   if (linkBySeriesId.size === 0) {
-    return NextResponse.json({ sent: 0, skipped: 0, message: "No recurring links with phone numbers found." });
+    return NextResponse.json({ sent: 0, skipped: 0, message: "No links with phone numbers found." });
   }
 
-  // 2. Fetch GCal events for the target day
+  // 2. Fetch GCal events spanning both target days in one call
   let gcalEvents: { id: string; start: string; recurringEventId?: string }[] = [];
   try {
     const { listEvents } = await import("@/lib/google-calendar");
-    gcalEvents = await listEvents(targetStart, targetEnd);
+    gcalEvents = await listEvents(reminderStart, warningEnd);
   } catch {
     return NextResponse.json({ error: "Failed to fetch Google Calendar events." }, { status: 500 });
   }
 
-  // 3. Match events to recurring links
+  function matchLink(ev: { id: string; recurringEventId?: string }): LinkInfo | undefined {
+    return linkBySeriesId.get(ev.id) ?? (ev.recurringEventId ? linkBySeriesId.get(ev.recurringEventId) : undefined);
+  }
+
+  function inWindow(start: string, from: Date, to: Date): boolean {
+    const d = start.includes("T") ? new Date(start) : new Date(start + "T12:00:00");
+    return d >= from && d < to;
+  }
+
+  // 3. Match events to links, split by which window they fall in
   type WorkItem = {
     eventId: string;
     contactId: string;
@@ -79,31 +99,32 @@ export async function GET(req: NextRequest) {
     eventDate: string;
   };
 
-  const workItems: WorkItem[] = [];
+  const reminderItems: WorkItem[] = [];
+  const warningItems: WorkItem[] = [];
   for (const ev of gcalEvents) {
-    const link = linkBySeriesId.get(ev.id) ?? (ev.recurringEventId ? linkBySeriesId.get(ev.recurringEventId) : undefined);
+    const link = matchLink(ev);
     if (!link) continue;
-    workItems.push({
+    const item: WorkItem = {
       eventId:      ev.id,
       contactId:    link.contactId,
       contactName:  link.contactName,
       contactPhone: link.contactPhone,
       eventDate:    ev.start,
-    });
+    };
+    if (inWindow(ev.start, reminderStart, reminderEnd)) reminderItems.push(item);
+    else if (inWindow(ev.start, warningStart, warningEnd)) warningItems.push(item);
   }
 
-  if (workItems.length === 0) {
-    return NextResponse.json({ sent: 0, skipped: 0, message: "No recurring events found for target date." });
-  }
-
-  // 4. Dedup: skip events already reminded
-  const contactIds = [...new Set(workItems.map(w => w.contactId))];
-  const { data: existingReminders } = await supabase
-    .from("timeline_events")
-    .select("metadata")
-    .eq("event_type", "sms")
-    .eq("created_by", "cron")
-    .in("contact_id", contactIds);
+  // 4. Dedup: skip customer reminders already sent
+  const contactIds = [...new Set(reminderItems.map(w => w.contactId))];
+  const { data: existingReminders } = contactIds.length
+    ? await supabase
+        .from("timeline_events")
+        .select("metadata")
+        .eq("event_type", "sms")
+        .eq("created_by", "cron")
+        .in("contact_id", contactIds)
+    : { data: [] };
 
   const alreadySent = new Set<string>(
     (existingReminders ?? [])
@@ -111,11 +132,10 @@ export async function GET(req: NextRequest) {
       .filter(Boolean) as string[]
   );
 
-  const toSend = workItems.filter(w => !alreadySent.has(w.eventId));
+  const toSend = reminderItems.filter(w => !alreadySent.has(w.eventId));
 
-  // 5. Send reminders
-  const { sendSMS } = await import("@/lib/openphone");
-  const { splitName } = await import("@/lib/openphone");
+  // 5. Send customer reminders
+  const { sendSMS, splitName } = await import("@/lib/openphone");
 
   let sent = 0;
   const failed: string[] = [];
@@ -148,13 +168,56 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 6. Log summary
-  const targetDateStr = targetStart.toISOString().slice(0, 10);
+  // 6. Log reminder summary
+  const reminderDateStr = reminderStart.toISOString().slice(0, 10);
   await supabase.from("system_flags").upsert({
-    key:        `sms_reminders_${targetDateStr}`,
-    value:      { sent, skipped: workItems.length - toSend.length, failed, target_date: targetDateStr },
+    key:        `sms_reminders_${reminderDateStr}`,
+    value:      { sent, skipped: reminderItems.length - toSend.length, failed, target_date: reminderDateStr },
     updated_at: new Date().toISOString(),
   }, { onConflict: "key" });
 
-  return NextResponse.json({ sent, skipped: workItems.length - toSend.length, failed, target_date: targetDateStr });
+  // 7. Internal warning text — one day before the customer reminder goes out,
+  // tell staff who's about to be notified. Dedup by date via system_flags so
+  // reruns the same day don't spam the alert numbers.
+  let warningSent = false;
+  const warningDateStr = warningStart.toISOString().slice(0, 10);
+  const alertPhones = getAlertPhoneNumbers();
+
+  if (warningItems.length > 0 && alertPhones.length > 0) {
+    const { data: warningFlag } = await supabase
+      .from("system_flags")
+      .select("key")
+      .eq("key", `sms_warning_${warningDateStr}`)
+      .maybeSingle();
+
+    if (!warningFlag) {
+      const uniqueNames = [...new Set(warningItems.map(w => w.contactName || w.contactPhone))];
+      const dateLabel = formatEventDate(warningItems[0].eventDate);
+      const message = `NorthWake Marine: Tomorrow we'll be texting ${uniqueNames.join(", ")} for work scheduled on ${dateLabel}.`;
+
+      for (const phone of alertPhones) {
+        try {
+          await sendSMS(phone, message);
+        } catch (err) {
+          failed.push(`alert to ${phone}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+      warningSent = true;
+
+      await supabase.from("system_flags").upsert({
+        key:        `sms_warning_${warningDateStr}`,
+        value:      { contacts: uniqueNames, target_date: warningDateStr, sent_to: alertPhones },
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "key" });
+    }
+  }
+
+  return NextResponse.json({
+    sent,
+    skipped: reminderItems.length - toSend.length,
+    failed,
+    target_date: reminderDateStr,
+    warning_sent: warningSent,
+    warning_date: warningDateStr,
+  });
 }

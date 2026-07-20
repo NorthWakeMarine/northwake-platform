@@ -2,6 +2,12 @@
 
 ## July 2026
 
+### July 20 | Per-event text reminder toggle, internal staff heads-up | Calendar,CRM
+
+- **Text reminder toggle on calendar work**: the automatic customer text sent ~2 days before scheduled work can now be turned on or off per event, for both Recurring Work and One-Off Work, from the "New+" service form and from an existing event's billing panel. Defaults to on.
+- **Reminder now covers one-off events too**: previously the 48hr customer text only ever fired for recurring series; it now fires for any linked event (recurring or one-off) with the toggle on.
+- **Internal staff warning text**: the day before customers get their reminder text (i.e. ~3 days before the scheduled work), a heads-up text goes out listing which customers are about to be notified and for what date, so staff aren't caught off guard by the automated message. Sent to the numbers in `ALERT_PHONE_NUMBERS`.
+
 ### July 20 | Leads section removed, merged into Contacts | CRM
 
 - **Leads section deleted**: the standalone `/pro/leads` list and detail pages, and all lead-only actions (convert, merge, block, disqualify, reactivate) are gone. Every intake path (website quote forms, Google Ads, Meta Ads, field-crew quick-add, service reminders, inbound calls) now creates or updates a Contact directly, so customer data no longer risks being stranded in a separate, un-mirrored table.

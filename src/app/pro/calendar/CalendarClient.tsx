@@ -34,6 +34,7 @@ export type EventLink = {
   invoiceQty: number | null;
   invoiceRate: number | null;
   autoInvoice: boolean;
+  smsReminderEnabled: boolean;
   colorId: string | null;
   qbCustomerId: string | null;
 };
@@ -286,6 +287,7 @@ function LinkedPanel({
   const [billingRate,       setBillingRate]         = useState(String(link.invoiceRate ?? link.invoiceAmount ?? ""));
   const [billingDiscount,   setBillingDiscount]     = useState(String(link.invoiceDiscount ?? 0));
   const [billingAuto,       setBillingAuto]         = useState(link.autoInvoice);
+  const [billingSmsReminder, setBillingSmsReminder] = useState(link.smsReminderEnabled);
 
   useEffect(() => {
     if (billingState.success) router.refresh();
@@ -511,7 +513,13 @@ function LinkedPanel({
                 {link.autoInvoice ? "Edit" : "Set Up Billing"}
               </button>
             </div>
-          ) : (
+          ) : null}
+          {(!showBilling || billingState.success) && (
+            <p className="text-[10px] text-slate-400 mt-1">
+              Text reminder: <span className={link.smsReminderEnabled ? "text-emerald-700 font-semibold" : "text-slate-400"}>{link.smsReminderEnabled ? "ON" : "OFF"}</span>
+            </p>
+          )}
+          {showBilling && !billingState.success && (
             <form action={billingAction} className="flex flex-col gap-2">
               <input type="hidden" name="gcal_event_id" value={event.recurringEventId ?? event.id} />
               <input type="hidden" name="contact_id"    value={link.contactId} />
@@ -564,6 +572,18 @@ function LinkedPanel({
                 </button>
                 <input type="hidden" name="auto_invoice" value={billingAuto ? "true" : "false"} />
                 <span className="text-[10px] text-slate-600 font-medium">Auto-invoice on the 15th</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBillingSmsReminder(v => !v)}
+                  className={`relative w-9 h-5 rounded-full transition-colors ${billingSmsReminder ? "bg-emerald-500" : "bg-slate-200"}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${billingSmsReminder ? "translate-x-4" : ""}`} />
+                </button>
+                <input type="hidden" name="sms_reminder_enabled" value={billingSmsReminder ? "true" : "false"} />
+                <span className="text-[10px] text-slate-600 font-medium">Text customer a reminder 2 days before</span>
               </div>
 
               {billingState.error && <p className="text-red-600 text-[11px]">{billingState.error}</p>}
@@ -916,6 +936,7 @@ function EventModal({ event, editScope, defaultDate, serviceTemplates, onClose }
   const [rate,            setRate]            = useState("");
   const [discount,        setDiscount]        = useState("0");
   const [autoInvoice,     setAutoInvoice]     = useState(false);
+  const [smsReminder,     setSmsReminder]     = useState(true);
   const [searchingC,      startSearchC]       = useTransition();
   const [fetchingV2,      startFetchV2]       = useTransition();
 
@@ -1184,6 +1205,15 @@ function EventModal({ event, editScope, defaultDate, serviceTemplates, onClose }
                     </button>
                     <input type="hidden" name="auto_invoice" value={autoInvoice ? "true" : "false"} />
                     <span className="text-[10px] text-slate-600 font-medium">Auto-invoice on the 15th</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setSmsReminder(v => !v)}
+                      className={`relative w-9 h-5 rounded-full transition-colors ${smsReminder ? "bg-emerald-500" : "bg-slate-200"}`}>
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${smsReminder ? "translate-x-4" : ""}`} />
+                    </button>
+                    <input type="hidden" name="sms_reminder_enabled" value={smsReminder ? "true" : "false"} />
+                    <span className="text-[10px] text-slate-600 font-medium">Text customer a reminder 2 days before</span>
                   </div>
                 </>
               )}

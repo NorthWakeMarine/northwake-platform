@@ -1149,6 +1149,7 @@ export async function linkCalendarEvent(
   const invoice_rate_raw     = (formData.get("invoice_rate") as string)?.trim();
   const invoice_rate         = invoice_rate_raw ? parseFloat(invoice_rate_raw) : null;
   const auto_invoice         = formData.get("auto_invoice") === "true";
+  const sms_reminder_enabled = formData.get("sms_reminder_enabled") !== "false";
 
   if (!gcal_event_id || !contact_id) return { error: "Missing required fields." };
 
@@ -1159,6 +1160,7 @@ export async function linkCalendarEvent(
       {
         gcal_event_id, contact_id, vessel_id, service_template_id, service_label,
         invoice_amount, invoice_discount, invoice_qty, invoice_rate, auto_invoice,
+        sms_reminder_enabled,
       },
       { onConflict: "gcal_event_id" }
     );
@@ -1743,6 +1745,7 @@ export async function createStandaloneEvent(
   const invoice_discount    = parseFloat(formData.get("invoice_discount") as string) || 0;
   const invoice_amount      = invoice_qty * invoice_rate - invoice_discount;
   const auto_invoice        = formData.get("auto_invoice") === "true";
+  const sms_reminder_enabled = formData.get("sms_reminder_enabled") !== "false";
 
   if (!title || !start_time || !end_time) return { error: "Title, start, and end time are required." };
 
@@ -1780,6 +1783,7 @@ export async function createStandaloneEvent(
         invoice_discount:   invoice_discount || null,
         invoice_amount:     invoice_amount > 0 ? invoice_amount : null,
         auto_invoice,
+        sms_reminder_enabled,
       }, { onConflict: "gcal_event_id" });
     }
 
@@ -1868,6 +1872,7 @@ export async function createServiceEvent(
   const frequency       = formData.get("frequency")        as string | null;
   const freq_unit       = (formData.get("freq_unit") as string | null) || "weeks";
   const description     = formData.get("description")      as string | null;
+  const sms_reminder_enabled = formData.get("sms_reminder_enabled") !== "false";
 
   if (!contact_id || !service_label || !start_time) {
     return { error: "Contact, service, and date are required." };
@@ -1948,6 +1953,7 @@ export async function createServiceEvent(
       billing_frequency:   billingFreq,
       color_id:            colorId,
       recurrence_rule:     recurrenceRule ?? null,
+      sms_reminder_enabled,
     });
 
     if (linkErr) {

@@ -80,6 +80,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
   const [frequency,   setFrequency]   = useState<string>("4");
   const [freqUnit,    setFreqUnit]    = useState<"days" | "weeks" | "months">("weeks");
   const [notes,       setNotes]       = useState("");
+  const [smsReminder, setSmsReminder] = useState(true);
 
   // ── Calendar event fields ──
   const [calTitle,    setCalTitle]    = useState("");
@@ -435,6 +436,18 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Access instructions, special notes..." className={`${inputCls} resize-none`} />
               </div>
 
+              {/* Customer text reminder toggle */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSmsReminder(v => !v)}
+                  className={`relative w-9 h-5 rounded-full transition-colors ${smsReminder ? "bg-emerald-500" : "bg-slate-200"}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${smsReminder ? "translate-x-4" : ""}`} />
+                </button>
+                <span className="text-[10px] text-slate-600 font-medium">Text customer a reminder 2 days before</span>
+              </div>
+
               {/* Auto-generated title preview */}
               {(picked && serviceLabel) && (
                 <div className="bg-slate-50 border border-slate-100 rounded-sm px-3 py-2">
@@ -465,6 +478,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 <input type="hidden" name="frequency"        value={eventType === "recurring" ? frequency : ""} />
                 <input type="hidden" name="freq_unit"        value={eventType === "recurring" ? freqUnit : ""} />
                 <input type="hidden" name="description"     value={notes} />
+                <input type="hidden" name="sms_reminder_enabled" value={smsReminder ? "true" : "false"} />
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={servicePending || !picked || !serviceLabel || !rate}
                     className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-40">
