@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createLeadFromCall } from "@/app/actions";
+import { createContactFromCall } from "@/app/actions";
 
 export default function CreateLeadButton({ phone, isLead }: { phone: string; isLead?: boolean }) {
   const [state, setState] = useState<"idle" | "loading" | "done">(isLead ? "done" : "idle");
@@ -9,7 +9,7 @@ export default function CreateLeadButton({ phone, isLead }: { phone: string; isL
   async function handle() {
     setState("loading");
     try {
-      const result = await createLeadFromCall(phone);
+      const result = await createContactFromCall(phone);
       setState(result.ok ? "done" : "idle");
     } catch {
       setState("idle");

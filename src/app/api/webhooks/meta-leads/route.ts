@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
-import { createClient } from "@supabase/supabase-js";
 
 // Meta Lead Ads webhook
 // Docs: https://developers.facebook.com/docs/marketing-api/guides/lead-ads/retrieve
@@ -100,11 +99,6 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SECRET_KEY!
-      );
-
       const referral = [
         "Meta Ads",
         campaignId ? `campaign:${campaignId}` : null,
@@ -112,45 +106,31 @@ export async function POST(req: NextRequest) {
         adId       ? `ad:${adId}`             : null,
       ].filter(Boolean).join(" / ");
 
-      const { error } = await supabase.from("leads").insert({
-        name,
-        email:           email ?? `meta-lead-${leadgenId}@metaads.placeholder`,
-        phone:           phone || null,
-        vessel_type:     vesselType || null,
-        vessel_length:   vesselLength || null,
-        service:         service || null,
-        message:         message || null,
-        referral_source: referral,
-        source:          "meta_ads",
-      });
-
-      if (error) {
-        console.error("[meta-leads] DB insert failed:", error.message);
+      try {
+        const { ingestContact } = await import("@/lib/ingest");
+        await ingestContact({
+          name:          name || undefined,
+          email:         email || undefined,
+          phone:         phone || undefined,
+          vessel_type:   vesselType || undefined,
+          vessel_length: vesselLength || undefined,
+          source:        "meta_ads",
+          event_type:    "lead_created",
+          event_title:   "Lead created from Meta Ads",
+          event_body:    message || undefined,
+          metadata: {
+            leadgen_id:  leadgenId,
+            form_id:     formId,
+            ad_id:       adId,
+            campaign_id: campaignId,
+            service:     service || undefined,
+            referral_source: referral,
+          },
+        });
+      } catch (err) {
+        console.error("[meta-leads] ingest failed:", err);
         continue;
       }
-
-      // Mirror to contacts + OpenPhone (fire-and-forget)
-      (async () => {
-        try {
-          const { ingestContact } = await import("@/lib/ingest");
-          await ingestContact({
-            name:          name || undefined,
-            email:         email || undefined,
-            phone:         phone || undefined,
-            vessel_type:   vesselType || undefined,
-            vessel_length: vesselLength || undefined,
-            source:        "meta_ads",
-            event_type:    "lead_created",
-            event_title:   "Lead created from Meta Ads",
-            metadata: {
-              leadgen_id:  leadgenId,
-              form_id:     formId,
-              ad_id:       adId,
-              campaign_id: campaignId,
-            },
-          });
-        } catch { /* non-fatal */ }
-      })();
     }
   }
 

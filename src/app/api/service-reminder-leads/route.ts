@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       id, service_name, interval_days, last_service_date,
       vessels!vessel_id (
         id, name, make_model, year, length_ft,
-        contacts!owner_id ( id, name, phone )
+        contacts!owner_id ( id, name, phone, pipeline_stage )
       )
     `);
 
@@ -70,6 +70,10 @@ export async function GET(req: NextRequest) {
     const phone = normalizePhone(contact.phone);
     if (!phone) { skipped++; continue; }
 
+    // Already visible on the pipeline board — the overdue-service flag there
+    // already surfaces this, no need to re-nudge.
+    if (contact.pipeline_stage) { skipped++; continue; }
+
     const vesselLabel = [vessel.year, vessel.make_model, vessel.length_ft ? `${String(vessel.length_ft).replace(/\s*ft\s*$/i, "")}ft` : null]
       .filter(Boolean).join(" ") || vessel.name || "Vessel";
 
@@ -77,27 +81,17 @@ export async function GET(req: NextRequest) {
     const months = Math.floor(daysAgo / 30);
     const timeLabel = months >= 1 ? `${months} month${months !== 1 ? "s" : ""}` : `${daysAgo} days`;
 
-    // Skip if an open service_reminder lead already exists for this phone+service
-    const { data: existing } = await supabase
-      .from("leads")
-      .select("id")
-      .eq("phone", phone)
-      .eq("source", "service_reminder")
-      .eq("service", serviceName)
-      .neq("status", "converted")
-      .maybeSingle();
-
-    if (existing) { skipped++; continue; }
-
-    await supabase.from("leads").insert({
-      name:    contact.name ?? null,
+    const { ingestContact } = await import("@/lib/ingest");
+    await ingestContact({
+      name: contact.name ?? undefined,
       phone,
-      source:  "service_reminder",
-      service: serviceName,
-      message: `Last ${serviceName} was ${timeLabel} ago on ${vesselLabel}. Due for service — reach out to schedule.`,
-      email:   "",
-      vessel_type:   vessel.make_model ?? null,
-      vessel_length: vessel.length_ft ? String(vessel.length_ft).replace(/\s*ft\s*$/i, "") : null,
+      vessel_type: vessel.make_model ?? undefined,
+      vessel_length: vessel.length_ft ? String(vessel.length_ft).replace(/\s*ft\s*$/i, "") : undefined,
+      source: "service_reminder",
+      event_type: "service_reminder",
+      event_title: `${serviceName} overdue`,
+      event_body: `Last ${serviceName} was ${timeLabel} ago on ${vesselLabel}. Due for service, reach out to schedule.`,
+      metadata: { service: serviceName },
     });
 
     created++;

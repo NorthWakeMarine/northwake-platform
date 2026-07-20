@@ -38,9 +38,7 @@ export type HealthFlag = {
 
 export interface PipelineCard {
   id: string;
-  sourceType: "contact" | "lead";
-  contactId: string | null;
-  leadId: string | null;
+  contactId: string;
   name: string | null;
   stage: PipelineStage;
   assetType: "vessel" | "car" | "plane" | "other" | null;

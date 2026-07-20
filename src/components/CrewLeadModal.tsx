@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { createFieldLead } from "@/app/actions";
+import { createFieldContact } from "@/app/actions";
 
 const SERVICES = [
   "Maintenance Wash",
@@ -15,7 +15,7 @@ const SERVICES = [
 ];
 
 export default function CrewLeadModal({ onClose }: { onClose: () => void }) {
-  const [state, action, pending] = useActionState(createFieldLead, {});
+  const [state, action, pending] = useActionState(createFieldContact, {});
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {

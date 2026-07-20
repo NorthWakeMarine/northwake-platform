@@ -90,26 +90,13 @@ export default function PipelineBoard({ initialCards }: { initialCards: Pipeline
       });
 
       startTransition(async () => {
-        const sourceId = card.sourceType === "lead" ? card.leadId! : card.contactId!;
-        const result = await updatePipelineStage(sourceId, card.sourceType, targetStage);
+        const result = await updatePipelineStage(card.contactId, targetStage);
 
         if (!result.ok) {
           setColumns(prevColumns);
           setMoveError(result.error ?? "Failed to move card. Please try again.");
           setTimeout(() => setMoveError(null), 4000);
           return;
-        }
-
-        if (result.contactId && card.sourceType === "lead") {
-          setColumns((prev) => {
-            const next = { ...prev };
-            next[targetStage] = prev[targetStage].map((c) =>
-              c.id === card.id
-                ? { ...c, id: result.contactId!, sourceType: "contact", contactId: result.contactId!, leadId: null, vesselName: result.vesselName ?? c.vesselName }
-                : c
-            );
-            return next;
-          });
         }
       });
     },

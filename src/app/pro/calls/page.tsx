@@ -67,14 +67,14 @@ function formatDuration(raw: number): string {
 }
 
 
-async function getLeadPhones(): Promise<Set<string>> {
+async function getKnownContactPhones(): Promise<Set<string>> {
   const supabase = svc();
-  const { data } = await supabase.from("leads").select("phone").not("phone", "is", null);
+  const { data } = await supabase.from("contacts").select("phone").not("phone", "is", null);
   return new Set((data ?? []).map((r) => r.phone).filter(Boolean));
 }
 
 export default async function CallsPage() {
-  const [calls, leadPhones] = await Promise.all([getCalls(), getLeadPhones()]);
+  const [calls, leadPhones] = await Promise.all([getCalls(), getKnownContactPhones()]);
 
   const totalCalls = calls.filter((c) => c.event_type === "call").length;
   const totalSms = calls.filter((c) => c.event_type === "sms").length;

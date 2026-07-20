@@ -4,7 +4,7 @@ import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { PipelineCard, PipelineStage } from "@/types/pipeline";
 import { STAGES, STAGE_LABELS } from "@/types/pipeline";
-import { removeFromPipeline, deleteLead } from "@/app/actions";
+import { removeFromPipeline } from "@/app/actions";
 
 function AssetIcon({ type }: { type: PipelineCard["assetType"] }) {
   return (
@@ -124,18 +124,13 @@ function MobileCard({
   const [moveOpen, setMoveOpen] = useState(false);
 
   function handleCardClick() {
-    if (card.contactId) router.push(`/pro/contacts/${card.contactId}`);
-    else if (card.leadId) router.push(`/pro/leads/${card.leadId}`);
+    router.push(`/pro/contacts/${card.contactId}`);
   }
 
   function handleRemove(e: React.MouseEvent) {
     e.stopPropagation();
     startTransition(async () => {
-      if (card.sourceType === "lead" && card.leadId) {
-        await deleteLead(card.leadId);
-      } else if (card.contactId) {
-        await removeFromPipeline(card.contactId);
-      }
+      await removeFromPipeline(card.contactId);
       onRemove();
     });
   }
@@ -184,16 +179,14 @@ function MobileCard({
             />
           )}
 
-          {(card.contactId || (card.sourceType === "lead" && card.leadId)) && (
-            <button
-              onClick={handleRemove}
-              disabled={isPending}
-              className="w-7 h-7 rounded-full hover:bg-red-50 flex items-center justify-center text-slate-300 hover:text-red-400 text-base leading-none transition-colors"
-              title={card.sourceType === "lead" ? "Dismiss lead" : "Remove from pipeline"}
-            >
-              ×
-            </button>
-          )}
+          <button
+            onClick={handleRemove}
+            disabled={isPending}
+            className="w-7 h-7 rounded-full hover:bg-red-50 flex items-center justify-center text-slate-300 hover:text-red-400 text-base leading-none transition-colors"
+            title="Remove from pipeline"
+          >
+            ×
+          </button>
         </div>
       </div>
 
@@ -210,11 +203,6 @@ function MobileCard({
         </div>
       )}
 
-      {card.sourceType === "lead" && (
-        <div className="pl-9 mt-1">
-          <span className="text-slate-300 text-[9px] tracking-widest uppercase">New Lead</span>
-        </div>
-      )}
     </div>
   );
 }

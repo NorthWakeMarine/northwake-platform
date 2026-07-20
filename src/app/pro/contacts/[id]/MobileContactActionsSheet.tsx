@@ -63,7 +63,7 @@ export default function MobileContactActionsSheet({
   function handleStageSelect(s: PipelineStage) {
     close();
     startPipelineTransition(async () => {
-      const res = await updatePipelineStage(contactId, "contact", s);
+      const res = await updatePipelineStage(contactId, s);
       if (res.ok) { setStage(s); router.refresh(); }
     });
   }

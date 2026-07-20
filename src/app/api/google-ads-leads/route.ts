@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 // Google Ads Lead Form Extension webhook
@@ -85,48 +84,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No usable lead data in payload" }, { status: 400 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!
-  );
-
-  const { error } = await supabase.from("leads").insert({
-    name:            name || null,
-    email:           email ?? `ads-lead-${body.lead_id ?? Date.now()}@googleads.placeholder`,
-    phone:           phone || null,
-    vessel_type:     vesselType || null,
-    vessel_length:   vesselLength || null,
-    service:         service || null,
-    message:         message || null,
-    referral_source: [body.campaign_name, body.form_name].filter(Boolean).join(" / ") || "Google Ads",
-    source:          "google_ads",
-  });
-
-  if (error) {
-    console.error("Google Ads lead insert failed:", error.message);
+  try {
+    const { ingestContact } = await import("@/lib/ingest");
+    await ingestContact({
+      name: name || undefined,
+      email: email || undefined,
+      phone: phone || undefined,
+      vessel_type: vesselType || undefined,
+      vessel_length: vesselLength || undefined,
+      source: "google_ads",
+      event_type: "lead_created",
+      event_title: "Lead created from Google Ads",
+      event_body: message || undefined,
+      metadata: {
+        campaign_name: body.campaign_name || undefined,
+        form_name: body.form_name || undefined,
+        service: service || undefined,
+      },
+    });
+  } catch (err) {
+    console.error("Google Ads lead ingest failed:", err);
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
-
-  // Mirror to contacts table and push to OpenPhone as a Lead (fire-and-forget)
-  (async () => {
-    try {
-      const { ingestContact } = await import("@/lib/ingest");
-      await ingestContact({
-        name: name || undefined,
-        email: email || undefined,
-        phone: phone || undefined,
-        vessel_type: vesselType || undefined,
-        vessel_length: vesselLength || undefined,
-        source: "google_ads",
-        event_type: "lead_created",
-        event_title: "Lead created from Google Ads",
-        metadata: {
-          campaign_name: body.campaign_name || undefined,
-          form_name: body.form_name || undefined,
-        },
-      });
-    } catch { /* non-fatal */ }
-  })();
 
   return NextResponse.json({ ok: true }, { status: 200 });
 }

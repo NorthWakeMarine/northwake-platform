@@ -300,15 +300,6 @@ async function handleContactUpsert(obj: Record<string, unknown>) {
       if (data) match = data;
     }
 
-    // Backfill name on any matching lead rows that still have no name
-    if (fullName && phones.length > 0) {
-      await supabase
-        .from("leads")
-        .update({ name: fullName })
-        .in("phone", phones)
-        .is("name", null);
-    }
-
     if (!match) {
       // No CRM contact found by phone, email, or name. Create one so future
       // calls/SMS from this number are recognised and don't generate new leads.

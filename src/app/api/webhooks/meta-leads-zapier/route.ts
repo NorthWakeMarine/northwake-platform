@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 // Meta Lead Ads via Zapier
 // Zapier fetches the lead from Graph API and sends a flat JSON to this endpoint.
@@ -53,46 +52,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No usable lead data" }, { status: 400 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!
-  );
-
   const referral = ["Meta Ads", campaignName, adName, formName].filter(Boolean).join(" / ");
 
-  const { error } = await supabase.from("leads").insert({
-    name,
-    email:           email ?? `meta-zapier-${Date.now()}@metaads.placeholder`,
-    phone:           phone || null,
-    vessel_type:     vesselType || null,
-    vessel_length:   vesselLength || null,
-    service:         service || null,
-    message:         message || null,
-    referral_source: referral || "Meta Ads",
-    source:          "meta_ads",
-  });
-
-  if (error) {
-    console.error("[meta-leads-zapier] DB insert failed:", error.message);
+  try {
+    const { ingestContact } = await import("@/lib/ingest");
+    await ingestContact({
+      name:          name || undefined,
+      email:         email || undefined,
+      phone:         phone || undefined,
+      vessel_type:   vesselType || undefined,
+      vessel_length: vesselLength || undefined,
+      source:        "meta_ads",
+      event_type:    "lead_created",
+      event_title:   "Lead created from Meta Ads",
+      event_body:    message || undefined,
+      metadata: { campaign_name: campaignName, ad_name: adName, form_name: formName, service, referral_source: referral || "Meta Ads" },
+    });
+  } catch (err) {
+    console.error("[meta-leads-zapier] ingest failed:", err);
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
-
-  (async () => {
-    try {
-      const { ingestContact } = await import("@/lib/ingest");
-      await ingestContact({
-        name:          name || undefined,
-        email:         email || undefined,
-        phone:         phone || undefined,
-        vessel_type:   vesselType || undefined,
-        vessel_length: vesselLength || undefined,
-        source:        "meta_ads",
-        event_type:    "lead_created",
-        event_title:   "Lead created from Meta Ads",
-        metadata: { campaign_name: campaignName, ad_name: adName, form_name: formName },
-      });
-    } catch { /* non-fatal */ }
-  })();
 
   return NextResponse.json({ ok: true });
 }

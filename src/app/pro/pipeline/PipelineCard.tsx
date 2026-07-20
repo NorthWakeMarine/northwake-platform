@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import type { PipelineCard as PipelineCardType } from "@/types/pipeline";
-import { removeFromPipeline, deleteLead } from "@/app/actions";
+import { removeFromPipeline } from "@/app/actions";
 
 function AssetIcon({ type }: { type: PipelineCardType["assetType"] }) {
   return (
@@ -66,7 +66,6 @@ function HealthWarningIcon({ flags }: { flags: PipelineCardType["healthFlags"] }
 }
 
 function buildEyebrow(card: PipelineCardType): string | null {
-  if (card.sourceType === "lead") return "New lead";
   const parts: string[] = [];
   if (card.vesselName) parts.push(card.vesselName);
   if (card.isReturningClient) {
@@ -92,8 +91,7 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
   const motionLocked = isDragging || isPending || confirming;
 
   function handleClick() {
-    if (card.contactId) router.push(`/pro/contacts/${card.contactId}`);
-    else if (card.leadId) router.push(`/pro/leads/${card.leadId}`);
+    router.push(`/pro/contacts/${card.contactId}`);
   }
 
   function handleRemoveClick(e: React.MouseEvent) {
@@ -105,11 +103,7 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
     e.stopPropagation();
     setConfirming(false);
     startTransition(async () => {
-      if (card.sourceType === "lead" && card.leadId) {
-        await deleteLead(card.leadId);
-      } else if (card.contactId) {
-        await removeFromPipeline(card.contactId);
-      }
+      await removeFromPipeline(card.contactId);
       onRemove?.(card.id);
     });
   }
@@ -120,7 +114,6 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
   }
 
   const eyebrow = buildEyebrow(card);
-  const removable = card.contactId || (card.sourceType === "lead" && card.leadId);
 
   return (
     <motion.div
@@ -150,34 +143,32 @@ export default function PipelineCard({ card, onRemove }: { card: PipelineCardTyp
         </div>
         <HealthWarningIcon flags={card.healthFlags} />
         <StatusGlow heat={card.heat} stageEnteredAt={card.stageEnteredAt} />
-        {removable && (
-          confirming ? (
-            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={handleConfirmRemove}
-                disabled={isPending}
-                className="text-red-400 hover:text-red-600 text-[9px] font-semibold tracking-wide uppercase transition-colors"
-              >
-                Remove
-              </button>
-              <span className="text-slate-300 text-[9px]">/</span>
-              <button
-                onClick={handleCancelRemove}
-                className="text-slate-400 hover:text-slate-600 text-[9px] tracking-wide uppercase transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
+        {confirming ? (
+          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={handleRemoveClick}
+              onClick={handleConfirmRemove}
               disabled={isPending}
-              className="text-slate-300 hover:text-red-400 text-xs leading-none shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-              title={card.sourceType === "lead" ? "Dismiss lead" : "Remove from pipeline"}
+              className="text-red-400 hover:text-red-600 text-[9px] font-semibold tracking-wide uppercase transition-colors"
             >
-              ×
+              Remove
             </button>
-          )
+            <span className="text-slate-300 text-[9px]">/</span>
+            <button
+              onClick={handleCancelRemove}
+              className="text-slate-400 hover:text-slate-600 text-[9px] tracking-wide uppercase transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleRemoveClick}
+            disabled={isPending}
+            className="text-slate-300 hover:text-red-400 text-xs leading-none shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+            title="Remove from pipeline"
+          >
+            ×
+          </button>
         )}
       </div>
     </motion.div>

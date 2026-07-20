@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { blockLead } from "@/app/actions";
+import { blockContact } from "@/app/actions";
 
-export default function BlockLeadButton({ leadId }: { leadId: string }) {
+export default function BlockContactButton({
+  contactId,
+  redirectTo,
+}: {
+  contactId: string;
+  redirectTo?: string;
+}) {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -13,9 +19,9 @@ export default function BlockLeadButton({ leadId }: { leadId: string }) {
     return (
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirm(true); }}
-        className="text-[10px] tracking-widest uppercase text-orange-400 hover:text-orange-600 font-medium transition-colors whitespace-nowrap"
+        className="text-[10px] tracking-widest uppercase text-red-400 hover:text-red-600 font-medium transition-colors whitespace-nowrap"
       >
-        Block
+        Block Number
       </button>
     );
   }
@@ -28,10 +34,15 @@ export default function BlockLeadButton({ leadId }: { leadId: string }) {
           e.preventDefault();
           e.stopPropagation();
           setBusy(true);
-          await blockLead(leadId);
-          router.push("/pro/leads");
+          const res = await blockContact(contactId);
+          if (!res.error) {
+            if (redirectTo) router.push(redirectTo);
+            else router.refresh();
+          } else {
+            setBusy(false);
+          }
         }}
-        className="text-[10px] tracking-widest uppercase text-orange-600 font-semibold whitespace-nowrap disabled:opacity-50"
+        className="text-[10px] tracking-widest uppercase text-red-600 font-semibold whitespace-nowrap disabled:opacity-50"
       >
         {busy ? "..." : "Confirm Block"}
       </button>

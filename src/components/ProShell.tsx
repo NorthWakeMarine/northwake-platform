@@ -41,16 +41,6 @@ const allNavLinks: NavItem[] = [
     ),
   },
   {
-    href: "/pro/leads",
-    label: "Leads",
-    roles: ["admin"],
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-      </svg>
-    ),
-  },
-  {
     href: "/pro/contacts",
     label: "Contacts",
     roles: ["admin", "crew"],
@@ -195,7 +185,6 @@ const allBottomTabs = [
 
 // More drawer links (overflow menu on mobile)
 const allMoreLinks = [
-  { href: "/pro/leads",        label: "Leads",        roles: ["admin"] },
   { href: "/pro/calls",        label: "Calls",        roles: ["admin"] },
   { href: "/pro/vessels",      label: "Vessels",      roles: ["admin"] },
   { href: "/pro/services",     label: "Services",     roles: ["admin"] },

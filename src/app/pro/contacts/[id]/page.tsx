@@ -15,6 +15,7 @@ import SyncToQbButton from "./SyncToQbButton";
 import SyncQuoButton from "./SyncQuoButton";
 import AddToPipelineButton from "@/components/AddToPipelineButton";
 import DeleteContactButton from "../DeleteContactButton";
+import BlockContactButton from "../BlockContactButton";
 import MobileContactActionsSheet from "./MobileContactActionsSheet";
 import VendorDescriptor from "./VendorDescriptor";
 import LinkedContacts, { type LinkedContact } from "./LinkedContacts";
@@ -208,9 +209,10 @@ export default async function ContactProfilePage({
               </>
             )}
             {contact.contact_type !== "vendor" && (
-              <AddToPipelineButton id={contact.id} sourceType="contact" currentStage={contact.pipeline_stage} />
+              <AddToPipelineButton id={contact.id} currentStage={contact.pipeline_stage} />
             )}
             <SyncQuoButton contactId={contact.id} />
+            <BlockContactButton contactId={contact.id} redirectTo="/pro/contacts" />
             <DeleteContactButton contactId={contact.id} redirectTo="/pro/contacts" />
           </div>
         </div>

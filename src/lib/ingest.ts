@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { after } from "next/server";
 
 function serviceClient() {
   return createClient(
@@ -63,11 +64,23 @@ export async function ingestContact(
 
   if (contact) {
     // Merge any new data onto existing record
+    const { data: existing } = await supabase
+      .from("contacts")
+      .select("pipeline_stage")
+      .eq("id", contact.id)
+      .single();
+
     const updates: Record<string, unknown> = {};
     if (payload.name) updates.name = payload.name;
     if (payload.phone) updates.phone = payload.phone;
     if (payload.vessel_type) updates.vessel_type = payload.vessel_type;
     if (payload.vessel_length) updates.vessel_length = payload.vessel_length;
+
+    // Not currently shown on the pipeline board — renewed interest brings them back
+    if (!existing?.pipeline_stage) {
+      updates.pipeline_stage = "new_leads";
+      updates.stage_entered_at = new Date().toISOString();
+    }
 
     if (Object.keys(updates).length > 0) {
       await supabase.from("contacts").update(updates).eq("id", contact.id);
@@ -83,6 +96,8 @@ export async function ingestContact(
         vessel_length: payload.vessel_length ?? null,
         source: payload.source ?? "website",
         status: "lead",
+        pipeline_stage: "new_leads",
+        stage_entered_at: new Date().toISOString(),
       })
       .select("id")
       .single();
@@ -106,7 +121,7 @@ export async function ingestContact(
 
   if (created) {
     const contactId = contact.id;
-    (async () => {
+    after(async () => {
       try {
         const { createOpenPhoneContact, splitName } = await import("./openphone");
         const { firstName, lastName } = splitName(payload.name?.trim() ?? "");
@@ -121,7 +136,7 @@ export async function ingestContact(
           await supabase.from("contacts").update({ openphone_contact_id: newId }).eq("id", contactId);
         }
       } catch { /* non-fatal */ }
-    })();
+    });
   }
 
   return { contact_id: contact.id, created };

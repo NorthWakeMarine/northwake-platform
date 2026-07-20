@@ -7,7 +7,6 @@ import { STAGE_LABELS, type PipelineStage } from "@/types/pipeline";
 
 interface Props {
   id: string;
-  sourceType: "contact" | "lead";
   currentStage?: PipelineStage | null;
 }
 
@@ -16,7 +15,7 @@ const STAGE_ORDER: PipelineStage[] = [
   "needs_attention", "work_scheduled", "done_invoiced",
 ];
 
-export default function AddToPipelineButton({ id, sourceType, currentStage }: Props) {
+export default function AddToPipelineButton({ id, currentStage }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -33,7 +32,7 @@ export default function AddToPipelineButton({ id, sourceType, currentStage }: Pr
   function addToStage(stage: PipelineStage) {
     setOpen(false);
     startTransition(async () => {
-      const res = await updatePipelineStage(id, sourceType, stage);
+      const res = await updatePipelineStage(id, stage);
       if (!res.ok) { setError(res.error ?? "Failed."); return; }
       router.refresh();
     });

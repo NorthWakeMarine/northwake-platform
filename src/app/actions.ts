@@ -4,6 +4,7 @@ import { z } from "zod"; // noop: force cache bust after ServicesClient.tsx was 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ingestContact } from "@/lib/ingest";
 import { sendLeadNotification, sendWaiverCompletionNotification } from "@/lib/gmail";
@@ -69,36 +70,22 @@ export async function submitLead(
     [d.first_name, d.last_name].filter(Boolean).join(" ") ||
     "";
 
-  const supabase = await createServerSupabase();
-  const { error } = await supabase.from("leads").insert({
-    name,
-    email:           d.email,
-    phone:           normalizePhone(d.phone),
-    vessel_length:   d.vessel_length   || null,
-    vessel_type:     d.vessel_type,
-    service:         d.service,
-    referral_source: d.referral_source || null,
-    message:         d.message || d.comments || null,
-    source:          d.source          || "website",
-  });
-
-  if (error) {
-    console.error("Lead insert error:", error.message, error.code, error.details);
-    return { success: false, error: error.message };
+  try {
+    await ingestContact({
+      name,
+      email: d.email,
+      phone: normalizePhone(d.phone) ?? undefined,
+      vessel_type: d.vessel_type,
+      vessel_length: d.vessel_length ?? undefined,
+      source: d.source ?? "website",
+      event_type: "form_submission",
+      event_title: `Quote request: ${d.service}`,
+      metadata: { service: d.service, vessel_type: d.vessel_type },
+    });
+  } catch (err) {
+    console.error("Ingest error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to submit." };
   }
-
-  // Mirror into contacts table via ingest (fire-and-forget, non-blocking)
-  ingestContact({
-    name,
-    email: d.email,
-    phone: normalizePhone(d.phone) ?? undefined,
-    vessel_type: d.vessel_type,
-    vessel_length: d.vessel_length ?? undefined,
-    source: d.source ?? "website",
-    event_type: "form_submission",
-    event_title: `Quote request: ${d.service}`,
-    metadata: { service: d.service, vessel_type: d.vessel_type },
-  }).catch((err) => console.error("Ingest error:", err));
 
   // Email notification (fire-and-forget)
   sendLeadNotification({
@@ -223,42 +210,7 @@ export async function updateSiteContent(
 
 // ─── Timeline Notes ───────────────────────────────────────────────────────────
 
-export type LeadNote = { id: string; created_at: string; body: string | null; created_by: string | null; metadata: Record<string, unknown> | null };
-export type NoteState = { success?: boolean; error?: string; note?: LeadNote };
-
-export async function addLeadNote(
-  _prev: NoteState,
-  formData: FormData
-): Promise<NoteState> {
-  const lead_id    = formData.get("lead_id")    as string;
-  const lead_phone = formData.get("lead_phone") as string | null;
-  const lead_email = formData.get("lead_email") as string | null;
-  const body = (formData.get("body") as string)?.trim();
-
-  if (!lead_id) return { error: "Missing lead." };
-  if (!body)    return { error: "Note cannot be empty." };
-
-  const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  const username = user?.email?.split("@")[0] ?? "pro";
-
-  const { data, error } = await supabase.from("timeline_events").insert({
-    lead_id,
-    event_type: "note",
-    title: "Note added",
-    body,
-    created_by: username,
-    metadata: {
-      ...(lead_phone ? { lead_phone } : {}),
-      ...(lead_email ? { lead_email } : {}),
-    },
-  }).select("id, created_at, body, created_by, metadata").single();
-
-  if (error) return { error: error.message };
-
-  revalidatePath(`/pro/leads/${lead_id}`);
-  return { success: true, note: data as LeadNote };
-}
+export type NoteState = { success?: boolean; error?: string };
 
 export async function addTimelineNote(
   _prev: NoteState,
@@ -290,59 +242,39 @@ export async function addTimelineNote(
 
 // ─── Phone Notes ──────────────────────────────────────────────────────────────
 
-export async function createLeadFromCall(phone: string, name?: string, source?: string): Promise<{ ok: boolean; error?: string }> {
+export async function createContactFromCall(phone: string, name?: string, source?: string): Promise<{ ok: boolean; error?: string }> {
   if (!phone) return { ok: false, error: "No phone number." };
   const { createClient } = await import("@supabase/supabase-js");
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
-  const { data: existing } = await supabase.from("leads").select("id").eq("phone", phone).maybeSingle();
-  if (existing) return { ok: true }; // already a lead
-  const { data: lead, error } = await supabase
-    .from("leads")
-    .insert({ phone, name: name?.trim() || null, source: source || "website", email: "" })
-    .select("id")
-    .single();
-  if (error) return { ok: false, error: error.message };
+  const { data: existing } = await supabase.from("contacts").select("id").eq("phone", phone).maybeSingle();
+  if (existing) return { ok: true }; // already a contact
 
-  // Retroactively link any orphaned call/SMS events logged before this lead existed.
-  // Events from unknown callers are stored with caller_number or from_number in metadata.
-  if (lead?.id) {
-    await supabase
-      .from("timeline_events")
-      .update({ lead_id: lead.id })
-      .is("lead_id", null)
-      .is("contact_id", null)
-      .eq("metadata->>caller_number", phone);
-    await supabase
-      .from("timeline_events")
-      .update({ lead_id: lead.id })
-      .is("lead_id", null)
-      .is("contact_id", null)
-      .eq("metadata->>from_number", phone);
+  let contactId: string;
+  try {
+    const { ingestContact } = await import("@/lib/ingest");
+    const result = await ingestContact({ phone, name, source: source || "website" });
+    contactId = result.contact_id;
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to create contact." };
   }
 
-  revalidatePath("/pro/leads");
+  // Retroactively link any orphaned call/SMS events logged before this contact existed.
+  // Events from unknown callers are stored with caller_number or from_number in metadata.
+  await supabase
+    .from("timeline_events")
+    .update({ contact_id: contactId })
+    .is("lead_id", null)
+    .is("contact_id", null)
+    .eq("metadata->>caller_number", phone);
+  await supabase
+    .from("timeline_events")
+    .update({ contact_id: contactId })
+    .is("lead_id", null)
+    .is("contact_id", null)
+    .eq("metadata->>from_number", phone);
+
+  revalidatePath("/pro/pipeline");
   return { ok: true };
-}
-
-export type PhoneNoteState = { success?: boolean; error?: string };
-
-export async function savePhoneNote(
-  _prev: PhoneNoteState,
-  formData: FormData
-): Promise<PhoneNoteState> {
-  const phone = (formData.get("phone") as string ?? "").trim();
-  const note  = (formData.get("note")  as string ?? "").trim();
-  if (!phone) return { error: "Missing phone number." };
-
-  const supabase = await svc();
-  const { error } = await supabase
-    .from("phone_notes")
-    .upsert({ phone, note, updated_at: new Date().toISOString() }, { onConflict: "phone" });
-
-  if (error) return { error: error.message };
-
-  revalidatePath("/pro/leads");
-  return { success: true };
 }
 
 export async function updateTimelineNote(
@@ -386,7 +318,7 @@ export async function deleteTimelineNote(
 
   const { data: existing } = await supabase
     .from("timeline_events")
-    .select("contact_id, lead_id")
+    .select("contact_id")
     .eq("id", id)
     .single();
 
@@ -398,7 +330,6 @@ export async function deleteTimelineNote(
 
   if (error) return { ok: false, error: error.message };
   if (existing?.contact_id) revalidatePath(`/pro/contacts/${existing.contact_id}`);
-  if (existing?.lead_id)    revalidatePath(`/pro/leads/${existing.lead_id}`);
   return { ok: true };
 }
 
@@ -611,300 +542,12 @@ export async function submitWaiver(
   return { success: true, data: { name, address, phone, email, boat, date, signature } };
 }
 
-// ─── Lead Conversion ─────────────────────────────────────────────────────────
-
-export type ConvertLeadState = { error?: string };
-
 async function svc() {
   const { createClient } = await import("@supabase/supabase-js");
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!
   );
-}
-
-async function insertVessel(
-  supabase: Awaited<ReturnType<typeof svc>>,
-  contactId: string,
-  lead: { vessel_type?: string | null; vessel_length?: string | null; last_service_date?: string | null }
-) {
-  if (!lead.vessel_type && !lead.vessel_length) return;
-  try {
-    await supabase.from("vessels").insert({
-      owner_id: contactId,
-      asset_type: "vessel",
-      vessel_type: lead.vessel_type ?? null,
-      make_model: lead.vessel_type ?? null,
-      length_ft: lead.vessel_length ?? null,
-      last_service_date: lead.last_service_date ?? null,
-    });
-  } catch { /* vessels table may not exist yet */ }
-}
-
-// Check for duplicate contact by email or phone before converting
-export type DuplicateCheckResult = {
-  found: boolean;
-  contact?: { id: string; name: string | null; email: string | null; phone: string | null };
-  error?: string;
-};
-
-export async function checkDuplicateContact(leadId: string): Promise<DuplicateCheckResult> {
-  const supabase = await svc();
-
-  const { data: lead } = await supabase
-    .from("leads")
-    .select("email, phone")
-    .eq("id", leadId)
-    .single();
-
-  if (!lead) return { found: false, error: "Lead not found." };
-
-  const [byEmail, byPhone] = await Promise.all([
-    lead.email
-      ? supabase.from("contacts").select("id, name, email, phone").eq("email", lead.email).maybeSingle()
-      : Promise.resolve({ data: null }),
-    lead.phone
-      ? supabase.from("contacts").select("id, name, email, phone").eq("phone", normalizePhone(lead.phone) ?? lead.phone).maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
-
-  const contact = byEmail.data ?? byPhone.data;
-
-  return contact ? { found: true, contact } : { found: false };
-}
-
-// Convert lead to new contact profile (force_create skips duplicate lookup)
-export async function convertLead(
-  _prev: ConvertLeadState,
-  formData: FormData
-): Promise<ConvertLeadState> {
-  const lead_id     = formData.get("lead_id")     as string;
-  const force_create = formData.get("force_create") === "true";
-  if (!lead_id) return { error: "Missing lead ID." };
-
-  const supabase = await svc();
-
-  const { data: lead, error: leadErr } = await supabase
-    .from("leads")
-    .select("id, name, email, phone, vessel_type, vessel_length, source, waiver_signed, last_service_date, message, service, referral_source")
-    .eq("id", lead_id)
-    .single();
-
-  if (leadErr || !lead) return { error: "Lead not found." };
-
-  // Fetch any phone note saved for this number
-  let phoneNote: string | null = null;
-  if (lead.phone) {
-    const { data: pn } = await supabase
-      .from("phone_notes")
-      .select("note")
-      .eq("phone", normalizePhone(lead.phone) ?? lead.phone)
-      .maybeSingle();
-    phoneNote = pn?.note?.trim() || null;
-  }
-
-  let contactId: string | null = null;
-
-  if (!force_create) {
-    const { data: existing } = await supabase
-      .from("contacts")
-      .select("id, notes")
-      .eq("email", lead.email)
-      .maybeSingle();
-    if (existing) {
-      contactId = existing.id;
-      const mergedNotes = [existing.notes, phoneNote].filter(Boolean).join("\n\n---\n\n") || null;
-      await supabase
-        .from("contacts")
-        .update({ name: lead.name, phone: normalizePhone(lead.phone), vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, status: "client", ...(mergedNotes !== null ? { notes: mergedNotes } : {}) })
-        .eq("id", contactId);
-    }
-  }
-
-  if (!contactId) {
-    const { data: newContact, error: contactErr } = await supabase
-      .from("contacts")
-      .insert({ name: lead.name, email: lead.email, phone: normalizePhone(lead.phone), vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, waiver_signed: lead.waiver_signed ?? false, source: lead.source ?? "website", status: "client", notes: phoneNote })
-      .select("id")
-      .single();
-    if (contactErr || !newContact) return { error: contactErr?.message ?? "Failed to create contact." };
-    contactId = newContact.id;
-  }
-
-  if (contactId) await insertVessel(supabase, contactId, lead);
-
-  // Migrate lead notes (directly tied to this lead) to the contact timeline
-  await supabase
-    .from("timeline_events")
-    .update({ contact_id: contactId, lead_id: null })
-    .eq("lead_id", lead_id)
-    .eq("event_type", "note");
-
-  // Migrate orphaned notes shown via phone recovery (lead_id null but same phone)
-  if (lead.phone) {
-    const normalPhone = normalizePhone(lead.phone) ?? lead.phone;
-    await supabase
-      .from("timeline_events")
-      .update({ contact_id: contactId })
-      .is("lead_id", null)
-      .is("contact_id", null)
-      .eq("event_type", "note")
-      .filter("metadata->>lead_phone", "eq", normalPhone);
-  }
-
-  // Carry original inquiry message into the contact timeline
-  const cleanMessage = (lead as { message?: string | null }).message?.trim();
-  if (cleanMessage) {
-    const parts: string[] = [];
-    if ((lead as { service?: string | null }).service) parts.push(`Service: ${(lead as { service?: string | null }).service}`);
-    if ((lead as { referral_source?: string | null }).referral_source) parts.push(`Referral: ${(lead as { referral_source?: string | null }).referral_source}`);
-    parts.push(cleanMessage);
-    await supabase.from("timeline_events").insert({
-      contact_id: contactId,
-      event_type: "note",
-      title: "Original inquiry",
-      body: parts.join("\n"),
-      created_by: "system",
-    });
-  }
-
-  await supabase.from("timeline_events").insert({
-    contact_id: contactId,
-    event_type: "lead_converted",
-    title: "Converted to client",
-    body: `Lead converted from source: ${lead.source ?? "website"}.`,
-    created_by: "pro",
-  });
-
-  await supabase.from("leads").update({ status: "converted" }).eq("id", lead_id);
-
-  // Fire-and-forget: retag as Customer in OpenPhone and write vessel info
-  const _convertedContactId = contactId;
-  const _convertedLead = lead;
-  (async () => {
-    try {
-      const { createClient: cc } = await import("@supabase/supabase-js");
-      const sb = cc(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
-      const { data: c } = await sb.from("contacts")
-        .select("openphone_contact_id, name")
-        .eq("id", _convertedContactId)
-        .maybeSingle();
-      if (!c?.openphone_contact_id) return;
-      const { updateOpenPhoneContact, splitName } = await import("@/lib/openphone");
-      const { firstName, lastName } = splitName(c.name?.trim() ?? "");
-      const vesselParts = [_convertedLead.vessel_type, _convertedLead.vessel_length].filter(Boolean);
-      await updateOpenPhoneContact(c.openphone_contact_id, {
-        firstName,
-        lastName: lastName || undefined,
-        role: "Customer",
-        company: vesselParts.length ? vesselParts.join(" ") : undefined,
-      });
-    } catch { /* non-fatal */ }
-  })();
-
-  revalidatePath(`/pro/leads/${lead_id}`);
-  revalidatePath(`/pro/contacts/${contactId}`);
-  redirect(`/pro/contacts/${contactId}`);
-}
-
-// Merge lead data into an existing contact, then delete the lead
-export type MergeLeadState = { error?: string };
-
-export async function mergeLead(
-  _prev: MergeLeadState,
-  formData: FormData
-): Promise<MergeLeadState> {
-  const lead_id    = formData.get("lead_id")    as string;
-  const contact_id = formData.get("contact_id") as string;
-  if (!lead_id || !contact_id) return { error: "Missing required fields." };
-
-  const supabase = await svc();
-
-  const { data: lead, error: leadErr } = await supabase
-    .from("leads")
-    .select("id, name, phone, vessel_type, vessel_length, service, referral_source, message, source, waiver_signed, last_service_date")
-    .eq("id", lead_id)
-    .single();
-
-  if (leadErr || !lead) return { error: "Lead not found." };
-
-  // Fetch phone note and existing contact notes to merge
-  let phoneNote: string | null = null;
-  if (lead.phone) {
-    const { data: pn } = await supabase
-      .from("phone_notes")
-      .select("note")
-      .eq("phone", normalizePhone(lead.phone) ?? lead.phone)
-      .maybeSingle();
-    phoneNote = pn?.note?.trim() || null;
-  }
-
-  const { data: existingContact } = await supabase
-    .from("contacts")
-    .select("notes, openphone_contact_id, name")
-    .eq("id", contact_id)
-    .maybeSingle();
-  const mergedNotes = [existingContact?.notes, phoneNote].filter(Boolean).join("\n\n---\n\n") || null;
-
-  // Patch any new info onto the existing contact
-  await supabase
-    .from("contacts")
-    .update({
-      ...(lead.name  ? { name: lead.name }   : {}),
-      ...(lead.phone ? { phone: normalizePhone(lead.phone) ?? lead.phone } : {}),
-      ...(lead.vessel_type   ? { vessel_type: lead.vessel_type }     : {}),
-      ...(lead.vessel_length ? { vessel_length: lead.vessel_length } : {}),
-      ...(lead.waiver_signed ? { waiver_signed: true }               : {}),
-      ...(mergedNotes !== null ? { notes: mergedNotes } : {}),
-      status: "client",
-    })
-    .eq("id", contact_id);
-
-  await insertVessel(supabase, contact_id, lead);
-
-  // Migrate any lead notes to the contact timeline
-  await supabase
-    .from("timeline_events")
-    .update({ contact_id, lead_id: null })
-    .eq("lead_id", lead_id)
-    .eq("event_type", "note");
-
-  // Log original lead as a web_lead timeline event
-  await supabase.from("timeline_events").insert({
-    contact_id,
-    event_type: "web_lead",
-    title: `Web lead merged — ${lead.service ?? "inquiry"}`,
-    body: lead.message ?? `Service inquiry: ${lead.service ?? "not specified"}. Referral: ${lead.referral_source ?? "none"}.`,
-    metadata: { lead_id, service: lead.service, source: lead.source, vessel_type: lead.vessel_type, vessel_length: lead.vessel_length, referral_source: lead.referral_source },
-    created_by: "system",
-  });
-
-  // Delete the lead to keep the database clean
-  await supabase.from("leads").delete().eq("id", lead_id);
-
-  // Fire-and-forget: retag as Customer in OpenPhone and write vessel info
-  if (existingContact?.openphone_contact_id) {
-    const _opId = existingContact.openphone_contact_id;
-    const _mergedName = lead.name || existingContact.name || "";
-    const _mergedLead = lead;
-    (async () => {
-      try {
-        const { updateOpenPhoneContact, splitName } = await import("@/lib/openphone");
-        const { firstName, lastName } = splitName(_mergedName.trim());
-        const vesselParts = [_mergedLead.vessel_type, _mergedLead.vessel_length].filter(Boolean);
-        await updateOpenPhoneContact(_opId, {
-          firstName,
-          lastName: lastName || undefined,
-          role: "Customer",
-          company: vesselParts.length ? vesselParts.join(" ") : undefined,
-        });
-      } catch { /* non-fatal */ }
-    })();
-  }
-
-  revalidatePath("/pro/leads");
-  revalidatePath(`/pro/contacts/${contact_id}`);
-  redirect(`/pro/contacts/${contact_id}`);
 }
 
 // ─── Fleet Assets ─────────────────────────────────────────────────────────────
@@ -1030,29 +673,6 @@ export async function deleteAsset(assetId: string, contactId: string): Promise<{
   return {};
 }
 
-// ─── Update Lead Field ────────────────────────────────────────────────────────
-
-export type LeadFieldState = { error?: string; success?: boolean };
-
-export async function updateLeadField(
-  _prev: LeadFieldState,
-  formData: FormData
-): Promise<LeadFieldState> {
-  const lead_id = formData.get("lead_id") as string;
-  const field   = formData.get("field")   as string;
-  const value   = (formData.get("value")  as string)?.trim() || null;
-
-  const ALLOWED = ["name", "email", "phone", "vessel_type", "vessel_length", "service", "source"];
-  if (!lead_id || !field || !ALLOWED.includes(field)) return { error: "Invalid request." };
-
-  const supabase = await svc();
-  const { error } = await supabase.from("leads").update({ [field]: value }).eq("id", lead_id);
-  if (error) return { error: error.message };
-  revalidatePath(`/pro/leads/${lead_id}`);
-  revalidatePath("/pro/leads");
-  return { success: true };
-}
-
 // ─── Update Contact Field ─────────────────────────────────────────────────────
 
 export type ContactFieldState = { error?: string; success?: boolean };
@@ -1075,7 +695,7 @@ export async function updateContactField(
   return { success: true };
 }
 
-export async function createFieldLead(_prev: { success?: boolean; error?: string }, formData: FormData): Promise<{ success?: boolean; error?: string }> {
+export async function createFieldContact(_prev: { success?: boolean; error?: string }, formData: FormData): Promise<{ success?: boolean; error?: string }> {
   const name    = (formData.get("name")    as string | null)?.trim() || null;
   const phone   = (formData.get("phone")   as string | null)?.trim() || null;
   const email   = (formData.get("email")   as string | null)?.trim() || null;
@@ -1092,21 +712,23 @@ export async function createFieldLead(_prev: { success?: boolean; error?: string
   const vesselType = [year, make].filter(Boolean).join(" ") || null;
   const message    = [location ? `Boat location: ${location}` : null, notes].filter(Boolean).join("\n") || null;
 
-  const supabase = await svc();
-  const { error } = await supabase.from("leads").insert({
-    name:        name ?? "Unknown",
-    email:       email || null,
-    phone:       phone ? normalizePhone(phone) : null,
-    vessel_type: vesselType,
-    service:     service || "General Inquiry",
-    message,
-    source:      "field_crew",
-    status:      "new",
-  });
+  try {
+    await ingestContact({
+      name: name ?? undefined,
+      email: email ?? undefined,
+      phone: phone ? normalizePhone(phone) ?? undefined : undefined,
+      vessel_type: vesselType ?? undefined,
+      source: "field_crew",
+      event_type: "form_submission",
+      event_title: `Field lead: ${service || "General Inquiry"}`,
+      event_body: message ?? undefined,
+      metadata: { service: service || "General Inquiry" },
+    });
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to save." };
+  }
 
-  if (error) return { error: error.message };
-
-  revalidatePath("/pro/leads");
+  revalidatePath("/pro/pipeline");
   return { success: true };
 }
 
@@ -1120,6 +742,7 @@ export async function createContact(fields: {
   waiver_signed?: boolean;
 }): Promise<{ ok: boolean; id?: string; error?: string }> {
   const supabase = await svc();
+  const contactType = fields.contact_type || "customer";
   const { data, error } = await supabase
     .from("contacts")
     .insert({
@@ -1128,30 +751,22 @@ export async function createContact(fields: {
       email:         fields.email?.trim()        || null,
       phone:         normalizePhone(fields.phone) || null,
       address:       fields.address?.trim()      || null,
-      contact_type:  fields.contact_type         || "customer",
+      contact_type:  contactType,
       waiver_signed: fields.waiver_signed        ?? false,
       source:        "manual",
+      ...(contactType === "customer"
+        ? { pipeline_stage: "new_leads", stage_entered_at: new Date().toISOString() }
+        : {}),
     })
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };
   revalidatePath("/pro/contacts");
-
-  // Push to QB in the background (skip for non-customer types)
-  const contactId = data.id;
-  if (fields.contact_type !== "vendor" && fields.contact_type !== "other") {
-    (async () => {
-      try {
-        const { findOrCreateQbCustomer, getQbTokens } = await import("@/lib/quickbooks");
-        const tokens = await getQbTokens();
-        if (!tokens) return;
-        await findOrCreateQbCustomer({ id: contactId, name: fields.name?.trim() ?? null, company_name: fields.company_name?.trim() ?? null, email: fields.email?.trim() ?? null, phone: fields.phone?.trim() ?? null });
-      } catch { /* non-fatal */ }
-    })();
-  }
+  revalidatePath("/pro/pipeline");
 
   // Push to Quo in the background — don't block the response
-  (async () => {
+  const contactId = data.id;
+  after(async () => {
     try {
       const { createOpenPhoneContact, splitName } = await import("@/lib/openphone");
       const { firstName, lastName } = splitName(fields.name?.trim() ?? "");
@@ -1169,7 +784,7 @@ export async function createContact(fields: {
         await sb.from("contacts").update({ openphone_contact_id: newId }).eq("id", contactId);
       }
     } catch { /* non-fatal */ }
-  })();
+  });
 
   return { ok: true, id: data.id };
 }
@@ -1236,6 +851,26 @@ export async function updateContactFields(
         });
       } catch { /* non-fatal */ }
     })();
+  }
+
+  // Keep an already-linked QuickBooks customer in sync — does not create a new
+  // QB link, only pushes changes for contacts someone already pressed "push to
+  // quickbooks" for.
+  const qbFieldsChanged = new Set<"name" | "email" | "phone">();
+  if ("name" in fields || "company_name" in fields) qbFieldsChanged.add("name");
+  if ("email" in fields) qbFieldsChanged.add("email");
+  if ("phone" in fields) qbFieldsChanged.add("phone");
+
+  if (qbFieldsChanged.size > 0) {
+    after(async () => {
+      try {
+        const { data: contact } = await supabase.from("contacts").select("qb_customer_id").eq("id", contactId).single();
+        if (!contact?.qb_customer_id) return;
+        for (const field of qbFieldsChanged) {
+          await pushCrmFieldToQb(contactId, field);
+        }
+      } catch { /* non-fatal */ }
+    });
   }
 
   return { ok: true };
@@ -2592,52 +2227,27 @@ export async function deleteContact(contactId: string): Promise<{ error?: string
   return {};
 }
 
-// ─── Delete Lead ─────────────────────────────────────────────────────────────
+// ─── Block Contact (spam/nuisance number) ────────────────────────────────────
 
-export async function deleteLead(leadId: string): Promise<{ error?: string }> {
+export async function blockContact(contactId: string): Promise<{ error?: string }> {
   const supabase = await svc();
-  const { error } = await supabase.from("leads").delete().eq("id", leadId);
-  if (error) return { error: error.message };
-  revalidatePath("/pro/leads");
-  revalidatePath("/pro/pipeline");
-  return {};
-}
-
-export async function disqualifyLead(leadId: string): Promise<{ error?: string }> {
-  const supabase = await svc();
-  const { error } = await supabase.from("leads").update({ status: "not_qualified" }).eq("id", leadId);
-  if (error) return { error: error.message };
-  revalidatePath("/pro/leads");
-  return {};
-}
-
-export async function reactivateLead(leadId: string): Promise<{ error?: string }> {
-  const supabase = await svc();
-  const { error } = await supabase.from("leads").update({ status: "lead" }).eq("id", leadId);
-  if (error) return { error: error.message };
-  revalidatePath("/pro/leads");
-  return {};
-}
-
-export async function blockLead(leadId: string): Promise<{ error?: string }> {
-  const supabase = await svc();
-  const { data: lead, error: fetchErr } = await supabase
-    .from("leads")
+  const { data: contact, error: fetchErr } = await supabase
+    .from("contacts")
     .select("phone")
-    .eq("id", leadId)
+    .eq("id", contactId)
     .single();
-  if (fetchErr || !lead) return { error: fetchErr?.message ?? "Lead not found" };
+  if (fetchErr || !contact) return { error: fetchErr?.message ?? "Contact not found" };
 
-  if (lead.phone) {
+  if (contact.phone) {
     await supabase
       .from("blocked_numbers")
-      .upsert({ phone: lead.phone, blocked_by: "crm" }, { onConflict: "phone" });
+      .upsert({ phone: contact.phone, blocked_by: "crm" }, { onConflict: "phone" });
   }
 
-  const { error: delErr } = await supabase.from("leads").delete().eq("id", leadId);
+  const { error: delErr } = await supabase.from("contacts").delete().eq("id", contactId);
   if (delErr) return { error: delErr.message };
 
-  revalidatePath("/pro/leads");
+  revalidatePath("/pro/contacts");
   revalidatePath("/pro/pipeline");
   return {};
 }
@@ -2650,84 +2260,15 @@ export async function blockLead(leadId: string): Promise<{ error?: string }> {
 import type { PipelineStage } from "@/types/pipeline";
 
 export async function updatePipelineStage(
-  id: string,
-  sourceType: "contact" | "lead",
+  contactId: string,
   newStage: PipelineStage
 ): Promise<{ ok: boolean; contactId?: string; contactName?: string; vesselName?: string; error?: string }> {
   const supabase = await svc();
 
-  if (sourceType === "lead") {
-    const { data: lead, error: leadErr } = await supabase
-      .from("leads")
-      .select("id, name, email, phone, vessel_type, vessel_length, source, waiver_signed")
-      .eq("id", id)
-      .single();
-    if (leadErr || !lead) return { ok: false, error: "Lead not found." };
-
-    let contactId: string | null = null;
-    const { data: existing } = await supabase
-      .from("contacts")
-      .select("id")
-      .eq("email", lead.email)
-      .maybeSingle();
-
-    if (existing) {
-      contactId = existing.id;
-      await supabase.from("contacts").update({
-        ...(lead.name  ? { name: lead.name }  : {}),
-        ...(lead.phone ? { phone: normalizePhone(lead.phone) ?? lead.phone } : {}),
-        pipeline_stage: newStage,
-        stage_entered_at: new Date().toISOString(),
-        status: "client",
-      }).eq("id", contactId);
-    } else {
-      const { data: newContact, error: cErr } = await supabase
-        .from("contacts")
-        .insert({
-          name: lead.name, email: lead.email,
-          phone: normalizePhone(lead.phone),
-          vessel_type: lead.vessel_type, vessel_length: lead.vessel_length,
-          waiver_signed: lead.waiver_signed ?? false,
-          source: lead.source ?? "website",
-          status: "client",
-          pipeline_stage: newStage,
-          stage_entered_at: new Date().toISOString(),
-        })
-        .select("id")
-        .single();
-      if (cErr || !newContact) return { ok: false, error: cErr?.message ?? "Failed to create contact." };
-      contactId = newContact.id;
-    }
-
-    if (contactId) await insertVessel(supabase, contactId, lead);
-
-    await supabase.from("timeline_events").insert({
-      contact_id: contactId,
-      event_type: "lead_converted",
-      title: "Converted via Pipeline board",
-      body: `Lead moved to ${newStage.replace(/_/g, " ")} stage.`,
-      created_by: "pro",
-    });
-
-    await supabase.from("leads").update({ status: "converted" }).eq("id", id);
-
-    const { data: vessel } = await supabase
-      .from("vessels")
-      .select("name")
-      .eq("owner_id", contactId!)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    revalidatePath("/pro/leads");
-    return { ok: true, contactId: contactId!, contactName: lead.name ?? "Unknown", vesselName: vessel?.name ?? null };
-  }
-
-  // Contact
   const { data: contact, error: cErr } = await supabase
     .from("contacts")
     .select("id, name, pipeline_stage")
-    .eq("id", id)
+    .eq("id", contactId)
     .single();
   if (cErr || !contact) return { ok: false, error: "Contact not found." };
 
@@ -2735,18 +2276,18 @@ export async function updatePipelineStage(
   if (contact.pipeline_stage === "needs_attention") {
     updatePayload.health_flags = [];
   }
-  const { error: updateErr } = await supabase.from("contacts").update(updatePayload).eq("id", id);
+  const { error: updateErr } = await supabase.from("contacts").update(updatePayload).eq("id", contactId);
   if (updateErr) return { ok: false, error: updateErr.message };
 
   const { data: vessel } = await supabase
     .from("vessels")
     .select("name")
-    .eq("owner_id", id)
+    .eq("owner_id", contactId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  return { ok: true, contactId: id, contactName: contact.name ?? "Unknown", vesselName: vessel?.name ?? null };
+  return { ok: true, contactId, contactName: contact.name ?? "Unknown", vesselName: vessel?.name ?? null };
 }
 
 export async function removeFromPipeline(contactId: string): Promise<{ ok: boolean }> {

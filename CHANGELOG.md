@@ -2,6 +2,14 @@
 
 ## July 2026
 
+### July 20 | Leads section removed, merged into Contacts | CRM
+
+- **Leads section deleted**: the standalone `/pro/leads` list and detail pages, and all lead-only actions (convert, merge, block, disqualify, reactivate) are gone. Every intake path (website quote forms, Google Ads, Meta Ads, field-crew quick-add, service reminders, inbound calls) now creates or updates a Contact directly, so customer data no longer risks being stranded in a separate, un-mirrored table.
+- **New contacts auto-stage on the Pipeline board**: any new contact (from a form, an ad platform, or a manual "New Contact" add in the Contacts tab) is created with `pipeline_stage: "new_leads"`, so it shows up on the Kanban board immediately without a separate conversion step.
+- **QuickBooks stays manual-only to start, then auto-syncs**: the "push to quickbooks" button is still required to create the initial QB link (no more auto-push on contact creation), but once a contact is linked, edits to name/email/phone/company now push to the linked QuickBooks customer automatically.
+- **OpenPhone (Quo) contact creation reliability fix**: background pushes to OpenPhone on contact creation now use Next.js's `after()` API instead of a bare fire-and-forget call, fixing a bug where the Quo contact sometimes wasn't created until well after the CRM contact was saved.
+- **"Block Number" added to the Contact detail page**: preserves the old Leads-list spam-blocking action (block the phone number, delete the record) now that blocking lives on Contacts instead.
+
 ### July 20 | Site Editor carousel upload fixes | Site,Infrastructure
 
 - **Production Supabase env vars restored**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SECRET_KEY` had been cleared to empty strings in Vercel's production environment, breaking every carousel upload (and any other Supabase call reading these at runtime). Values restored from Supabase's API Keys page; the URL was also corrected to the bare project URL (a `/rest/v1/` suffix had been pasted in by mistake).
