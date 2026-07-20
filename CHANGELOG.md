@@ -2,6 +2,25 @@
 
 ## July 2026
 
+### July 20 | Technical SEO and AI-discoverability audit fixes | SEO,Site
+
+- **Fixed sitewide title-doubling bug**: the layout's title template was silently appending "| NorthWake Marine" a second time on nearly every page (About, Services, Contact, Socials, and every service/location/airport detail page), because each page's own title string already included the company name. All page titles now embed the brand exactly once.
+- **Deleted conflicting robots.txt**: a stale static `public/robots.txt` (wrong domain, dead `/admin`/`/dashboard` rules) was competing with the correct dynamic `robots.ts` route. The dynamic, config-driven version is now the only source.
+- **Trimmed oversized meta titles and descriptions**: home, services, locations, and airports pages had titles/descriptions running 80-250 characters, well past Google's truncation point. All trimmed to SERP-safe lengths.
+- **Unique meta descriptions for 13 services**: services without a hand-written description were falling back to an identical generic sentence. Each now has unique, factual copy.
+- **BreadcrumbList schema added** to location and airport detail pages, matching the pattern services pages already had.
+- **New /locations and /airports hub pages**: previously these were "orphan" pages reachable only via sitemap, with no on-site links. Both now have an index page linked from the footer, plus an Airports column added to the services page coverage list.
+- **Per-service FAQ content and FAQPage schema** added to every service detail page (previously only the Contact page had FAQ content).
+- **Custom branded 404 page** replacing the bare Next.js default.
+- **Homepage logo alt text and intro copy fixed**: alt text was stuffing the entire meta description into an image tag; a redundant duplicate sentence in the hero intro was removed.
+
+### July 20 | Aviation location pages and homepage/services redesign | Site
+
+- **Airport-specific landing pages**: added 7 NE Florida airports (Fernandina Beach to St. Augustine/Palm Coast) with dedicated `/airports/[slug]` pages for aircraft detailing, mirroring the existing yacht `/locations/[slug]` pattern.
+- **Homepage services section redesigned**: flat service grid replaced with expandable Yacht / Aviation / RV & Auto category boxes.
+- **Services page redesigned**: same category-box pattern applied to the full 21-service catalog; the long marinas/waterways/communities list is now collapsed behind a "View Full Coverage List" toggle.
+- **Homepage hero and testimonials copy refresh**: hero tagline resized with a new services subline, trust bar removed, reviews truncate with a "Read more" toggle, testimonials heading updated.
+
 ### July 9 | Lead conversion note migration | CRM
 
 - **Lead notes now transfer on conversion**: when a lead is converted to a contact, all timeline notes tied to that lead (by `lead_id`) are migrated to the new contact record. Previously, notes written on the lead profile were orphaned after conversion.
