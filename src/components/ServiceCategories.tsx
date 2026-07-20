@@ -124,12 +124,14 @@ export default function ServiceCategories({ services }: { services: ServiceItem[
                 </li>
               ))}
             </ul>
-            <Link
-              href="/services"
-              className="self-center border border-gray-500 text-gray-700 text-xs font-semibold tracking-[0.3em] uppercase px-8 py-3 hover:border-navy hover:text-navy transition-colors duration-300"
-            >
-              See More
-            </Link>
+            {cat.id === "yacht" && (
+              <Link
+                href="/services"
+                className="self-center border border-gray-500 text-gray-700 text-xs font-semibold tracking-[0.3em] uppercase px-8 py-3 hover:border-navy hover:text-navy transition-colors duration-300"
+              >
+                See More
+              </Link>
+            )}
           </div>
         );
       })}

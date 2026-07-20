@@ -118,7 +118,8 @@ export default async function Home() {
                   </span>
                 </h1>
                 <p className="text-white/70 text-xs sm:text-sm tracking-[0.3em] uppercase hero-text-shadow mt-1">
-                  Professional Yacht, Aviation, RV and Luxury Auto Services
+                  Professional Yacht, Aviation<br />
+                  RV and Luxury Auto Services
                 </p>
                 <p className="text-white/75 text-sm tracking-[0.45em] uppercase hero-text-shadow mt-1">
                   {clientConfig.city}, {clientConfig.state} &nbsp;·&nbsp; Est. {clientConfig.foundedYear}
@@ -182,7 +183,6 @@ export default async function Home() {
         <section aria-labelledby="testimonials-heading" className="py-16 px-6 bg-gray-50">
           <div className="max-w-7xl mx-auto">
             <header className="flex flex-col items-center text-center gap-2 mb-10">
-              <p className="text-gray-500 text-xs tracking-[0.4em] uppercase">Client Feedback</p>
               <h2 id="testimonials-heading" className="text-gray-900 text-2xl sm:text-3xl font-bold tracking-tight">
                 What Clients Are <span className="chrome-text-dark">Saying</span>
               </h2>

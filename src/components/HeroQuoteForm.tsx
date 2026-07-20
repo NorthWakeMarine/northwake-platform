@@ -152,11 +152,11 @@ export default function HeroQuoteForm() {
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="hero-vessel-length" className={labelCls}>
-            Vessel Length (ft) <span aria-hidden="true" className="text-navy-light">*</span>
+            Asset Length (ft) <span aria-hidden="true" className="text-navy-light">*</span>
           </label>
           <input id="hero-vessel-length" name="vessel_length" type="text" required placeholder="e.g. 28"
             className={inputCls} />
-          <span className={fieldErr}>Please enter your vessel length in feet.</span>
+          <span className={fieldErr}>Please enter your asset length in feet.</span>
         </div>
       </div>
 
@@ -164,7 +164,7 @@ export default function HeroQuoteForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex flex-col gap-1">
           <label htmlFor="hero-vessel" className={labelCls}>
-            Vessel Type <span aria-hidden="true" className="text-navy-light">*</span>
+            Asset Type <span aria-hidden="true" className="text-navy-light">*</span>
           </label>
           <select id="hero-vessel" name="vessel_type" required defaultValue=""
             className={selectCls}>
@@ -173,7 +173,7 @@ export default function HeroQuoteForm() {
               <option key={v} value={v} className="bg-[#0a0a18] text-white">{v}</option>
             ))}
           </select>
-          <span className={fieldErr}>Please select a vessel type.</span>
+          <span className={fieldErr}>Please select an asset type.</span>
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="hero-service" className={labelCls}>
@@ -182,7 +182,7 @@ export default function HeroQuoteForm() {
           <select id="hero-service" name="service" required defaultValue=""
             className={selectCls}>
             <option value="" disabled className="bg-[#0a0a18] text-white/40">Select service…</option>
-            {["Maintenance Wash","One-Off Wash","Full Detail","Exterior Detailing","Interior Cleaning & Cabin Detailing","Canvas Cleaning & Treatment","Vinyl & Upholstery Conditioning","Teak Cleaning & Brightening","Stainless Polish","Engine Bay & Bilge Cleaning","Water Spot & Mineral Deposit Removal","Ceramic Coating","Wax Application","Gel Coat Restoration","Monthly Maintenance Plan","Marine Transport","Captain & Crew Services","Yacht Management","Aircraft Detailing","RV Detailing","Automotive Detailing","Custom Request","Not Sure, Need Consultation"].map(s => (
+            {["Maintenance Wash","One-Off Wash","Full Detail","Exterior Detailing","Interior Cleaning & Cabin Detailing","Canvas Cleaning & Treatment","Vinyl & Upholstery Conditioning","Teak Cleaning & Brightening","Stainless Polish","Engine Bay & Bilge Cleaning","Water Spot & Mineral Deposit Removal","Ceramic Coating","Wax Application","Gel Coat Restoration","Yamaha Outboard Maintenance","Monthly Maintenance Plan","Marine Transport","Captain & Crew Services","Yacht Management","Aircraft Detailing","RV Detailing","Automotive Detailing","Custom Request","Not Sure, Need Consultation"].map(s => (
               <option key={s} value={s} className="bg-[#0a0a18] text-white">{s}</option>
             ))}
           </select>

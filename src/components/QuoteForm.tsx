@@ -11,6 +11,7 @@ const vesselTypes = clientConfig.assetTypes;
 
 const serviceOptions = [
   ...clientConfig.services.map((s) => s.title),
+  "Yamaha Outboard Maintenance",
   "Not Sure, Need Consultation",
 ];
 
@@ -197,7 +198,7 @@ export default function QuoteForm({
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-vessel-length`} className={labelClass}>
-            Vessel Length (ft) <span aria-hidden="true" className="text-navy">*</span>
+            Asset Length (ft) <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <input
             id={`${formId}-vessel-length`}
@@ -207,7 +208,7 @@ export default function QuoteForm({
             placeholder="e.g. 28"
             className={fieldClass}
           />
-          <span className={fieldErr}>Please enter your vessel length in feet.</span>
+          <span className={fieldErr}>Please enter your asset length in feet.</span>
         </div>
       </div>
 
@@ -215,7 +216,7 @@ export default function QuoteForm({
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-vessel`} className={labelClass}>
-            Vessel Type <span aria-hidden="true" className="text-navy">*</span>
+            Asset Type <span aria-hidden="true" className="text-navy">*</span>
           </label>
           <select
             id={`${formId}-vessel`}
@@ -224,12 +225,12 @@ export default function QuoteForm({
             defaultValue=""
             className={selectClass}
           >
-            <option value="" disabled className="text-gray-400">Select vessel type…</option>
+            <option value="" disabled className="text-gray-400">Select asset type…</option>
             {vesselTypes.map((v) => (
               <option key={v} value={v} className="bg-white text-gray-900">{v}</option>
             ))}
           </select>
-          <span className={fieldErr}>Please select a vessel type.</span>
+          <span className={fieldErr}>Please select an asset type.</span>
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor={`${formId}-service`} className={labelClass}>
