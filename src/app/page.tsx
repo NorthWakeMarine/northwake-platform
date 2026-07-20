@@ -7,6 +7,7 @@ import HeroCarouselClient from "@/components/HeroCarouselClient";
 import HeroAmbientGlow from "@/components/HeroAmbientGlow";
 import HeroDesktopNav from "@/components/HeroDesktopNav";
 import ReviewsCarousel from "@/components/ReviewsCarousel";
+import ServiceCategories from "@/components/ServiceCategories";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
@@ -109,13 +110,16 @@ export default async function Home() {
               />
               <div className="flex flex-col gap-2 items-center">
                 <h1 id="hero-heading" className="flex flex-col items-center gap-1 uppercase leading-[1.1]">
-                  <span className="text-white font-black text-3xl sm:text-4xl lg:text-5xl tracking-tight hero-text-shadow">
+                  <span className="text-white font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight hero-text-shadow">
                     {heroHeadline}
                   </span>
                   <span className="text-white/85 font-bold text-lg sm:text-xl lg:text-2xl tracking-widest hero-text-shadow">
                     {heroSubheadline}
                   </span>
                 </h1>
+                <p className="text-white/70 text-xs sm:text-sm tracking-[0.3em] uppercase hero-text-shadow mt-1">
+                  Professional Yacht, Aviation, RV and Luxury Auto Services
+                </p>
                 <p className="text-white/75 text-sm tracking-[0.45em] uppercase hero-text-shadow mt-1">
                   {clientConfig.city}, {clientConfig.state} &nbsp;·&nbsp; Est. {clientConfig.foundedYear}
                 </p>
@@ -149,19 +153,6 @@ export default async function Home() {
 
         </section>
 
-
-        {/* ── TRUST BAR ── */}
-        <div aria-label="Trust indicators" className="border-y border-gray-200 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-            {clientConfig.trustBadges.map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-2">
-                <span aria-hidden="true" className="chrome-text-dark text-sm">{icon}</span>
-                <span className="text-gray-700 text-xs tracking-[0.2em] uppercase font-semibold">{text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* ── SERVICES GRID ── */}
         <section id="services" aria-labelledby="services-heading" className="pt-10 pb-14 px-6 bg-white">
           <div className="max-w-7xl mx-auto">
@@ -183,35 +174,7 @@ export default async function Home() {
               </Link>
             </header>
 
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-gray-200 list-none" role="list">
-              {clientConfig.services.filter((svc) =>
-                ["yacht-management","maintenance-wash","full-detail","ceramic-coating","outboard-engine-service","marine-transport","aero-detailing","rv-detailing","automotive-detailing"].includes(svc.id)
-              ).map((svc) => (
-                <li
-                  key={svc.title}
-                  className="group bg-white p-5 flex flex-col gap-3 hover:bg-gray-50 transition-colors duration-300"
-                >
-                  <span aria-hidden="true" className="chrome-text-dark text-2xl leading-none transition-transform duration-300 group-hover:scale-110 origin-left">
-                    {svc.icon}
-                  </span>
-                  <div>
-                    <p className="text-gray-500 text-xs tracking-[0.35em] uppercase mb-0.5 transition-colors duration-200 group-hover:text-gray-700">
-                      {svc.tagline}
-                    </p>
-                    <h3 className="text-gray-900 text-base font-bold tracking-tight transition-colors duration-200 group-hover:text-navy">{svc.title}</h3>
-                  </div>
-                  <p className="text-gray-700 text-sm leading-relaxed">{svc.description}</p>
-                  <ul className="flex flex-col gap-1 mt-auto list-none">
-                    {svc.includes.slice(0, 3).map((d) => (
-                      <li key={d} className="flex items-start gap-2 text-gray-500 text-xs">
-                        <span aria-hidden="true" className="text-navy mt-0.5 transition-transform duration-200 group-hover:translate-x-0.5">▸</span>
-                        {d}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
+            <ServiceCategories services={clientConfig.services} />
           </div>
         </section>
 
@@ -221,7 +184,7 @@ export default async function Home() {
             <header className="flex flex-col items-center text-center gap-2 mb-10">
               <p className="text-gray-500 text-xs tracking-[0.4em] uppercase">Client Feedback</p>
               <h2 id="testimonials-heading" className="text-gray-900 text-2xl sm:text-3xl font-bold tracking-tight">
-                What Vessel Owners Are <span className="chrome-text-dark">Saying</span>
+                What Clients Are <span className="chrome-text-dark">Saying</span>
               </h2>
               <hr className="accent-rule w-48 mt-2" />
             </header>

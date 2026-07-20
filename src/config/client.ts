@@ -805,7 +805,7 @@ export const clientConfig: ClientConfig = {
 
   ctaText: "Get a Free Quote",
   ctaSubtext: "No obligation. Most quotes returned same day.",
-  footerTagline: "Premium Marine Services · Jacksonville, FL",
+  footerTagline: "Premium Asset Services · Jacksonville, FL",
   waiverTitle: "NORTHWAKE MARINE - LIABILITY WAIVER",
 
   privacyEffectiveDate: "April 27, 2025",

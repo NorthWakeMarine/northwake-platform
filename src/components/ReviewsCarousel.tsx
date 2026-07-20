@@ -24,6 +24,31 @@ const STATIC_REVIEWS: GoogleReview[] = [
   },
 ];
 
+const TRUNCATE_LENGTH = 160;
+
+function ReviewText({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text.length > TRUNCATE_LENGTH;
+  const display = expanded || !isLong ? text : `${text.slice(0, TRUNCATE_LENGTH).trimEnd()}…`;
+
+  return (
+    <div className="relative z-10">
+      <p className="text-steel-light text-xs leading-relaxed italic">&ldquo;{display}&rdquo;</p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="mt-1.5 flex items-center gap-1 text-wake text-[10px] font-semibold tracking-[0.15em] uppercase hover:text-white transition-colors duration-200"
+        >
+          {expanded ? "Show less" : "Read more"}
+          <span aria-hidden="true" className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}>▾</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5">
@@ -92,7 +117,7 @@ export default function ReviewsCarousel({
               &ldquo;
             </span>
             {isGoogle && <StarRating rating={review.rating} />}
-            <p className="text-steel-light text-xs leading-relaxed italic relative z-10">&ldquo;{review.text}&rdquo;</p>
+            <ReviewText text={review.text} />
             <div className="mt-auto flex flex-col gap-0.5 relative z-10">
               <span className="text-wake text-xs font-bold tracking-wide transition-colors duration-200 group-hover:text-white">{review.author}</span>
               <span className="text-steel text-[10px] tracking-[0.2em] uppercase">{review.relativeTime}</span>
@@ -121,7 +146,7 @@ export default function ReviewsCarousel({
                 &ldquo;
               </span>
               {isGoogle && <StarRating rating={review.rating} />}
-              <p className="text-steel-light text-xs leading-relaxed italic relative z-10">&ldquo;{review.text}&rdquo;</p>
+              <ReviewText text={review.text} />
               <div className="mt-auto flex flex-col gap-0.5 relative z-10">
                 <span className="text-wake text-xs font-bold tracking-wide">{review.author}</span>
                 <span className="text-steel text-[10px] tracking-[0.2em] uppercase">{review.relativeTime}</span>
