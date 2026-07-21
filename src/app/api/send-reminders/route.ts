@@ -168,29 +168,36 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 6. Log reminder summary
+  // 6. Log reminder summary (contact_id null = system-wide log entry, not tied
+  // to one customer — mirrors the pattern used for unrecognized-caller events)
   const reminderDateStr = reminderStart.toISOString().slice(0, 10);
-  await supabase.from("system_flags").upsert({
-    key:        `sms_reminders_${reminderDateStr}`,
-    value:      { sent, skipped: reminderItems.length - toSend.length, failed, target_date: reminderDateStr },
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "key" });
+  await supabase.from("timeline_events").insert({
+    contact_id: null,
+    event_type: "cron_log",
+    title:      "SMS reminder run",
+    body:       `Sent ${sent}, skipped ${reminderItems.length - toSend.length}, failed ${failed.length}.`,
+    metadata:   { kind: "sms_reminders", target_date: reminderDateStr, sent, failed },
+    created_by: "cron",
+  });
 
   // 7. Internal warning text — one day before the customer reminder goes out,
-  // tell staff who's about to be notified. Dedup by date via system_flags so
-  // reruns the same day don't spam the alert numbers.
+  // tell staff who's about to be notified. Dedup by date via timeline_events
+  // so reruns the same day don't spam the alert numbers (system_flags is a
+  // different, admin-alerts table — not a generic key/value store).
   let warningSent = false;
   const warningDateStr = warningStart.toISOString().slice(0, 10);
   const alertPhones = getAlertPhoneNumbers();
 
   if (warningItems.length > 0 && alertPhones.length > 0) {
-    const { data: warningFlag } = await supabase
-      .from("system_flags")
-      .select("key")
-      .eq("key", `sms_warning_${warningDateStr}`)
+    const { data: existingWarning } = await supabase
+      .from("timeline_events")
+      .select("id")
+      .eq("event_type", "cron_log")
+      .eq("metadata->>kind", "sms_warning")
+      .eq("metadata->>target_date", warningDateStr)
       .maybeSingle();
 
-    if (!warningFlag) {
+    if (!existingWarning) {
       const uniqueNames = [...new Set(warningItems.map(w => w.contactName || w.contactPhone))];
       const dateLabel = formatEventDate(warningItems[0].eventDate);
       const message = `NorthWake Marine: Tomorrow we'll be texting ${uniqueNames.join(", ")} for work scheduled on ${dateLabel}.`;
@@ -204,11 +211,14 @@ export async function GET(req: NextRequest) {
       }
       warningSent = true;
 
-      await supabase.from("system_flags").upsert({
-        key:        `sms_warning_${warningDateStr}`,
-        value:      { contacts: uniqueNames, target_date: warningDateStr, sent_to: alertPhones },
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "key" });
+      await supabase.from("timeline_events").insert({
+        contact_id: null,
+        event_type: "cron_log",
+        title:      "SMS internal warning sent",
+        body:       message,
+        metadata:   { kind: "sms_warning", target_date: warningDateStr, contacts: uniqueNames, sent_to: alertPhones },
+        created_by: "cron",
+      });
     }
   }
 

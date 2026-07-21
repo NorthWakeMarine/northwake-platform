@@ -282,13 +282,18 @@ export async function GET(req: NextRequest) {
     }
   }, 1);
 
-  // 7. Log summary
+  // 7. Log summary (contact_id null = system-wide log entry, not tied to one
+  // customer; system_flags is a different, admin-alerts table, not a
+  // generic key/value store)
   const month = nextMonthStart.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  await supabase.from("system_flags").upsert({
-    key:        `maintenance_invoices_${nextMonthStart.toISOString().slice(0, 7)}`,
-    value:      { invoiced: succeeded.length, skipped: dedupedList.length, failed: failed.map(f => `${f.contact}: ${f.error}`), month },
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "key" });
+  await supabase.from("timeline_events").insert({
+    contact_id: null,
+    event_type: "cron_log",
+    title:      "Maintenance invoices run",
+    body:       `Invoiced ${succeeded.length}, skipped ${dedupedList.length}, failed ${failed.length} for ${month}.`,
+    metadata:   { kind: "maintenance_invoices", month: nextMonthStart.toISOString().slice(0, 7), invoiced: succeeded.length, failed },
+    created_by: "cron",
+  });
 
   return NextResponse.json({
     month,
