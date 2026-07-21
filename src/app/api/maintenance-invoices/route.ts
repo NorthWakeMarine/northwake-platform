@@ -255,6 +255,7 @@ export async function GET(req: NextRequest) {
         qty:             w.link.invoiceQty,
         rate:            w.link.invoiceRate,
         txnDate:         w.txnDate,
+        billEmail:       w.link.contactEmail,
       });
       const invoiceUrl = getQbInvoiceUrl(tokens.realm_id, invoiceId);
 

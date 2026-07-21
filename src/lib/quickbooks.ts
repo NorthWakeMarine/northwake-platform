@@ -267,6 +267,7 @@ export async function createQbInvoiceDraft(opts: {
   qty?: number;
   rate?: number;
   txnDate?: string;
+  billEmail?: string | null;
 }): Promise<{ invoiceId: string; docNumber: string }> {
   const qty   = Math.max(1, opts.qty ?? 1);
   const rate  = opts.rate ?? (opts.amount ?? 0);
@@ -315,6 +316,8 @@ export async function createQbInvoiceDraft(opts: {
 
   if (opts.txnDate) body.TxnDate = opts.txnDate;
   if (nextDocNumber) body.DocNumber = nextDocNumber;
+  const emailValid = opts.billEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(opts.billEmail);
+  if (emailValid) body.BillEmail = { Address: opts.billEmail };
 
   type InvoiceResponse = { Invoice: { Id: string; DocNumber?: string } };
   const data = await qbRequest<InvoiceResponse>("/invoice", {

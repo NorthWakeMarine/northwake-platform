@@ -2371,6 +2371,7 @@ export async function createQuickBooksInvoiceDraft(
     const { invoiceId, docNumber } = await createQbInvoiceDraft({
       qbCustomerId,
       lineDescription: `Services: ${assetDesc}`,
+      billEmail: contact.email,
     });
 
     const invoiceUrl = getQbInvoiceUrl(tokens.realm_id, invoiceId);
