@@ -2,11 +2,26 @@
 
 ## July 2026
 
+### July 21 | Cron run logs were silently failing | Infrastructure
+
+- **`system_flags` was never a key/value store**: the run-summary logging in `send-reminders` and `maintenance-invoices`, plus the new internal-warning dedup check, assumed `system_flags` had `key`/`value`/`updated_at` columns. In production it's actually an admin-alerts table (`message`/`severity`/`resolved`/`flag_type`), so those upserts silently failed every run, and the warning-text dedup would have re-sent the same alert on every rerun instead of skipping it. Both now log to `timeline_events` (with `contact_id: null` for system-wide entries), matching the pattern already proven to work for unrecognized-caller events.
+- **Confirmed root cause of a missed customer reminder**: J.C. Brown didn't get his appointment reminder while two other customers on the same day did, because his recurring job's `calendar_contact_links` row had no `recurrence_rule` stored, and the reminder needed to fire the day before yesterday's toggle fix shipped (old code only reminded links with a stored recurrence rule). No fix needed beyond what already shipped; his next occurrence will be reminded correctly.
+
 ### July 20 | Per-event text reminder toggle, internal staff heads-up | Calendar,CRM
 
 - **Text reminder toggle on calendar work**: the automatic customer text sent ~2 days before scheduled work can now be turned on or off per event, for both Recurring Work and One-Off Work, from the "New+" service form and from an existing event's billing panel. Defaults to on.
 - **Reminder now covers one-off events too**: previously the 48hr customer text only ever fired for recurring series; it now fires for any linked event (recurring or one-off) with the toggle on.
 - **Internal staff warning text**: the day before customers get their reminder text (i.e. ~3 days before the scheduled work), a heads-up text goes out listing which customers are about to be notified and for what date, so staff aren't caught off guard by the automated message. Sent to the numbers in `ALERT_PHONE_NUMBERS`.
+
+### July 20 | New Contact modal can set up the first asset and a note | CRM
+
+- **First vessel/asset in one step**: the "New Contact" modal now has optional Asset Type, Make/Model, Year, and Length fields for customers; filling any of them creates the customer's first vessel row immediately, instead of requiring a separate Add Asset pass afterward.
+- **Notes field posts to the timeline**: a Notes field on the same modal, if filled in, logs an initial "Note added" timeline event on the new contact right away.
+
+### July 20 | QuickBooks customers stop going stale after the first sync | CRM
+
+- **Linked QB customers now get their email/phone/name backfilled**: `findOrCreateQbCustomer` used to return immediately once a contact had a `qb_customer_id`, so a QB customer created before an email was on file (common for leads captured before an email was collected) stayed permanently missing that email, even after it was added in the CRM later. It now patches the linked QB customer's DisplayName/CompanyName/PrimaryEmailAddr/PrimaryPhone whenever they differ from the CRM record.
+- **Auto-generated invoices sync first**: the monthly maintenance-invoices cron previously invoiced directly against a stored `qb_customer_id` without ever syncing it; it now syncs the linked QB customer right before creating each invoice.
 
 ### July 20 | Leads section removed, merged into Contacts | CRM
 
