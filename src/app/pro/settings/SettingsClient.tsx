@@ -32,7 +32,7 @@ function RoleSelect({ member }: { member: TeamMember }) {
       value={current}
       onChange={handleChange}
       disabled={pending}
-      className="text-xs border border-gray-200 rounded px-2 py-1.5 bg-white text-gray-700 cursor-pointer hover:border-gray-400 transition-colors disabled:opacity-50 focus:outline-none focus:border-[#000080]"
+      className="text-xs border border-gray-200 rounded px-2 py-2.5 sm:py-1.5 bg-white text-gray-700 cursor-pointer hover:border-gray-400 transition-colors disabled:opacity-50 focus:outline-none focus:border-[#000080]"
     >
       {ROLES.map((r) => (
         <option key={r.value} value={r.value}>{r.label}</option>
@@ -69,7 +69,7 @@ function MemberActions({ member, currentUserId }: { member: TeamMember; currentU
         <button
           onClick={handleResend}
           disabled={resendPending || resendDone}
-          className="text-[10px] font-medium px-2.5 py-1 rounded border border-gray-300 text-gray-600 hover:border-[#000080] hover:text-[#000080] transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          className="text-[10px] font-medium px-3 py-2.5 sm:px-2.5 sm:py-1 rounded border border-gray-300 text-gray-600 hover:border-[#000080] hover:text-[#000080] transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
           {resendPending ? "Sending…" : resendDone ? "Sent" : "Resend Invite"}
         </button>
@@ -78,7 +78,7 @@ function MemberActions({ member, currentUserId }: { member: TeamMember; currentU
         onClick={handleDelete}
         disabled={delPending || isSelf}
         title={isSelf ? "You cannot remove yourself" : `Remove ${member.name}`}
-        className="text-[10px] font-medium px-2.5 py-1 rounded border border-gray-300 text-red-500 hover:border-red-400 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="text-[10px] font-medium px-3 py-2.5 sm:px-2.5 sm:py-1 rounded border border-gray-300 text-red-500 hover:border-red-400 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {delPending ? "Removing…" : "Delete"}
       </button>
@@ -131,13 +131,14 @@ export default function SettingsClient({
               Change a member&apos;s role to control what they can access in the portal.
             </p>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {/* Desktop table */}
+          <div className="hidden sm:block bg-white rounded-lg border border-gray-200 overflow-hidden">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   <th className="text-left px-4 py-2.5 text-gray-400 font-medium uppercase tracking-wider text-[10px]">Member</th>
                   <th className="text-left px-4 py-2.5 text-gray-400 font-medium uppercase tracking-wider text-[10px]">Role</th>
-                  <th className="text-left px-4 py-2.5 text-gray-400 font-medium uppercase tracking-wider text-[10px] hidden sm:table-cell">Last Sign In</th>
+                  <th className="text-left px-4 py-2.5 text-gray-400 font-medium uppercase tracking-wider text-[10px] hidden md:table-cell">Last Sign In</th>
                   <th className="px-4 py-2.5" />
                 </tr>
               </thead>
@@ -165,7 +166,7 @@ export default function SettingsClient({
                     <td className="px-4 py-3">
                       <RoleSelect member={m} />
                     </td>
-                    <td className="px-4 py-3 text-gray-400 hidden sm:table-cell">
+                    <td className="px-4 py-3 text-gray-400 hidden md:table-cell">
                       {m.lastSignIn
                         ? new Date(m.lastSignIn).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                         : "Never"}
@@ -177,6 +178,41 @@ export default function SettingsClient({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile card list */}
+          <div className="sm:hidden flex flex-col gap-2">
+            {members.map((m) => (
+              <div key={m.id} className="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[#000080]/10 flex items-center justify-center shrink-0">
+                    <span className="text-[#000080] text-xs font-bold">{initials(m.name)}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-gray-800 font-medium text-sm truncate">{m.name}</p>
+                      {!m.confirmed && (
+                        <span className="text-[9px] font-semibold uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0">
+                          Pending
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-400 text-xs truncate mt-0.5">{m.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <RoleSelect member={m} />
+                  <span className="text-gray-400 text-[11px]">
+                    {m.lastSignIn
+                      ? new Date(m.lastSignIn).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                      : "Never signed in"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-end border-t border-gray-100 pt-3">
+                  <MemberActions member={m} currentUserId={currentUserId} />
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
