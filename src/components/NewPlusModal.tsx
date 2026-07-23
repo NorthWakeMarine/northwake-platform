@@ -383,11 +383,37 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 </p>
               )}
 
-              {/* Date — all-day events, just pick the date */}
-              <div className="flex flex-col gap-1">
-                <label className={labelCls}>Date <span className="text-red-500">*</span></label>
-                <input type="date" value={startTime.split("T")[0]} onChange={e => { setStartTime(e.target.value); setEndTime(e.target.value); }} className={inputCls} />
+              {/* Date — all-day events, just pick the date(s) */}
+              <div className="flex gap-3">
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className={labelCls}>{eventType === "one_time" ? "Start Date" : "Date"} <span className="text-red-500">*</span></label>
+                  <input
+                    type="date"
+                    value={startTime.split("T")[0]}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setStartTime(v);
+                      setEndTime(cur => (cur.split("T")[0] < v ? v : cur));
+                    }}
+                    className={inputCls}
+                  />
+                </div>
+                {eventType === "one_time" && (
+                  <div className="flex flex-col gap-1 flex-1">
+                    <label className={labelCls}>End Date</label>
+                    <input
+                      type="date"
+                      value={endTime.split("T")[0]}
+                      min={startTime.split("T")[0]}
+                      onChange={e => setEndTime(e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                )}
               </div>
+              {eventType === "one_time" && endTime.split("T")[0] !== startTime.split("T")[0] && (
+                <p className="text-[11px] text-slate-500 -mt-2">Job spans multiple days — one invoice will still be created for the whole job.</p>
+              )}
 
               {/* Frequency (recurring only) */}
               {eventType === "recurring" && (

@@ -1888,9 +1888,13 @@ export async function createServiceEvent(
 
   const freqN    = frequency ? Math.max(1, parseInt(frequency, 10)) : null;
 
-  // All-day: end date must be the next calendar day for GCal
+  // All-day: end date must be the next calendar day for GCal (exclusive end).
+  // One-time jobs may span multiple days (end_time date >= start_time date);
+  // recurring jobs are always a single day per occurrence — the RRULE handles repetition.
   const dateOnly = start_time.split("T")[0];
-  const nextDate = new Date(dateOnly + "T12:00:00");
+  const endDateOnly = end_time ? end_time.split("T")[0] : dateOnly;
+  const spanEndDateOnly = !freqN && endDateOnly > dateOnly ? endDateOnly : dateOnly;
+  const nextDate = new Date(spanEndDateOnly + "T12:00:00");
   nextDate.setDate(nextDate.getDate() + 1);
   const nextDateStr = nextDate.toISOString().split("T")[0];
 
