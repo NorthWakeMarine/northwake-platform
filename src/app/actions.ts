@@ -2011,14 +2011,20 @@ export async function createSalesMeetingEvent(
   // User-typed location takes priority; fall back to contact's saved address
   const location = user_location || contactRow?.address || contact_address || undefined;
 
+  // All-day: end date must be the next calendar day for GCal (exclusive end).
+  // Use end_time's date if it's a later day than start (multi-day span), else just start+1.
+  const startDateOnly = start_time.split("T")[0];
+  const endDateOnly = end_time ? end_time.split("T")[0] : startDateOnly;
+  const allDaySpanEnd = endDateOnly > startDateOnly ? endDateOnly : startDateOnly;
+
   try {
     const { createCalendarEvent, SALES_EVENT_COLOR_ID } = await import("@/lib/google-calendar");
     const eventId = await createCalendarEvent({
       title,
       description: description ?? undefined,
       location,
-      startTime:   start_time,
-      endTime:     is_all_day ? nextDay(start_time.split("T")[0]) : end_time,
+      startTime:   is_all_day ? startDateOnly : start_time,
+      endTime:     is_all_day ? nextDay(allDaySpanEnd) : end_time,
       isAllDay:    is_all_day,
       colorId:     SALES_EVENT_COLOR_ID,
     });

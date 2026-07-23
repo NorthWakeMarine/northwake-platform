@@ -551,9 +551,30 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
 
               {/* Date/time */}
               {calIsAllDay ? (
-                <div className="flex flex-col gap-1">
-                  <label className={labelCls}>Date <span className="text-red-500">*</span></label>
-                  <input type="date" value={startTime.split("T")[0]} onChange={e => { setStartTime(e.target.value); setEndTime(e.target.value); }} className={inputCls} />
+                <div className="flex gap-3">
+                  <div className="flex flex-col gap-1 flex-1">
+                    <label className={labelCls}>Start Date <span className="text-red-500">*</span></label>
+                    <input
+                      type="date"
+                      value={startTime.split("T")[0]}
+                      onChange={e => {
+                        const v = e.target.value;
+                        setStartTime(v);
+                        setEndTime(cur => (cur.split("T")[0] < v ? v : cur));
+                      }}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <label className={labelCls}>End Date</label>
+                    <input
+                      type="date"
+                      value={endTime.split("T")[0]}
+                      min={startTime.split("T")[0]}
+                      onChange={e => setEndTime(e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
