@@ -2,6 +2,22 @@
 
 ## July 2026
 
+### July 23 | QuickBooks outage recovery + Products/Services sync | CRM,Infrastructure
+
+- **QuickBooks was fully down in production**: `QB_CLIENT_ID`, `QB_CLIENT_SECRET`, and `QB_REDIRECT_URI` had all been cleared to empty strings in Vercel's production environment (same failure mode as the earlier carousel-upload incident), and separately `SUPABASE_SECRET_KEY` got overwritten with an unrelated value while those were being fixed, which broke every CRM list ("all the data is gone" — the data itself was always intact, just unreachable with an invalid API key). Both restored; QuickBooks reconnected via a fresh OAuth authorization since the stored refresh token no longer matched the corrected client credentials.
+- **QuickBooks Products/Services now sync with the CRM's Services page**: a new "Sync with QuickBooks" button pulls every QuickBooks product/service into `/pro/services` (linked via a new `qb_item_id` column, not just name-matching). Creating or editing a service in the CRM now creates/updates the matching QuickBooks Item automatically (auto-resolves an income account by checking what existing items already use, rather than guessing). Editing an item directly in QuickBooks flows back into the CRM via the daily sync, the "Sync All" button, or (once the `Item` entity is enabled in the QuickBooks app's webhook settings) near-real-time.
+- Requires running `supabase/migrations/20260722_qb_item_sync.sql` in the Supabase SQL editor before the sync will work (adds the `qb_item_id` column).
+
+### July 22 | Multi-day jobs get real Start/End date ranges | Calendar
+
+- **One-Time Invoice can now span multiple days**: New+'s One-Time Invoice step gained an End Date field, so a job running several consecutive days blocks the whole range on the calendar as one multi-day event while still creating a single invoice for the job.
+- **Sales Meeting's all-day toggle was the one date field still forcing start=end**: now has a proper Start/End range like every other date field in the app. Also fixed a latent bug where the all-day case sent a full datetime string into Google Calendar's all-day date field instead of the plain `YYYY-MM-DD` the API requires.
+
+### July 21 | QuickBooks invoices were missing the customer's email | CRM
+
+- **`BillEmail` was never set on generated invoices**: QuickBooks' invoice editor reads the "customer email" field directly off the invoice document, not live from the customer record, so every auto-generated invoice showed blank there regardless of whether the customer had an email on file. Retyping the customer in QuickBooks' dropdown was filling it in as a side effect, which is why that "fixed" it per-invoice. Both invoice-creation paths (manual and the maintenance-invoices cron) now set it from the start; all 22 existing August auto-invoices were back-patched directly via the QuickBooks API (no invoices deleted or renumbered).
+- **Settings > Team Members made mobile-friendly**: the member list had no responsive layout below `sm`; now matches the card-list pattern used elsewhere (Contacts), with 44px touch targets.
+
 ### July 21 | Cron run logs were silently failing | Infrastructure
 
 - **`system_flags` was never a key/value store**: the run-summary logging in `send-reminders` and `maintenance-invoices`, plus the new internal-warning dedup check, assumed `system_flags` had `key`/`value`/`updated_at` columns. In production it's actually an admin-alerts table (`message`/`severity`/`resolved`/`flag_type`), so those upserts silently failed every run, and the warning-text dedup would have re-sent the same alert on every rerun instead of skipping it. Both now log to `timeline_events` (with `contact_id: null` for system-wide entries), matching the pattern already proven to work for unrecognized-caller events.

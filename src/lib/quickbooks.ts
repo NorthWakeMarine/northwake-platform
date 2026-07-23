@@ -242,7 +242,7 @@ async function findQbDiscountAccountId(): Promise<string | null> {
   }
 }
 
-async function findQbItem(name: string): Promise<{ id: string; description: string | null } | null> {
+export async function findQbItem(name: string): Promise<{ id: string; description: string | null } | null> {
   try {
     const escaped = name.replace(/'/g, "\\'");
     type Resp = { QueryResponse: { Item?: { Id: string; Description?: string }[] } };
@@ -255,6 +255,113 @@ async function findQbItem(name: string): Promise<{ id: string; description: stri
   } catch {
     return null;
   }
+}
+
+export async function getDefaultIncomeAccountId(): Promise<string | null> {
+  if (process.env.QB_DEFAULT_INCOME_ACCOUNT_ID) return process.env.QB_DEFAULT_INCOME_ACCOUNT_ID;
+  try {
+    // Use whichever income account existing Service/NonInventory items already
+    // use most often — "the first active Income account" QBO happens to return
+    // is not necessarily the one the business actually books services revenue
+    // to (e.g. a company can have a "Billable Expense Income" account that
+    // sorts first but is never actually used by any real item).
+    type ItemResp = { QueryResponse: { Item?: { IncomeAccountRef?: { value: string } }[] } };
+    const itemData = await qbRequest<ItemResp>(
+      `/query?query=${encodeURIComponent("SELECT IncomeAccountRef FROM Item WHERE Active = true MAXRESULTS 1000")}`
+    );
+    const counts = new Map<string, number>();
+    for (const item of itemData.QueryResponse.Item ?? []) {
+      const id = item.IncomeAccountRef?.value;
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    if (counts.size > 0) {
+      return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    }
+
+    // No existing items to infer from — fall back to any active Income account
+    type AcctResp = { QueryResponse: { Account?: { Id: string }[] } };
+    const acctData = await qbRequest<AcctResp>(
+      `/query?query=${encodeURIComponent("SELECT Id FROM Account WHERE AccountType = 'Income' AND Active = true MAXRESULTS 1")}`
+    );
+    return acctData.QueryResponse.Account?.[0]?.Id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function findOrCreateQbItem(opts: {
+  name: string;
+  unitPrice?: number;
+}): Promise<{ qbItemId: string | null; error?: string }> {
+  const existing = await findQbItem(opts.name);
+  if (existing) return { qbItemId: existing.id };
+
+  const incomeAccountId = await getDefaultIncomeAccountId();
+  if (!incomeAccountId) {
+    return { qbItemId: null, error: "No QuickBooks income account found — create the item manually in QuickBooks and it will link automatically on next sync." };
+  }
+
+  try {
+    const body: Record<string, unknown> = {
+      Name: opts.name,
+      Type: "Service",
+      IncomeAccountRef: { value: incomeAccountId },
+    };
+    if (opts.unitPrice) body.UnitPrice = opts.unitPrice;
+
+    type ItemResponse = { Item: { Id: string } };
+    const data = await qbRequest<ItemResponse>("/item", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    return { qbItemId: data.Item.Id };
+  } catch (err) {
+    return { qbItemId: null, error: err instanceof Error ? err.message : "Failed to create QuickBooks item." };
+  }
+}
+
+export async function updateQbItemFields(
+  qbItemId: string,
+  fields: { name?: string; unitPrice?: number }
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    type ItemResponse = { Item: { Id: string; SyncToken?: string } };
+    const getRes = await qbRequest<ItemResponse>(`/item/${qbItemId}`);
+    const syncToken = getRes.Item.SyncToken ?? "0";
+
+    const patch: Record<string, unknown> = { Id: qbItemId, SyncToken: syncToken, sparse: true };
+    if (fields.name) patch.Name = fields.name;
+    if (fields.unitPrice !== undefined) patch.UnitPrice = fields.unitPrice;
+
+    await qbRequest<ItemResponse>("/item", {
+      method: "POST",
+      body: JSON.stringify(patch),
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to update QuickBooks item." };
+  }
+}
+
+export async function listQbServiceItems(): Promise<
+  { id: string; name: string; type: string; unitPrice: number | null; description: string | null }[]
+> {
+  const all: { id: string; name: string; type: string; unitPrice: number | null; description: string | null }[] = [];
+  let startPos = 1;
+  const pageSize = 100;
+  type Resp = { QueryResponse: { Item?: { Id: string; Name: string; Type: string; UnitPrice?: number; Description?: string }[] } };
+  while (true) {
+    const query = `SELECT Id, Name, Type, UnitPrice, Description FROM Item WHERE Active = true STARTPOSITION ${startPos} MAXRESULTS ${pageSize}`;
+    const data = await qbRequest<Resp>(`/query?query=${encodeURIComponent(query)}`);
+    const items = data.QueryResponse.Item ?? [];
+    for (const it of items) {
+      if (it.Type === "Category") continue;
+      all.push({ id: it.Id, name: it.Name, type: it.Type, unitPrice: it.UnitPrice ?? null, description: it.Description ?? null });
+    }
+    if (items.length < pageSize) break;
+    startPos += pageSize;
+  }
+  return all;
 }
 
 export async function createQbInvoiceDraft(opts: {

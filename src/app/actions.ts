@@ -3422,6 +3422,7 @@ export type ServiceTemplate = {
   is_per_foot: boolean;
   description: string | null;
   created_at: string;
+  qb_item_id: string | null;
 };
 
 export type ServiceTemplateState = { error?: string; success?: boolean };
@@ -3448,10 +3449,22 @@ export async function createServiceTemplate(
   if (!name) return { error: "Service name is required." };
 
   const supabase = await svc();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("service_templates")
-    .insert({ name, service_label, default_amount, is_per_foot, description });
+    .insert({ name, service_label, default_amount, is_per_foot, description })
+    .select("id")
+    .single();
   if (error) return { error: error.message };
+
+  // Push to QuickBooks in the background — don't block the response, and
+  // never fail the CRM save if QuickBooks is unreachable
+  try {
+    const { findOrCreateQbItem } = await import("@/lib/quickbooks");
+    const { qbItemId } = await findOrCreateQbItem({ name, unitPrice: default_amount });
+    if (qbItemId) {
+      await supabase.from("service_templates").update({ qb_item_id: qbItemId }).eq("id", data.id);
+    }
+  } catch { /* non-fatal */ }
 
   revalidatePath("/pro/services");
   return { success: true };
@@ -3471,11 +3484,31 @@ export async function updateServiceTemplate(
   if (!id || !name) return { error: "Missing required fields." };
 
   const supabase = await svc();
+  const { data: existing } = await supabase
+    .from("service_templates")
+    .select("qb_item_id")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("service_templates")
     .update({ name, service_label, default_amount, is_per_foot, description })
     .eq("id", id);
   if (error) return { error: error.message };
+
+  // Keep QuickBooks in sync — push the update if already linked, or
+  // opportunistically link/create if this template predates the QB sync feature
+  try {
+    const { findOrCreateQbItem, updateQbItemFields } = await import("@/lib/quickbooks");
+    if (existing?.qb_item_id) {
+      await updateQbItemFields(existing.qb_item_id, { name, unitPrice: default_amount });
+    } else {
+      const { qbItemId } = await findOrCreateQbItem({ name, unitPrice: default_amount });
+      if (qbItemId) {
+        await supabase.from("service_templates").update({ qb_item_id: qbItemId }).eq("id", id);
+      }
+    }
+  } catch { /* non-fatal */ }
 
   revalidatePath("/pro/services");
   return { success: true };
@@ -3490,6 +3523,64 @@ export async function deleteServiceTemplate(id: string): Promise<{ error?: strin
   if (error) return { error: error.message };
   revalidatePath("/pro/services");
   return {};
+}
+
+export async function importQbItems(): Promise<{ imported: number; linked: number; updated: number; error?: string }> {
+  const supabase = await svc();
+  try {
+    const { listQbServiceItems, getQbTokens } = await import("@/lib/quickbooks");
+    const tokens = await getQbTokens();
+    if (!tokens) return { imported: 0, linked: 0, updated: 0, error: "QuickBooks not connected." };
+
+    const qbItems = await listQbServiceItems();
+    const { data: templates } = await supabase
+      .from("service_templates")
+      .select("id, name, qb_item_id");
+
+    const byQbId = new Map((templates ?? []).filter(t => t.qb_item_id).map(t => [t.qb_item_id as string, t]));
+    const byName = new Map((templates ?? []).map(t => [t.name.trim().toLowerCase(), t]));
+
+    let imported = 0, linked = 0, updated = 0;
+
+    for (const item of qbItems) {
+      const existingByQbId = byQbId.get(item.id);
+      if (existingByQbId) {
+        await supabase.from("service_templates").update({
+          name: item.name,
+          default_amount: item.unitPrice ?? 0,
+          description: item.description,
+        }).eq("id", existingByQbId.id);
+        updated++;
+        continue;
+      }
+
+      const existingByName = byName.get(item.name.trim().toLowerCase());
+      if (existingByName) {
+        await supabase.from("service_templates").update({
+          qb_item_id: item.id,
+          default_amount: item.unitPrice ?? 0,
+          description: item.description,
+        }).eq("id", existingByName.id);
+        linked++;
+        continue;
+      }
+
+      await supabase.from("service_templates").insert({
+        name: item.name,
+        service_label: item.name,
+        default_amount: item.unitPrice ?? 0,
+        is_per_foot: false,
+        description: item.description,
+        qb_item_id: item.id,
+      });
+      imported++;
+    }
+
+    revalidatePath("/pro/services");
+    return { imported, linked, updated };
+  } catch (err) {
+    return { imported: 0, linked: 0, updated: 0, error: err instanceof Error ? err.message : "Failed to sync with QuickBooks." };
+  }
 }
 
 // ─── Team & Role Management ───────────────────────────────────────────────────

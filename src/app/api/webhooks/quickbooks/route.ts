@@ -58,6 +58,8 @@ export async function POST(req: NextRequest) {
           (entity.operation === "Create" || entity.operation === "Update")
         ) {
           return handleTransaction(entity.name as "Invoice" | "SalesReceipt" | "CreditMemo", entity.id);
+        } else if (entity.name === "Item" && (entity.operation === "Create" || entity.operation === "Update")) {
+          return handleItemUpsert(entity.id);
         }
         return Promise.resolve();
       })
@@ -358,6 +360,60 @@ async function handlePayment(qbPaymentId: string) {
     });
   } catch (err) {
     console.error("QB payment handler error:", err);
+  }
+}
+
+// ── Item.Create / Item.Update ────────────────────────────────────────────────
+
+async function handleItemUpsert(qbItemId: string) {
+  const supabase = svc();
+  const { getQbTokens } = await import("@/lib/quickbooks");
+  const tokens = await getQbTokens();
+  if (!tokens) return;
+
+  try {
+    const data = await qbFetch(tokens, `/item/${qbItemId}`);
+    if (!data) return;
+    const item = data.Item;
+    if (!item || item.Type === "Category") return;
+
+    const name = (item.Name as string | undefined)?.trim();
+    if (!name) return;
+    const unitPrice = (item.UnitPrice as number | undefined) ?? 0;
+    const description = (item.Description as string | undefined) ?? null;
+
+    const { data: byQbId } = await supabase
+      .from("service_templates")
+      .select("id")
+      .eq("qb_item_id", qbItemId)
+      .maybeSingle();
+
+    if (byQbId) {
+      await supabase.from("service_templates").update({
+        name, default_amount: unitPrice, description,
+      }).eq("id", byQbId.id);
+      return;
+    }
+
+    const { data: byName } = await supabase
+      .from("service_templates")
+      .select("id")
+      .ilike("name", name)
+      .maybeSingle();
+
+    if (byName) {
+      await supabase.from("service_templates").update({
+        qb_item_id: qbItemId, default_amount: unitPrice, description,
+      }).eq("id", byName.id);
+      return;
+    }
+
+    await supabase.from("service_templates").insert({
+      name, service_label: name, default_amount: unitPrice,
+      is_per_foot: false, description, qb_item_id: qbItemId,
+    });
+  } catch (err) {
+    console.error("QB item webhook error:", err);
   }
 }
 

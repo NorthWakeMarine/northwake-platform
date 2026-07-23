@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   createServiceTemplate,
   updateServiceTemplate,
   deleteServiceTemplate,
+  importQbItems,
   type ServiceTemplate,
   type ServiceTemplateState,
 } from "@/app/actions";
@@ -39,7 +41,7 @@ function TemplateForm({
             placeholder="Bi-Weekly Wash"
             className={inputCls}
           />
-          <p className="text-[10px] text-slate-400">Must match the item name in QuickBooks exactly.</p>
+          <p className="text-[10px] text-slate-400">Automatically linked (or created) in QuickBooks on save.</p>
         </div>
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{isPerFoot ? "Rate ($/ft)" : "Flat Price ($)"}</label>
@@ -106,11 +108,14 @@ function TemplateForm({
 }
 
 export default function ServicesClient({ templates: initial }: { templates: ServiceTemplate[] }) {
+  const router = useRouter();
   const [templates, setTemplates] = useState(initial);
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
+  const [syncing, startSync] = useTransition();
+  const [syncResult, setSyncResult] = useState<{ imported: number; linked: number; updated: number; error?: string } | null>(null);
 
   async function handleDelete(id: string) {
     setDeletingId(id);
@@ -125,29 +130,53 @@ export default function ServicesClient({ templates: initial }: { templates: Serv
     }
   }
 
+  function handleSync() {
+    setSyncResult(null);
+    startSync(async () => {
+      const res = await importQbItems();
+      setSyncResult(res);
+      if (!res.error) router.refresh();
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-slate-800 text-base font-bold">Recurring Services</h2>
           <p className="text-slate-500 text-xs mt-0.5">
             Define reusable service types with default pricing. Pick a template in the New+ flow to pre-fill qty, rate, and description per client.
           </p>
         </div>
-        {!showCreate && (
+        <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => { setShowCreate(true); setEditingId(null); }}
-            className="flex items-center gap-1.5 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm hover:bg-blue-900 transition-colors shrink-0"
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-1.5 border border-slate-300 text-slate-600 text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm hover:border-[#000080] hover:text-[#000080] transition-colors disabled:opacity-50"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            New Service
+            {syncing ? "Syncing..." : "Sync with QuickBooks"}
           </button>
-        )}
+          {!showCreate && (
+            <button
+              onClick={() => { setShowCreate(true); setEditingId(null); }}
+              className="flex items-center gap-1.5 bg-[#000080] text-white text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm hover:bg-blue-900 transition-colors shrink-0"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              New Service
+            </button>
+          )}
+        </div>
       </div>
+
+      {syncResult && (
+        <p className={`text-xs -mt-3 ${syncResult.error ? "text-red-600" : "text-emerald-600"}`}>
+          {syncResult.error ?? `Synced: ${syncResult.imported} imported, ${syncResult.linked} linked, ${syncResult.updated} updated.`}
+        </p>
+      )}
 
       {/* Create form */}
       {showCreate && (
@@ -172,7 +201,14 @@ export default function ServicesClient({ templates: initial }: { templates: Serv
                 <div className="flex items-center justify-between gap-4 px-5 py-4">
                   <div className="flex items-center gap-6 min-w-0">
                     <div className="min-w-0">
-                      <p className="text-slate-800 text-sm font-semibold truncate">{t.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-slate-800 text-sm font-semibold truncate">{t.name}</p>
+                        {t.qb_item_id && (
+                          <span className="text-[9px] tracking-widest uppercase font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded shrink-0">
+                            Synced
+                          </span>
+                        )}
+                      </div>
                       {t.description && (
                         <p className="text-slate-400 text-xs truncate mt-0.5 max-w-xs">{t.description}</p>
                       )}

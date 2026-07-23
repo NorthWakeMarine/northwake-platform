@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { importQbCustomers, runIntegrityCheck, createContactFromQb, createContactFromQuo, pushCrmToQuickBooks, pushCrmToQuo, importQuoContacts, syncVesselsToQbNotes, updateContactFields, pushCrmFieldToQb, importQbInvoices, reconcileQbInvoices, purgeGhostVessels } from "@/app/actions";
+import { importQbCustomers, runIntegrityCheck, createContactFromQb, createContactFromQuo, pushCrmToQuickBooks, pushCrmToQuo, importQuoContacts, syncVesselsToQbNotes, updateContactFields, pushCrmFieldToQb, importQbInvoices, reconcileQbInvoices, purgeGhostVessels, importQbItems } from "@/app/actions";
 import type { FieldMismatch, OpUnmatched } from "@/app/actions";
 
 type QbUnmatched = { qbId: string; name: string; email: string | null; phone: string | null; companyName: string | null };
@@ -16,6 +16,7 @@ type SyncResult = {
   qbPush?: { upserted: number; skipped: string[]; error?: string };
   qbNotes?: { synced: number; error?: string };
   ghostPurge?: { deleted: number; error?: string };
+  qbItems?: { imported: number; linked: number; updated: number; error?: string };
 };
 
 export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: boolean; quoConnected: boolean }) {
@@ -33,12 +34,13 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
       // QB sync + integrity check run in parallel
       // Quo contact sync removed — handled in real-time by Quo webhooks
       // Integrity check fires async so it doesn't hold up the response
-      const [qb, qbInvoices, qbReconcile, qbPush, qbNotes] = await Promise.all([
+      const [qb, qbInvoices, qbReconcile, qbPush, qbNotes, qbItems] = await Promise.all([
         qbConnected ? importQbCustomers() : Promise.resolve(undefined),
         qbConnected ? importQbInvoices() : Promise.resolve(undefined),
         qbConnected ? reconcileQbInvoices() : Promise.resolve(undefined),
         qbConnected ? pushCrmToQuickBooks() : Promise.resolve(undefined),
         qbConnected ? syncVesselsToQbNotes() : Promise.resolve(undefined),
+        qbConnected ? importQbItems() : Promise.resolve(undefined),
       ]);
 
       // Fire integrity check without awaiting it — runs in background
@@ -50,6 +52,7 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
         qbReconcile: qbReconcile ?? undefined,
         qbPush: qbPush ?? undefined,
         qbNotes: qbNotes ?? undefined,
+        qbItems: qbItems ?? undefined,
         ghostPurge,
       });
     });
@@ -303,6 +306,31 @@ export default function SyncPanel({ qbConnected, quoConnected }: { qbConnected: 
             </div>
           )}
 
+
+          {/* QB Products/Services sync results */}
+          {result.qbItems && (
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] tracking-widest uppercase font-semibold text-slate-500">QB Products/Services</p>
+              {result.qbItems.error ? (
+                <p className="text-red-500 text-xs">{result.qbItems.error}</p>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-700 text-xs">{result.qbItems.imported} imported</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-400" />
+                    <span className="text-slate-700 text-xs">{result.qbItems.linked} linked</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-300" />
+                    <span className="text-slate-500 text-xs">{result.qbItems.updated} updated</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Quo import results */}
           {result.quo && (
