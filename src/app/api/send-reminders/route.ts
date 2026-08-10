@@ -134,13 +134,38 @@ export async function GET(req: NextRequest) {
 
   const toSend = reminderItems.filter(w => !alreadySent.has(w.eventId));
 
+  // 4b. Honor "No <Name>" skip requests staff sent in reply to yesterday's
+  // internal warning text (see handleInboundSms in the Quo webhook)
+  const { data: skipRows } = toSend.length
+    ? await supabase
+        .from("reminder_pending")
+        .select("gcal_event_id")
+        .in("gcal_event_id", toSend.map(w => w.eventId))
+        .eq("skipped", true)
+    : { data: [] };
+  const skippedEventIds = new Set((skipRows ?? []).map(r => r.gcal_event_id));
+
   // 5. Send customer reminders
   const { sendSMS, splitName } = await import("@/lib/openphone");
 
   let sent = 0;
+  let skippedByStaff = 0;
   const failed: string[] = [];
 
   for (const w of toSend) {
+    if (skippedEventIds.has(w.eventId)) {
+      skippedByStaff++;
+      await supabase.from("timeline_events").insert({
+        contact_id: w.contactId,
+        event_type: "sms",
+        title:      "Appointment Reminder Skipped",
+        body:       "Skipped per staff reply to the internal heads-up text.",
+        metadata:   { direction: "outbound", reminder: true, reminder_gcal_event_id: w.eventId, skipped: true },
+        created_by: "cron",
+      });
+      continue;
+    }
+
     try {
       const firstName = splitName(w.contactName).firstName || w.contactName;
       const dateLabel = formatEventDate(w.eventDate);
@@ -168,6 +193,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Clean up processed pending rows (sent, failed, or skipped — no longer pending)
+  if (toSend.length > 0) {
+    await supabase.from("reminder_pending").delete().in("gcal_event_id", toSend.map(w => w.eventId));
+  }
+
   // 6. Log reminder summary (contact_id null = system-wide log entry, not tied
   // to one customer — mirrors the pattern used for unrecognized-caller events)
   const reminderDateStr = reminderStart.toISOString().slice(0, 10);
@@ -175,8 +205,8 @@ export async function GET(req: NextRequest) {
     contact_id: null,
     event_type: "cron_log",
     title:      "SMS reminder run",
-    body:       `Sent ${sent}, skipped ${reminderItems.length - toSend.length}, failed ${failed.length}.`,
-    metadata:   { kind: "sms_reminders", target_date: reminderDateStr, sent, failed },
+    body:       `Sent ${sent}, already-sent skipped ${reminderItems.length - toSend.length}, staff-skipped ${skippedByStaff}, failed ${failed.length}.`,
+    metadata:   { kind: "sms_reminders", target_date: reminderDateStr, sent, skippedByStaff, failed },
     created_by: "cron",
   });
 
@@ -200,7 +230,21 @@ export async function GET(req: NextRequest) {
     if (!existingWarning) {
       const uniqueNames = [...new Set(warningItems.map(w => w.contactName || w.contactPhone))];
       const dateLabel = formatEventDate(warningItems[0].eventDate);
-      const message = `NorthWake Marine: Tomorrow we'll be texting ${uniqueNames.join(", ")} for work scheduled on ${dateLabel}.`;
+      const skipInstructions = uniqueNames.map(n => `"No ${n}"`).join(" or ");
+      const message = `NorthWake Marine: Tomorrow we'll be texting ${uniqueNames.join(", ")} for work scheduled on ${dateLabel}. Reply ${skipInstructions} to skip that customer's text.`;
+
+      // Persist who's pending so a "No <Name>" reply (handled in the Quo
+      // webhook) can be matched back to the right occurrence tomorrow.
+      await supabase.from("reminder_pending").upsert(
+        warningItems.map(w => ({
+          contact_id: w.contactId,
+          gcal_event_id: w.eventId,
+          contact_name: w.contactName || w.contactPhone,
+          target_date: w.eventDate.includes("T") ? w.eventDate.split("T")[0] : w.eventDate,
+          skipped: false,
+        })),
+        { onConflict: "gcal_event_id" }
+      );
 
       for (const phone of alertPhones) {
         try {

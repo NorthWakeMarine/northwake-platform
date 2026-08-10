@@ -219,6 +219,48 @@ async function handleMissedCall(obj: Record<string, unknown>) {
   // We still log the event; we just don't auto-create a lead from it.
 }
 
+function getAlertPhoneNumbers(): string[] {
+  return (process.env.ALERT_PHONE_NUMBERS ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+// Staff can reply "No <Name>" to the internal reminder-warning text to skip
+// that customer's automatic appointment reminder for the upcoming occurrence.
+async function handleReminderSkipReply(supabase: AnySupabase, normalizedFrom: string, body: string): Promise<boolean> {
+  const alertPhones = getAlertPhoneNumbers().map((p) => normalizePhone(p));
+  if (!alertPhones.includes(normalizedFrom)) return false;
+
+  const match = body.trim().match(/^["“]?no["”]?\s+(.+?)["”]?$/i);
+  if (!match) return false;
+  const requestedName = match[1].trim();
+  if (!requestedName) return false;
+
+  const { data: pending } = await supabase
+    .from("reminder_pending")
+    .select("id, contact_name")
+    .eq("skipped", false)
+    .ilike("contact_name", `%${requestedName}%`);
+
+  const { sendSMS } = await import("@/lib/openphone");
+  const rows = pending ?? [];
+
+  if (rows.length === 0) {
+    await sendSMS(normalizedFrom, `NorthWake Marine: No pending reminder found matching "${requestedName}".`).catch(() => {});
+    return true;
+  }
+  if (rows.length > 1) {
+    const names = [...new Set(rows.map((r: { contact_name: string }) => r.contact_name))].join(", ");
+    await sendSMS(normalizedFrom, `NorthWake Marine: More than one match for "${requestedName}" (${names}). Reply with the full name.`).catch(() => {});
+    return true;
+  }
+
+  await supabase.from("reminder_pending").update({ skipped: true }).eq("id", rows[0].id);
+  await sendSMS(normalizedFrom, `NorthWake Marine: Got it, skipping the reminder text to ${rows[0].contact_name}.`).catch(() => {});
+  return true;
+}
+
 async function handleInboundSms(obj: Record<string, unknown>) {
   const supabase = svc();
   const from = extractPhone(obj.from);
@@ -227,6 +269,13 @@ async function handleInboundSms(obj: Record<string, unknown>) {
 
   const normalized = normalizePhone(from);
   if (!normalized) return;
+
+  try {
+    const handled = await handleReminderSkipReply(supabase, normalized, body);
+    if (handled) return;
+  } catch (err) {
+    console.error("[quo webhook] reminder skip reply error", err);
+  }
 
   const contact = await findContactByPhone(supabase, normalized);
 
