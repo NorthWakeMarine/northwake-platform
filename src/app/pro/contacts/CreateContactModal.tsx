@@ -4,11 +4,21 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createContact } from "@/app/actions";
 
-type Props = { defaultType?: "customer" | "vendor" | "other" };
+type Props = {
+  defaultType?: "customer" | "vendor" | "other";
+  /** Controlled visibility — when provided, the internal trigger button is suppressed and `onClose` drives closing. */
+  open?: boolean;
+  onClose?: () => void;
+  /** Suppress the internal "+ New Contact" button (used when opened from elsewhere, e.g. a dropdown menu). */
+  hideTrigger?: boolean;
+};
 
-export default function CreateContactModal({ defaultType = "customer" }: Props) {
+export default function CreateContactModal({ defaultType = "customer", open: controlledOpen, onClose, hideTrigger }: Props) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (v: boolean) => { if (!v) onClose?.(); } : setInternalOpen;
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -27,14 +37,29 @@ export default function CreateContactModal({ defaultType = "customer" }: Props) 
     notes: "",
   });
 
-  function handleOpen() {
+  function resetDraft() {
     setDraft({
       name: "", company_name: "", email: "", phone: "", address: "",
       contact_type: defaultType, waiver_signed: false,
       asset_type: "vessel", make_model: "", year: "", vessel_length: "", notes: "",
     });
     setError(null);
+  }
+
+  function handleOpen() {
+    resetDraft();
     setOpen(true);
+  }
+
+  // Controlled mode: reset the draft whenever the parent opens the modal.
+  // Adjusting state during render (React's recommended pattern) instead of
+  // an effect, since this only needs to run on the false->true transition.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (isControlled && open && !wasOpen) {
+    setWasOpen(true);
+    resetDraft();
+  } else if (isControlled && !open && wasOpen) {
+    setWasOpen(false);
   }
 
   function handleClose() {
@@ -57,15 +82,17 @@ export default function CreateContactModal({ defaultType = "customer" }: Props) 
 
   return (
     <>
-      <button
-        onClick={handleOpen}
-        className="flex items-center justify-center gap-1.5 bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm transition-colors whitespace-nowrap w-full sm:w-auto"
-      >
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-        New Contact
-      </button>
+      {!hideTrigger && (
+        <button
+          onClick={handleOpen}
+          className="flex items-center justify-center gap-1.5 bg-[#000080] hover:bg-[#0000a0] text-white text-[10px] tracking-widest uppercase font-semibold px-3 py-2 rounded-sm transition-colors whitespace-nowrap w-full sm:w-auto"
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New Contact
+        </button>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
