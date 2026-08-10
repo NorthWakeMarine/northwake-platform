@@ -873,14 +873,22 @@ export async function updateContactFields(
       try {
         const { data: contact } = await supabase.from("contacts").select("openphone_contact_id, name, email, phone, company_name").eq("id", contactId).single();
         if (!contact?.openphone_contact_id) return;
-        const { updateOpenPhoneContact, splitName } = await import("@/lib/openphone");
+        const { updateOpenPhoneContact, getOpenPhoneContact, splitName } = await import("@/lib/openphone");
         const { firstName, lastName } = splitName(contact.name?.trim() ?? "");
+
+        // Only include phone/email if they've actually changed — PATCH appends
+        // rather than replaces array fields, so resending an unchanged value
+        // on every edit (e.g. editing just the name) piles up duplicates.
+        const current = await getOpenPhoneContact(contact.openphone_contact_id);
+        const phoneAlreadySet = !!contact.phone && (current?.phoneNumbers ?? []).some((p) => normalizePhone(p.value ?? "") === normalizePhone(contact.phone!));
+        const emailAlreadySet = !!contact.email && (current?.emails ?? []).some((e) => e.value?.toLowerCase() === contact.email!.toLowerCase());
+
         await updateOpenPhoneContact(contact.openphone_contact_id, {
           firstName,
           lastName: lastName || undefined,
           company: contact.company_name?.trim() || undefined,
-          phoneNumbers: contact.phone ? [{ name: "main", value: contact.phone }] : [],
-          emails: contact.email ? [{ name: "main", value: contact.email }] : [],
+          ...(phoneAlreadySet || !contact.phone ? {} : { phoneNumbers: [{ name: "main", value: contact.phone }] }),
+          ...(emailAlreadySet || !contact.email ? {} : { emails: [{ name: "main", value: contact.email }] }),
         });
       } catch { /* non-fatal */ }
     })();
@@ -3157,6 +3165,7 @@ export async function pushCrmToQuo(): Promise<{ updated: number; created: number
 
     // Build a phone index of existing Quo contacts to avoid duplicates on create
     const existing = await listOpenPhoneContacts();
+    const existingById = new Map(existing.map((c) => [c.id, c]));
     const existingByPhone = new Map(
       existing.flatMap((c) => (c.phoneNumbers ?? []).filter((p) => p.value).map((p) => [normalizePhone(p.value!) ?? p.value!, c.id]))
     );
@@ -3164,12 +3173,21 @@ export async function pushCrmToQuo(): Promise<{ updated: number; created: number
     const counts = await pMap(contacts ?? [], async (c) => {
       const { firstName, lastName } = splitName(c.name ?? c.company_name ?? "");
       const vessel = vesselMap.get(c.id) ?? null;
+
+      // Skip fields that already match the current Quo record so a PATCH
+      // (which appends rather than replaces array fields) doesn't pile up
+      // duplicate phone/email entries on every daily sync run.
+      const current = c.openphone_contact_id ? existingById.get(c.openphone_contact_id) : undefined;
+      const phoneAlreadySet = !!c.phone && (current?.phoneNumbers ?? []).some((p) => normalizePhone(p.value ?? "") === normalizePhone(c.phone!));
+      const emailAlreadySet = !!c.email && (current?.emails ?? []).some((e) => e.value?.toLowerCase() === c.email!.toLowerCase());
+
       const payload = {
         firstName,
         lastName,
-        ...(vessel ? { role: vessel } : {}),
-        ...(c.email ? { emails: [{ name: "work", value: c.email }] } : {}),
-        ...(c.phone ? { phoneNumbers: [{ name: "work", value: c.phone }] } : {}),
+        role: "Customer",
+        ...(vessel ? { company: vessel } : {}),
+        ...(c.email && !emailAlreadySet ? { emails: [{ name: "work", value: c.email }] } : {}),
+        ...(c.phone && !phoneAlreadySet ? { phoneNumbers: [{ name: "work", value: c.phone }] } : {}),
       };
       if (c.openphone_contact_id) {
         await updateOpenPhoneContact(c.openphone_contact_id, payload);
@@ -3291,19 +3309,33 @@ export async function syncQuoForContact(
   if (!contact.phone) return { ok: false, imported: 0, skipped: 0, error: "Contact has no phone number on file." };
 
   try {
-    const { createOpenPhoneContact, updateOpenPhoneContact, splitName, fetchCallsByPhone, fetchMessagesByPhone } = await import("@/lib/openphone");
+    const { createOpenPhoneContact, updateOpenPhoneContact, getOpenPhoneContact, splitName, fetchCallsByPhone, fetchMessagesByPhone } = await import("@/lib/openphone");
     const { firstName, lastName } = splitName(contact.name?.trim() ?? "");
-    const opPayload = {
-      firstName,
-      lastName: lastName || undefined,
-      company: contact.company_name?.trim() || undefined,
-      phoneNumbers: [{ name: "main", value: contact.phone }],
-      emails: contact.email?.trim() ? [{ name: "main", value: contact.email.trim() }] : [],
-    };
 
     if (contact.openphone_contact_id) {
+      // Only include phone/email if they're not already on the Quo record —
+      // PATCH appends rather than replaces array fields, so re-syncing an
+      // unchanged contact would otherwise pile up duplicate entries.
+      const current = await getOpenPhoneContact(contact.openphone_contact_id);
+      const phoneAlreadySet = (current?.phoneNumbers ?? []).some((p) => normalizePhone(p.value ?? "") === normalizePhone(contact.phone!));
+      const emailAlreadySet = !!contact.email?.trim() && (current?.emails ?? []).some((e) => e.value?.toLowerCase() === contact.email!.trim().toLowerCase());
+
+      const opPayload = {
+        firstName,
+        lastName: lastName || undefined,
+        company: contact.company_name?.trim() || undefined,
+        ...(phoneAlreadySet ? {} : { phoneNumbers: [{ name: "main", value: contact.phone }] }),
+        ...(emailAlreadySet || !contact.email?.trim() ? {} : { emails: [{ name: "main", value: contact.email.trim() }] }),
+      };
       await updateOpenPhoneContact(contact.openphone_contact_id, opPayload).catch(() => null);
     } else {
+      const opPayload = {
+        firstName,
+        lastName: lastName || undefined,
+        company: contact.company_name?.trim() || undefined,
+        phoneNumbers: [{ name: "main", value: contact.phone }],
+        emails: contact.email?.trim() ? [{ name: "main", value: contact.email.trim() }] : [],
+      };
       const newId = await createOpenPhoneContact(opPayload).catch(() => null);
       if (newId) {
         await supabase.from("contacts").update({ openphone_contact_id: newId }).eq("id", contactId);

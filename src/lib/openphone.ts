@@ -68,6 +68,18 @@ export async function listOpenPhoneContacts(maxTotal = 1000): Promise<OpenPhoneC
   return all;
 }
 
+export async function getOpenPhoneContact(id: string): Promise<OpenPhoneContact | null> {
+  type RawContact = { id: string; defaultFields?: OpenPhoneContactFields };
+  type Resp = { data: RawContact };
+  try {
+    const res = await opRequest<Resp>(`/contacts/${id}`);
+    const f = res.data.defaultFields ?? ({} as OpenPhoneContactFields);
+    return { id: res.data.id, firstName: f.firstName, lastName: f.lastName, role: f.role, company: f.company, phoneNumbers: f.phoneNumbers, emails: f.emails };
+  } catch {
+    return null;
+  }
+}
+
 export async function createOpenPhoneContact(fields: OpenPhoneContactFields): Promise<string | null> {
   type Resp = { data: { id: string } };
   const res = await opRequest<Resp>("/contacts", {

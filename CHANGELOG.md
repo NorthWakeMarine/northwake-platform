@@ -1,6 +1,12 @@
 # NorthWake Platform Changelog
 
-## July 2026
+## August 2026
+
+### August 10 | Quo contact sync was corrupting contact cards | CRM
+
+- **Vessel info was being written into the wrong OpenPhone field**: `pushCrmToQuo()` stuffed a contact's boat description (e.g. "2005 Grady White") into Quo's "Role" field, which is meant for a job-title-style label — that's why a Role field could show boat info instead of "Customer".
+- **Repeated syncs were piling up duplicate phone/email entries**: every sync (the daily cron, the manual "Sync Quo" button, and any contact edit that touched name/email/phone/company) resent the full phone/email arrays to Quo's PATCH endpoint even when nothing had changed, and Quo's API doesn't dedupe on its end — so the same number could end up listed many times over. All three call sites now check the contact's current Quo record first and only send a field if it's actually different.
+- **A real customer's Quo contact card had been overwritten**: a pre-existing Quo contact for Micheal / Coastal Dive Service had gotten linked to a different, unrelated CRM contact (Leo Radkowski) and was showing Leo's name and phone number instead of Micheal's. Manually restored Micheal's contact to his correct name, company, and mobile number; removed an empty duplicate Quo contact that had been auto-created for him in the meantime; gave Leo his own correct, separate Quo contact.
 
 ### July 23 | QuickBooks outage recovery + Products/Services sync | CRM,Infrastructure
 
