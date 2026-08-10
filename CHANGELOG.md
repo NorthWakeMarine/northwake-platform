@@ -2,6 +2,15 @@
 
 ## August 2026
 
+### August 10 | Pipeline New+ menu, Recurring Reminder, and reminder skip-replies | CRM,Calendar
+
+- **Pipeline's "New+" button is now a menu**: New Contact (same modal as the Contacts page, made reusable so it can be opened without its own trigger button), Add Contact to Pipeline (search an existing contact, pick a stage, drops it straight onto the board), and Create Calendar Event (unchanged, what the button already did).
+- **New "Recurring Reminder" option in New+** (from a contact's own page): pick a frequency (every N days/weeks/months), and a recurring internal-only calendar event (no invoice, no customer text) automatically moves that contact's pipeline card back to Discovery each time it comes due — useful for customers serviced on a periodic schedule who shouldn't fall off the radar between visits. The date field asks for the **date of last work**, not the first reminder date — the first occurrence is computed automatically (last work + one frequency interval) and shown as a live preview.
+- **Recurring Service's date field also gained a Start/End range**, matching every other calendar date picker in the app — a job that spans multiple days blocks the whole range before repeating at the chosen frequency.
+- **Staff can now reply "No `<Name>`" to skip a customer's reminder text**: the internal warning sent the day before customers get their appointment reminder lists the exact reply format per name, persists the pending list to a new `reminder_pending` table, and a matching reply marks that customer's text as skipped (with a confirmation back) instead of sent the next day.
+- **The internal warning (and skip confirmations) now send as a real group thread** to all `ALERT_PHONE_NUMBERS` in one message, not separate 1:1 texts to each number — verified directly against OpenPhone's API (one shared conversation ID for both recipients).
+- Fixed a missing `calendar_contact_links.event_type` CHECK constraint value that would have silently blocked the Recurring Reminder feature from saving (`pipeline_reminder` wasn't an allowed value) — confirmed all pending migrations from this and the prior QuickBooks sync work are now applied to production via a direct database connection.
+
 ### August 10 | Quo contact sync was corrupting contact cards | CRM
 
 - **Vessel info was being written into the wrong OpenPhone field**: `pushCrmToQuo()` stuffed a contact's boat description (e.g. "2005 Grady White") into Quo's "Role" field, which is meant for a job-title-style label — that's why a Role field could show boat info instead of "Customer".
@@ -12,7 +21,7 @@
 
 - **QuickBooks was fully down in production**: `QB_CLIENT_ID`, `QB_CLIENT_SECRET`, and `QB_REDIRECT_URI` had all been cleared to empty strings in Vercel's production environment (same failure mode as the earlier carousel-upload incident), and separately `SUPABASE_SECRET_KEY` got overwritten with an unrelated value while those were being fixed, which broke every CRM list ("all the data is gone" — the data itself was always intact, just unreachable with an invalid API key). Both restored; QuickBooks reconnected via a fresh OAuth authorization since the stored refresh token no longer matched the corrected client credentials.
 - **QuickBooks Products/Services now sync with the CRM's Services page**: a new "Sync with QuickBooks" button pulls every QuickBooks product/service into `/pro/services` (linked via a new `qb_item_id` column, not just name-matching). Creating or editing a service in the CRM now creates/updates the matching QuickBooks Item automatically (auto-resolves an income account by checking what existing items already use, rather than guessing). Editing an item directly in QuickBooks flows back into the CRM via the daily sync, the "Sync All" button, or (once the `Item` entity is enabled in the QuickBooks app's webhook settings) near-real-time.
-- Requires running `supabase/migrations/20260722_qb_item_sync.sql` in the Supabase SQL editor before the sync will work (adds the `qb_item_id` column).
+- `supabase/migrations/20260722_qb_item_sync.sql` (adds the `qb_item_id` column) — confirmed applied to production August 10.
 
 ### July 22 | Multi-day jobs get real Start/End date ranges | Calendar
 
