@@ -162,11 +162,11 @@ async function resolvePhoneNumberId(): Promise<string> {
   return match.id;
 }
 
-export async function sendSMS(to: string, content: string): Promise<void> {
+export async function sendSMS(to: string | string[], content: string): Promise<void> {
   const phoneNumberId = await resolvePhoneNumberId();
   await opRequest("/messages", {
     method: "POST",
-    body: JSON.stringify({ from: phoneNumberId, to: [to], content }),
+    body: JSON.stringify({ from: phoneNumberId, to: Array.isArray(to) ? to : [to], content }),
   });
 }
 

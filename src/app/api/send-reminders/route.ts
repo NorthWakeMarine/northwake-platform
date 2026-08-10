@@ -246,12 +246,12 @@ export async function GET(req: NextRequest) {
         { onConflict: "gcal_event_id" }
       );
 
-      for (const phone of alertPhones) {
-        try {
-          await sendSMS(phone, message);
-        } catch (err) {
-          failed.push(`alert to ${phone}: ${err instanceof Error ? err.message : String(err)}`);
-        }
+      try {
+        // Send as one group message (all alert numbers in a single call) so
+        // it's a shared thread, not separate 1:1 texts.
+        await sendSMS(alertPhones, message);
+      } catch (err) {
+        failed.push(`alert group: ${err instanceof Error ? err.message : String(err)}`);
       }
       warningSent = true;
 

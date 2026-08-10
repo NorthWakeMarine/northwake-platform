@@ -245,19 +245,22 @@ async function handleReminderSkipReply(supabase: AnySupabase, normalizedFrom: st
 
   const { sendSMS } = await import("@/lib/openphone");
   const rows = pending ?? [];
+  // Reply to the whole alert group (not just whoever texted) so everyone
+  // sees the request was handled, not just the person who sent it.
+  const replyTo = getAlertPhoneNumbers();
 
   if (rows.length === 0) {
-    await sendSMS(normalizedFrom, `NorthWake Marine: No pending reminder found matching "${requestedName}".`).catch(() => {});
+    await sendSMS(replyTo, `NorthWake Marine: No pending reminder found matching "${requestedName}".`).catch(() => {});
     return true;
   }
   if (rows.length > 1) {
     const names = [...new Set(rows.map((r: { contact_name: string }) => r.contact_name))].join(", ");
-    await sendSMS(normalizedFrom, `NorthWake Marine: More than one match for "${requestedName}" (${names}). Reply with the full name.`).catch(() => {});
+    await sendSMS(replyTo, `NorthWake Marine: More than one match for "${requestedName}" (${names}). Reply with the full name.`).catch(() => {});
     return true;
   }
 
   await supabase.from("reminder_pending").update({ skipped: true }).eq("id", rows[0].id);
-  await sendSMS(normalizedFrom, `NorthWake Marine: Got it, skipping the reminder text to ${rows[0].contact_name}.`).catch(() => {});
+  await sendSMS(replyTo, `NorthWake Marine: Got it, skipping the reminder text to ${rows[0].contact_name}.`).catch(() => {});
   return true;
 }
 
