@@ -2055,6 +2055,86 @@ export async function createSalesMeetingEvent(
   }
 }
 
+// ─── Recurring Pipeline Reminder ───────────────────────────────────────────────
+// Creates a recurring, internal-only calendar event with no invoicing or
+// customer text — GET /api/pipeline-reminders matches each occurrence and
+// moves the linked contact's pipeline_stage back to "discovery".
+
+export async function createPipelineReminder(
+  _prev: NewEventState,
+  formData: FormData
+): Promise<NewEventState> {
+  const contact_id   = formData.get("contact_id")   as string;
+  const contact_name = (formData.get("contact_name") as string | null)?.trim() || "Contact";
+  const start_time    = formData.get("start_time")    as string;
+  const frequency     = formData.get("frequency")     as string | null;
+  const freq_unit     = (formData.get("freq_unit") as string | null) || "months";
+
+  if (!contact_id || !start_time || !frequency) {
+    return { error: "Contact, start date, and frequency are required." };
+  }
+
+  const freqN = Math.max(1, parseInt(frequency, 10));
+  const dateOnly = start_time.split("T")[0];
+
+  const nextDate = new Date(dateOnly + "T12:00:00");
+  nextDate.setDate(nextDate.getDate() + 1);
+  const nextDateStr = nextDate.toISOString().split("T")[0];
+
+  // Build RRULE — for weekly and monthly, pin to the same weekday as the start date
+  const RRULE_DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+  const startDateObj = new Date(dateOnly + "T12:00:00");
+  const dayCode      = RRULE_DAYS[startDateObj.getDay()];
+  const dayOfMonth   = startDateObj.getDate();
+  const ordinal      = Math.ceil(dayOfMonth / 7);
+  const daysInMonth  = new Date(startDateObj.getFullYear(), startDateObj.getMonth() + 1, 0).getDate();
+  const byDay        = dayOfMonth + 7 > daysInMonth ? `-1${dayCode}` : `${ordinal}${dayCode}`;
+
+  let recurrenceRule: string;
+  if (freq_unit === "days") {
+    recurrenceRule = `RRULE:FREQ=DAILY;INTERVAL=${freqN}`;
+  } else if (freq_unit === "months") {
+    recurrenceRule = `RRULE:FREQ=MONTHLY;INTERVAL=${freqN};BYDAY=${byDay}`;
+  } else {
+    recurrenceRule = `RRULE:FREQ=WEEKLY;INTERVAL=${freqN};BYDAY=${dayCode}`;
+  }
+
+  const supabase = await svc();
+
+  try {
+    const { createCalendarEvent, PIPELINE_REMINDER_COLOR_ID } = await import("@/lib/google-calendar");
+    const eventId = await createCalendarEvent({
+      title: `Recurring Reminder - ${contact_name}`,
+      startTime: dateOnly,
+      endTime: nextDateStr,
+      isAllDay: true,
+      colorId: PIPELINE_REMINDER_COLOR_ID,
+      recurrenceRule,
+    });
+
+    const { error: linkErr } = await supabase.from("calendar_contact_links").insert({
+      gcal_event_id:     eventId,
+      contact_id,
+      service_label:     "Pipeline Reminder",
+      event_type:        "pipeline_reminder",
+      auto_invoice:       false,
+      sms_reminder_enabled: false,
+      color_id:          PIPELINE_REMINDER_COLOR_ID,
+      recurrence_rule:   recurrenceRule,
+    });
+
+    if (linkErr) {
+      return { error: `Event created but reminder link failed: ${linkErr.message}` };
+    }
+
+    revalidatePath("/pro/calendar");
+    revalidatePath("/pro/pipeline");
+    return { success: true, eventId };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to create recurring reminder." };
+  }
+}
+
 export async function createBlankCalendarEvent(
   _prev: NewEventState,
   formData: FormData

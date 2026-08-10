@@ -44,6 +44,7 @@ export const RECURRING_WORK_COLOR_ID = "9";  // Blueberry — recurring work lab
 export const ONE_OFF_WORK_COLOR_ID   = "1";  // Lavender — one-off work label
 export const TIME_BLOCK_COLOR_ID     = "3";  // Grape — time block label
 export const SALES_EVENT_COLOR_ID    = "11"; // Tomato (red) — sales label
+export const PIPELINE_REMINDER_COLOR_ID = "8"; // Graphite — internal-only, non-billable marker
 // Legacy alias kept for any existing references
 export const WORK_EVENT_COLOR_ID     = RECURRING_WORK_COLOR_ID;
 

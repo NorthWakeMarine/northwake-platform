@@ -6,6 +6,7 @@ import {
   createServiceEvent,
   createSalesMeetingEvent,
   createBlankCalendarEvent,
+  createPipelineReminder,
   searchContactsByName,
   getVesselsByContactId,
   getServiceTemplates,
@@ -14,7 +15,7 @@ import {
 } from "@/app/actions";
 
 
-type EventType = "recurring" | "one_time" | "sales_meeting" | "calendar_event";
+type EventType = "recurring" | "one_time" | "sales_meeting" | "calendar_event" | "pipeline_reminder";
 type ContactResult = { id: string; name: string; email: string | null; address: string | null };
 type VesselOption  = { id: string; name: string | null; make_model: string | null; length_ft: string | null };
 
@@ -49,9 +50,9 @@ type Props = {
 export default function NewPlusModal({ onClose, preContactId, preContactName, preContactAddress, preVessels }: Props) {
   const router = useRouter();
 
-  // Step: "customer" (pipeline only) | "type" | "service" | "sales" | "calendar"
+  // Step: "customer" (pipeline only) | "type" | "service" | "sales" | "calendar" | "reminder"
   const step0 = preContactId ? "type" : "customer";
-  const [step, setStep] = useState<"customer" | "type" | "service" | "sales" | "calendar">(step0);
+  const [step, setStep] = useState<"customer" | "type" | "service" | "sales" | "calendar" | "reminder">(step0);
   const [eventType, setEventType] = useState<EventType | null>(null);
 
   // ── Customer selection ──
@@ -96,14 +97,15 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
   const [serviceState,  serviceAction,  servicePending]  = useActionState<NewEventState, FormData>(createServiceEvent,      {});
   const [salesState,    salesAction,    salesPending]    = useActionState<NewEventState, FormData>(createSalesMeetingEvent, {});
   const [calState,      calAction,      calPending]      = useActionState<NewEventState, FormData>(createBlankCalendarEvent, {});
+  const [reminderState, reminderAction, reminderPending] = useActionState<NewEventState, FormData>(createPipelineReminder, {});
 
   // ── On success close ──
   useEffect(() => {
-    if (serviceState.success || salesState.success || calState.success) {
+    if (serviceState.success || salesState.success || calState.success || reminderState.success) {
       router.refresh();
       onClose();
     }
-  }, [serviceState.success, salesState.success, calState.success, router, onClose]);
+  }, [serviceState.success, salesState.success, calState.success, reminderState.success, router, onClose]);
 
   // ── Contact search ──
   useEffect(() => {
@@ -181,6 +183,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
             {step === "service"  && (eventType === "recurring" ? "Recurring Service" : "One-Time Invoice")}
             {step === "sales"    && "Sales Meeting"}
             {step === "calendar" && "Calendar Event"}
+            {step === "reminder" && "Recurring Reminder"}
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
         </div>
@@ -302,6 +305,17 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                   label: "Calendar Event",
                   desc: "Blank event with custom color",
                 },
+                {
+                  type: "pipeline_reminder" as EventType,
+                  icon: (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 3" />
+                    </svg>
+                  ),
+                  label: "Recurring Reminder",
+                  desc: "Automatically move this contact back to Discovery on a repeating schedule",
+                },
               ].map(opt => (
                 <button
                   key={opt.type}
@@ -311,6 +325,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                     setStep(
                       opt.type === "recurring" || opt.type === "one_time" ? "service"
                       : opt.type === "sales_meeting" ? "sales"
+                      : opt.type === "pipeline_reminder" ? "reminder"
                       : "calendar"
                     );
                   }}
@@ -630,6 +645,82 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                   <button type="submit" disabled={salesPending || !picked}
                     className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-40">
                     {salesPending ? "Creating..." : "Schedule Sales Meeting"}
+                  </button>
+                  <button type="button" onClick={() => setStep("type")} className="px-4 text-slate-500 text-xs hover:text-slate-800 transition-colors">Back</button>
+                </div>
+              </form>
+
+            </div>
+          )}
+
+          {/* ── Step: Recurring Reminder ── */}
+          {step === "reminder" && (
+            <div className="flex flex-col gap-4">
+
+              {picked && (
+                <div className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-sm px-3 py-2">
+                  <span className="text-xs font-medium text-slate-800">{picked.name}</span>
+                </div>
+              )}
+
+              <p className="text-[11px] text-slate-500 -mt-1">
+                On this schedule, this contact&apos;s pipeline card will automatically move back to Discovery.
+              </p>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>First Reminder Date <span className="text-red-500">*</span></label>
+                <input
+                  type="date"
+                  value={startTime.split("T")[0]}
+                  onChange={e => setStartTime(e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>Frequency</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-500 shrink-0">Every</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    step="1"
+                    value={frequency}
+                    onChange={e => setFrequency(e.target.value)}
+                    className={`${inputCls} w-20`}
+                  />
+                  <div className="flex rounded-sm border border-gray-500 overflow-hidden shrink-0">
+                    {(["days", "weeks", "months"] as const).map(u => (
+                      <button
+                        key={u}
+                        type="button"
+                        onClick={() => setFreqUnit(u)}
+                        className={`px-3 py-2 text-xs font-medium transition-colors ${
+                          freqUnit === u
+                            ? "bg-[#000080] text-white"
+                            : "bg-white text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {reminderState.error && <p className="text-red-600 text-xs">{reminderState.error}</p>}
+
+              <form action={reminderAction}>
+                <input type="hidden" name="contact_id"   value={picked?.id ?? ""} />
+                <input type="hidden" name="contact_name" value={picked?.name ?? ""} />
+                <input type="hidden" name="start_time"   value={startTime} />
+                <input type="hidden" name="frequency"    value={frequency} />
+                <input type="hidden" name="freq_unit"    value={freqUnit} />
+                <div className="flex gap-2 pt-1">
+                  <button type="submit" disabled={reminderPending || !picked}
+                    className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-40">
+                    {reminderPending ? "Creating..." : "Create Recurring Reminder"}
                   </button>
                   <button type="button" onClick={() => setStep("type")} className="px-4 text-slate-500 text-xs hover:text-slate-800 transition-colors">Back</button>
                 </div>
