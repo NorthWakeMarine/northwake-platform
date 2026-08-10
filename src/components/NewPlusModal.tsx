@@ -668,7 +668,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
               </p>
 
               <div className="flex flex-col gap-1">
-                <label className={labelCls}>First Reminder Date <span className="text-red-500">*</span></label>
+                <label className={labelCls}>Date of Last Work <span className="text-red-500">*</span></label>
                 <input
                   type="date"
                   value={startTime.split("T")[0]}
@@ -709,14 +709,29 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 </div>
               </div>
 
+              {startTime && frequency && (
+                <p className="text-[11px] text-slate-500 -mt-2">
+                  First reminder: <span className="font-semibold text-slate-700">
+                    {(() => {
+                      const d = new Date(startTime.split("T")[0] + "T12:00:00");
+                      const n = Math.max(1, parseInt(frequency, 10) || 1);
+                      if (freqUnit === "days") d.setDate(d.getDate() + n);
+                      else if (freqUnit === "weeks") d.setDate(d.getDate() + n * 7);
+                      else d.setMonth(d.getMonth() + n);
+                      return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+                    })()}
+                  </span>, repeating every {frequency} {freqUnit}.
+                </p>
+              )}
+
               {reminderState.error && <p className="text-red-600 text-xs">{reminderState.error}</p>}
 
               <form action={reminderAction}>
-                <input type="hidden" name="contact_id"   value={picked?.id ?? ""} />
-                <input type="hidden" name="contact_name" value={picked?.name ?? ""} />
-                <input type="hidden" name="start_time"   value={startTime} />
-                <input type="hidden" name="frequency"    value={frequency} />
-                <input type="hidden" name="freq_unit"    value={freqUnit} />
+                <input type="hidden" name="contact_id"     value={picked?.id ?? ""} />
+                <input type="hidden" name="contact_name"   value={picked?.name ?? ""} />
+                <input type="hidden" name="last_work_date" value={startTime} />
+                <input type="hidden" name="frequency"      value={frequency} />
+                <input type="hidden" name="freq_unit"      value={freqUnit} />
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={reminderPending || !picked}
                     className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-40">

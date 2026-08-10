@@ -2064,18 +2064,27 @@ export async function createPipelineReminder(
   _prev: NewEventState,
   formData: FormData
 ): Promise<NewEventState> {
-  const contact_id   = formData.get("contact_id")   as string;
-  const contact_name = (formData.get("contact_name") as string | null)?.trim() || "Contact";
-  const start_time    = formData.get("start_time")    as string;
-  const frequency     = formData.get("frequency")     as string | null;
-  const freq_unit     = (formData.get("freq_unit") as string | null) || "months";
+  const contact_id     = formData.get("contact_id")     as string;
+  const contact_name   = (formData.get("contact_name") as string | null)?.trim() || "Contact";
+  const last_work_date = formData.get("last_work_date") as string;
+  const frequency      = formData.get("frequency")      as string | null;
+  const freq_unit      = (formData.get("freq_unit") as string | null) || "months";
 
-  if (!contact_id || !start_time || !frequency) {
-    return { error: "Contact, start date, and frequency are required." };
+  if (!contact_id || !last_work_date || !frequency) {
+    return { error: "Contact, date of last work, and frequency are required." };
   }
 
   const freqN = Math.max(1, parseInt(frequency, 10));
-  const dateOnly = start_time.split("T")[0];
+
+  // The first reminder occurrence is last_work_date + one frequency interval,
+  // not the last-work date itself.
+  const lastWorkDateOnly = last_work_date.split("T")[0];
+  const firstReminderDateObj = new Date(lastWorkDateOnly + "T12:00:00");
+  if (freq_unit === "days") firstReminderDateObj.setDate(firstReminderDateObj.getDate() + freqN);
+  else if (freq_unit === "weeks") firstReminderDateObj.setDate(firstReminderDateObj.getDate() + freqN * 7);
+  else firstReminderDateObj.setMonth(firstReminderDateObj.getMonth() + freqN);
+  const p = (n: number) => String(n).padStart(2, "0");
+  const dateOnly = `${firstReminderDateObj.getFullYear()}-${p(firstReminderDateObj.getMonth() + 1)}-${p(firstReminderDateObj.getDate())}`;
 
   const nextDate = new Date(dateOnly + "T12:00:00");
   nextDate.setDate(nextDate.getDate() + 1);
