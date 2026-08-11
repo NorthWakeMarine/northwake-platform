@@ -334,6 +334,11 @@ function ServiceScheduleSection({ asset, contactId, services, isAdmin }: {
                     className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
                 </div>
               )}
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Last Done</label>
+                <input type="date" name="last_service_date" defaultValue={s.last_service_date ?? ""}
+                  className="border border-slate-200 rounded-sm px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-400" />
+              </div>
               <NotificationsField defaultValue={notifOn} />
               {editState.error && <p className="text-red-500 text-[11px]">{editState.error}</p>}
               <div className="flex gap-2 pt-1">

@@ -1041,6 +1041,7 @@ export async function updateVesselService(
   const notifications_enabled = formData.get("notifications_enabled") === "true";
   const priceRaw             = (formData.get("typical_price") as string)?.trim();
   const typical_price        = priceRaw ? parseFloat(priceRaw) : null;
+  const last_service_date    = (formData.get("last_service_date") as string)?.trim() || null;
 
   if (!service_id || !service_name) return { error: "Service name required." };
   if (isNaN(interval_days))         return { error: "Valid interval required." };
@@ -1053,6 +1054,7 @@ export async function updateVesselService(
       interval_days,
       notifications_enabled,
       typical_price: typical_price !== null && !isNaN(typical_price) ? typical_price : null,
+      last_service_date,
     })
     .eq("id", service_id);
   if (error) return { error: error.message };
