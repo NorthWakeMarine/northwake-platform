@@ -161,6 +161,7 @@ export async function login(
   ) {
     await secureDelay();
     recordFailure(ip);
+    if (isRateLimited(ip)) return { error: "Too many sign-in attempts. Please wait 15 minutes." };
     return { error: "Invalid credentials." };
   }
 
@@ -170,6 +171,7 @@ export async function login(
   if (error) {
     await secureDelay();
     recordFailure(ip);
+    if (isRateLimited(ip)) return { error: "Too many sign-in attempts. Please wait 15 minutes." };
     return { error: "Invalid credentials." };
   }
 
