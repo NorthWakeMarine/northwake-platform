@@ -122,7 +122,7 @@ export default function ReleaseNotesPage() {
 
                       <time
                         dateTime={date}
-                        className="text-[11px] text-slate-400 font-medium whitespace-nowrap w-12 pt-0.5 shrink-0"
+                        className="text-[11px] text-slate-400 font-medium whitespace-nowrap w-24 pt-0.5 shrink-0"
                       >
                         {date}
                       </time>
