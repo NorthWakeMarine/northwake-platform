@@ -10,6 +10,7 @@ import {
   getVesselRecurringLinks, type VesselRecurringLink,
   unlinkCalendarEvent,
 } from "@/app/actions";
+import { SHOW_QB_INVOICING } from "@/config/features";
 
 export type VesselService = {
   id: string;
@@ -380,7 +381,7 @@ function ServiceScheduleSection({ asset, contactId, services, isAdmin }: {
                     Mark Done
                   </button>
                 </form>
-                {isAdmin && (
+                {SHOW_QB_INVOICING && isAdmin && (
                   <button type="button" onClick={() => setInvoicingId(invoicingId === s.id ? null : s.id)}
                     className="text-[9px] tracking-widest uppercase text-[#000080] font-semibold hover:text-[#0000a0]">
                     Create Invoice
@@ -406,7 +407,7 @@ function ServiceScheduleSection({ asset, contactId, services, isAdmin }: {
             {isAdmin && s.typical_price !== null && s.typical_price !== undefined && (
               <p className="text-[10px] text-slate-400">Typical: ${s.typical_price.toFixed(2)}</p>
             )}
-            {invoicingId === s.id && (
+            {SHOW_QB_INVOICING && invoicingId === s.id && (
               invoiceState.success && invoiceState.invoiceUrl ? (
                 <div className="mt-1 flex items-center gap-2">
                   <span className="text-emerald-600 text-[10px] font-medium">Invoice #{invoiceState.docNumber} created.</span>
@@ -567,19 +568,21 @@ function RecurringLinksSection({ vesselId, isAdmin }: { vesselId: string; isAdmi
                 <p className="text-xs font-semibold text-slate-800 truncate">
                   {link.service_label ?? "Recurring Service"}
                 </p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  {link.auto_invoice ? (
-                    <span className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                      <span className="text-[10px] text-emerald-700 font-medium">Auto-invoice</span>
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-slate-400">Manual billing</span>
-                  )}
-                </div>
+                {SHOW_QB_INVOICING && (
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {link.auto_invoice ? (
+                      <span className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="text-[10px] text-emerald-700 font-medium">Auto-invoice</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400">Manual billing</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {isAdmin && gross > 0 && (
+                {SHOW_QB_INVOICING && isAdmin && gross > 0 && (
                   <div className="text-right">
                     <p className="text-xs font-bold text-slate-800">${net.toFixed(2)}/mo</p>
                     {disc > 0 && (

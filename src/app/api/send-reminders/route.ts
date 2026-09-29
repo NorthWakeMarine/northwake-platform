@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { SHOW_SMS_AUTO_REMINDERS } from "@/config/features";
 
 function svc() {
   return createClient(
@@ -25,6 +26,10 @@ export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (secret && auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!SHOW_SMS_AUTO_REMINDERS) {
+    return NextResponse.json({ ok: true, disabled: true });
   }
 
   const supabase = svc();

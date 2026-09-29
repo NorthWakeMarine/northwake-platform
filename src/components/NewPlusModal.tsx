@@ -13,6 +13,7 @@ import {
   type NewEventState,
   type ServiceTemplate,
 } from "@/app/actions";
+import { SHOW_QB_INVOICING, SHOW_SMS_AUTO_REMINDERS } from "@/config/features";
 
 
 type EventType = "recurring" | "one_time" | "sales_meeting" | "calendar_event" | "pipeline_reminder";
@@ -316,7 +317,9 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                   label: "Recurring Reminder",
                   desc: "Automatically move this contact back to Discovery on a repeating schedule",
                 },
-              ].map(opt => (
+              ]
+                .filter(opt => SHOW_QB_INVOICING || (opt.type !== "recurring" && opt.type !== "one_time"))
+                .map(opt => (
                 <button
                   key={opt.type}
                   type="button"
@@ -480,16 +483,18 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
               </div>
 
               {/* Customer text reminder toggle */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSmsReminder(v => !v)}
-                  className={`relative w-9 h-5 rounded-full transition-colors ${smsReminder ? "bg-emerald-500" : "bg-slate-200"}`}
-                >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${smsReminder ? "translate-x-4" : ""}`} />
-                </button>
-                <span className="text-[10px] text-slate-600 font-medium">Text customer a reminder 2 days before</span>
-              </div>
+              {SHOW_SMS_AUTO_REMINDERS && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSmsReminder(v => !v)}
+                    className={`relative w-9 h-5 rounded-full transition-colors ${smsReminder ? "bg-emerald-500" : "bg-slate-200"}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${smsReminder ? "translate-x-4" : ""}`} />
+                  </button>
+                  <span className="text-[10px] text-slate-600 font-medium">Text customer a reminder 2 days before</span>
+                </div>
+              )}
 
               {/* Auto-generated title preview */}
               {(picked && serviceLabel) && (
@@ -521,7 +526,7 @@ export default function NewPlusModal({ onClose, preContactId, preContactName, pr
                 <input type="hidden" name="frequency"        value={eventType === "recurring" ? frequency : ""} />
                 <input type="hidden" name="freq_unit"        value={eventType === "recurring" ? freqUnit : ""} />
                 <input type="hidden" name="description"     value={notes} />
-                <input type="hidden" name="sms_reminder_enabled" value={smsReminder ? "true" : "false"} />
+                <input type="hidden" name="sms_reminder_enabled" value={SHOW_SMS_AUTO_REMINDERS && smsReminder ? "true" : "false"} />
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={servicePending || !picked || !serviceLabel || !rate}
                     className="flex-1 bg-[#000080] text-white text-xs font-semibold py-2.5 rounded-sm hover:bg-blue-900 transition-colors disabled:opacity-40">

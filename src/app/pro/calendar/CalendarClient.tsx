@@ -22,6 +22,7 @@ import {
   type ServiceTemplate,
 } from "@/app/actions";
 import type { CalendarEvent } from "@/lib/google-calendar";
+import { SHOW_SMS_AUTO_REMINDERS, SHOW_QB_INVOICING } from "@/config/features";
 
 export type EventLink = {
   contactId: string;
@@ -358,7 +359,7 @@ function LinkedPanel({
         </a>
       </div>
 
-      {!showInvoice && !showClaimInvoice && (
+      {SHOW_QB_INVOICING && !showInvoice && !showClaimInvoice && (
         checkingLinked ? null : linkedInvoice ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2 bg-emerald-50 border border-emerald-100 rounded-sm px-3 py-2">
@@ -425,7 +426,7 @@ function LinkedPanel({
         )
       )}
 
-      {isAdmin && showInvoice && (
+      {SHOW_QB_INVOICING && isAdmin && showInvoice && (
         <form action={invoiceAction} className="flex flex-col gap-3">
           <input type="hidden" name="contact_id"    value={link.contactId} />
           <input type="hidden" name="gcal_event_id" value={event.recurringEventId ?? event.id} />
@@ -452,7 +453,7 @@ function LinkedPanel({
         </form>
       )}
 
-      {showClaimInvoice && (
+      {SHOW_QB_INVOICING && showClaimInvoice && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <p className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Pick an existing invoice</p>
@@ -490,9 +491,9 @@ function LinkedPanel({
       )}
 
       {/* Billing section */}
-      {isAdmin && !showInvoice && !showClaimInvoice && (
+      {isAdmin && !showInvoice && !showClaimInvoice && (SHOW_QB_INVOICING || SHOW_SMS_AUTO_REMINDERS) && (
         <div className="border-t border-slate-100 pt-3">
-          {!showBilling || billingState.success ? (
+          {SHOW_QB_INVOICING && (!showBilling || billingState.success) ? (
             <div className="flex items-center justify-between gap-2">
               {link.autoInvoice ? (
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -514,12 +515,12 @@ function LinkedPanel({
               </button>
             </div>
           ) : null}
-          {(!showBilling || billingState.success) && (
+          {SHOW_SMS_AUTO_REMINDERS && (!showBilling || billingState.success) && (
             <p className="text-[10px] text-slate-400 mt-1">
               Text reminder: <span className={link.smsReminderEnabled ? "text-emerald-700 font-semibold" : "text-slate-400"}>{link.smsReminderEnabled ? "ON" : "OFF"}</span>
             </p>
           )}
-          {showBilling && !billingState.success && (
+          {SHOW_QB_INVOICING && showBilling && !billingState.success && (
             <form action={billingAction} className="flex flex-col gap-2">
               <input type="hidden" name="gcal_event_id" value={event.recurringEventId ?? event.id} />
               <input type="hidden" name="contact_id"    value={link.contactId} />
@@ -562,29 +563,37 @@ function LinkedPanel({
                 </p>
               )}
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBillingAuto(v => !v)}
-                  className={`relative w-9 h-5 rounded-full transition-colors ${billingAuto ? "bg-emerald-500" : "bg-slate-200"}`}
-                >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${billingAuto ? "translate-x-4" : ""}`} />
-                </button>
-                <input type="hidden" name="auto_invoice" value={billingAuto ? "true" : "false"} />
-                <span className="text-[10px] text-slate-600 font-medium">Auto-invoice on the 15th</span>
-              </div>
+              {SHOW_QB_INVOICING ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBillingAuto(v => !v)}
+                    className={`relative w-9 h-5 rounded-full transition-colors ${billingAuto ? "bg-emerald-500" : "bg-slate-200"}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${billingAuto ? "translate-x-4" : ""}`} />
+                  </button>
+                  <input type="hidden" name="auto_invoice" value={billingAuto ? "true" : "false"} />
+                  <span className="text-[10px] text-slate-600 font-medium">Auto-invoice on the 15th</span>
+                </div>
+              ) : (
+                <input type="hidden" name="auto_invoice" value="false" />
+              )}
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBillingSmsReminder(v => !v)}
-                  className={`relative w-9 h-5 rounded-full transition-colors ${billingSmsReminder ? "bg-emerald-500" : "bg-slate-200"}`}
-                >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${billingSmsReminder ? "translate-x-4" : ""}`} />
-                </button>
-                <input type="hidden" name="sms_reminder_enabled" value={billingSmsReminder ? "true" : "false"} />
-                <span className="text-[10px] text-slate-600 font-medium">Text customer a reminder 2 days before</span>
-              </div>
+              {SHOW_SMS_AUTO_REMINDERS ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBillingSmsReminder(v => !v)}
+                    className={`relative w-9 h-5 rounded-full transition-colors ${billingSmsReminder ? "bg-emerald-500" : "bg-slate-200"}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${billingSmsReminder ? "translate-x-4" : ""}`} />
+                  </button>
+                  <input type="hidden" name="sms_reminder_enabled" value={billingSmsReminder ? "true" : "false"} />
+                  <span className="text-[10px] text-slate-600 font-medium">Text customer a reminder 2 days before</span>
+                </div>
+              ) : (
+                <input type="hidden" name="sms_reminder_enabled" value="false" />
+              )}
 
               {billingState.error && <p className="text-red-600 text-[11px]">{billingState.error}</p>}
 
@@ -1166,55 +1175,68 @@ function EventModal({ event, editScope, defaultDate, serviceTemplates, onClose }
                   )}
                   {fetchingV2 && <p className="text-[10px] text-slate-400">Loading vessels...</p>}
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Template</label>
-                    <select value={tplId} onChange={e => handleTplChange(e.target.value)} name="service_template_id" className={inputCls}>
-                      <option value="">None</option>
-                      {serviceTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                    </select>
-                  </div>
+                  {SHOW_QB_INVOICING ? (
+                    <>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Service Template</label>
+                        <select value={tplId} onChange={e => handleTplChange(e.target.value)} name="service_template_id" className={inputCls}>
+                          <option value="">None</option>
+                          {serviceTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                      </div>
 
-                  <input type="hidden" name="service_label" value={svcLabel} />
+                      <input type="hidden" name="service_label" value={svcLabel} />
 
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Qty</label>
-                      <input type="number" name="invoice_qty" value={qty} onChange={e => setQty(e.target.value)} min="1" step="1" className={inputCls} />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Rate</label>
-                      <input type="number" name="invoice_rate" value={rate} onChange={e => setRate(e.target.value)} min="0" step="0.01" className={inputCls} />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Discount</label>
-                      <input type="number" name="invoice_discount" value={discount} onChange={e => setDiscount(e.target.value)} min="0" step="0.01" className={inputCls} />
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Qty</label>
+                          <input type="number" name="invoice_qty" value={qty} onChange={e => setQty(e.target.value)} min="1" step="1" className={inputCls} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Rate</label>
+                          <input type="number" name="invoice_rate" value={rate} onChange={e => setRate(e.target.value)} min="0" step="0.01" className={inputCls} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] tracking-widest uppercase font-medium text-slate-400">Discount</label>
+                          <input type="number" name="invoice_discount" value={discount} onChange={e => setDiscount(e.target.value)} min="0" step="0.01" className={inputCls} />
+                        </div>
+                      </div>
 
-                  {gross > 0 && (
-                    <p className="text-[10px] text-slate-500">
-                      Net: <span className="font-semibold text-slate-800">${net.toFixed(2)}</span>
-                      {parseFloat(discount) > 0 && <span className="text-slate-400 line-through ml-2">${gross.toFixed(2)}</span>}
-                    </p>
+                      {gross > 0 && (
+                        <p className="text-[10px] text-slate-500">
+                          Net: <span className="font-semibold text-slate-800">${net.toFixed(2)}</span>
+                          {parseFloat(discount) > 0 && <span className="text-slate-400 line-through ml-2">${gross.toFixed(2)}</span>}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => setAutoInvoice(v => !v)}
+                          className={`relative w-9 h-5 rounded-full transition-colors ${autoInvoice ? "bg-emerald-500" : "bg-slate-200"}`}>
+                          <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${autoInvoice ? "translate-x-4" : ""}`} />
+                        </button>
+                        <input type="hidden" name="auto_invoice" value={autoInvoice ? "true" : "false"} />
+                        <span className="text-[10px] text-slate-600 font-medium">Auto-invoice on the 15th</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <input type="hidden" name="service_label" value={svcLabel} />
+                      <input type="hidden" name="auto_invoice" value="false" />
+                    </>
                   )}
 
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => setAutoInvoice(v => !v)}
-                      className={`relative w-9 h-5 rounded-full transition-colors ${autoInvoice ? "bg-emerald-500" : "bg-slate-200"}`}>
-                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${autoInvoice ? "translate-x-4" : ""}`} />
-                    </button>
-                    <input type="hidden" name="auto_invoice" value={autoInvoice ? "true" : "false"} />
-                    <span className="text-[10px] text-slate-600 font-medium">Auto-invoice on the 15th</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => setSmsReminder(v => !v)}
-                      className={`relative w-9 h-5 rounded-full transition-colors ${smsReminder ? "bg-emerald-500" : "bg-slate-200"}`}>
-                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${smsReminder ? "translate-x-4" : ""}`} />
-                    </button>
-                    <input type="hidden" name="sms_reminder_enabled" value={smsReminder ? "true" : "false"} />
-                    <span className="text-[10px] text-slate-600 font-medium">Text customer a reminder 2 days before</span>
-                  </div>
+                  {SHOW_SMS_AUTO_REMINDERS ? (
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => setSmsReminder(v => !v)}
+                        className={`relative w-9 h-5 rounded-full transition-colors ${smsReminder ? "bg-emerald-500" : "bg-slate-200"}`}>
+                        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${smsReminder ? "translate-x-4" : ""}`} />
+                      </button>
+                      <input type="hidden" name="sms_reminder_enabled" value={smsReminder ? "true" : "false"} />
+                      <span className="text-[10px] text-slate-600 font-medium">Text customer a reminder 2 days before</span>
+                    </div>
+                  ) : (
+                    <input type="hidden" name="sms_reminder_enabled" value="false" />
+                  )}
                 </>
               )}
             </div>

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { updateTimelineNote, deleteTimelineNote, deleteTimelineEvent } from "@/app/actions";
 import { InvoiceScheduleModal } from "./InvoiceScheduleModal";
+import { SHOW_QB_INVOICING } from "@/config/features";
 
 type EditEntry = { edited_at: string; edited_by?: string };
 
@@ -225,7 +226,7 @@ function InvoiceItem({
   const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
   const isPast = new Date(ev.created_at) < startOfToday;
 
-  const showScheduleButton = qbInvoiceId && !alreadyScheduled && !linkedToGcal && !isPaid && !isPast;
+  const showScheduleButton = SHOW_QB_INVOICING && qbInvoiceId && !alreadyScheduled && !linkedToGcal && !isPaid && !isPast;
 
   return (
     <li className="flex gap-4 relative group">

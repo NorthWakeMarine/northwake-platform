@@ -1,5 +1,14 @@
 # NorthWake Platform Changelog
 
+## September 2026
+
+### September 29 | Scaled back to a lighter-touch CRM: no site forms, no auto-text, no auto-invoicing | CRM,Landing,Calendar
+
+- **Landing site's contact/quote forms are hidden**: the homepage hero form and the `/contact` page form no longer render — both now show direct phone/email/location contact info instead. Every "Get a Quote" link across the site still points at `/contact`, which now leads there instead of a form. Nothing was deleted; the form components and the `submitLead`/`ingestContact` pipeline are untouched, just unused on these two pages.
+- **Automatic customer text reminders are off**: the daily `send-reminders` cron (both the customer's 2-day appointment reminder and the internal staff heads-up text) now no-ops. The "Text reminder" toggles are hidden from Calendar's event forms and the New+ modal so staff can't turn on something that won't fire.
+- **QuickBooks invoicing UI is hidden from the CRM**: Create Invoice, Claim to Invoice, and the auto-invoice/billing setup panel are gone from Calendar and a contact's Fleet tab; the "Recurring Service"/"One-Time Invoice" options are gone from the New+ menu; the monthly auto-invoice cron no-ops. Past invoice history stays visible as a read-only record. QuickBooks customer sync ("Sync to QB" / "View in QB") and the Integrations page connection are unaffected, this was invoicing specifically, not the whole QB integration.
+- All three are single-flag toggles in the new `src/config/features.ts` (`SHOW_LEAD_FORMS`, `SHOW_SMS_AUTO_REMINDERS`, `SHOW_QB_INVOICING`), so any of them can come back with a one-line flip, no rebuilding the feature.
+
 ## August 2026
 
 ### August 10 | Pipeline New+ menu, Recurring Reminder, and reminder skip-replies | CRM,Calendar

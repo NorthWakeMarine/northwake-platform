@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { SHOW_QB_INVOICING } from "@/config/features";
 
 function svc() {
   return createClient(
@@ -26,6 +27,10 @@ export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (secret && auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!SHOW_QB_INVOICING) {
+    return NextResponse.json({ ok: true, disabled: true });
   }
 
   const debug = req.nextUrl.searchParams.get("debug") === "1";

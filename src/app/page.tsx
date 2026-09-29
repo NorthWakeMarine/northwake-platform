@@ -14,6 +14,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { CarouselSlideSource } from "@/components/HeroCarousel";
 import { getGoogleReviews } from "@/lib/google-places";
 import { clientConfig } from "@/config/client";
+import { SHOW_LEAD_FORMS } from "@/config/features";
 
 
 const getCMS = unstable_cache(
@@ -145,9 +146,34 @@ export default async function Home() {
             >
               <div className="flex flex-col gap-0.5 mb-4">
                 <h2 className="text-white text-xl font-bold tracking-tight">{clientConfig.ctaText}</h2>
-                <p className="text-white/55 text-xs tracking-wide">{clientConfig.ctaSubtext}</p>
+                <p className="text-white/55 text-xs tracking-wide">
+                  {SHOW_LEAD_FORMS ? clientConfig.ctaSubtext : "Call or email us, most quotes returned same day."}
+                </p>
               </div>
-              <HeroQuoteForm />
+              {SHOW_LEAD_FORMS ? (
+                <HeroQuoteForm />
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <a
+                    href={`tel:${clientConfig.phoneE164}`}
+                    className="chrome-btn text-center font-bold text-sm tracking-[0.2em] uppercase py-3.5"
+                  >
+                    {clientConfig.phone}
+                  </a>
+                  <a
+                    href={`mailto:${clientConfig.email}`}
+                    className="text-white/80 text-sm font-semibold text-center hover:text-white transition-colors duration-200"
+                  >
+                    {clientConfig.email}
+                  </a>
+                  <Link
+                    href="/contact"
+                    className="text-white/55 text-xs tracking-widest uppercase text-center hover:text-white/80 transition-colors duration-200 mt-1"
+                  >
+                    Full Contact Info →
+                  </Link>
+                </div>
+              )}
             </div>
 
           </div>
